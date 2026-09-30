@@ -1,9 +1,7 @@
 # Người chịu trách nhiệm review theo từng khu vực (xem RACI trong docs/engineering-plan.md).
 #
-# Hiện chỉ có @hhieuann vì Hoàng và Nhân chưa được mời vào repo.
-# Sau khi hai bạn nhận lời mời:
-#   1. Thay @hhieuann ở các nhóm dòng ghi "Hoàng" và "Nhân" bằng username GitHub của hai bạn.
-#   2. Bật "Require review from Code Owners" trong ruleset của develop và main.
+# Phần của Nhân tạm để @hhieuann cho tới khi có username GitHub của Nhân.
+# Khi đủ cả ba người: bật "Require review from Code Owners" trong ruleset của develop, main, release.
 
 # Mặc định và nền tảng: An
 *                                           @hhieuann
@@ -13,15 +11,15 @@
 /services/api/src/modules/recommendation/   @hhieuann
 
 # Nghiệp vụ bán hàng: Hoàng
-/services/api/src/modules/catalog/          @hhieuann
-/services/api/src/modules/cart/             @hhieuann
-/services/api/src/modules/ordering/         @hhieuann
-/services/api/src/modules/admin/            @hhieuann
-/services/workers/                          @hhieuann
-/apps/web/                                  @hhieuann
-/tests/                                     @hhieuann
+/services/api/src/modules/catalog/          @simonhoang611
+/services/api/src/modules/cart/             @simonhoang611
+/services/api/src/modules/ordering/         @simonhoang611
+/services/api/src/modules/admin/            @simonhoang611
+/services/workers/                          @simonhoang611
+/apps/web/                                  @simonhoang611
+/tests/                                     @simonhoang611
 
-# Dữ liệu, gợi ý và bảo mật dữ liệu: Nhân
+# Dữ liệu, gợi ý và bảo mật dữ liệu: Nhân (chờ username)
 /data/                                      @hhieuann
 /services/api/src/modules/events/           @hhieuann
 /SECURITY.md                                @hhieuann
