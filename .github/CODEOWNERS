@@ -1,0 +1,27 @@
+# Người chịu trách nhiệm review theo từng khu vực (xem RACI trong docs/engineering-plan.md).
+#
+# Hiện chỉ có @hhieuann vì Hoàng và Nhân chưa được mời vào repo.
+# Sau khi hai bạn nhận lời mời:
+#   1. Thay @hhieuann ở các nhóm dòng ghi "Hoàng" và "Nhân" bằng username GitHub của hai bạn.
+#   2. Bật "Require review from Code Owners" trong ruleset của develop và main.
+
+# Mặc định và nền tảng: An
+*                                           @hhieuann
+/infra/                                     @hhieuann
+/.github/                                   @hhieuann
+/services/api/src/shared/                   @hhieuann
+/services/api/src/modules/recommendation/   @hhieuann
+
+# Nghiệp vụ bán hàng: Hoàng
+/services/api/src/modules/catalog/          @hhieuann
+/services/api/src/modules/cart/             @hhieuann
+/services/api/src/modules/ordering/         @hhieuann
+/services/api/src/modules/admin/            @hhieuann
+/services/workers/                          @hhieuann
+/apps/web/                                  @hhieuann
+/tests/                                     @hhieuann
+
+# Dữ liệu, gợi ý và bảo mật dữ liệu: Nhân
+/data/                                      @hhieuann
+/services/api/src/modules/events/           @hhieuann
+/SECURITY.md                                @hhieuann

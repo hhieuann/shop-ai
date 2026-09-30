@@ -1,0 +1,159 @@
+name: PR checks
+
+on:
+  pull_request:
+    branches: [develop, main, 'release/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: PR title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tiêu đề theo chuẩn commit của nhóm
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|perf|refactor|style|docs|test|build|ci|chore|revert|merge|release|review|fixreview)(\([^)]+\))?!?: .+'
+          if ! printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "::error::Tiêu đề PR sai chuẩn. Ví dụ: merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop. Xem docs/git-flow.md mục 5."
+            exit 1
+          fi
+
+  node:
+    name: Node · lint, type, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Cài thư viện
+        run: pnpm install --frozen-lockfile
+      - name: Commit message của từng commit trong PR
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+      - name: Định dạng
+        run: pnpm run format:check
+      - name: Lint
+        run: pnpm run lint
+      - name: Kiểm tra kiểu
+        run: pnpm run typecheck
+      - name: Luật layer (ADR-009)
+        if: hashFiles('services/api/src/**') != ''
+        run: pnpm run deps:check
+      - name: Unit và integration test (Testcontainers cần Docker, runner có sẵn)
+        run: pnpm run test
+      - name: Build
+        run: pnpm run build
+
+  python:
+    name: Python · data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Chưa có code Python
+        if: hashFiles('data/pyproject.toml') == ''
+        run: echo "Chưa có data/pyproject.toml, bỏ qua."
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        if: hashFiles('data/pyproject.toml') != ''
+        with:
+          working-directory: data
+          enable-cache: true
+      - name: Cài môi trường
+        if: hashFiles('data/pyproject.toml') != ''
+        working-directory: data
+        run: uv sync --locked
+      - name: Ruff
+        if: hashFiles('data/pyproject.toml') != ''
+        working-directory: data
+        run: uv run ruff check .
+      - name: Mypy
+        if: hashFiles('data/pyproject.toml') != ''
+        working-directory: data
+        run: uv run mypy .
+      - name: Pytest
+        if: hashFiles('data/pyproject.toml') != ''
+        working-directory: data
+        run: uv run pytest
+
+  security:
+    name: Security · secrets & dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Quét secret trong các commit của PR (gitleaks)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git /repo --redact --verbose --log-opts="$BASE_SHA..$HEAD_SHA"
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: Thư viện npm có lỗ hổng High hoặc Critical
+        run: pnpm audit --audit-level high
+
+  infra:
+    name: Infra · synth, cdk-nag, diff
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Chưa có CDK app
+        if: hashFiles('infra/cdk.json') == ''
+        run: echo "Chưa có infra/cdk.json, bỏ qua."
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        if: hashFiles('infra/cdk.json') != ''
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: hashFiles('infra/cdk.json') != ''
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Cài thư viện
+        if: hashFiles('infra/cdk.json') != ''
+        run: pnpm install --frozen-lockfile
+      - name: cdk synth (cdk-nag chạy trong bước này)
+        if: hashFiles('infra/cdk.json') != ''
+        run: pnpm --filter infra run synth
+      - name: Đăng nhập AWS bằng role chỉ đọc
+        if: hashFiles('infra/cdk.json') != '' && vars.DEPLOY_ENABLED == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DIFF_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: cdk diff so với staging
+        if: hashFiles('infra/cdk.json') != '' && vars.DEPLOY_ENABLED == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          pnpm --filter infra run diff:staging > cdk-diff.txt 2>&1 || true
+          {
+            echo '### cdk diff so với staging'
+            echo '```'
+            head -c 60000 cdk-diff.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

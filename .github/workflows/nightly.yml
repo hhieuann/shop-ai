@@ -1,0 +1,68 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 19 * * *' # 02:00 giờ Việt Nam
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    name: OWASP ZAP baseline (staging)
+    if: vars.STAGING_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: ${{ vars.STAGING_URL }}
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-baseline
+
+  schemathesis:
+    name: Schemathesis (API staging)
+    if: vars.STAGING_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Fuzz API theo OpenAPI
+        env:
+          API_URL: ${{ vars.STAGING_URL }}
+        run: uvx schemathesis run contracts/openapi.yaml --url "$API_URL"
+
+  audit:
+    name: Audit thư viện
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: pnpm audit (chỉ báo cáo)
+        continue-on-error: true
+        run: pnpm audit --audit-level moderate
+
+  k6-smoke:
+    name: k6 smoke (staging)
+    if: vars.STAGING_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Chưa có kịch bản k6
+        if: hashFiles('tests/load/smoke.js') == ''
+        run: echo "Chưa có tests/load/smoke.js, bỏ qua."
+      - name: Chạy kịch bản nhỏ
+        if: hashFiles('tests/load/smoke.js') != ''
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+        run: docker run --rm -i -e BASE_URL grafana/k6:2.3.0 run - < tests/load/smoke.js

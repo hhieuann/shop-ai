@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+CHANGELOG.md
+cdk.out/
+coverage/
+playwright-report/
+test-results/
+# Tài liệu Markdown không bắt định dạng, để ai cũng sửa được ngay trên GitHub.
+**/*.md

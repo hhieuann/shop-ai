@@ -1,0 +1,76 @@
+openapi: 3.1.0
+info:
+  title: shop-ai API
+  version: 0.1.0
+  description: API của shop linh kiện. Nguồn sự thật cho web và backend (ADR-0011).
+servers:
+  - url: http://localhost:4010
+    description: Prism mock
+  - url: https://{domain}
+    description: dev, staging hoặc prod (tên miền CloudFront)
+    variables:
+      domain:
+        default: example.cloudfront.net
+security:
+  - cognitoJwt: []
+paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      summary: Kiểm tra API còn chạy
+      security: []
+      responses:
+        '200':
+          description: API đang chạy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+        default:
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    cognitoJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Problem:
+      type: object
+      description: Lỗi theo RFC 9457
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        traceId:
+          type: string
+        errors:
+          type: array
+          description: Chi tiết lỗi theo từng trường khi input sai
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+  responses:
+    Problem:
+      description: Lỗi
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

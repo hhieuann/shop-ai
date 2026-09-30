@@ -1,0 +1,47 @@
+name: User story
+description: Một tính năng nhìn từ phía người dùng
+title: '[Story] '
+labels: ['story']
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - catalog
+        - cart
+        - ordering
+        - recommendation
+        - events
+        - admin
+        - web
+        - infra
+        - data
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      placeholder: Là <vai trò>, tôi muốn <việc> để <lợi ích>.
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Quy tắc nghiệp vụ
+      placeholder: |
+        - BR-01: ...
+        - BR-02: ...
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Tiêu chí nghiệm thu
+      placeholder: |
+        - Given ... When ... Then ...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Trường hợp đặc biệt, phác thảo màn hình, phụ thuộc

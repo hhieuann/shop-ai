@@ -1,0 +1,62 @@
+name: Deploy prod
+
+# Chạy khi An đẩy tag phát hành, ví dụ: git tag -a v0.1.0 -m "Release version 0.1.0" && git push origin v0.1.0
+# Chỉ admin repo được tạo tag v* (ruleset). Environment production cần 1 người duyệt.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy shop-prd ${{ github.ref_name }}
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Cài thư viện
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+      - name: Đăng nhập AWS (OIDC, không access key)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: cdk deploy shop-prd (canary cho ordering)
+        run: pnpm --filter infra run deploy:prod
+      - name: Smoke test
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+        run: pnpm run test:smoke
+
+  github-release:
+    name: GitHub Release
+    needs: deploy
+    if: always() && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Tạo release, ghi chú tự sinh từ các commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes --verify-tag

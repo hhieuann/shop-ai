@@ -1,0 +1,19 @@
+# Môi trường chạy trên máy cá nhân.
+#   docker compose up -d                      -> DynamoDB Local ở http://localhost:8000
+#   docker compose --profile baseline up -d   -> thêm MySQL cho bản đối chứng EC2
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:3.3.1
+    command: ['-jar', 'DynamoDBLocal.jar', '-sharedDb', '-inMemory']
+    ports:
+      - '8000:8000'
+
+  mysql:
+    image: mysql:8.4
+    profiles: ['baseline']
+    environment:
+      # Chỉ dùng trên máy cá nhân. Đổi bằng biến môi trường nếu muốn.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-localdev}
+      MYSQL_DATABASE: shop
+    ports:
+      - '3306:3306'

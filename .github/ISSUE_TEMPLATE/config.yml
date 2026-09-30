@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Báo lỗ hổng bảo mật
+    url: https://github.com/hhieuann/shop-ai/security/advisories/new
+    about: Báo riêng tư, không mở issue công khai.

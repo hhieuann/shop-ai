@@ -1,0 +1,43 @@
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.pnpm-store/
+
+# AWS CDK
+cdk.out/
+.cdk.staging/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Kết quả test
+playwright-report/
+test-results/
+zap-report*/
+tests/e2e-api/reports/
+
+# Bí mật: không bao giờ commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.ppk
+*_accessKeys.csv
+*_credentials.csv
+credentials*.csv
+
+# Hệ điều hành và IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

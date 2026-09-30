@@ -1,0 +1,39 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: Asia/Ho_Chi_Minh
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ['*']
+
+  # Thêm khi đã có data/pyproject.toml:
+  # - package-ecosystem: uv
+  #   directory: /data
+  #   target-branch: develop
+  #   schedule:
+  #     interval: weekly

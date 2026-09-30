@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "amazonwebservices.aws-toolkit-vscode",
+    "charliermarsh.ruff",
+    "ms-playwright.playwright",
+    "redhat.vscode-yaml",
+    "bierner.markdown-mermaid"
+  ]
+}
