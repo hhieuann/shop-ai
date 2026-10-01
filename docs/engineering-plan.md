@@ -98,9 +98,11 @@ R làm · A chịu trách nhiệm cuối (mỗi dòng một người) · C đư�
 
 ## 5. Kiến trúc và layer
 
-### Quyết định: Hexagonal rút gọn trong từng module (ADR-009)
+### Quyết định: modular monolith, bên trong mỗi module là Hexagonal rút gọn (ADR-0009)
 
-Backend chia thành các module theo nghiệp vụ: `catalog`, `cart`, `ordering`, `recommendation`, `events`, `admin`. Bên trong mỗi module:
+Cả hệ thống là một **modular monolith**: một repo, một pipeline, deploy cùng lúc và chung số phiên bản, nhưng chia thành các module theo nghiệp vụ: `catalog`, `cart`, `ordering`, `recommendation`, `events`, `admin`. Mỗi module có Lambda, bảng DynamoDB và quyền IAM riêng, và không import code của module khác. Vì sao không chọn microservices, và Hexagonal khác 3 layer ở đâu: xem [ADR-0009](adr/0009-layer-hexagonal-rut-gon.md).
+
+Bên trong mỗi module:
 
 - **handler** nhận request, kiểm input, gọi use case
 - **application** chứa use case, chỉ gọi **port** (interface)
