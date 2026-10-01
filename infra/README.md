@@ -33,52 +33,32 @@ Rồi tạo AWS Budgets $5, $10, $20 và bật cost allocation tag `project` tro
 
 ## Kết nối GitHub Actions với AWS bằng OIDC (tài khoản demo)
 
-1. IAM → Identity providers → Add provider → OpenID Connect
-   - Provider URL: `https://token.actions.githubusercontent.com`
-   - Audience: `sts.amazonaws.com`
-2. Tạo 4 role: `gh-deploy-dev`, `gh-deploy-staging`, `gh-deploy-prod`, `gh-diff-readonly`.
+OIDC provider và 4 role nằm trong [bootstrap/github-oidc.yaml](bootstrap/github-oidc.yaml). Muốn đổi trust policy thì sửa file này qua PR; Nhân review trước khi bật deploy.
 
-Trust policy của `gh-deploy-staging` (các role deploy khác chỉ đổi tên environment ở dòng `sub`):
+| Role | Ai assume được | Được làm gì |
+|---|---|---|
+| `gh-deploy-dev` | Job có `environment: dev` của repo này | Assume các role CDK bootstrap ở ap-southeast-1 và us-east-1 |
+| `gh-deploy-staging` | Job có `environment: staging` | Như trên |
+| `gh-deploy-prod` | Job có `environment: production` | Như trên |
+| `gh-diff-readonly` | Job chạy trên `pull_request` | Chỉ assume role lookup của CDK, chỉ đọc |
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:hhieuann/shop-ai:environment:staging"
-        }
-      }
-    }
-  ]
-}
+Deploy lần đầu hoặc sau khi sửa template, chạy ở thư mục gốc repo sau khi `aws login`:
+
+```bash
+aws cloudformation deploy --stack-name shop-github-oidc --template-file infra/bootstrap/github-oidc.yaml --capabilities CAPABILITY_NAMED_IAM --region ap-southeast-1 --tags project=shop-ai
 ```
 
-Quyền của role deploy: chỉ được assume các role CDK bootstrap tạo ra.
+Bật chống xoá cho stack, chỉ cần một lần:
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/cdk-hnb659fds-*-<ACCOUNT_ID>-ap-southeast-1"
-    }
-  ]
-}
+```bash
+aws cloudformation update-termination-protection --enable-termination-protection --stack-name shop-github-oidc --region ap-southeast-1
 ```
 
-`gh-diff-readonly` tin `repo:hhieuann/shop-ai:pull_request` và chỉ được assume role `cdk-hnb659fds-lookup-role-<ACCOUNT_ID>-ap-southeast-1`.
+Xem ARN của các role để đặt biến trên GitHub:
 
-Nhân review các trust policy trước khi bật deploy.
+```bash
+aws cloudformation describe-stacks --stack-name shop-github-oidc --region ap-southeast-1 --query "Stacks[0].Outputs" --output table
+```
 
 ## Biến và secret trên GitHub
 
