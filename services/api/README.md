@@ -18,7 +18,7 @@ src/
 │     ├─ application/   use case, chỉ gọi port
 │     ├─ domain/        luật thuần, không I/O, không AWS SDK
 │     ├─ ports.ts       interface
-│     └─ infra/         adapter DynamoDB, SQS, Personalize
+│     └─ infra/         adapter DynamoDB, SQS
 └─ shared/              logger, tracer, lỗi chuẩn, http helpers, config, idempotency
 test/
 ├─ helpers/             makeHandler, apiEvent, dữ liệu mẫu

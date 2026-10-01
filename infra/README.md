@@ -98,4 +98,4 @@ Nhân review các trust policy trước khi bật deploy.
 - Không sửa tài nguyên trên console ở dev, staging, prod. Muốn đổi thì sửa code CDK và mở PR.
 - Lambda không đặt trong VPC, không tạo NAT gateway (ADR-0005).
 - Bảng dữ liệu ở prod để `RemovalPolicy.RETAIN`; ở sandbox, dev, staging để `DESTROY`.
-- Dọn dẹp cuối dự án: `cdk destroy` từng stack; xoá Personalize theo thứ tự campaign, solution, event tracker, dataset, dataset group; lên lịch xoá KMS key; hôm sau kiểm tra Billing.
+- Dọn dẹp cuối dự án: `cdk destroy` từng stack; lên lịch xoá KMS key; hôm sau kiểm tra Billing.

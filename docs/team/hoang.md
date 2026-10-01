@@ -41,7 +41,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 | 4 · 20–26/10 | Module `ordering` với `Idempotency-Key`; worker `order-processor` qua SQS, email qua SES, báo admin qua SNS; trang lịch sử đơn | Đặt hàng trọn luồng trên dev, nhận được email |
 | 5 · 27/10–02/11 | Module `admin` và trang admin; integration test bằng Testcontainers cho các repository; thêm case âm vào E2E; viết runbook | Chốt tính năng cho `v0.2.0` |
 | 6 · 03–09/11 | Sửa lỗi; Lighthouse ≥ 90; mẫu email; hỗ trợ An chạy load test | `v1.0.0-rc.1` |
-| 7–8 · 10–23/11 | Workshop của mình; 3 blog; tập demo; chỉ sửa lỗi trên `release/v1.0.0` | Workshop xong; `v1.0.0` |
+| 7–8 · 10–23/11 | Chương workshop của mình; 3 blog; tập demo; chỉ sửa lỗi trên `release/v1.0.0` | Chương workshop xong; `v1.0.0` |
 
 ## Cần học gì, học ở đâu
 
@@ -57,7 +57,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 
 ## Workshop và blog
 
-- **Workshop:** Đơn hàng không mất khi quá tải: API Gateway → Lambda → SQS → SES
+- **Chương của bạn trong workshop nhóm:** Đơn hàng không mất khi quá tải: API Gateway → Lambda → SQS → SES
 - **Blog 1 (tuần 3):** Thiết kế bảng DynamoDB bắt đầu từ truy vấn: products, carts, orders
 - **Blog 2 (tuần 5):** Chống tạo đơn trùng bằng Idempotency-Key và Powertools Idempotency
 - **Blog 3 (tuần 7):** Test API bằng Postman và Newman trong GitHub Actions
