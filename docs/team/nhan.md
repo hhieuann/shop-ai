@@ -22,7 +22,7 @@ Bạn làm **phần AI của cửa hàng và giữ cho nó an toàn**: dữ li�
 - [ ] Bật xác thực hai bước (MFA) cho tài khoản GitHub
 - [ ] Cài Python 3.13 và uv, Docker Desktop, AWS CLI v2. Clone repo, chạy `pnpm install`
 - [ ] Đọc [git-flow.md](../git-flow.md), [hands-on-testing-guide.md](../hands-on-testing-guide.md), [ADR-0004](../adr/0004-goi-y-batch-truoc.md), [ADR-0009](../adr/0009-layer-hexagonal-rut-gon.md)
-- [ ] Review PR #3 và #4, rồi **Approve** nếu ổn
+- [ ] Đọc `.github/CODEOWNERS` để biết GitHub sẽ mời bạn xem PR ở thư mục nào
 - [ ] Mở console Amazon Personalize ở tài khoản của mình, thử **Create dataset group**, báo nhóm kết quả: Free plan có cho dùng không
 - [ ] Threat model bản 0 (STRIDE) cho luồng đăng nhập, đặt hàng, ghi sự kiện, kèm bảng phân loại dữ liệu, đặt ở `docs/security/`
 - [ ] Script sinh dữ liệu v1 trong `data/`: `pyproject.toml` (uv), pytest; bật khối `uv` trong `.github/dependabot.yml`

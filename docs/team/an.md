@@ -1,4 +1,4 @@
-# An · Trưởng nhóm, nền tảng và DevOps
+x# An · Trưởng nhóm, nền tảng và DevOps
 
 GitHub: [@hhieuann](https://github.com/hhieuann)
 
@@ -22,15 +22,15 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 - Lập kế hoạch sprint, giữ bảng công việc, gỡ vướng cho đồng đội
 - Làm đầu mối với mentor: hỏi 3 câu còn treo (workshop chấm nhóm hay cá nhân, có được nâng Paid plan cho Personalize không, trọng số chấm điểm), báo tiến độ
 - Giữ phạm vi: việc mới phải có ADR hoặc được bạn đồng ý; bảng "không làm" trong project-plan
-- Giữ nhịp review: không PR nào chờ quá 24 giờ
+- Mỗi ngày lướt các PR mới vào `develop`; thấy vấn đề thì comment hoặc mở issue
 - Không ôm việc: mỗi khu vực đều có người dự phòng biết cách làm
 
 ## Tuần này (đến hết 05/10)
 
-- [ ] Merge PR #3 và #4 khi đã có người duyệt; sau đó bật **Require review from Code Owners** trong ruleset `develop`, `main`, `release`
+- [x] Merge PR #3 (ADR-0009) và #4 (CODEOWNERS)
 - [ ] Tạo bảng GitHub Projects với các cột Backlog → Ready → In progress → In review → Done → Released
-- [ ] CDK bootstrap ở 4 tài khoản; Budgets $5/$10/$20; bật cost allocation tag `project`
-- [ ] OIDC provider và 4 role theo [infra/README.md](../../infra/README.md); nhờ Nhân review trust policy; đặt biến; bật `DEPLOY_ENABLED=true`
+- [ ] CDK bootstrap ở tài khoản của mình (vừa là demo vừa là sandbox), rồi hướng dẫn Hoàng và Nhân bootstrap tài khoản của họ; Budgets $5/$10/$20; bật cost allocation tag `project` sau lần deploy đầu tiên
+- [ ] OIDC provider và 4 role theo [infra/README.md](../../infra/README.md); nhờ Nhân review trust policy; đặt biến; bật `DEPLOY_ENABLED=true` khi `infra/` đã có app CDK
 - [ ] Module mẫu: một endpoint `GET /api/v1/products/{id}` trong `catalog`, đủ handler, application, domain, ports, infra, kèm unit, handler và integration test theo [hands-on-testing-guide.md](../hands-on-testing-guide.md). Sau đó Hoàng phát triển tiếp module này
 - [ ] Buổi 60 phút đi qua module mẫu với cả nhóm
 - [ ] Hỏi mentor 3 câu ở trên
@@ -75,7 +75,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 - Không có access key nào tồn tại; mọi deploy đi qua OIDC
 - Chi phí cả dự án dưới $15; không có tài nguyên bị bỏ quên
 - Alarm nào cũng có runbook
-- Không PR nào chờ review quá 24 giờ
+- Không PR nào nằm quá 2 ngày mà không ai đọc
 - Hoàng và Nhân tự deploy sandbox, tự đọc log, không cần hỏi bạn
 
 ## Những bẫy hay gặp
@@ -83,7 +83,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 - **Ôm hết việc vì mình làm nhanh hơn.** Cả nhóm sẽ phụ thuộc vào một người. Hãy để đồng đội tự làm, bạn review.
 - **Sửa tay trên console cho nhanh.** Hạ tầng sẽ lệch với code. Luôn sửa bằng CDK và mở PR.
 - **Bật dịch vụ tính tiền theo giờ rồi quên.** Dùng cầu dao, tag, và xem Cost Explorer mỗi tuần.
-- **Để PR của đồng đội chờ.** Review trước, code việc mới sau.
+- **Không ai đọc PR vì không bắt buộc duyệt.** Mỗi ngày dành 15 phút đọc PR mới của đồng đội; lỗi bắt sớm rẻ hơn lỗi đã lên dev.
 - **Quyết định mà không ghi lại.** Viết một ADR ngắn, nhóm review trong 1 ngày.
 
 ## Hướng đi sau dự án
