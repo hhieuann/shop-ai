@@ -15,7 +15,7 @@ Làm theo [git-flow.md](../git-flow.md):
 
 - Năm loại nhánh: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`; thêm `review/*` cho review ghi thẳng vào code
 - Mỗi lần phát hành đều đi qua `release/vX.Y.Z` tách từ `develop`, test trên staging, rồi merge vào `main` và ngược về `develop`
-- Merge vào nhánh chung bằng **merge commit** qua PR, có 1 người duyệt
+- Merge vào nhánh chung bằng **merge commit** qua PR, CI phải xanh. PR vào `release/*` và `main` cần 1 người duyệt; PR vào `develop` thì không (xem Cập nhật 01/10/2026)
 - Tag phát hành gắn tay bằng `git tag -a vX.Y.Z` trên `main`; chỉ An được tạo tag `v*`
 - Commit theo `<type>(<scope>): <mô tả>`, có thêm `merge`, `release`, `review`, `fixreview`
 - Môi trường: `develop` → dev, `release/*` → staging, tag `v*` → prod (có duyệt)
@@ -35,3 +35,7 @@ Tự động hoá phát hành bằng release-please đã bị loại: tag do bot
 - Dễ hơn: lịch sử thấy rõ nhánh nào gộp vào đâu; staging luôn là bản sắp phát hành.
 - Khó hơn: phải nhớ merge ngược `release/*` và `hotfix/*` về `develop`.
 - Cần xem lại khi: nhóm muốn phát hành nhiều lần mỗi tuần.
+
+## Cập nhật 01/10/2026
+
+PR vào `develop` không còn bắt buộc duyệt. Người viết tự merge khi CI xanh, để cả nhóm đưa code lên dev và test chung nhanh hơn. `release/*` và `main` vẫn cần 1 người duyệt vì đó là bản sắp lên prod. Người quyết: An.

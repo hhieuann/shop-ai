@@ -12,11 +12,11 @@ Trang riêng của từng người: [an.md](an.md) · [hoang.md](hoang.md) · [n
 
 Mỗi người sở hữu **một phần trọn vẹn**, từ API tới dữ liệu tới giao diện của phần đó. Nhờ vậy ai cũng tự demo được phần mình, tự viết được workshop và blog từ đó. Chia theo tầng (một người frontend, một người backend) thì mọi người phải chờ nhau.
 
-## Ai review cho ai
+## Ai xem PR của ai
 
-Mỗi khu vực có người phụ trách chính và một người dự phòng. Người dự phòng là người review chính khi người phụ trách mở PR. Danh sách đầy đủ trong `.github/CODEOWNERS`.
+Mỗi khu vực có người phụ trách chính và một người dự phòng. Khi có PR, GitHub tự mời họ vào xem theo `.github/CODEOWNERS`. PR vào `develop` không bắt buộc duyệt: người được mời đọc và comment nếu thấy vấn đề, người viết tự merge khi CI xanh. PR vào `release/*` và `main` cần 1 người khác duyệt.
 
-| Khu vực | Chính | Dự phòng, review |
+| Khu vực | Chính | Dự phòng |
 |---|---|---|
 | `infra/`, `.github/` | An | Nhân, xem từ góc bảo mật |
 | `services/api/src/shared/`, `tests/load/` | An | Hoàng |
@@ -29,7 +29,7 @@ Mỗi khu vực có người phụ trách chính và một người dự phòng.
 
 - **9:00 mỗi ngày:** standup viết trong nhóm chat, gồm hôm qua, hôm nay, vướng gì. Dùng lại nội dung này làm worklog FCAJ, nộp trước 9:00.
 - **Đầu sprint:** họp lập kế hoạch 45 phút. **Cuối sprint:** demo trên staging, retro 20 phút.
-- **Review PR trong 24 giờ.** Review trước, code việc mới sau.
+- **Đọc PR được mời trong ngày.** Không bắt buộc duyệt, nhưng góp ý sớm rẻ hơn sửa lỗi khi code đã lên dev.
 - **Vướng quá nửa ngày** thì hỏi trong nhóm. **Vướng quá một ngày** thì báo An. An báo mentor khi cần.
 - **Quyết định kỹ thuật lớn** thì viết ADR, cả nhóm review, An chốt.
 - **Bảng công việc:** GitHub Projects. Ai nhận việc thì tự gán issue và kéo cột.

@@ -23,7 +23,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 - [ ] Bật xác thực hai bước (MFA) cho tài khoản GitHub
 - [ ] Cài Node 24, pnpm 12, Docker Desktop, AWS CLI v2, Postman. Clone repo, chạy `pnpm install` và `docker compose up -d`
 - [ ] Đọc [git-flow.md](../git-flow.md), [hands-on-testing-guide.md](../hands-on-testing-guide.md), [ADR-0009](../adr/0009-layer-hexagonal-rut-gon.md)
-- [ ] Review PR #3 và #4. Đây là lần review đầu tiên: đọc kỹ, comment nếu chỗ nào chưa rõ, rồi **Approve**
+- [x] Review PR #3 và #4 (đã approve ngày 01/10)
 - [ ] Lab nền tảng nếu chưa làm: [000002 IAM](https://000002.awsstudygroup.com/), [000057 S3](https://000057.awsstudygroup.com/). Sau đó [000060 DynamoDB](https://000060.awsstudygroup.com/)
 - [ ] Cùng nhóm viết nghiệp vụ catalog, giỏ hàng, đặt hàng vào `docs/business/` trước 05/10
 - [ ] OpenAPI bản 0 cho catalog và cart

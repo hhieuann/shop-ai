@@ -37,7 +37,7 @@ Tài liệu đi kèm:
 - **`main` luôn deploy được.** Thứ gì lên prod cũng đã được test trên staging.
 - **Build một lần, deploy nhiều nơi:** cùng commit thì cùng gói code.
 - **Bảo mật và chi phí là cổng chặn trong pipeline**, không phải việc để cuối.
-- **PR nhỏ, review trong 24 giờ, không ai tự duyệt PR của mình.**
+- **PR nhỏ, CI xanh mới merge.** PR vào `develop` không cần duyệt để cả nhóm test chung nhanh; `release/*` và `main` cần 1 người khác duyệt.
 - **Đo bằng số:** các mục tiêu dưới đây và 4 chỉ số DORA ở mục 10.
 
 ## 3. Mục tiêu phi chức năng (bản đầu)
@@ -91,7 +91,7 @@ R làm · A chịu trách nhiệm cuối (mỗi dòng một người) · C đư�
 
 ### Việc khởi tạo trong Sprint 0
 
-- **An:** mời thành viên, hoàn tất [setup-checklist.md](setup-checklist.md); CDK bootstrap ở 4 tài khoản (region ap-southeast-1); role OIDC cho GitHub Actions; Budgets $5/$10/$20 ở cả 4 tài khoản; module mẫu `catalog`.
+- **An:** mời thành viên, hoàn tất [setup-checklist.md](setup-checklist.md); CDK bootstrap ở tài khoản của mình (vừa là tài khoản demo vừa là sandbox, region ap-southeast-1) và hướng dẫn Hoàng, Nhân bootstrap tài khoản của họ; role OIDC cho GitHub Actions; Budgets $5/$10/$20 ở cả 3 tài khoản; module mẫu `catalog`.
 - **Hoàng:** cài môi trường (Node 24, pnpm, Docker Desktop, AWS CLI, Postman); viết OpenAPI bản 0 cho catalog và cart; khung React chạy trên mock Prism.
 - **Nhân:** threat model bản 0 và phân loại dữ liệu; script sinh dữ liệu v1; thử mở Personalize trên console.
 - **Cả nhóm:** đọc git-flow.md và hands-on-testing-guide.md; buổi 60 phút đi qua module mẫu; gửi nghiệp vụ trước 05/10.
@@ -278,7 +278,7 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 
 | Chặng | Phải đạt |
 |---|---|
-| Merge PR | Tĩnh, unit, integration xanh; tiêu đề và commit đúng chuẩn; 1 người duyệt |
+| Merge PR | Tĩnh, unit, integration xanh; tiêu đề và commit đúng chuẩn; PR vào `release/*` và `main` thêm 1 người duyệt |
 | Lên dev | Deploy xanh, smoke xanh, E2E xanh |
 | Tách release | Mọi story trong sprint đã Done trên dev |
 | Merge release vào main | UAT xong trên staging, E2E xanh, không High/Critical đang mở, runbook cập nhật |
@@ -289,7 +289,7 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 ```mermaid
 flowchart TB
   A["feature/* · fix/*"] --> B["pr.yml<br/>commit, lint, type, luật layer,<br/>unit, integration, quét bảo mật, cdk-nag"]
-  B --> C{"CI xanh +<br/>1 người duyệt"}
+  B --> C{"CI xanh"}
   C --> D["merge commit vào develop"]
   D --> E["deploy.yml → dev<br/>smoke + E2E Newman"]
   E --> F["An tách release/vX.Y.Z"]
@@ -310,7 +310,7 @@ flowchart TB
 | staging | Tài khoản demo | `shop-stg` | Push lên `release/*` | Tự động | Seed giả, reset được |
 | prod | Tài khoản demo | `shop-prd` | Tag `v*` do An đẩy | 1 người khác An | Dữ liệu demo, bật PITR |
 
-dev, staging và prod chung tài khoản demo vì Free plan không có AWS Organizations (ADR-013). Ba môi trường tách hẳn bằng tên stack: bảng, bucket, user pool, distribution CloudFront riêng. Mỗi tài khoản được đúng 3 gói CloudFront Free, vừa đủ cho ba distribution này.
+dev, staging và prod chung tài khoản demo vì Free plan không có AWS Organizations (ADR-013). Tài khoản demo là tài khoản của An, cũng là sandbox của An. Ba môi trường tách hẳn bằng tên stack: bảng, bucket, user pool, distribution CloudFront riêng. Mỗi tài khoản được đúng 3 gói CloudFront Free, vừa đủ cho ba distribution này; sandbox của An không dùng gói Free.
 
 ### Workflow
 
@@ -406,7 +406,7 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 ### Chi phí và DORA
 
 - Tag `project`, `env`, `owner`, `module` cho mọi tài nguyên, gắn ở cấp CDK app
-- Budgets $5/$10/$20 ở cả 4 tài khoản; xem Cost Explorer 5 phút mỗi thứ Hai
+- Budgets $5/$10/$20 ở cả 3 tài khoản; xem Cost Explorer 5 phút mỗi thứ Hai
 - Cầu dao tự động cho campaign Personalize và EC2 đối chứng
 - Chỉ số chi phí trên 1.000 đơn, đưa vào báo cáo
 
