@@ -3,3 +3,7 @@ packages:
   - services/*
   - infra
   - tests/*
+allowBuilds:
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
