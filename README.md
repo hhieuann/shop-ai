@@ -108,11 +108,13 @@ Chi tiết: [infra/README.md](infra/README.md).
 
 ## Nhóm
 
-| Thành viên | Vai trò |
-|---|---|
-| An | Trưởng nhóm · nền tảng, DevOps, bảo mật hạ tầng |
-| Hoàng | Nghiệp vụ bán hàng · API và giao diện |
-| Nhân | Dữ liệu, gợi ý · bảo mật dữ liệu và AI |
+| Thành viên | GitHub | Vai trò |
+|---|---|---|
+| An | [@hhieuann](https://github.com/hhieuann) | Trưởng nhóm · nền tảng, DevOps, bảo mật hạ tầng |
+| Hoàng | [@simonhoang611](https://github.com/simonhoang611) | Fullstack · nghiệp vụ bán hàng |
+| Nhân | [@Netanii](https://github.com/Netanii) | Dữ liệu, gợi ý · bảo mật dữ liệu và AI |
+
+Việc cần làm và lộ trình của từng người: [docs/team/](docs/team/).
 
 ## Bảo mật
 
