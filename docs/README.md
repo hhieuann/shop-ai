@@ -2,6 +2,7 @@
 
 | Tài liệu | Đọc khi |
 |---|---|
+| [team/](team/) | Muốn biết mình phụ trách gì, tuần này làm gì, lộ trình 8 tuần |
 | [git-flow.md](git-flow.md) | Trước khi tạo nhánh, commit, mở PR, phát hành |
 | [hands-on-testing-guide.md](hands-on-testing-guide.md) | Trước khi viết test |
 | [engineering-plan.md](engineering-plan.md) | Muốn hiểu toàn bộ cách làm: layer, CI/CD, môi trường, vận hành, lịch |
