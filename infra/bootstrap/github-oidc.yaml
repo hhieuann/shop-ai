@@ -1,0 +1,185 @@
+# GitHub Actions signs in to AWS with OIDC. No access keys exist.
+# Deployed once to the demo account (see infra/README.md). Change it only through a PR; Nhan reviews the trust policies.
+# Kept ASCII-only: the AWS CLI on Windows cannot read non-ASCII template files by default.
+#
+# A role can only be assumed with a GitHub token for this repo and the right context:
+#   gh-deploy-dev      job with environment: dev         (the environment only accepts develop)
+#   gh-deploy-staging  job with environment: staging     (only release/*)
+#   gh-deploy-prod     job with environment: production  (only tags v*, approved by someone other than An)
+#   gh-diff-readonly   job triggered by pull_request     (read only, for cdk diff)
+# Deploy roles cannot create resources themselves: they can only assume the roles created by CDK bootstrap.
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: shop-ai - GitHub Actions OIDC provider and deploy roles (no access keys)
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: hhieuann/shop-ai
+    Description: owner/repo allowed to assume the roles
+  CdkQualifier:
+    Type: String
+    Default: hnb659fds
+    Description: CDK bootstrap qualifier
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+      Tags:
+        - Key: project
+          Value: shop-ai
+
+  DeployDevRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gh-deploy-dev
+      Description: GitHub Actions deploys to dev (jobs with environment dev only)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:environment:dev
+      Policies:
+        - PolicyName: assume-cdk-bootstrap-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-*-${AWS::AccountId}-ap-southeast-1
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-*-${AWS::AccountId}-us-east-1
+      Tags:
+        - Key: project
+          Value: shop-ai
+        - Key: env
+          Value: dev
+
+  DeployStagingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gh-deploy-staging
+      Description: GitHub Actions deploys to staging (jobs with environment staging only)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:environment:staging
+      Policies:
+        - PolicyName: assume-cdk-bootstrap-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-*-${AWS::AccountId}-ap-southeast-1
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-*-${AWS::AccountId}-us-east-1
+      Tags:
+        - Key: project
+          Value: shop-ai
+        - Key: env
+          Value: staging
+
+  DeployProdRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gh-deploy-prod
+      Description: GitHub Actions deploys to prod (jobs with environment production only)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:environment:production
+      Policies:
+        - PolicyName: assume-cdk-bootstrap-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-*-${AWS::AccountId}-ap-southeast-1
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-*-${AWS::AccountId}-us-east-1
+      Tags:
+        - Key: project
+          Value: shop-ai
+        - Key: env
+          Value: prod
+
+  DiffReadOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gh-diff-readonly
+      Description: GitHub Actions runs cdk diff on pull requests (read only)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:pull_request
+      Policies:
+        - PolicyName: assume-cdk-lookup-role
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-lookup-role-${AWS::AccountId}-ap-southeast-1
+                  - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-${CdkQualifier}-lookup-role-${AWS::AccountId}-us-east-1
+      Tags:
+        - Key: project
+          Value: shop-ai
+        - Key: env
+          Value: ci
+
+Outputs:
+  OidcProviderArn:
+    Value: !Ref GitHubOidcProvider
+  DeployDevRoleArn:
+    Description: Variable AWS_DEPLOY_ROLE_ARN of environment dev
+    Value: !GetAtt DeployDevRole.Arn
+  DeployStagingRoleArn:
+    Description: Variable AWS_DEPLOY_ROLE_ARN of environment staging
+    Value: !GetAtt DeployStagingRole.Arn
+  DeployProdRoleArn:
+    Description: Variable AWS_DEPLOY_ROLE_ARN of environment production
+    Value: !GetAtt DeployProdRole.Arn
+  DiffReadOnlyRoleArn:
+    Description: Repository variable AWS_DIFF_ROLE_ARN
+    Value: !GetAtt DiffReadOnlyRole.Arn
