@@ -1,25 +1,35 @@
-# Người chịu trách nhiệm review theo từng khu vực (xem RACI trong docs/engineering-plan.md).
+# Người chịu trách nhiệm review theo từng khu vực (xem docs/team/README.md).
 #
-# Phần của Nhân tạm để @hhieuann cho tới khi có username GitHub của Nhân.
-# Khi đủ cả ba người: bật "Require review from Code Owners" trong ruleset của develop, main, release.
+# Mỗi khu vực có người phụ trách chính đứng trước và người dự phòng đứng sau.
+# GitHub chỉ cần 1 owner duyệt, và tác giả PR không tự duyệt được, nên khu vực nào
+# cũng có ít nhất 2 người để không PR nào bị kẹt.
+#
+# An: @hhieuann · Hoàng: @simonhoang611 · Nhân: @Netanii
 
-# Mặc định và nền tảng: An
-*                                           @hhieuann
-/infra/                                     @hhieuann
-/.github/                                   @hhieuann
-/services/api/src/shared/                   @hhieuann
-/services/api/src/modules/recommendation/   @hhieuann
+# Mặc định: tài liệu, cấu hình chung. Ai trong nhóm duyệt cũng được.
+*                                           @hhieuann @simonhoang611 @Netanii
 
-# Nghiệp vụ bán hàng: Hoàng
-/services/api/src/modules/catalog/          @simonhoang611
-/services/api/src/modules/cart/             @simonhoang611
-/services/api/src/modules/ordering/         @simonhoang611
-/services/api/src/modules/admin/            @simonhoang611
-/services/workers/                          @simonhoang611
-/apps/web/                                  @simonhoang611
-/tests/                                     @simonhoang611
+# Nền tảng, hạ tầng, pipeline: An chính, Nhân dự phòng (review bảo mật)
+/infra/                                     @hhieuann @Netanii
+/.github/                                   @hhieuann @Netanii
+/services/api/src/shared/                   @hhieuann @simonhoang611
+/tests/load/                                @hhieuann @simonhoang611
 
-# Dữ liệu, gợi ý và bảo mật dữ liệu: Nhân (chờ username)
-/data/                                      @hhieuann
-/services/api/src/modules/events/           @hhieuann
-/SECURITY.md                                @hhieuann
+# Nghiệp vụ bán hàng: Hoàng chính, An dự phòng
+/services/api/src/modules/catalog/          @simonhoang611 @hhieuann
+/services/api/src/modules/cart/             @simonhoang611 @hhieuann
+/services/api/src/modules/ordering/         @simonhoang611 @hhieuann
+/services/api/src/modules/admin/            @simonhoang611 @hhieuann
+/services/workers/                          @simonhoang611 @hhieuann
+/apps/web/                                  @simonhoang611 @hhieuann
+/tests/e2e-api/                             @simonhoang611 @hhieuann
+/tests/e2e-ui/                              @simonhoang611 @hhieuann
+/contracts/                                 @simonhoang611 @hhieuann
+
+# Gợi ý: An làm API và widget, Nhân làm dữ liệu
+/services/api/src/modules/recommendation/   @hhieuann @Netanii
+
+# Dữ liệu, sự kiện, bảo mật dữ liệu: Nhân chính, An dự phòng
+/data/                                      @Netanii @hhieuann
+/services/api/src/modules/events/           @Netanii @hhieuann
+/SECURITY.md                                @Netanii @hhieuann
