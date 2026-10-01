@@ -11,7 +11,7 @@ Mỗi alarm có một runbook: khi alarm kêu thì làm gì, theo thứ tự. Vi
 | `dynamodb-throttle.md` | DynamoDB bị throttle | Hoàng |
 | `canary-rollback.md` | Canary ordering báo lỗi | An |
 | `cost-spike.md` | Chi phí vượt $5, $10, $20 | An |
-| `personalize-breaker.md` | Campaign Personalize sống quá 3 giờ | Nhân |
+| `recs-pipeline.md` | Pipeline gợi ý đêm qua lỗi hoặc không chạy | Nhân |
 
 ## Mẫu
 

@@ -4,7 +4,7 @@ Mỗi quyết định kiến trúc quan trọng được ghi thành một file: 
 
 | ADR | Quyết định | Trạng thái |
 |---|---|---|
-| [0004](0004-goi-y-batch-truoc.md) | Gợi ý chạy batch trước; bảng `recs`; Personalize cắm vào sau | Chấp nhận |
+| [0004](0004-goi-y-batch-truoc.md) | Gợi ý chạy batch mỗi đêm; bảng `recs` | Chấp nhận; phần Personalize thay bởi 0016 |
 | [0005](0005-lambda-ngoai-vpc.md) | Lambda không đặt trong VPC, không NAT gateway | Chấp nhận |
 | [0006](0006-mot-cloudfront-waf.md) | Một CloudFront cho web và `/api/*`, WAF gói Free | Chấp nhận |
 | [0007](0007-http-api-jwt-cognito.md) | HTTP API + JWT authorizer của Cognito | Chấp nhận |
@@ -16,6 +16,7 @@ Mỗi quyết định kiến trúc quan trọng được ghi thành một file: 
 | [0013](0013-moi-truong-chung-tai-khoan.md) | dev, staging, prod chung tài khoản demo, tách bằng stack | Chấp nhận |
 | [0014](0014-canary-ordering.md) | Deploy Lambda ordering kiểu canary bằng CodeDeploy | Đề xuất |
 | [0015](0015-repo-public.md) | Repo public | Chấp nhận |
+| [0016](0016-tu-xay-mo-hinh-goi-y.md) | Tự xây mô hình gợi ý trên Lambda + DynamoDB, không dùng Personalize | Chấp nhận |
 
 ## Mẫu cho ADR mới
 

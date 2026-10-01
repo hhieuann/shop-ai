@@ -20,7 +20,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 ## Việc của trưởng nhóm
 
 - Lập kế hoạch sprint, giữ bảng công việc, gỡ vướng cho đồng đội
-- Làm đầu mối với mentor: hỏi 3 câu còn treo (workshop chấm nhóm hay cá nhân, có được nâng Paid plan cho Personalize không, trọng số chấm điểm), báo tiến độ
+- Làm đầu mối với mentor: báo tiến độ, hỏi khi nhóm vướng
 - Giữ phạm vi: việc mới phải có ADR hoặc được bạn đồng ý; bảng "không làm" trong project-plan
 - Mỗi ngày lướt các PR mới vào `develop`; thấy vấn đề thì comment hoặc mở issue
 - Không ôm việc: mỗi khu vực đều có người dự phòng biết cách làm
@@ -33,7 +33,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 - [ ] OIDC provider và 4 role theo [infra/README.md](../../infra/README.md); nhờ Nhân review trust policy; đặt biến; bật `DEPLOY_ENABLED=true` khi `infra/` đã có app CDK
 - [ ] Module mẫu: một endpoint `GET /api/v1/products/{id}` trong `catalog`, đủ handler, application, domain, ports, infra, kèm unit, handler và integration test theo [hands-on-testing-guide.md](../hands-on-testing-guide.md). Sau đó Hoàng phát triển tiếp module này
 - [ ] Buổi 60 phút đi qua module mẫu với cả nhóm
-- [ ] Hỏi mentor 3 câu ở trên
+- [x] Hỏi mentor 3 câu (01/10): workshop chấm theo nhóm; không dùng Personalize mà tự xây mô hình gợi ý ([ADR-0016](../adr/0016-tu-xay-mo-hinh-goi-y.md)); trọng số theo thang điểm của chương trình
 - [ ] Gom nghiệp vụ của cả nhóm vào `docs/business/` trước 05/10
 
 ## Lộ trình 8 tuần
@@ -46,7 +46,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 | 4 · 20–26/10 | Module recommendation và 2 widget; dashboard, alarm, runbook | Widget hiện gợi ý từ bảng `recs` trên dev |
 | 5 · 27/10–02/11 | Worker `cost-breaker`; gắn rule WAF Nhân viết; X-Ray; tách `release/v0.2.0` (30/10), tag `v0.2.0` (02/11) | `v0.2.0` trên prod; alarm nào cũng có runbook |
 | 6 · 03–09/11 | EC2 đối chứng và k6 ở 50/200/1.000 người ảo; canary cho ordering; diễn tập point-in-time recovery; chi phí trên 1.000 đơn; tách `release/v1.0.0` (06/11), tag `v1.0.0-rc.1` (09/11) | Có đủ số liệu cho báo cáo |
-| 7–8 · 10–23/11 | Viết chính phần Proposal 8 mục; điều phối nhóm tự vẽ sơ đồ kiến trúc; workshop của mình; tập demo 2 lần; tag `v1.0.0` (23/11) | Báo cáo đầy đủ; `v1.0.0` trên prod |
+| 7–8 · 10–23/11 | Viết chính phần Proposal 8 mục; điều phối nhóm tự vẽ sơ đồ kiến trúc; ghép workshop nhóm và viết các chương của mình; tập demo 2 lần; tag `v1.0.0` (23/11) | Báo cáo đầy đủ; `v1.0.0` trên prod |
 | 24–29/11 | Nộp workshop trên portal; chuẩn bị dọn tài nguyên | Đã nộp trước 29/11 |
 
 ## Cần học gì, học ở đâu
@@ -64,7 +64,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 
 ## Workshop và blog
 
-- **Workshop:** Đưa web serverless lên AWS an toàn bằng CDK: CloudFront, WAF, Cognito và CI/CD không access key
+- **Workshop nhóm:** bạn điều phối và ghép bài; viết các chương Introduction, Prerequisite, hạ tầng và CI/CD (CDK, CloudFront, WAF, Cognito, GitHub OIDC) và Clean up
 - **Blog 1 (tuần 3):** CI/CD không cần access key: GitHub Actions và OIDC
 - **Blog 2 (tuần 5):** Một CloudFront cho cả web và API, WAF gói Free
 - **Blog 3 (tuần 7):** Serverless so với container trên EC2: số liệu thật từ k6 và chi phí

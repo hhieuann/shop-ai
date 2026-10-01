@@ -21,7 +21,7 @@ Chi tiết và phần không làm: [docs/project-plan.md](docs/project-plan.md).
 
 ## Kiến trúc
 
-Web React tĩnh trên S3 + CloudFront có WAF. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý được tính theo lô (baseline hoặc Amazon Personalize) rồi ghi vào DynamoDB. Toàn bộ hạ tầng viết bằng AWS CDK.
+Web React tĩnh trên S3 + CloudFront có WAF. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý do mô hình nhóm tự xây (luật mua kèm, gợi ý theo món tương tự) tính mỗi đêm trên Lambda rồi ghi vào DynamoDB. Toàn bộ hạ tầng viết bằng AWS CDK.
 
 Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture/`. Lý do cho từng lựa chọn nằm trong [docs/adr/](docs/adr/).
 
@@ -32,7 +32,7 @@ Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture
 | Web | React, Vite, TypeScript, TanStack Query |
 | API | AWS Lambda (Node.js 24, arm64), HTTP API, Powertools for AWS Lambda |
 | Dữ liệu | DynamoDB; S3 cho dữ liệu train |
-| Gợi ý | Python 3.13: baseline luật mua kèm; Amazon Personalize (tuỳ chọn) |
+| Gợi ý | Python 3.13 trên Lambda, chạy mỗi đêm bằng EventBridge Scheduler: luật mua kèm, gợi ý theo món tương tự |
 | Hạ tầng | AWS CDK v2, cdk-nag |
 | CI/CD | GitHub Actions + OIDC |
 | Kiểm thử | Vitest, Testcontainers, pytest, Postman/Newman, k6, OWASP ZAP, Schemathesis |
@@ -44,7 +44,7 @@ shop-ai/
 ├─ apps/web/                  React + Vite
 ├─ services/api/              Lambda API, chia module theo ADR-009
 ├─ services/workers/          Lambda chạy nền (SQS, lịch hẹn giờ)
-├─ data/                      Python: sinh dữ liệu, baseline, Personalize
+├─ data/                      Python: sinh dữ liệu, mô hình gợi ý, pipeline mỗi đêm
 ├─ infra/                     AWS CDK
 ├─ contracts/openapi.yaml     Hợp đồng API
 ├─ tests/                     e2e-api (Postman/Newman) · e2e-ui (Playwright) · load (k6)

@@ -1,6 +1,6 @@
 # ADR-0004: Gợi ý chạy batch trước, Personalize cắm vào sau
 
-- Trạng thái: Chấp nhận
+- Trạng thái: Chấp nhận; phần Personalize thay bởi ADR-0016
 - Ngày: 30/09/2026
 - Người quyết: An, Hoàng, Nhân
 
@@ -20,3 +20,7 @@ Campaign real-time của Amazon Personalize bị tính tối thiểu 1 request m
 - Dễ hơn: web chạy được kể cả khi chưa có Personalize; so AI với baseline chỉ là so hai nguồn ghi vào cùng bảng.
 - Khó hơn: gợi ý không cập nhật tức thì theo từng cú click, trừ lúc demo có campaign.
 - Luận điểm business: shop nhỏ làm mới gợi ý mỗi đêm là đủ, chi phí gần 0.
+
+## Cập nhật 01/10/2026
+
+Không dùng Personalize nữa ([ADR-0016](0016-tu-xay-mo-hinh-goi-y.md)). Gợi ý do mô hình Nhân tự xây; hàng bán chạy theo loại là baseline và là gợi ý cho người mới. Bỏ campaign real-time và Lambda cầu dao. Phần còn lại của quyết định giữ nguyên: tính theo lô mỗi đêm, ghi bảng `recs`, API chỉ đọc bảng.

@@ -8,7 +8,7 @@
 
 - Backend chạy trên Lambda bằng TypeScript. Nhóm 3 người, 2 người mới với cloud, có 8 tuần.
 - Cần nhanh (khởi động lạnh thấp) và dễ kiểm soát (ranh giới rõ, test được, review được).
-- Có một chỗ phải hoán đổi được nguồn dữ liệu gợi ý: baseline, Personalize batch, Personalize real-time lúc demo.
+- Có một chỗ phải hoán đổi được nguồn dữ liệu gợi ý: mô hình tự xây, hoặc hàng bán chạy cho người mới (ADR-0016).
 
 ## Quyết định
 
@@ -29,7 +29,7 @@ Quyết định này trả lời hai câu hỏi khác nhau:
 - `handler.ts` nhận request, kiểm input bằng zod, lấy claims JWT, gọi use case, đổi lỗi sang HTTP
 - `application/` chứa use case; chỉ gọi port là các interface trong `ports.ts`
 - `domain/` chứa luật nghiệp vụ thuần, không I/O, không import AWS SDK
-- `infra/` chứa adapter cho DynamoDB, SQS, Personalize, hiện thực các port
+- `infra/` chứa adapter cho DynamoDB, SQS, hiện thực các port
 
 ### Cách gọi thống nhất
 
@@ -105,9 +105,9 @@ export class DynamoOrderRepository implements OrderRepository {
 Được hai thứ:
 
 - **Test lõi không cần AWS:** truyền một repository giả vào là chạy được.
-- **Đổi nguồn dữ liệu mà không sửa lõi:** gợi ý từ baseline hay từ Personalize chỉ là hai adapter cho cùng một port, chọn bằng flag.
+- **Đổi nguồn dữ liệu mà không sửa lõi:** gợi ý từ mô hình hay từ danh sách hàng bán chạy chỉ là hai adapter cho cùng một port.
 
-Gọi là **rút gọn** vì bản đầy đủ (Clean Architecture) còn tách port đầu vào và đầu ra, map DTO ở mỗi ranh giới. Với 8 tuần, nhóm chỉ giữ interface cho những chỗ gọi ra ngoài: database, queue, Personalize.
+Gọi là **rút gọn** vì bản đầy đủ (Clean Architecture) còn tách port đầu vào và đầu ra, map DTO ở mỗi ranh giới. Với 8 tuần, nhóm chỉ giữ interface cho những chỗ gọi ra ngoài: database, queue.
 
 ### Một request đi qua cấu trúc này
 

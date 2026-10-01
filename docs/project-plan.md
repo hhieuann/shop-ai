@@ -3,6 +3,8 @@
 **Dự án:** Shop linh kiện, thiết bị điện tử tích hợp AI gợi ý sản phẩm theo hành vi mua sắm (serverless trên AWS)
 **Nhóm:** 3 người | **Thời hạn:** 8 tuần
 
+> **Cập nhật 01/10/2026:** theo góp ý của mentor, nhóm không dùng Amazon Personalize mà tự xây mô hình gợi ý trên Lambda + DynamoDB ([ADR-0016](adr/0016-tu-xay-mo-hinh-goi-y.md)). Các đoạn nhắc tới Personalize bên dưới là kế hoạch ban đầu.
+
 ---
 
 ## 1. Ý tưởng

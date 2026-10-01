@@ -38,13 +38,13 @@ Mỗi khu vực có người phụ trách chính và một người dự phòng.
 
 | Tuần | An | Hoàng | Nhân |
 |---|---|---|---|
-| 1 · 29/09–05/10 | Thiết lập repo, AWS, OIDC; module mẫu | Môi trường, OpenAPI bản 0, khung web, thiết kế bảng | Kiểm tra Personalize, threat model, sinh dữ liệu v1 |
-| 2 · 06–12/10 | Stack frontend, API, dữ liệu; dev tự deploy | Module catalog, trang sản phẩm | Dữ liệu v2, baseline và bảng chỉ số |
-| 3 · 13–19/10 | Staging, smoke, phát hành v0.1.0 | Module giỏ hàng, E2E bản 1 | Module events, ẩn danh, KMS |
+| 1 · 29/09–05/10 | Thiết lập repo, AWS, OIDC; module mẫu | Môi trường, OpenAPI bản 0, khung web, thiết kế bảng | Chốt cách tính gợi ý, threat model, sinh dữ liệu v1 |
+| 2 · 06–12/10 | Stack frontend, API, dữ liệu; dev tự deploy | Module catalog, trang sản phẩm | Dữ liệu v2, luật mua kèm chạy offline, bảng chỉ số |
+| 3 · 13–19/10 | Staging, smoke, phát hành v0.1.0 | Module giỏ hàng, E2E bản 1 | Module events, ẩn danh, KMS; gợi ý theo món tương tự |
 | 4 · 20–26/10 | API và widget gợi ý, dashboard, alarm | Đặt hàng qua SQS, email | Pipeline gợi ý mỗi đêm |
 | 5 · 27/10–02/11 | Cầu dao chi phí, WAF, phát hành v0.2.0 | Admin, integration test | Rule WAF, thí nghiệm đầu độc, test IDOR |
 | 6 · 03–09/11 | Load test, canary, diễn tập phục hồi, v1.0.0-rc.1 | Sửa lỗi, hiệu năng web | Chỉ số cuối, báo cáo bảo mật |
-| 7–8 · 10–23/11 | Proposal, tập demo, v1.0.0 | Workshop, blog, sửa lỗi | Workshop, blog, sửa lỗi |
+| 7–8 · 10–23/11 | Proposal, ghép workshop nhóm, tập demo, v1.0.0 | Chương workshop, blog, sửa lỗi | Chương workshop, blog, sửa lỗi |
 | 24–29/11 | Nộp workshop trên portal | | |
 
 ## Việc OJT của mỗi người (ngoài code)
@@ -52,7 +52,8 @@ Mỗi khu vực có người phụ trách chính và một người dự phòng.
 - Worklog mỗi ngày, nộp trước 9:00, đủ 12 tuần
 - 3 blog đăng trên group AWS Study Group. Gợi ý chủ đề có trong trang riêng của từng người
 - Ít nhất 10 buổi lên văn phòng và 3 sự kiện
-- Trang workshop từ phần mình làm ([docs/workshop/](../workshop/)) và phần Self-Assessment
+- Workshop chấm theo nhóm: cả nhóm làm một workshop, mỗi người viết chương phần mình ([docs/workshop/](../workshop/)). Điểm từng người tuỳ phần đóng góp, nên tự mở issue và PR bằng tài khoản GitHub của mình
+- Phần Self-Assessment của từng người
 
 Thiếu blog hoặc thiếu worklog là mất trọn điểm mục Worklog/Blog. Đừng để dồn tới cuối kỳ.
 
