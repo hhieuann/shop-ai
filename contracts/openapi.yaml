@@ -33,6 +33,34 @@ paths:
                     enum: [ok]
         default:
           $ref: '#/components/responses/Problem'
+  /api/v1/products/{id}:
+    get:
+      operationId: getProduct
+      summary: Xem chi tiết một sản phẩm
+      tags: [catalog]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Mã sản phẩm, chỉ gồm chữ, số và dấu gạch ngang
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9-]{1,64}$'
+          example: gpu-rtx4070
+      responses:
+        '200':
+          description: Sản phẩm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
 components:
   securitySchemes:
     cognitoJwt:
@@ -40,6 +68,38 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Product:
+      type: object
+      required: [id, name, category, priceVnd, availability, attributes]
+      properties:
+        id:
+          type: string
+          example: gpu-rtx4070
+        name:
+          type: string
+          example: NVIDIA GeForce RTX 4070 12GB
+        category:
+          type: string
+          example: gpu
+        priceVnd:
+          type: integer
+          minimum: 0
+          description: Giá bằng VND, số nguyên
+          example: 15990000
+        availability:
+          type: string
+          enum: [IN_STOCK, LOW_STOCK, OUT_OF_STOCK]
+          description: Mức còn hàng; API không trả số tồn kho thật
+        attributes:
+          type: object
+          description: Thông số theo từng loại linh kiện
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+          example:
+            vramGb: 12
+            tdpW: 200
     Problem:
       type: object
       description: Lỗi theo RFC 9457
