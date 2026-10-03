@@ -4,32 +4,48 @@ Hạ tầng viết bằng AWS CDK v2 (TypeScript). An phụ trách.
 
 ## Stack và môi trường
 
-| Môi trường | Tài khoản | Tên stack | Deploy bằng |
+| Môi trường | Tài khoản | Tiền tố stack | Deploy bằng |
 |---|---|---|---|
-| sandbox | Tài khoản của từng người | `shop-sbx-<tên>` | `cdk deploy` hoặc `cdk watch --hotswap` từ máy |
+| sandbox | Tài khoản của từng người | `shop-sbx-<tên>` | Lệnh `cdk deploy` từ máy |
 | dev | Tài khoản demo | `shop-dev` | `deploy.yml` khi merge vào `develop` |
 | staging | Tài khoản demo | `shop-stg` | `deploy.yml` khi push `release/*` |
 | prod | Tài khoản demo | `shop-prd` | `deploy-prod.yml` khi có tag `v*` |
 
-Mọi tài nguyên gắn tag `project=shop-ai`, `env`, `owner`, `module` ở cấp CDK app. Region: `ap-southeast-1`.
+Mỗi môi trường có các stack mang tiền tố trên, hiện có `<tiền tố>-api` (vd. `shop-dev-api`): bảng DynamoDB, Lambda theo module, HTTP API. Mọi tài nguyên gắn tag `project=shop-ai`, `env`; tài nguyên của module gắn thêm `module`. Region: `ap-southeast-1`.
 
-## Script mà workflow cần trong `infra/package.json`
+## Cấu trúc
 
-| Script | Làm gì |
+```text
+infra/
+├─ bin/shop.ts        đọc -c env, tạo stack, bật cdk-nag
+├─ lib/config.ts      tên môi trường → tiền tố stack
+├─ lib/api-stack.ts   bảng products, Lambda catalog, HTTP API
+└─ test/              unit test bằng aws-cdk-lib/assertions
+```
+
+## Lệnh thường dùng
+
+Chạy ở thư mục gốc repo, sau khi `aws login`. Lệnh nào cũng phải có `-c env=...`; thiếu thì CDK dừng ngay để không deploy nhầm môi trường.
+
+| Việc | Lệnh |
 |---|---|
-| `synth` | `cdk synth` cho mọi môi trường; cdk-nag chạy trong bước này |
-| `diff:staging` | `cdk diff` so với staging |
-| `deploy:dev` · `deploy:staging` · `deploy:prod` | `cdk deploy --all --require-approval never -c env=<môi trường>` |
+| Synth và kiểm cdk-nag, giống CI | `pnpm --filter infra run synth` |
+| Unit test cho stack | `pnpm --filter infra run test` |
+| Xem thay đổi trước khi deploy sandbox | `pnpm --filter infra exec cdk diff -c env=sbx -c owner=<tên>` |
+| Deploy sandbox của mình | `pnpm --filter infra exec cdk deploy -c env=sbx -c owner=<tên>` |
+| Xoá sandbox | `pnpm --filter infra exec cdk destroy -c env=sbx -c owner=<tên>` |
 
-Tên package phải là `infra` để lệnh `pnpm --filter infra` chạy được.
+Script `deploy:dev`, `deploy:staging`, `deploy:prod`, `diff:staging` dành cho workflow, không chạy từ máy. CDK CLI được ghim phiên bản trong `infra/package.json`; luôn gọi qua `pnpm --filter infra exec cdk`, không dùng `npx aws-cdk@latest`.
+
+cdk-nag chạy ở mỗi lần synth và chặn khi còn lỗi. Lỗi nào có lý do chính đáng thì ghi nhận ngay cạnh tài nguyên bằng `Validations.of(construct).acknowledge({ id, reason })`, không tắt cả luật. Danh sách lỗi đã ghi nhận nằm trong `cdk.out/validation-report.json`.
 
 ## Làm một lần cho mỗi tài khoản
 
 ```bash
-pnpm exec cdk bootstrap aws://<ACCOUNT_ID>/ap-southeast-1
+pnpm --filter infra exec cdk bootstrap aws://<ACCOUNT_ID>/ap-southeast-1 aws://<ACCOUNT_ID>/us-east-1 --termination-protection
 ```
 
-Rồi tạo AWS Budgets $5, $10, $20 và bật cost allocation tag `project` trong Billing.
+`us-east-1` cần cho WAF gắn vào CloudFront. Rồi tạo AWS Budgets $5, $10, $20, và sau lần deploy đầu tiên thì bật cost allocation tag `project` trong Billing.
 
 ## Kết nối GitHub Actions với AWS bằng OIDC (tài khoản demo)
 
