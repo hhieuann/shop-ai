@@ -20,16 +20,16 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 
 ## Tuần này (đến hết 05/10)
 
-- [ ] Bật xác thực hai bước (MFA) cho tài khoản GitHub
-- [ ] Cài Node 24, pnpm 12, Docker Desktop, AWS CLI v2, Postman. Clone repo, chạy `pnpm install` và `docker compose up -d`
-- [ ] Đọc [git-flow.md](../git-flow.md), [hands-on-testing-guide.md](../hands-on-testing-guide.md), [ADR-0009](../adr/0009-layer-hexagonal-rut-gon.md)
+- [x] Bật xác thực hai bước (MFA) cho tài khoản GitHub
+- [x] Cài Node 24, pnpm 12, Docker Desktop, AWS CLI v2, Postman. Clone repo, chạy `pnpm install` và `docker compose up -d`
+- [x] Đọc [git-flow.md](../git-flow.md), [hands-on-testing-guide.md](../hands-on-testing-guide.md), [ADR-0009](../adr/0009-layer-hexagonal-rut-gon.md)
 - [x] Review PR #3 và #4 (đã approve ngày 01/10)
-- [ ] Lab nền tảng nếu chưa làm: [000002 IAM](https://000002.awsstudygroup.com/), [000057 S3](https://000057.awsstudygroup.com/). Sau đó [000060 DynamoDB](https://000060.awsstudygroup.com/)
-- [ ] Cùng nhóm viết nghiệp vụ catalog, giỏ hàng, đặt hàng vào `docs/business/` trước 05/10
-- [ ] OpenAPI bản 0 cho catalog và cart
-- [ ] Khung web: Vite + React + TypeScript + React Router + TanStack Query, chạy trên mock Prism
-- [ ] Thiết kế bảng `products`, `carts`, `orders`: viết bảng truy vấn cần có, rồi chọn khoá; mở PR để An và Nhân góp ý
-- [ ] Dự buổi đi qua module mẫu của An
+- [x] Lab nền tảng nếu chưa làm: [000002 IAM](https://000002.awsstudygroup.com/), [000057 S3](https://000057.awsstudygroup.com/). Sau đó [000060 DynamoDB](https://000060.awsstudygroup.com/)
+- [x] Cùng nhóm viết nghiệp vụ catalog, giỏ hàng, đặt hàng vào `docs/business/` trước 05/10 (PR #15)
+- [x] OpenAPI bản 0 cho catalog và cart (PR #19, gồm cả ordering)
+- [x] Khung web: Vite + React + TypeScript + React Router + TanStack Query, chạy trên mock Prism (PR #21)
+- [x] Thiết kế bảng `products`, `carts`, `orders`: viết bảng truy vấn cần có, rồi chọn khoá; mở PR để An và Nhân góp ý (PR #17)
+- [x] Dự buổi đi qua module mẫu của An
 
 ## Lộ trình 8 tuần
 
