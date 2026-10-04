@@ -58,6 +58,8 @@ OIDC provider và 4 role nằm trong [bootstrap/github-oidc.yaml](bootstrap/gith
 | `gh-deploy-prod` | Job có `environment: production` | Như trên |
 | `gh-diff-readonly` | Job chạy trên `pull_request` | Chỉ assume role lookup của CDK, chỉ đọc |
 
+Trust policy so khớp trường `sub` trong token theo định dạng có mã số bất biến, mặc định cho repo tạo sau 15/07/2026: `repo:hhieuann@194261813/shop-ai@1398388653:environment:dev`. Xem tiền tố của repo bằng `gh api repos/hhieuann/shop-ai/actions/oidc/customization/sub --jq .sub_claim_prefix`.
+
 Deploy lần đầu hoặc sau khi sửa template, chạy ở thư mục gốc repo sau khi `aws login`:
 
 ```bash
@@ -105,3 +107,7 @@ aws cloudformation describe-stacks --stack-name shop-github-oidc --region ap-sou
 - Ở sandbox: chạy `cdk destroy` rồi deploy lại.
 - Ở dev, staging, prod: deploy 2 lần, lần đầu bỏ route cũ, lần sau thêm route mới.
 - Đổi đường dẫn cũng là đổi hợp đồng API: sửa `contracts/openapi.yaml` trước và báo cả nhóm.
+
+### Workflow deploy báo `Not authorized to perform sts:AssumeRoleWithWebIdentity`
+
+Trường `sub` trong token GitHub không khớp trust policy. Repo tạo sau 15/07/2026 dùng định dạng có mã số bất biến (`repo:hhieuann@194261813/shop-ai@1398388653:...`), trong khi trust policy cũ chờ `repo:hhieuann/shop-ai:...`. Xem `sub` thật trong CloudTrail: sự kiện `AssumeRoleWithWebIdentity`, trường `userIdentity.userName`. Sửa `infra/bootstrap/github-oidc.yaml` rồi deploy lại stack `shop-github-oidc`.
