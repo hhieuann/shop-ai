@@ -1,6 +1,6 @@
 import { GetCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import type { Product } from '../domain/product.js';
+import { PRODUCT_CATEGORIES, type Product } from '../domain/product.js';
 import type { ProductRepository } from '../ports.js';
 
 /**
@@ -11,7 +11,8 @@ import type { ProductRepository } from '../ports.js';
 const productItem = z.object({
   productId: z.string(),
   name: z.string(),
-  category: z.string(),
+  // Loại lạ trong bảng là dữ liệu hỏng: báo lỗi thay vì trả category ngoài 13 loại của OpenAPI
+  category: z.enum(PRODUCT_CATEGORIES),
   brand: z.string(),
   price: z.number().int().nonnegative(),
   stock: z.number().int().nonnegative(),
