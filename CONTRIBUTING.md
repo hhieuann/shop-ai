@@ -9,8 +9,8 @@ Trang này là bản tóm tắt để làm hằng ngày.
 
 ## Làm một việc từ đầu đến cuối
 
-1. Nhận issue trên bảng dự án, kéo sang **In progress**.
-2. Tách nhánh từ `develop` mới nhất:
+1. Tạo issue hoặc nhận issue có sẵn trên bảng dự án, kéo sang **In progress**. Nhớ số issue, vd. #12.
+2. Tách nhánh từ `develop` mới nhất, tên có đúng số issue (không phải số PR). Cách nhanh nhất: trong issue bấm **Development → Create a branch**, đặt tên `feature/12-cart-api`. Hoặc chạy:
    ```bash
    git checkout develop && git pull origin develop
    git checkout -b feature/12-cart-api
