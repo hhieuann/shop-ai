@@ -1,0 +1,9 @@
+{
+  "id": { "S": "gpu-rtx4070" },
+  "name": { "S": "NVIDIA GeForce RTX 4070 12GB" },
+  "category": { "S": "gpu" },
+  "priceVnd": { "N": "15990000" },
+  "stock": { "N": "3" },
+  "attributes": { "M": { "vramGb": { "N": "12" }, "tdpW": { "N": "200" } } },
+  "updatedAt": { "S": "2026-10-04T00:00:00.000Z" }
+}

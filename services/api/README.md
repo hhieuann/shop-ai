@@ -48,4 +48,12 @@ Không có bước build riêng: CDK đóng gói từng Lambda bằng esbuild kh
 
 Module mẫu để làm theo: `catalog` với `GET /api/v1/products/{id}`.
 
+## Dữ liệu mẫu cho sandbox
+
+`seed/` chứa sản phẩm mẫu ở dạng DynamoDB JSON, chỉ dùng ký tự ASCII để AWS CLI trên Windows đọc được. Nạp vào bảng sau khi deploy sandbox; tên bảng lấy từ output `ProductsTableName`:
+
+```bash
+aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/gpu-rtx4070.json
+```
+
 Cách viết test: [docs/hands-on-testing-guide.md](../../docs/hands-on-testing-guide.md).
