@@ -1,0 +1,78 @@
+.page {
+  padding-top: var(--space-100);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-200);
+  margin-bottom: var(--space-300);
+}
+.heading {
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 600;
+}
+.scope {
+  margin: var(--space-25) 0 0;
+  color: var(--fg-subdued);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-150);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+}
+.fieldLabel {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.field select {
+  height: 40px;
+  min-width: 160px;
+  padding: 0 var(--space-150);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: var(--space-200);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: opacity var(--dur-fast) ease-out;
+}
+@media (min-width: 960px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(208px, 1fr));
+  }
+}
+.grid[aria-busy='true'] {
+  opacity: 0.6;
+}
+.message {
+  color: var(--fg-subdued);
+}
+.empty {
+  padding: var(--space-500) var(--space-200);
+  text-align: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.empty p {
+  margin: 0 0 var(--space-100);
+}
+.more {
+  margin-top: var(--space-300);
+  text-align: center;
+}
+.more button {
+  min-height: 40px;
+  padding: var(--space-100) var(--space-300);
+}
