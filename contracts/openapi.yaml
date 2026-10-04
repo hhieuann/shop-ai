@@ -3,6 +3,9 @@ info:
   title: shop-ai API
   version: 0.1.0
   description: API của shop linh kiện. Nguồn sự thật cho web và backend (ADR-0011).
+  license:
+    name: MIT
+    identifier: MIT
 servers:
   - url: http://localhost:4010
     description: Prism mock
@@ -13,7 +16,9 @@ servers:
         default: example.cloudfront.net
 security:
   - cognitoJwt: []
+
 paths:
+  # ─── Health ────────────────────────────────────────────────────────────────
   /api/v1/health:
     get:
       operationId: getHealth
@@ -33,13 +38,617 @@ paths:
                     enum: [ok]
         default:
           $ref: '#/components/responses/Problem'
+
+  # ─── Catalog ───────────────────────────────────────────────────────────────
+  /api/v1/products:
+    get:
+      operationId: listProducts
+      summary: Danh sách sản phẩm (có lọc, tìm theo tên và phân trang)
+      description: |
+        Chỉ trả sản phẩm ACTIVE. Dùng được cùng lúc `category` và `q`.
+        Tìm theo tên không phân biệt chữ hoa, chữ thường và dấu tiếng Việt,
+        khớp ở bất kỳ vị trí nào trong tên (catalog.md BR-03).
+      security: []
+      tags: [catalog]
+      parameters:
+        - name: q
+          in: query
+          description: Từ khoá tìm trong tên sản phẩm, ví dụ `rtx` hoặc `chuot`
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 30
+          example: rtx
+        - name: category
+          in: query
+          description: Lọc theo loại sản phẩm
+          schema:
+            $ref: '#/components/schemas/ProductCategory'
+        - name: sort
+          in: query
+          description: |
+            Cách sắp xếp (catalog.md BR-08). Với mọi cách, sản phẩm hết hàng luôn nằm cuối.
+            `newest` mới nhất trước · `price_asc` giá tăng dần · `price_desc` giá giảm dần
+          schema:
+            type: string
+            enum: [newest, price_asc, price_desc]
+            default: newest
+        - name: limit
+          in: query
+          description: Số sản phẩm mỗi trang (mặc định 20, tối đa 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          description: Con trỏ phân trang từ response trước
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Danh sách sản phẩm
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductSummary'
+                  nextCursor:
+                    type: string
+                    description: Có giá trị nếu còn trang tiếp theo
+              example:
+                items:
+                  - productId: '01J9XKPQ0000000000000001'
+                    name: 'ASUS TUF Gaming GeForce RTX 4070'
+                    category: 'gpu'
+                    brand: 'ASUS'
+                    price: 15900000
+                    stock: 12
+                    status: 'ACTIVE'
+                    imageUrl: 'https://placehold.co/300x200?text=RTX+4070'
+                  - productId: '01J9XKPQ0000000000000002'
+                    name: 'Chuột Logitech G502 X Plus Wireless'
+                    category: 'mouse'
+                    brand: 'Logitech'
+                    price: 1890000
+                    stock: 25
+                    status: 'ACTIVE'
+                    imageUrl: 'https://placehold.co/300x200?text=G502+X'
+                  - productId: '01J9XKPQ0000000000000003'
+                    name: 'SSD Samsung 990 Pro 1TB NVMe M.2'
+                    category: 'storage'
+                    brand: 'Samsung'
+                    price: 2450000
+                    stock: 8
+                    status: 'ACTIVE'
+                    imageUrl: 'https://placehold.co/300x200?text=990+Pro'
+                  - productId: '01J9XKPQ0000000000000004'
+                    name: 'RAM Corsair Vengeance DDR5 32GB 5600MHz'
+                    category: 'ram'
+                    brand: 'Corsair'
+                    price: 3200000
+                    stock: 0
+                    status: 'ACTIVE'
+                    imageUrl: 'https://placehold.co/300x200?text=DDR5+32GB'
+        '400':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/products/{productId}:
+    get:
+      operationId: getProduct
+      summary: Chi tiết sản phẩm
+      security: []
+      tags: [catalog]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chi tiết sản phẩm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  # ─── Cart ──────────────────────────────────────────────────────────────────
+  /api/v1/cart:
+    get:
+      operationId: getCart
+      summary: Xem giỏ hàng của người đang đăng nhập
+      tags: [cart]
+      responses:
+        '200':
+          description: Giỏ hàng hiện tại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/cart/items:
+    post:
+      operationId: addCartItem
+      summary: Thêm sản phẩm vào giỏ (cộng dồn nếu đã có)
+      description: |
+        Số lượng sau khi cộng dồn không vượt quá min(99, tồn kho) (cart.md BR-03, BR-04).
+        Giỏ tối đa 50 dòng (BR-02).
+      tags: [cart]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, quantity]
+              properties:
+                productId:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 1
+                  maximum: 99
+      responses:
+        '200':
+          description: Giỏ hàng sau khi cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: |
+            `QUANTITY_LIMIT` vượt min(99, tồn kho), kèm `maxAddable` ·
+            `PRODUCT_UNAVAILABLE` sản phẩm đã ngừng bán · `CART_FULL` giỏ đã đủ 50 dòng
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/CartProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/cart/items/{productId}:
+    put:
+      operationId: updateCartItem
+      summary: Cập nhật số lượng sản phẩm trong giỏ
+      tags: [cart]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                  maximum: 99
+      responses:
+        '200':
+          description: Giỏ hàng sau khi cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: '`QUANTITY_LIMIT` số lượng mới vượt min(99, tồn kho), kèm `maxAddable`'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/CartProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: removeCartItem
+      summary: Xoá sản phẩm khỏi giỏ
+      tags: [cart]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Giỏ hàng sau khi xoá
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  # ─── Orders ────────────────────────────────────────────────────────────────
+  /api/v1/orders:
+    post:
+      operationId: createOrder
+      summary: Tạo đơn hàng từ các sản phẩm đã chọn trong giỏ
+      description: |
+        Client gửi danh sách sản phẩm muốn đặt (chỉ những món đã tick chọn trong giỏ)
+        kèm giá đang hiển thị (`expectedPrice`). Trong một giao dịch, server kiểm tồn kho
+        và giá, trừ kho, tạo đơn và xoá các món đã đặt khỏi giỏ (ordering.md BR-03, BR-07, BR-08).
+        Miễn phí vận chuyển. Bắt buộc header Idempotency-Key (UUID v4).
+      tags: [ordering]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: UUID v4 do client sinh, dùng để chống tạo đơn trùng khi retry
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items, shippingAddress]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  description: Danh sách sản phẩm đã chọn (chỉ những món tick ☑ trong giỏ)
+                  items:
+                    type: object
+                    required: [productId, quantity, expectedPrice]
+                    properties:
+                      productId:
+                        type: string
+                      quantity:
+                        type: integer
+                        minimum: 1
+                        maximum: 99
+                      expectedPrice:
+                        type: integer
+                        minimum: 0
+                        description: Đơn giá (VND) khách đang thấy; khác giá hiện tại thì trả 409 PRICE_CHANGED
+                shippingAddress:
+                  $ref: '#/components/schemas/ShippingAddress'
+      responses:
+        '201':
+          description: Đơn hàng mới được tạo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '200':
+          description: Đơn hàng cũ (trùng Idempotency-Key — đã xử lý rồi)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: |
+            `OUT_OF_STOCK` có món hết hàng, không đủ số lượng hoặc ngừng bán, kèm `invalidItems` ·
+            `PRICE_CHANGED` giá đã đổi, kèm `changedItems` · `ORDER_IN_PROGRESS` lần gửi trước
+            với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/OrderProblem'
+        '422':
+          description: '`IDEMPOTENCY_KEY_REUSED` cùng Idempotency-Key nhưng nội dung đơn khác'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+    get:
+      operationId: listOrders
+      summary: Lịch sử đơn hàng của người đang đăng nhập
+      tags: [ordering]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Danh sách đơn hàng
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderSummary'
+                  nextCursor:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/orders/{orderId}:
+    get:
+      operationId: getOrder
+      summary: Chi tiết một đơn hàng
+      tags: [ordering]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chi tiết đơn hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: cancelOrder
+      summary: Huỷ đơn hàng của mình (khi status là PENDING hoặc CONFIRMED)
+      description: Huỷ thành công thì hoàn lại tồn kho và gửi email báo khách (ordering.md BR-10, BR-12, BR-13).
+      tags: [ordering]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Đơn đã bị huỷ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          description: '`CANNOT_CANCEL` đơn đã SHIPPED, DELIVERED hoặc đã CANCELLED'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
 components:
   securitySchemes:
     cognitoJwt:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
   schemas:
+    # ─── Enums ─────────────────────────────────────────────────────────────
+    ProductCategory:
+      type: string
+      enum:
+        - laptop
+        - cpu
+        - gpu
+        - ram
+        - storage
+        - mainboard
+        - psu
+        - cooling
+        - keyboard
+        - mouse
+        - monitor
+        - headset
+        - accessory
+
+    ProductStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE]
+
+    # ─── Product ────────────────────────────────────────────────────────────
+    ProductSummary:
+      type: object
+      description: Thông tin rút gọn cho danh sách sản phẩm
+      required: [productId, name, category, brand, price, stock, status]
+      properties:
+        productId:
+          type: string
+          description: ULID
+          example: '01J9XKPQ0000000000000001'
+        name:
+          type: string
+          example: 'ASUS TUF Gaming GeForce RTX 4070'
+        category:
+          $ref: '#/components/schemas/ProductCategory'
+        brand:
+          type: string
+          example: 'ASUS'
+        price:
+          type: integer
+          description: Giá niêm yết (VND, số nguyên)
+          minimum: 0
+          example: 15900000
+        stock:
+          type: integer
+          minimum: 0
+          example: 12
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        imageUrl:
+          type: string
+          format: uri
+          example: 'https://placehold.co/400x300?text=RTX+4070'
+      example:
+        productId: '01J9XKPQ0000000000000001'
+        name: 'ASUS TUF Gaming GeForce RTX 4070'
+        category: 'gpu'
+        brand: 'ASUS'
+        price: 15900000
+        stock: 12
+        status: 'ACTIVE'
+        imageUrl: 'https://placehold.co/400x300?text=RTX+4070'
+
+    Product:
+      allOf:
+        - $ref: '#/components/schemas/ProductSummary'
+        - type: object
+          required: [description, createdAt, updatedAt]
+          properties:
+            description:
+              type: string
+              example: 'Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.'
+            specs:
+              type: object
+              description: Thông số kỹ thuật tuỳ theo category
+              additionalProperties: true
+              example:
+                vram: '12GB GDDR6X'
+                tdp: '200W'
+                connector: 'PCIe 4.0 x16'
+            createdAt:
+              type: string
+              format: date-time
+              example: '2026-10-01T07:00:00Z'
+            updatedAt:
+              type: string
+              format: date-time
+              example: '2026-10-01T07:00:00Z'
+
+    # ─── Cart ───────────────────────────────────────────────────────────────
+    CartItem:
+      type: object
+      required: [productId, name, price, quantity, stock, status]
+      properties:
+        productId:
+          type: string
+          example: '01J9XKPQ0000000000000001'
+        name:
+          type: string
+          example: 'ASUS TUF Gaming GeForce RTX 4070'
+        imageUrl:
+          type: string
+          format: uri
+          example: 'https://placehold.co/400x300?text=RTX+4070'
+        price:
+          type: integer
+          description: Giá hiện tại lấy từ bảng products (VND)
+          example: 15900000
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+          example: 1
+        stock:
+          type: integer
+          description: Tồn kho hiện tại; nhỏ hơn quantity thì món này chưa đặt được (cart.md BR-07)
+          example: 12
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        priceChanged:
+          type: boolean
+          description: true nếu giá thay đổi kể từ lần thêm vào giỏ
+          example: false
+      example:
+        productId: '01J9XKPQ0000000000000001'
+        name: 'ASUS TUF Gaming GeForce RTX 4070'
+        imageUrl: 'https://placehold.co/400x300?text=RTX+4070'
+        price: 15900000
+        quantity: 1
+        stock: 12
+        status: 'ACTIVE'
+        priceChanged: false
+
+    Cart:
+      type: object
+      required: [items, totalAmount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        totalAmount:
+          type: integer
+          description: Tổng tiền (VND) — chỉ tính món ACTIVE có stock >= quantity
+          example: 16550000
+      example:
+        totalAmount: 16550000
+        items:
+          - productId: '01J9XKPQ0000000000000001'
+            name: 'ASUS TUF Gaming GeForce RTX 4070'
+            imageUrl: 'https://placehold.co/400x300?text=RTX+4070'
+            price: 15900000
+            quantity: 1
+            stock: 12
+            status: 'ACTIVE'
+            priceChanged: false
+          - productId: '01J9XKPQ0000000000000002'
+            name: 'Chuột Logitech G502 X Plus'
+            imageUrl: 'https://placehold.co/400x300?text=G502+X'
+            price: 650000
+            quantity: 1
+            stock: 5
+            status: 'ACTIVE'
+            priceChanged: false
+
+    # ─── Errors ─────────────────────────────────────────────────────────────
     Problem:
       type: object
       description: Lỗi theo RFC 9457
@@ -54,6 +663,9 @@ components:
           type: integer
         detail:
           type: string
+        code:
+          type: string
+          description: Mã lỗi nghiệp vụ để frontend xử lý, ví dụ OUT_OF_STOCK, PRICE_CHANGED
         traceId:
           type: string
         errors:
@@ -67,6 +679,169 @@ components:
                 type: string
               message:
                 type: string
+
+    CartProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum: [QUANTITY_LIMIT, PRODUCT_UNAVAILABLE, CART_FULL]
+            maxAddable:
+              type: integer
+              minimum: 0
+              description: Số lượng còn thêm được vào giỏ (khi QUANTITY_LIMIT)
+
+    OrderProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum: [OUT_OF_STOCK, PRICE_CHANGED, ORDER_IN_PROGRESS]
+            invalidItems:
+              type: array
+              description: Món hết hàng, không đủ số lượng hoặc ngừng bán (khi OUT_OF_STOCK)
+              items:
+                type: object
+                required: [productId, available]
+                properties:
+                  productId:
+                    type: string
+                  available:
+                    type: integer
+                    minimum: 0
+                    description: Số còn đặt được; 0 nếu hết hàng hoặc ngừng bán
+            changedItems:
+              type: array
+              description: Món đã đổi giá (khi PRICE_CHANGED)
+              items:
+                type: object
+                required: [productId, expectedPrice, currentPrice]
+                properties:
+                  productId:
+                    type: string
+                  expectedPrice:
+                    type: integer
+                  currentPrice:
+                    type: integer
+
+    # ─── Ordering ───────────────────────────────────────────────────────────
+    ShippingAddress:
+      type: object
+      required: [fullName, phone, address, province]
+      properties:
+        fullName:
+          type: string
+          description: Họ và tên người nhận
+          minLength: 1
+          maxLength: 100
+          example: 'Nguyễn Văn A'
+        phone:
+          type: string
+          description: Số điện thoại Việt Nam, đã bỏ khoảng trắng (0xxxxxxxxx hoặc +84xxxxxxxxx)
+          pattern: '^(0|\+84)\d{9}$'
+          example: '0912345678'
+        address:
+          type: string
+          description: Số nhà, tên đường, phường/xã
+          minLength: 1
+          maxLength: 200
+          example: '12 Nguyễn Huệ, phường Bến Nghé'
+        province:
+          type: string
+          description: Tỉnh / thành phố
+          minLength: 1
+          maxLength: 100
+          example: 'TP. Hồ Chí Minh'
+
+    OrderStatus:
+      type: string
+      enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED]
+
+    OrderItem:
+      type: object
+      description: Snapshot sản phẩm tại thời điểm đặt hàng
+      required: [productId, name, price, quantity]
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: integer
+          description: Giá tại thời điểm đặt (VND)
+        quantity:
+          type: integer
+
+    OrderSummary:
+      type: object
+      description: Thông tin rút gọn cho danh sách đơn hàng
+      required: [orderId, status, totalAmount, itemCount, createdAt]
+      properties:
+        orderId:
+          type: string
+          description: ULID
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        totalAmount:
+          type: integer
+          description: Tổng tiền (VND)
+        itemCount:
+          type: integer
+          description: Số loại sản phẩm trong đơn
+        createdAt:
+          type: string
+          format: date-time
+
+    Order:
+      type: object
+      required:
+        [
+          orderId,
+          userId,
+          status,
+          items,
+          totalAmount,
+          shippingFee,
+          shippingAddress,
+          paymentMethod,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        orderId:
+          type: string
+          description: ULID
+        userId:
+          type: string
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        totalAmount:
+          type: integer
+          description: Tổng tiền (VND), server tự tính; khách trả đúng số này khi nhận hàng
+        shippingFee:
+          type: integer
+          description: Phí vận chuyển (VND); luôn 0 trong MVP (ordering.md BR-06)
+          enum: [0]
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+        paymentMethod:
+          type: string
+          enum: [COD]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
   responses:
     Problem:
       description: Lỗi
