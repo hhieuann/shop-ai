@@ -3,3 +3,9 @@ packages:
   - services/*
   - infra
   - tests/*
+
+allowBuilds:
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.51.0
