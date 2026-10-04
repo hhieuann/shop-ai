@@ -29,8 +29,8 @@ Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không
 > **Không dùng Scan ở bất kỳ đâu.**
 > DynamoDB không hỗ trợ ký tự đại diện trong khoá (`*#ACTIVE` không chạy được).
 >
-> - **Q3 (admin):** Query GSI1 với từng `<category>#ACTIVE` và `<category>#INACTIVE` (24 lần, chạy song song). Admin ít dùng nên chấp nhận được.
-> - **Q4, Q5:** Lambda giữ danh sách sản phẩm ACTIVE trong bộ nhớ 60 giây. Hết hạn thì Query GSI1 với từng `<category>#ACTIVE` (12 lần, song song), gộp lại. Lọc `nameSearch` và phân trang trên mảng này. Cursor là `productId` cuối của trang trước.
+> - **Q3 (admin):** Query GSI1 với từng `<category>#ACTIVE` và `<category>#INACTIVE` (26 lần, chạy song song). Admin ít dùng nên chấp nhận được.
+> - **Q4, Q5:** Lambda giữ danh sách sản phẩm ACTIVE trong bộ nhớ 60 giây. Hết hạn thì Query GSI1 với từng `<category>#ACTIVE` (13 lần, song song), gộp lại. Chuẩn hoá tên một lần lúc nạp, rồi lọc, sắp xếp và phân trang trên mảng này. Cursor mã hoá vị trí của sản phẩm cuối trang trước (còn hay hết hàng, giá hoặc `createdAt`, `productId`), nên vẫn đúng khi cache nạp lại giữa hai trang.
 > - Cách Q4, Q5 hợp với catalog nhỏ (dưới vài nghìn sản phẩm). Xem `catalog.md` mục "Cách hiện thực tìm kiếm".
 
 ### Schema thuộc tính
@@ -38,7 +38,7 @@ Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không
 ```
 productId    String  PK
 name         String
-nameSearch   String  (name chữ thường, bỏ dấu; chỉ dùng để tìm, không trả ra API)
+nameSearch   String  (tuỳ chọn, không bắt buộc: Lambda tự chuẩn hoá tên khi nạp cache; không trả ra API)
 category     String  (13 loại, xem catalog.md BR-02)
 brand        String
 price        Number  (VND, số nguyên)

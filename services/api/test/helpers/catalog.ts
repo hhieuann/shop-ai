@@ -28,3 +28,17 @@ export function sampleProduct(overrides: Partial<Product> = {}): Product {
     ...overrides,
   };
 }
+
+let sequence = 0;
+
+/**
+ * Như sampleProduct nhưng mỗi lần gọi có productId riêng, tăng dần theo thứ tự tạo (giống ULID thật).
+ * Dùng khi test cần nhiều sản phẩm khác nhau, vd. sắp xếp và phân trang.
+ */
+export function uniqueProduct(overrides: Partial<Product> = {}): Product {
+  sequence += 1;
+  return sampleProduct({
+    productId: `01K6PZ3Q5G${String(sequence).padStart(16, '0')}`,
+    ...overrides,
+  });
+}

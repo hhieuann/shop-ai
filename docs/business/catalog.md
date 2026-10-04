@@ -87,9 +87,9 @@ Là khách truy cập, tôi muốn xem danh sách sản phẩm, lọc theo loạ
 
 DynamoDB không có tìm kiếm toàn văn. Dịch vụ tìm kiếm như OpenSearch tính tiền theo giờ, vượt ngân sách dự án. Với quy mô demo (khoảng 100 sản phẩm):
 
-- Khi ghi sản phẩm, lưu thêm `nameSearch`: tên đã chuyển chữ thường và bỏ dấu.
+- Tên sản phẩm được chuẩn hoá (chữ thường, bỏ dấu, gộp khoảng trắng) một lần khi Lambda nạp danh sách vào bộ nhớ, không cần lưu thêm cột trong bảng. Từ khoá `q` cũng chuẩn hoá theo cùng cách.
 - Lambda `catalog` giữ danh sách sản phẩm ACTIVE trong bộ nhớ 60 giây (khởi tạo ngoài handler). Hết hạn thì nạp lại bằng Query trên GSI `byCategory`, mỗi loại một lần, chạy song song. Không dùng Scan.
-- Lọc `q` bằng `nameSearch.includes(q chuẩn hoá)`, sắp xếp theo BR-08 và phân trang trên mảng trong bộ nhớ.
+- Lọc `q` bằng "tên chuẩn hoá chứa `q` chuẩn hoá", sắp xếp theo BR-08 và phân trang trên mảng trong bộ nhớ. Cursor lưu vị trí của sản phẩm cuối trang (còn hay hết hàng, giá hoặc `createdAt`, `productId`), nên vẫn đúng khi danh sách nạp lại giữa hai trang.
 - CloudFront cache mỗi URL 60 giây.
 
 Giới hạn đã biết: cách này chỉ hợp khi catalog nhỏ (vài nghìn sản phẩm trở xuống). Hướng mở rộng là OpenSearch hoặc bảng từ khoá.
