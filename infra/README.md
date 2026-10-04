@@ -95,3 +95,13 @@ aws cloudformation describe-stacks --stack-name shop-github-oidc --region ap-sou
 - Lambda không đặt trong VPC, không tạo NAT gateway (ADR-0005).
 - Bảng dữ liệu ở prod để `RemovalPolicy.RETAIN`; ở sandbox, dev, staging để `DESTROY`.
 - Dọn dẹp cuối dự án: `cdk destroy` từng stack; lên lịch xoá KMS key; hôm sau kiểm tra Billing.
+
+## Lỗi đã gặp
+
+### Đổi tên biến trong đường dẫn route: `ConflictException`
+
+Đổi `GET /api/v1/products/{id}` thành `{productId}` trên một HTTP API đã deploy thì `cdk deploy` báo `has a conflicting variable on the same hierarchical level` rồi rollback. Tên biến nằm trong ID của route, nên CloudFormation coi đó là route mới: nó tạo route mới trước, xoá route cũ sau cùng. API Gateway không cho 2 route khác tên biến ở cùng một cấp, nên bước tạo thất bại.
+
+- Ở sandbox: chạy `cdk destroy` rồi deploy lại.
+- Ở dev, staging, prod: deploy 2 lần, lần đầu bỏ route cũ, lần sau thêm route mới.
+- Đổi đường dẫn cũng là đổi hợp đồng API: sửa `contracts/openapi.yaml` trước và báo cả nhóm.
