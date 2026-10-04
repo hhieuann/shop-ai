@@ -51,7 +51,7 @@ gitGraph
 | `hotfix/vX.Y.Z` | `main` | `main`, rồi `develop` | prod sau khi duyệt | Sửa gấp lỗi trên prod |
 | `review/<chủ-đề>/r<vòng>` | nhánh cần review | không merge | không | Người review ghi nhận xét thẳng vào code |
 
-Tên nhánh viết thường, nối bằng dấu gạch ngang, có số issue: `feature/12-cart-api`, `fix/31-price-rounding`, `release/v0.1.0`, `hotfix/v0.1.1`, `review/cart-api/r1`.
+Tên nhánh viết thường, nối bằng dấu gạch ngang, có số issue: `feature/12-cart-api`, `fix/31-price-rounding`, `release/v0.1.0`, `hotfix/v0.1.1`, `review/cart-api/r1`. Số trong tên nhánh là **số của issue**, không phải số PR.
 
 ## 3. Quy tắc bắt buộc
 
@@ -67,6 +67,10 @@ Tên nhánh viết thường, nối bằng dấu gạch ngang, có số issue: `
 
 ### 4.1. Làm một tính năng
 
+1. **Tạo issue trước** (New issue, chọn mẫu). GitHub cấp số, vd. **#12**. Số này dùng để đặt tên nhánh.
+2. **Tạo nhánh ngay trong issue** để khỏi gõ nhầm số: cột phải của issue → **Development** → **Create a branch** → sửa tên thành `feature/12-cart-api` → **Create branch**, rồi chạy `git fetch origin` và `git checkout feature/12-cart-api`. Hoặc tạo bằng lệnh như dưới.
+3. Code, commit, push:
+
 ```bash
 git checkout develop
 git pull origin develop
@@ -81,7 +85,9 @@ git push -u origin feature/12-cart-api
 Mở PR vào `develop` trên GitHub:
 
 - Tiêu đề: `merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop`
-- Mô tả theo mẫu, có dòng `Closes #12`
+- Mô tả theo mẫu, có dòng `Closes #12`, đúng số issue trong tên nhánh. CI chặn nếu tên nhánh không có dạng `feature/<số>-<tên>` hay `fix/<số>-<tên>`, hoặc thiếu `Closes #<cùng số>`
+- Số PR luôn khác số issue vì GitHub đếm chung issue và PR, vd. issue #12 có thể thành PR #13 hoặc #20 tuỳ lúc đó người khác đã tạo bao nhiêu issue, PR. Không đổi tên nhánh theo số PR
+- Nhánh đã merge là xong việc. Việc tiếp theo thì tạo issue mới, nhánh mới; không mở PR mới từ nhánh cũ
 - Chờ CI xanh rồi tự bấm **Create a merge commit**. Không cần chờ ai duyệt; người được GitHub tự mời xem (theo `.github/CODEOWNERS`) đọc và comment nếu thấy vấn đề
 
 ### 4.2. Cập nhật nhánh của mình khi develop đã đi tiếp

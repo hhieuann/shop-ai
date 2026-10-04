@@ -25,6 +25,16 @@ jobs:
             echo "::error::Tiêu đề PR sai chuẩn. Ví dụ: merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop. Xem docs/git-flow.md mục 5."
             exit 1
           fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Số trong tên nhánh là số issue
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          bash .github/scripts/check-branch-issue.test.sh
+          bash .github/scripts/check-branch-issue.sh
 
   node:
     name: Node · lint, type, test, build
