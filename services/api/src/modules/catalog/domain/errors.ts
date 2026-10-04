@@ -1,4 +1,4 @@
-import { NotFoundError } from '../../../shared/errors.js';
+import { BadRequestError, NotFoundError } from '../../../shared/errors.js';
 
 export class ProductNotFoundError extends NotFoundError {
   constructor(readonly productId: string) {
@@ -6,15 +6,9 @@ export class ProductNotFoundError extends NotFoundError {
   }
 }
 
-/**
- * Cursor phân trang sai định dạng, quá dài hoặc tạo từ cách sắp xếp khác.
- * API trả 400: khi làm route GET /api/v1/products sẽ thêm loại lỗi 400 vào shared/errors.ts.
- */
-export class InvalidCursorError extends Error {
-  readonly code = 'INVALID_CURSOR';
-
+/** Cursor phân trang sai định dạng, quá dài hoặc tạo từ cách sắp xếp khác → 400. */
+export class InvalidCursorError extends BadRequestError {
   constructor() {
     super('Con trỏ phân trang không hợp lệ');
-    this.name = 'InvalidCursorError';
   }
 }
