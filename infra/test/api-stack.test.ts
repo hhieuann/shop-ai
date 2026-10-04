@@ -15,14 +15,14 @@ function synth(shopEnv: ShopEnvironment): Template {
 }
 
 describe('ApiStack', () => {
-  it('productsTable_usesIdAsPartitionKeyWithOnDemandBilling', () => {
+  it('productsTable_usesProductIdAsPartitionKeyWithOnDemandBilling', () => {
     // Act
     const template = synth(dev);
 
     // Assert
     template.hasResourceProperties('AWS::DynamoDB::Table', {
-      KeySchema: [{ AttributeName: 'id', KeyType: 'HASH' }],
-      AttributeDefinitions: [{ AttributeName: 'id', AttributeType: 'S' }],
+      KeySchema: [{ AttributeName: 'productId', KeyType: 'HASH' }],
+      AttributeDefinitions: [{ AttributeName: 'productId', AttributeType: 'S' }],
       BillingMode: 'PAY_PER_REQUEST',
     });
   });
@@ -91,7 +91,7 @@ describe('ApiStack', () => {
 
     // Assert
     template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
-      RouteKey: 'GET /api/v1/products/{id}',
+      RouteKey: 'GET /api/v1/products/{productId}',
     });
     template.hasOutput('ApiUrl', Match.anyValue());
   });

@@ -38,9 +38,10 @@ export class ApiStack extends Stack {
     const { shopEnv } = props;
     const removalPolicy = shopEnv.isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY;
 
-    // Khoá chính `id`; giữ khớp với services/api/test/helpers/catalog.ts
+    // Theo docs/business/dynamodb-design.md: khoá chính `productId`. Hoàng thêm GSI byCategory khi làm
+    // API danh sách. Giữ khớp với services/api/test/helpers/catalog.ts
     const products = new Table(this, 'ProductsTable', {
-      partitionKey: { name: 'id', type: AttributeType.STRING },
+      partitionKey: { name: 'productId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       deletionProtection: shopEnv.isProd,
@@ -125,7 +126,7 @@ export class ApiStack extends Stack {
     });
 
     const [getProductRoute] = httpApi.addRoutes({
-      path: '/api/v1/products/{id}',
+      path: '/api/v1/products/{productId}',
       methods: [HttpMethod.GET],
       integration: new HttpLambdaIntegration('CatalogIntegration', catalogFn),
     });
