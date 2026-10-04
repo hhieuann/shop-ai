@@ -1,0 +1,15 @@
+{
+  "productId": { "S": "01K6PZ3Q5G0000000000000001" },
+  "name": { "S": "ASUS TUF Gaming GeForce RTX 4070 12GB" },
+  "nameSearch": { "S": "asus tuf gaming geforce rtx 4070 12gb" },
+  "category": { "S": "gpu" },
+  "brand": { "S": "ASUS" },
+  "price": { "N": "15990000" },
+  "stock": { "N": "3" },
+  "status": { "S": "ACTIVE" },
+  "description": { "S": "Graphics card RTX 4070 12GB GDDR6X for 1440p gaming." },
+  "imageUrl": { "S": "https://placehold.co/400x300?text=RTX+4070" },
+  "specs": { "M": { "vram": { "S": "12GB GDDR6X" }, "tdp": { "S": "200W" } } },
+  "createdAt": { "S": "2026-10-01T07:00:00.000Z" },
+  "updatedAt": { "S": "2026-10-04T07:00:00.000Z" }
+}

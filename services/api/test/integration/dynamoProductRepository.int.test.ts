@@ -21,17 +21,18 @@ afterAll(async () => {
 });
 
 describe('DynamoProductRepository', () => {
-  it('findById_returnsProduct_whenItemExists', async () => {
-    // Arrange
-    const product = sampleProduct({
-      id: 'psu-750w',
-      category: 'psu',
-      attributes: { wattage: 750 },
-    });
-    await dynamo.doc.send(new PutCommand({ TableName: TABLE, Item: product }));
+  it('findById_returnsProductWithoutInternalFields_whenItemExists', async () => {
+    // Arrange: nameSearch chỉ dùng để tìm kiếm, không được lọt ra ngoài
+    const product = sampleProduct({ productId: '01K6PZ3Q5G0000000000000002' });
+    await dynamo.doc.send(
+      new PutCommand({
+        TableName: TABLE,
+        Item: { ...product, nameSearch: 'asus tuf gaming geforce rtx 4070 12gb' },
+      }),
+    );
 
     // Act
-    const result = await repo.findById('psu-750w');
+    const result = await repo.findById('01K6PZ3Q5G0000000000000002');
 
     // Assert
     expect(result).toEqual(product);
@@ -39,7 +40,7 @@ describe('DynamoProductRepository', () => {
 
   it('findById_returnsNull_whenItemMissing', async () => {
     // Act
-    const result = await repo.findById('khong-co');
+    const result = await repo.findById('01K6PZ3Q5G0000000000000099');
 
     // Assert
     expect(result).toBeNull();
@@ -48,11 +49,14 @@ describe('DynamoProductRepository', () => {
   it('findById_throwsZodError_whenItemIsMalformed', async () => {
     // Arrange: thiếu giá, như khi có người sửa tay dữ liệu trong bảng
     await dynamo.doc.send(
-      new PutCommand({ TableName: TABLE, Item: { id: 'thieu-gia', name: 'Sản phẩm thiếu giá' } }),
+      new PutCommand({
+        TableName: TABLE,
+        Item: { productId: '01K6PZ3Q5G0000000000000003', name: 'Sản phẩm thiếu giá' },
+      }),
     );
 
     // Act
-    const act = repo.findById('thieu-gia');
+    const act = repo.findById('01K6PZ3Q5G0000000000000003');
 
     // Assert
     await expect(act).rejects.toBeInstanceOf(ZodError);

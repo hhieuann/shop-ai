@@ -46,14 +46,13 @@ Kiểm bằng `pnpm deps:check` ở thư mục gốc; CI chặn nếu vi phạm.
 
 Không có bước build riêng: CDK đóng gói từng Lambda bằng esbuild khi synth và deploy.
 
-Module mẫu để làm theo: `catalog` với `GET /api/v1/products/{id}`.
+Module mẫu để làm theo: `catalog` với `GET /api/v1/products/{productId}`.
 
 ## Dữ liệu mẫu cho sandbox
 
-`seed/` chứa sản phẩm mẫu ở dạng DynamoDB JSON, chỉ dùng ký tự ASCII để AWS CLI trên Windows đọc được. Nạp vào bảng sau khi deploy sandbox; tên bảng lấy từ output `ProductsTableName`:
+`seed/catalog/` có 2 sản phẩm ở dạng DynamoDB JSON: một `ACTIVE` (gọi API trả 200) và một `INACTIVE` (trả 404 theo BR-04). File chỉ dùng ký tự ASCII để AWS CLI trên Windows đọc được. Sau khi deploy sandbox, thay `<ProductsTableName>` bằng giá trị output `ProductsTableName` rồi chạy:
 
 ```bash
-aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/gpu-rtx4070.json
+aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx4070-active.json
+aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx3060-inactive.json
 ```
-
-Cách viết test: [docs/hands-on-testing-guide.md](../../docs/hands-on-testing-guide.md).

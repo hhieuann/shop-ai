@@ -7,20 +7,20 @@ import { errorToProblem, validationProblem } from './response.js';
 describe('errorToProblem', () => {
   it.each([
     {
-      name: 'NotFoundError',
+      name: 'errorToProblem_returns404_whenNotFoundError',
       error: new NotFoundError('Không tìm thấy sản phẩm gpu-x'),
       status: 404,
       title: 'Not Found',
       detail: 'Không tìm thấy sản phẩm gpu-x',
     },
     {
-      name: 'ConflictError',
+      name: 'errorToProblem_returns409_whenConflictError',
       error: new ConflictError('Đơn hàng đã tồn tại'),
       status: 409,
       title: 'Conflict',
       detail: 'Đơn hàng đã tồn tại',
     },
-  ])('errorToProblem_returns$status_when$name', ({ error, status, title, detail }) => {
+  ])('$name', ({ error, status, title, detail }) => {
     // Act
     const res = errorToProblem(error, 'req-1');
 

@@ -1,37 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { availabilityOf, LOW_STOCK_THRESHOLD } from './product.js';
+import { isVisibleToCustomers } from './product.js';
 
-describe('availabilityOf', () => {
-  it('availabilityOf_returnsOutOfStock_whenStockIsZero', () => {
-    // Arrange
-    const product = { stock: 0 };
-
+describe('isVisibleToCustomers', () => {
+  it.each([
+    {
+      name: 'isVisibleToCustomers_returnsTrue_whenStatusIsActive',
+      status: 'ACTIVE' as const,
+      visible: true,
+    },
+    {
+      name: 'isVisibleToCustomers_returnsFalse_whenStatusIsInactive',
+      status: 'INACTIVE' as const,
+      visible: false,
+    },
+  ])('$name', ({ status, visible }) => {
     // Act
-    const result = availabilityOf(product);
+    const result = isVisibleToCustomers({ status });
 
     // Assert
-    expect(result).toBe('OUT_OF_STOCK');
-  });
-
-  it('availabilityOf_returnsLowStock_whenStockEqualsThreshold', () => {
-    // Arrange
-    const product = { stock: LOW_STOCK_THRESHOLD };
-
-    // Act
-    const result = availabilityOf(product);
-
-    // Assert
-    expect(result).toBe('LOW_STOCK');
-  });
-
-  it('availabilityOf_returnsInStock_whenStockAboveThreshold', () => {
-    // Arrange
-    const product = { stock: LOW_STOCK_THRESHOLD + 1 };
-
-    // Act
-    const result = availabilityOf(product);
-
-    // Assert
-    expect(result).toBe('IN_STOCK');
+    expect(result).toBe(visible);
   });
 });

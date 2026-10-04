@@ -1,22 +1,26 @@
-/** Sản phẩm trong catalog. Giá là số nguyên VND; thời gian là ISO 8601 UTC. */
+/** Sản phẩm, theo docs/business/catalog.md và schema Product trong contracts/openapi.yaml. */
+export type ProductStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface Product {
-  readonly id: string;
+  /** ULID */
+  readonly productId: string;
   readonly name: string;
   readonly category: string;
-  readonly priceVnd: number;
+  readonly brand: string;
+  /** Giá niêm yết, số nguyên VND (BR-05) */
+  readonly price: number;
   readonly stock: number;
-  /** Thông số theo từng loại linh kiện, vd. { socket: 'AM5' } hoặc { wattage: 750 } */
-  readonly attributes: Readonly<Record<string, string | number>>;
+  readonly status: ProductStatus;
+  readonly description: string;
+  readonly imageUrl?: string;
+  /** Thông số kỹ thuật tuỳ theo loại, vd. { vram: '12GB GDDR6X' } */
+  readonly specs?: Readonly<Record<string, unknown>>;
+  /** ISO 8601 UTC */
+  readonly createdAt: string;
   readonly updatedAt: string;
 }
 
-export type Availability = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
-
-/** Còn từ mức này trở xuống thì báo sắp hết. Con số chốt trong nghiệp vụ catalog. */
-export const LOW_STOCK_THRESHOLD = 5;
-
-export function availabilityOf(product: Pick<Product, 'stock'>): Availability {
-  if (product.stock <= 0) return 'OUT_OF_STOCK';
-  if (product.stock <= LOW_STOCK_THRESHOLD) return 'LOW_STOCK';
-  return 'IN_STOCK';
+/** BR-04: sản phẩm INACTIVE không hiển thị cho khách, kể cả ở trang chi tiết. */
+export function isVisibleToCustomers(product: Pick<Product, 'status'>): boolean {
+  return product.status === 'ACTIVE';
 }

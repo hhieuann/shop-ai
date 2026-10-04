@@ -1,26 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
+import { sampleProduct } from '../../../test/helpers/catalog.js';
 import { apiEvent, parseBody } from '../../../test/helpers/http.js';
-import type { ProductView } from './application/getProduct.js';
 import { ProductNotFoundError } from './domain/errors.js';
 import { makeHandler } from './handler.js';
 
-const GET_PRODUCT = 'GET /api/v1/products/{id}';
-
-const rtx4070: ProductView = {
-  id: 'gpu-rtx4070',
-  name: 'NVIDIA GeForce RTX 4070 12GB',
-  category: 'gpu',
-  priceVnd: 15_990_000,
-  availability: 'IN_STOCK',
-  attributes: { vramGb: 12, tdpW: 200 },
-};
+const GET_PRODUCT = 'GET /api/v1/products/{productId}';
+const PRODUCT_ID = '01K6PZ3Q5G0000000000000001';
 
 describe('catalog handler', () => {
   it('getProduct_returns200WithProduct_whenProductExists', async () => {
     // Arrange
-    const getProduct = vi.fn().mockResolvedValue(rtx4070);
+    const getProduct = vi.fn().mockResolvedValue(sampleProduct());
     const handler = makeHandler({ getProduct });
-    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { id: 'gpu-rtx4070' } });
+    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { productId: PRODUCT_ID } });
 
     // Act
     const res = await handler(event);
@@ -29,24 +21,30 @@ describe('catalog handler', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers?.['content-type']).toBe('application/json');
     expect(parseBody(res)).toEqual({
-      id: 'gpu-rtx4070',
-      name: 'NVIDIA GeForce RTX 4070 12GB',
+      productId: PRODUCT_ID,
+      name: 'ASUS TUF Gaming GeForce RTX 4070 12GB',
       category: 'gpu',
-      priceVnd: 15_990_000,
-      availability: 'IN_STOCK',
-      attributes: { vramGb: 12, tdpW: 200 },
+      brand: 'ASUS',
+      price: 15_990_000,
+      stock: 3,
+      status: 'ACTIVE',
+      description: 'Card đồ hoạ RTX 4070 12GB GDDR6X, chơi game 1440p.',
+      imageUrl: 'https://placehold.co/400x300?text=RTX+4070',
+      specs: { vram: '12GB GDDR6X', tdp: '200W' },
+      createdAt: '2026-10-01T07:00:00.000Z',
+      updatedAt: '2026-10-04T07:00:00.000Z',
     });
 
     // Verify
     expect(getProduct).toHaveBeenCalledTimes(1);
-    expect(getProduct).toHaveBeenCalledWith({ id: 'gpu-rtx4070' });
+    expect(getProduct).toHaveBeenCalledWith({ productId: PRODUCT_ID });
   });
 
   it('getProduct_returns404Problem_whenProductMissing', async () => {
     // Arrange
-    const getProduct = vi.fn().mockRejectedValue(new ProductNotFoundError('khong-co'));
+    const getProduct = vi.fn().mockRejectedValue(new ProductNotFoundError(PRODUCT_ID));
     const handler = makeHandler({ getProduct });
-    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { id: 'khong-co' } });
+    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { productId: PRODUCT_ID } });
 
     // Act
     const res = await handler(event);
@@ -58,7 +56,7 @@ describe('catalog handler', () => {
       type: 'about:blank',
       title: 'Not Found',
       status: 404,
-      detail: 'Không tìm thấy sản phẩm khong-co',
+      detail: `Không tìm thấy sản phẩm ${PRODUCT_ID}`,
       traceId: 'req-test',
     });
 
@@ -66,18 +64,21 @@ describe('catalog handler', () => {
     expect(getProduct).toHaveBeenCalledTimes(1);
   });
 
-  it('getProduct_returns400WithFieldError_whenIdHasInvalidCharacters', async () => {
+  it('getProduct_returns400WithFieldError_whenProductIdHasInvalidCharacters', async () => {
     // Arrange
     const getProduct = vi.fn();
     const handler = makeHandler({ getProduct });
-    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { id: 'gpu rtx<4070>' } });
+    const event = apiEvent({
+      routeKey: GET_PRODUCT,
+      pathParameters: { productId: 'gpu rtx<4070>' },
+    });
 
     // Act
     const res = await handler(event);
 
     // Assert
     expect(res.statusCode).toBe(400);
-    expect(parseBody(res)).toMatchObject({ status: 400, errors: [{ field: 'id' }] });
+    expect(parseBody(res)).toMatchObject({ status: 400, errors: [{ field: 'productId' }] });
 
     // Verify
     expect(getProduct).not.toHaveBeenCalled();
@@ -89,7 +90,7 @@ describe('catalog handler', () => {
       .fn()
       .mockRejectedValue(new Error('ResourceNotFoundException: Requested resource not found'));
     const handler = makeHandler({ getProduct });
-    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { id: 'gpu-rtx4070' } });
+    const event = apiEvent({ routeKey: GET_PRODUCT, pathParameters: { productId: PRODUCT_ID } });
 
     // Act
     const res = await handler(event);
@@ -112,8 +113,8 @@ describe('catalog handler', () => {
     const getProduct = vi.fn();
     const handler = makeHandler({ getProduct });
     const event = apiEvent({
-      routeKey: 'DELETE /api/v1/products/{id}',
-      pathParameters: { id: 'gpu-rtx4070' },
+      routeKey: 'DELETE /api/v1/products/{productId}',
+      pathParameters: { productId: PRODUCT_ID },
     });
 
     // Act
