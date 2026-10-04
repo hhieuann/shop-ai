@@ -3,8 +3,12 @@ packages:
   - services/*
   - infra
   - tests/*
+
 allowBuilds:
   cpu-features: false
   esbuild: true
   protobufjs: false
   ssh2: false
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.51.0

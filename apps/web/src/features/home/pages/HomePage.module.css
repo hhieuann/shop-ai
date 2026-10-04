@@ -1,0 +1,230 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+}
+
+/* Hàng xếp chồng trên điện thoại; từ 960px chia 7/12 + 5/12, cao bằng nhau */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+}
+@media (min-width: 960px) {
+  .row {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .hero {
+    flex: 0 1 58.333%;
+  }
+  .side {
+    flex: 1;
+  }
+}
+
+/* ── Hero: chỗ duy nhất dùng gradient thương hiệu ─────────────── */
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-300);
+  min-width: 0;
+  padding: var(--space-300);
+  border-radius: var(--radius-xl);
+  background: var(--gradient-brand);
+  color: #ffffff;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .hero {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--space-500);
+  }
+}
+.heroText {
+  max-width: 560px; /* tiêu đề 2–3 dòng, đoạn văn dưới 80 ký tự mỗi dòng */
+}
+.heroTitle {
+  font-size: var(--text-headline-sm);
+  line-height: var(--leading-headline-sm);
+  font-weight: 600;
+}
+@media (min-width: 1280px) {
+  .heroTitle {
+    font-size: var(--text-display-sm);
+    line-height: var(--leading-display-sm);
+  }
+}
+.heroBody {
+  margin: var(--space-150) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: rgba(255, 255, 255, 0.88);
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-100);
+  margin-top: var(--space-300);
+}
+.heroPrimary,
+.heroSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--space-100) var(--space-300);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  transition:
+    background-color var(--dur-fast) ease-out,
+    box-shadow var(--dur-fast) ease-out;
+}
+/* Trên nền gradient, nút chính là nút trắng chữ tối (tím trên tím sẽ chìm) */
+.heroPrimary {
+  background: #ffffff;
+  color: #2e1065;
+}
+.heroPrimary:hover {
+  background: #f5f3ff;
+  color: #2e1065;
+  text-decoration: none;
+  box-shadow: var(--glow-primary);
+}
+.heroSecondary {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+.heroSecondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  text-decoration: none;
+}
+.hero :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Minh hoạ "GPU + nguồn": chính là câu chuyện mua kèm của dự án */
+.heroArt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  flex-shrink: 0;
+}
+.chip {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border-radius: var(--radius-xl);
+  background: rgba(11, 11, 15, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+.plus {
+  font-size: var(--text-headline-sm);
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+}
+@media (max-width: 639px) {
+  .chip {
+    width: 72px;
+    height: 72px;
+  }
+  .chip svg {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ── Mua theo nhu cầu ─────────────────────────────────────────── */
+.needs {
+  display: grid;
+  gap: var(--space-100);
+  margin: 0;
+  padding: 0 var(--space-200) var(--space-200);
+  list-style: none;
+}
+@media (min-width: 640px) {
+  .needs {
+    grid-template-columns: 1fr 1fr;
+    padding: 0 var(--space-300) var(--space-300);
+  }
+}
+@media (min-width: 960px) {
+  .needs {
+    flex: 1;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+.need {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  height: 100%;
+  padding: var(--space-200);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  transition: border-color var(--dur-fast) ease-out;
+}
+.need:hover {
+  border-color: var(--border-primary);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+.needIcon {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.needTitle {
+  display: block;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.needDetail {
+  display: block;
+  margin-top: var(--space-25);
+  color: var(--fg-subdued);
+}
+
+/* ── Ô danh mục ────────────────────────────────────────── */
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-100);
+  width: 104px;
+  color: var(--fg-default);
+  text-align: center;
+}
+.tile:hover {
+  color: var(--fg-default);
+  text-decoration: none;
+}
+.tileCircle {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  color: var(--fg-muted);
+  transition:
+    border-color var(--dur-fast) ease-out,
+    color var(--dur-fast) ease-out;
+}
+.tile:hover .tileCircle {
+  border-color: var(--border-primary);
+  color: var(--fg-primary);
+}
+.tileLabel {
+  min-height: 40px;
+  font-weight: 500;
+}

@@ -1,0 +1,80 @@
+.carousel {
+  position: relative;
+  min-width: 0;
+}
+.track {
+  display: flex;
+  gap: var(--space-100);
+  margin: 0;
+  padding: 0 var(--space-200) var(--space-200);
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-200);
+  scrollbar-width: none;
+}
+.track::-webkit-scrollbar {
+  display: none;
+}
+.item {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+/*
+ * Căn giữa khi còn chỗ. Không dùng justify-content:center: khi dải dài hơn khung, nó đẩy phần đầu
+ * ra ngoài bên trái và không cuộn về được. margin auto ở phần tử đầu/cuối thì tự về 0 khi hết chỗ.
+ */
+.centered > .item:first-child {
+  margin-left: auto;
+}
+.centered > .item:last-child {
+  margin-right: auto;
+}
+@media (min-width: 640px) {
+  .track {
+    padding: 0 var(--space-300) var(--space-300);
+    scroll-padding-inline: var(--space-300);
+  }
+}
+
+/* Nút tròn 40px, ẩn cho tới khi rê chuột vào dải hoặc focus bằng bàn phím */
+.arrow {
+  position: absolute;
+  top: calc(50% - 32px);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  color: var(--fg-default);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition:
+    opacity var(--dur-medium) ease-out,
+    border-color var(--dur-fast) ease-out;
+}
+.prev {
+  left: var(--space-100);
+}
+.next {
+  right: var(--space-100);
+}
+.carousel:hover .arrow,
+.arrow:focus-visible {
+  opacity: 1;
+}
+.arrow:hover:not(:disabled) {
+  background: var(--bg-surface-pressed);
+  border-color: var(--border-primary);
+}
+/* Màn hình cảm ứng không có hover: cuộn bằng tay, không cần nút */
+@media (hover: none) {
+  .arrow {
+    display: none;
+  }
+}
