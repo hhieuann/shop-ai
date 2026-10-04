@@ -13,7 +13,8 @@ src/
 │  ├─ admin/            Hoàng
 │  ├─ recommendation/   An
 │  └─ events/           Nhân
-│     ├─ handler.ts     nhận request, kiểm input, gọi use case, đổi lỗi sang HTTP
+│     ├─ handler.ts     nhận request, chọn route, đổi lỗi sang HTTP
+│     ├─ lambda.ts      ghép use case với adapter thật; CDK trỏ Lambda vào file này
 │     ├─ routes.ts      bảng route → use case
 │     ├─ application/   use case, chỉ gọi port
 │     ├─ domain/        luật thuần, không I/O, không AWS SDK
@@ -21,7 +22,7 @@ src/
 │     └─ infra/         adapter DynamoDB, SQS
 └─ shared/              logger, tracer, lỗi chuẩn, http helpers, config, idempotency
 test/
-├─ helpers/             makeHandler, apiEvent, dữ liệu mẫu
+├─ helpers/             apiEvent, DynamoDB Local, dữ liệu mẫu
 └─ integration/         test adapter với DynamoDB Local qua Testcontainers
 ```
 
@@ -34,8 +35,24 @@ Kiểm bằng `pnpm deps:check` ở thư mục gốc; CI chặn nếu vi phạm.
 - `infra` hiện thực `ports`, được import AWS SDK
 - Module không import module khác
 
-## Script cần có trong `package.json`
+## Script
 
-`lint`, `typecheck`, `test` (unit + integration), `build`, `test:smoke`. Tên package là `api`.
+| Script | Việc |
+|---|---|
+| `pnpm --filter api test` | Toàn bộ unit và integration test; Docker Desktop phải đang chạy |
+| `pnpm --filter api test:unit` | Chỉ unit test trong `src/` |
+| `pnpm --filter api test:int` | Chỉ integration test, chạy DynamoDB Local qua Testcontainers |
+| `pnpm --filter api lint` · `typecheck` | ESLint và kiểm tra kiểu |
 
-Cách viết test: [docs/hands-on-testing-guide.md](../../docs/hands-on-testing-guide.md).
+Không có bước build riêng: CDK đóng gói từng Lambda bằng esbuild khi synth và deploy.
+
+Module mẫu để làm theo: `catalog` với `GET /api/v1/products/{productId}`.
+
+## Dữ liệu mẫu cho sandbox
+
+`seed/catalog/` có 2 sản phẩm ở dạng DynamoDB JSON: một `ACTIVE` (gọi API trả 200) và một `INACTIVE` (trả 404 theo BR-04). File chỉ dùng ký tự ASCII để AWS CLI trên Windows đọc được. Sau khi deploy sandbox, thay `<ProductsTableName>` bằng giá trị output `ProductsTableName` rồi chạy:
+
+```bash
+aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx4070-active.json
+aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx3060-inactive.json
+```

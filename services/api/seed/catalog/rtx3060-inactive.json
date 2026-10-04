@@ -1,0 +1,13 @@
+{
+  "productId": { "S": "01K6PZ3Q5G0000000000000002" },
+  "name": { "S": "MSI GeForce RTX 3060 Ventus 2X 12GB" },
+  "nameSearch": { "S": "msi geforce rtx 3060 ventus 2x 12gb" },
+  "category": { "S": "gpu" },
+  "brand": { "S": "MSI" },
+  "price": { "N": "7490000" },
+  "stock": { "N": "0" },
+  "status": { "S": "INACTIVE" },
+  "description": { "S": "Discontinued model, hidden from customers (BR-04)." },
+  "createdAt": { "S": "2026-09-01T07:00:00.000Z" },
+  "updatedAt": { "S": "2026-10-04T07:00:00.000Z" }
+}

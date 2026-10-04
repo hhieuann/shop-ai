@@ -1,0 +1,28 @@
+{
+  "name": "api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run src",
+    "test:int": "vitest run test/integration",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.35.0",
+    "@aws-sdk/client-dynamodb": "^3.1100.0",
+    "@aws-sdk/lib-dynamodb": "^3.1100.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
+    "@types/node": "^24.19.0",
+    "@vitest/coverage-v8": "^5.0.0",
+    "testcontainers": "^12.2.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.0"
+  }
+}
