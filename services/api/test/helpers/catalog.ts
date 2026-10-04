@@ -1,12 +1,29 @@
 import type { CreateTableCommandInput } from '@aws-sdk/client-dynamodb';
 import type { Product } from '../../src/modules/catalog/domain/product.js';
+import {
+  categoryStatusKey,
+  PRODUCTS_BY_CATEGORY_INDEX,
+} from '../../src/modules/catalog/infra/dynamoProductRepository.js';
 
 /** Theo docs/business/dynamodb-design.md; giữ khớp với bảng products trong infra/. */
 export function productsTableDefinition(tableName: string): CreateTableCommandInput {
   return {
     TableName: tableName,
-    AttributeDefinitions: [{ AttributeName: 'productId', AttributeType: 'S' }],
+    AttributeDefinitions: [
+      { AttributeName: 'productId', AttributeType: 'S' },
+      { AttributeName: 'categoryStatus', AttributeType: 'S' },
+    ],
     KeySchema: [{ AttributeName: 'productId', KeyType: 'HASH' }],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: PRODUCTS_BY_CATEGORY_INDEX,
+        KeySchema: [
+          { AttributeName: 'categoryStatus', KeyType: 'HASH' },
+          { AttributeName: 'productId', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
+    ],
     BillingMode: 'PAY_PER_REQUEST',
   };
 }
@@ -41,4 +58,9 @@ export function uniqueProduct(overrides: Partial<Product> = {}): Product {
     productId: `01K6PZ3Q5G${String(sequence).padStart(16, '0')}`,
     ...overrides,
   });
+}
+
+/** Item như khi nạp vào bảng thật: sản phẩm kèm khoá GSI categoryStatus. */
+export function productItem(product: Product): Product & { readonly categoryStatus: string } {
+  return { ...product, categoryStatus: categoryStatusKey(product.category, product.status) };
 }

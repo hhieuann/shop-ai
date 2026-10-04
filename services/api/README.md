@@ -50,7 +50,7 @@ Module mẫu để làm theo: `catalog` với `GET /api/v1/products/{productId}`
 
 ## Dữ liệu mẫu cho sandbox
 
-`seed/catalog/` có 2 sản phẩm ở dạng DynamoDB JSON: một `ACTIVE` (gọi API trả 200) và một `INACTIVE` (trả 404 theo BR-04). File chỉ dùng ký tự ASCII để AWS CLI trên Windows đọc được. Sau khi deploy sandbox, thay `<ProductsTableName>` bằng giá trị output `ProductsTableName` rồi chạy:
+`seed/catalog/` có 2 sản phẩm ở dạng DynamoDB JSON: một `ACTIVE` (gọi API trả 200, có trong `GET /api/v1/products`) và một `INACTIVE` (trả 404 theo BR-04, không có trong danh sách). Mỗi item có `categoryStatus` (vd. `gpu#ACTIVE`) là khoá của GSI `byCategory`; thiếu thuộc tính này thì sản phẩm không xuất hiện trong danh sách. File chỉ dùng ký tự ASCII để AWS CLI trên Windows đọc được. Sau khi deploy sandbox, thay `<ProductsTableName>` bằng giá trị output `ProductsTableName` rồi chạy:
 
 ```bash
 aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx4070-active.json
