@@ -1,0 +1,21 @@
+.price {
+  color: var(--fg-default);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.number {
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+}
+.sign {
+  font-size: var(--text-body-md);
+  margin-left: 1px;
+}
+.lg .number {
+  font-size: var(--text-headline-sm);
+  line-height: var(--leading-headline-sm);
+}
+.lg .sign {
+  font-size: var(--text-body-lg);
+}
