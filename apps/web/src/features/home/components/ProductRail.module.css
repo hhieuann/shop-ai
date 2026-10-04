@@ -1,0 +1,30 @@
+/* Bề rộng thẻ trong carousel: 192px; màn nhỏ min(42vw, 184px) */
+.slot {
+  width: min(42vw, 184px);
+  height: 100%;
+}
+@media (min-width: 768px) {
+  .slot {
+    width: 192px;
+  }
+}
+.skeleton {
+  height: 300px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, #1f1f29 0%, #1f1f29 30%, #2a2a36 50%, #1f1f29 70%);
+  background-size: 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+.message {
+  margin: 0;
+  padding: 0 var(--space-300) var(--space-300);
+  color: var(--fg-subdued);
+}
