@@ -16,7 +16,7 @@ import {
   LogGroupLogDestination,
 } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
-import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { AttributeType, BillingMode, ProjectionType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -26,6 +26,9 @@ import type { ShopEnvironment } from './config.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
 const API_SRC = path.join(REPO_ROOT, 'services', 'api', 'src');
+
+/** Tên GSI, trùng với PRODUCTS_BY_CATEGORY_INDEX trong services/api/src/modules/catalog/infra/. */
+export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
 
 export interface ApiStackProps extends StackProps {
   readonly shopEnv: ShopEnvironment;
@@ -38,14 +41,21 @@ export class ApiStack extends Stack {
     const { shopEnv } = props;
     const removalPolicy = shopEnv.isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY;
 
-    // Theo docs/business/dynamodb-design.md: khoá chính `productId`. Hoàng thêm GSI byCategory khi làm
-    // API danh sách. Giữ khớp với services/api/test/helpers/catalog.ts
+    // Theo docs/business/dynamodb-design.md: khoá chính `productId`; GSI byCategory cho API danh sách.
+    // Giữ khớp với services/api/test/helpers/catalog.ts và adapter dynamoProductRepository.ts
     const products = new Table(this, 'ProductsTable', {
       partitionKey: { name: 'productId', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       deletionProtection: shopEnv.isProd,
       removalPolicy,
+    });
+    // Danh sách theo loại: khoá `categoryStatus` = "<category>#<status>", vd. "gpu#ACTIVE"
+    products.addGlobalSecondaryIndex({
+      indexName: PRODUCTS_BY_CATEGORY_INDEX,
+      partitionKey: { name: 'categoryStatus', type: AttributeType.STRING },
+      sortKey: { name: 'productId', type: AttributeType.STRING },
+      projectionType: ProjectionType.ALL,
     });
 
     const catalogFn = new NodejsFunction(this, 'CatalogFunction', {
@@ -79,9 +89,15 @@ export class ApiStack extends Stack {
         externalModules: [],
       },
     });
-    // Quyền tối thiểu: chỉ GetItem trên đúng bảng này. Cần Query cho danh sách thì thêm action ở đây.
+    // Quyền tối thiểu: GetItem trên bảng (chi tiết), Query chỉ trên GSI byCategory (danh sách). Không Scan.
     catalogFn.addToRolePolicy(
       new PolicyStatement({ actions: ['dynamodb:GetItem'], resources: [products.tableArn] }),
+    );
+    catalogFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:Query'],
+        resources: [`${products.tableArn}/index/${PRODUCTS_BY_CATEGORY_INDEX}`],
+      }),
     );
     Tags.of(products).add('module', 'catalog');
     Tags.of(catalogFn).add('module', 'catalog');
@@ -125,16 +141,26 @@ export class ApiStack extends Stack {
       },
     });
 
-    const [getProductRoute] = httpApi.addRoutes({
-      path: '/api/v1/products/{productId}',
-      methods: [HttpMethod.GET],
-      integration: new HttpLambdaIntegration('CatalogIntegration', catalogFn),
-    });
-    Validations.of(getProductRoute).acknowledge({
-      id: 'AwsSolutions::AwsSolutions-APIG4',
-      reason:
-        'Xem sản phẩm là công khai. Route cần đăng nhập dùng JWT authorizer của Cognito (ADR-0007).',
-    });
+    const catalogIntegration = new HttpLambdaIntegration('CatalogIntegration', catalogFn);
+    const catalogRoutes = [
+      ...httpApi.addRoutes({
+        path: '/api/v1/products',
+        methods: [HttpMethod.GET],
+        integration: catalogIntegration,
+      }),
+      ...httpApi.addRoutes({
+        path: '/api/v1/products/{productId}',
+        methods: [HttpMethod.GET],
+        integration: catalogIntegration,
+      }),
+    ];
+    for (const route of catalogRoutes) {
+      Validations.of(route).acknowledge({
+        id: 'AwsSolutions::AwsSolutions-APIG4',
+        reason:
+          'Xem sản phẩm là công khai. Route cần đăng nhập dùng JWT authorizer của Cognito (ADR-0007).',
+      });
+    }
 
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
