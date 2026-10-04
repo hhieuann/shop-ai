@@ -7,6 +7,8 @@ interface ApiEventInit {
   /** Đúng như route khai báo trong HTTP API, vd. 'GET /api/v1/products/{id}' */
   readonly routeKey: string;
   readonly pathParameters?: Record<string, string>;
+  /** Query string, vd. { q: 'rtx', limit: '10' } (API Gateway luôn đưa giá trị dạng chuỗi) */
+  readonly query?: Record<string, string>;
   readonly headers?: Record<string, string>;
   readonly body?: unknown;
   /** Có userId thì event mang claim `sub` như khi đã qua JWT authorizer của Cognito. */
@@ -25,9 +27,10 @@ export function apiEvent(init: ApiEventInit): APIGatewayProxyEventV2WithJWTAutho
     version: '2.0',
     routeKey: init.routeKey,
     rawPath,
-    rawQueryString: '',
+    rawQueryString: new URLSearchParams(init.query).toString(),
     headers: { 'content-type': 'application/json', ...init.headers },
     pathParameters: init.pathParameters,
+    queryStringParameters: init.query,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
     isBase64Encoded: false,
     requestContext: {
