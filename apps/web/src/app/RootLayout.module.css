@@ -1,0 +1,13 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+/* Khung nội dung chung: tối đa --content-max (1920px), lề 16 / 24 / 40 / 64px */
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-200) var(--gutter) 0;
+}
