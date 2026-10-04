@@ -8,15 +8,19 @@
 #   gh-deploy-prod     job with environment: production  (only tags v*, approved by someone other than An)
 #   gh-diff-readonly   job triggered by pull_request     (read only, for cdk diff)
 # Deploy roles cannot create resources themselves: they can only assume the roles created by CDK bootstrap.
+#
+# The token subject uses GitHub's immutable format (default for repos created after 2026-07-15):
+#   repo:<owner>@<owner_id>/<repo>@<repo_id>:<context>
+# Get the prefix with: gh api repos/OWNER/REPO/actions/oidc/customization/sub --jq .sub_claim_prefix
 
 AWSTemplateFormatVersion: '2010-09-09'
 Description: shop-ai - GitHub Actions OIDC provider and deploy roles (no access keys)
 
 Parameters:
-  GitHubRepo:
+  GitHubSubjectPrefix:
     Type: String
-    Default: hhieuann/shop-ai
-    Description: owner/repo allowed to assume the roles
+    Default: repo:hhieuann@194261813/shop-ai@1398388653
+    Description: OIDC subject prefix of the repo, with immutable owner and repo IDs
   CdkQualifier:
     Type: String
     Default: hnb659fds
@@ -52,7 +56,7 @@ Resources:
             Condition:
               StringEquals:
                 'token.actions.githubusercontent.com:aud': sts.amazonaws.com
-                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:environment:dev
+                'token.actions.githubusercontent.com:sub': !Sub ${GitHubSubjectPrefix}:environment:dev
       Policies:
         - PolicyName: assume-cdk-bootstrap-roles
           PolicyDocument:
@@ -85,7 +89,7 @@ Resources:
             Condition:
               StringEquals:
                 'token.actions.githubusercontent.com:aud': sts.amazonaws.com
-                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:environment:staging
+                'token.actions.githubusercontent.com:sub': !Sub ${GitHubSubjectPrefix}:environment:staging
       Policies:
         - PolicyName: assume-cdk-bootstrap-roles
           PolicyDocument:
@@ -118,7 +122,7 @@ Resources:
             Condition:
               StringEquals:
                 'token.actions.githubusercontent.com:aud': sts.amazonaws.com
-                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:environment:production
+                'token.actions.githubusercontent.com:sub': !Sub ${GitHubSubjectPrefix}:environment:production
       Policies:
         - PolicyName: assume-cdk-bootstrap-roles
           PolicyDocument:
@@ -151,7 +155,7 @@ Resources:
             Condition:
               StringEquals:
                 'token.actions.githubusercontent.com:aud': sts.amazonaws.com
-                'token.actions.githubusercontent.com:sub': !Sub repo:${GitHubRepo}:pull_request
+                'token.actions.githubusercontent.com:sub': !Sub ${GitHubSubjectPrefix}:pull_request
       Policies:
         - PolicyName: assume-cdk-lookup-role
           PolicyDocument:
