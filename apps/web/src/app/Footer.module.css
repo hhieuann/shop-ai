@@ -1,0 +1,22 @@
+.footer {
+  margin-top: var(--space-600);
+  background: var(--bg-chrome);
+  border-top: 1px solid var(--border-divider);
+  color: #c9c9d3;
+}
+.inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-400) var(--gutter);
+}
+.brand {
+  margin: 0 0 var(--space-100);
+  color: #f4f4f7;
+  font-weight: 700;
+}
+.note {
+  margin: 0;
+  color: #a1a1ae;
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}

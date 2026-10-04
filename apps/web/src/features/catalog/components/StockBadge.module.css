@@ -1,0 +1,21 @@
+.badge {
+  display: inline-block;
+  padding: var(--space-25) var(--space-100);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.success {
+  background: var(--bg-success-tint);
+  color: var(--fg-success);
+}
+.warning {
+  background: var(--bg-warning-tint);
+  color: var(--fg-warning);
+}
+.danger {
+  background: var(--bg-danger-tint);
+  color: var(--fg-danger);
+}

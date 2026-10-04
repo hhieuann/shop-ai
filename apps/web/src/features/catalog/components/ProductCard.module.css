@@ -1,0 +1,91 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-100);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-lg);
+  transition:
+    background-color var(--dur-fast) ease-out,
+    border-color var(--dur-fast) ease-out;
+}
+.card:hover {
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
+}
+/* Cả thẻ bấm được, nhưng chỉ tiêu đề là link thật (trình đọc màn hình đọc gọn) */
+.card:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.link {
+  color: inherit;
+}
+.link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+.link:focus-visible {
+  outline: none;
+}
+.link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.plate {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: var(--bg-image-plate);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.image {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* nền trắng của ảnh hoà vào ô sáng */
+}
+.noImage {
+  color: #6b6b78; /* icon trên ô sáng cố định, không đổi theo theme */
+}
+.unavailable .plate {
+  opacity: 0.6;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-50);
+  padding: var(--space-150) var(--space-50) var(--space-50);
+}
+.title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 40px; /* giữ chỗ 2 dòng để các thẻ cùng hàng thẳng nhau */
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+}
+.brand {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-50) var(--space-100);
+  margin-top: auto;
+  padding-top: var(--space-100);
+}
