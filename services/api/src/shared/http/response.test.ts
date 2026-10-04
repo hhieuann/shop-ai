@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { parseBody } from '../../../test/helpers/http.js';
-import { ConflictError, NotFoundError } from '../errors.js';
+import { BadRequestError, ConflictError, NotFoundError } from '../errors.js';
 import { errorToProblem, validationProblem } from './response.js';
 
 describe('errorToProblem', () => {
   it.each([
+    {
+      name: 'errorToProblem_returns400_whenBadRequestError',
+      error: new BadRequestError('Con trỏ phân trang không hợp lệ'),
+      status: 400,
+      title: 'Bad Request',
+      detail: 'Con trỏ phân trang không hợp lệ',
+    },
     {
       name: 'errorToProblem_returns404_whenNotFoundError',
       error: new NotFoundError('Không tìm thấy sản phẩm gpu-x'),

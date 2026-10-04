@@ -3,6 +3,7 @@
   "name": { "S": "ASUS TUF Gaming GeForce RTX 4070 12GB" },
   "nameSearch": { "S": "asus tuf gaming geforce rtx 4070 12gb" },
   "category": { "S": "gpu" },
+  "categoryStatus": { "S": "gpu#ACTIVE" },
   "brand": { "S": "ASUS" },
   "price": { "N": "15990000" },
   "stock": { "N": "3" },

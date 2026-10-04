@@ -23,7 +23,7 @@ Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không
 | Thuộc tính | Kiểu | Giá trị | Phục vụ |
 |---|---|---|---|
 | **PK** | String | `productId` (ULID) | Q1 — GetItem |
-| **GSI1-PK** | String | `category#status` (ví dụ: `gpu#ACTIVE`) | Q2 — Query trên GSI1 |
+| **GSI1-PK** | String | thuộc tính `categoryStatus` = `category#status` (ví dụ: `gpu#ACTIVE`) | Q2 — Query trên GSI1 |
 | **GSI1-SK** | String | `productId` | Q2 — phân trang bằng cursor = `productId` cuối cùng |
 
 > **Không dùng Scan ở bất kỳ đâu.**
@@ -38,6 +38,7 @@ Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không
 ```
 productId    String  PK
 name         String
+categoryStatus String (khoá GSI byCategory, vd. gpu#ACTIVE; không trả ra API)
 nameSearch   String  (tuỳ chọn, không bắt buộc: Lambda tự chuẩn hoá tên khi nạp cache; không trả ra API)
 category     String  (13 loại, xem catalog.md BR-02)
 brand        String
@@ -52,7 +53,7 @@ updatedAt    String  (ISO 8601 UTC)
 ```
 
 **GSI: `byCategory`**
-- PK: `category#status`
+- PK: `categoryStatus` = `category#status`; ai ghi sản phẩm (seed, admin) phải ghi kèm và cập nhật khi đổi `category` hoặc `status`
 - SK: `productId`
 - Chiếu: ALL
 

@@ -3,6 +3,7 @@
   "name": { "S": "MSI GeForce RTX 3060 Ventus 2X 12GB" },
   "nameSearch": { "S": "msi geforce rtx 3060 ventus 2x 12gb" },
   "category": { "S": "gpu" },
+  "categoryStatus": { "S": "gpu#INACTIVE" },
   "brand": { "S": "MSI" },
   "price": { "N": "7490000" },
   "stock": { "N": "0" },

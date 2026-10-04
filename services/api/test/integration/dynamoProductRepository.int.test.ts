@@ -3,7 +3,12 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import { DynamoProductRepository } from '../../src/modules/catalog/infra/dynamoProductRepository.js';
-import { productsTableDefinition, sampleProduct } from '../helpers/catalog.js';
+import {
+  productItem,
+  productsTableDefinition,
+  sampleProduct,
+  uniqueProduct,
+} from '../helpers/catalog.js';
 import { startDynamoLocal, type DynamoLocal } from '../helpers/dynamo.js';
 
 const TABLE = 'products-test';
@@ -13,7 +18,8 @@ let repo: DynamoProductRepository;
 beforeAll(async () => {
   dynamo = await startDynamoLocal();
   await dynamo.client.send(new CreateTableCommand(productsTableDefinition(TABLE)));
-  repo = new DynamoProductRepository(dynamo.doc, TABLE);
+  // Mỗi lần Query chỉ lấy 2 item để thử đường đọc nhiều trang (LastEvaluatedKey)
+  repo = new DynamoProductRepository(dynamo.doc, TABLE, { queryPageSize: 2 });
 });
 
 afterAll(async () => {
@@ -60,5 +66,40 @@ describe('DynamoProductRepository', () => {
 
     // Assert
     await expect(act).rejects.toBeInstanceOf(ZodError);
+  });
+});
+
+describe('DynamoProductRepository.listActiveByCategory', () => {
+  async function put(...products: Parameters<typeof productItem>[0][]) {
+    for (const product of products) {
+      await dynamo.doc.send(new PutCommand({ TableName: TABLE, Item: productItem(product) }));
+    }
+  }
+
+  it('listActiveByCategory_returnsOnlyActiveProductsOfCategory_acrossPages', async () => {
+    // Arrange: 5 chuột ACTIVE (3 trang khi mỗi trang 2 item), 1 chuột INACTIVE, 1 bàn phím ACTIVE
+    const mice = Array.from({ length: 5 }, (_, i) =>
+      uniqueProduct({ category: 'mouse', name: `Chuột ${i}` }),
+    );
+    await put(
+      ...mice,
+      uniqueProduct({ category: 'mouse', status: 'INACTIVE', name: 'Chuột ngừng bán' }),
+      uniqueProduct({ category: 'keyboard', name: 'Bàn phím' }),
+    );
+
+    // Act
+    const result = await repo.listActiveByCategory('mouse');
+
+    // Assert
+    expect(result.map((p) => p.productId).sort()).toEqual(mice.map((p) => p.productId).sort());
+    expect(result[0]).not.toHaveProperty('categoryStatus');
+  });
+
+  it('listActiveByCategory_returnsEmpty_whenCategoryHasNoProducts', async () => {
+    // Act
+    const result = await repo.listActiveByCategory('headset');
+
+    // Assert
+    expect(result).toEqual([]);
   });
 });

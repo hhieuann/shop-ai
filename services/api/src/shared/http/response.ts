@@ -30,6 +30,7 @@ export function problem({ status, title, ...rest }: ProblemInit): HttpResult {
 }
 
 const HTTP_BY_KIND: Readonly<Record<ErrorKind, { status: number; title: string }>> = {
+  BAD_REQUEST: { status: 400, title: 'Bad Request' },
   NOT_FOUND: { status: 404, title: 'Not Found' },
   CONFLICT: { status: 409, title: 'Conflict' },
 };

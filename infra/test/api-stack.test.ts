@@ -22,7 +22,8 @@ describe('ApiStack', () => {
     // Assert
     template.hasResourceProperties('AWS::DynamoDB::Table', {
       KeySchema: [{ AttributeName: 'productId', KeyType: 'HASH' }],
-      AttributeDefinitions: [{ AttributeName: 'productId', AttributeType: 'S' }],
+      // productId cho khoá chính, categoryStatus cho GSI byCategory
+      AttributeDefinitions: Match.arrayWith([{ AttributeName: 'productId', AttributeType: 'S' }]),
       BillingMode: 'PAY_PER_REQUEST',
     });
   });
@@ -67,29 +68,60 @@ describe('ApiStack', () => {
     });
   });
 
-  it('catalogFunction_canOnlyGetItemFromProductsTable', () => {
+  it('productsTable_hasByCategoryIndexForListing', () => {
     // Act
     const template = synth(dev);
 
-    // Assert: quyền DynamoDB duy nhất là GetItem trên đúng bảng products, không Scan
+    // Assert: GSI theo "<category>#<status>", sort key productId, chiếu đủ thuộc tính
+    template.hasResourceProperties('AWS::DynamoDB::Table', {
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'byCategory',
+          KeySchema: [
+            { AttributeName: 'categoryStatus', KeyType: 'HASH' },
+            { AttributeName: 'productId', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+      ],
+    });
+  });
+
+  it('catalogFunction_canOnlyGetItemOnTableAndQueryOnCategoryIndex', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: chỉ 2 quyền DynamoDB, đúng chỗ; không Scan, không ghi
     const statements = Object.values(template.findResources('AWS::IAM::Policy')).flatMap(
       (policy) => policy.Properties.PolicyDocument.Statement,
     );
     const dynamo = statements.filter((s) =>
       [s.Action].flat().some((action: string) => action.startsWith('dynamodb:')),
     );
-    expect(dynamo).toHaveLength(1);
-    expect(dynamo[0].Action).toBe('dynamodb:GetItem');
-    expect(dynamo[0].Resource).toEqual({
+    expect(dynamo.map((s) => s.Action).sort()).toEqual(['dynamodb:GetItem', 'dynamodb:Query']);
+
+    const getItem = dynamo.find((s) => s.Action === 'dynamodb:GetItem');
+    expect(getItem.Resource).toEqual({
       'Fn::GetAtt': [expect.stringMatching(/^ProductsTable/), 'Arn'],
+    });
+
+    const query = dynamo.find((s) => s.Action === 'dynamodb:Query');
+    expect(query.Resource).toEqual({
+      'Fn::Join': [
+        '',
+        [{ 'Fn::GetAtt': [expect.stringMatching(/^ProductsTable/), 'Arn'] }, '/index/byCategory'],
+      ],
     });
   });
 
-  it('httpApi_routesGetProductAndExposesUrl', () => {
+  it('httpApi_routesListAndGetProductAndExposesUrl', () => {
     // Act
     const template = synth(dev);
 
     // Assert
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'GET /api/v1/products',
+    });
     template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
       RouteKey: 'GET /api/v1/products/{productId}',
     });
