@@ -17,10 +17,11 @@
 - [x] `.github/CODEOWNERS` có người phụ trách chính và người dự phòng cho từng khu vực. Chỉ dùng để tự mời người xem PR; không bật **Require review from Code Owners**
 - [x] Tên check trong ruleset khớp tên job trong `pr.yml`
 
-## An làm tiếp
+## An làm tiếp (01/10–04/10/2026)
 
-1. **Bảng công việc:** tạo GitHub Project dạng Board, cột Backlog → Ready → In progress → In review → Done → Released.
-2. **AWS:** làm theo [infra/README.md](../infra/README.md): bootstrap CDK, tạo role OIDC, đặt biến cho từng environment. Chỉ đổi `DEPLOY_ENABLED` thành `true` khi `infra/` đã có app CDK, nếu không `deploy.yml` sẽ lỗi.
+- [x] **Bảng công việc:** GitHub Project dạng Board, cột Backlog → Ready → In progress → In review → Done → Released (01/10)
+- [x] **AWS:** theo [infra/README.md](../infra/README.md): bootstrap CDK, tạo role OIDC, đặt biến cho từng environment (01/10)
+- [x] `DEPLOY_ENABLED=true` sau khi `infra/` có app CDK; merge vào `develop` là tự deploy dev (04/10)
 
 ## Mỗi thành viên làm một lần
 
