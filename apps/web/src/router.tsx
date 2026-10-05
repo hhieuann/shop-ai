@@ -11,6 +11,9 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
+    // React Router 7: lúc mở web lần đầu, trong khi tải code của trang (lazy route) router chưa vẽ gì.
+    // Khai báo rõ điều đó ở đây; thiếu thì router in cảnh báo "No HydrateFallback element" ra console.
+    HydrateFallback: () => null,
     children: [
       {
         index: true,
