@@ -1,8 +1,14 @@
+/* Cùng màu với header: khung tím bao lấy phần nội dung nền sáng */
 .footer {
   margin-top: var(--space-600);
   background: var(--bg-chrome);
-  border-top: 1px solid var(--border-divider);
-  color: #c9c9d3;
+  color: var(--fg-on-chrome-muted);
+}
+.footer :focus-visible {
+  outline-color: var(--focus-ring-on-chrome);
+}
+.footer a {
+  color: var(--fg-on-chrome);
 }
 .inner {
   max-width: var(--content-max);
@@ -11,12 +17,12 @@
 }
 .brand {
   margin: 0 0 var(--space-100);
-  color: #f4f4f7;
+  color: var(--fg-on-chrome);
   font-weight: 700;
 }
 .note {
   margin: 0;
-  color: #a1a1ae;
+  color: var(--fg-on-chrome-muted);
   font-size: var(--text-body-sm);
   line-height: var(--leading-body-sm);
 }

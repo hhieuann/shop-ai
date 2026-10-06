@@ -1,93 +1,64 @@
 /*
- * Token giao diện của Black Magic (xem docs/web/giao-dien.md).
+ * Token giao diện của Black Magic (xem docs/web/design-system.md §2).
+ * Bảng màu "Áo choàng phù thủy": nền sáng, header/footer tím đậm, tím rực làm màu hành động.
  * Component chỉ dùng token ngữ nghĩa (--bg-*, --fg-*, --border-*), không dùng mã màu trực tiếp.
- * Đổi giao diện sáng: đặt data-theme="light" trên <html>.
  */
-:root,
-[data-theme='dark'] {
-  color-scheme: dark;
-  --bg-canvas: #0b0b0f;
-  --bg-surface: #16161d;
-  --bg-surface-raised: #1f1f29;
-  --bg-surface-pressed: #2a2a36;
-  --bg-chrome: #111118;
-  --bg-image-plate: #f4f4f7;
-  --bg-primary: #7c3aed;
-  --bg-primary-hover: #854bf2;
-  --bg-primary-pressed: #6d28d9;
-  --bg-primary-tint: rgba(124, 58, 237, 0.16);
-  --bg-accent-tint: rgba(34, 211, 238, 0.12);
-  --bg-deal: #f5b83d;
-  --bg-success-tint: rgba(34, 197, 94, 0.14);
-  --bg-danger-tint: rgba(244, 63, 94, 0.14);
-  --bg-warning-tint: rgba(251, 191, 36, 0.14);
-  --bg-transparent-hover: rgba(255, 255, 255, 0.06);
-  --bg-transparent-pressed: rgba(255, 255, 255, 0.12);
-  --scrim: rgba(0, 0, 0, 0.7);
-
-  --fg-default: #f4f4f7;
-  --fg-muted: #c9c9d3;
-  --fg-subdued: #a1a1ae;
-  --fg-placeholder: #8b8a97;
-  --fg-disabled: #6b6b78;
-  --fg-on-primary: #ffffff;
-  --fg-on-deal: #0b0b0f;
-  --fg-primary: #a78bfa;
-  --fg-primary-hover: #c4b5fd;
-  --fg-accent: #22d3ee;
-  --fg-deal: #f5b83d;
-  --fg-success: #4ade80;
-  --fg-danger: #fb7185;
-  --fg-warning: #fbbf24;
-
-  --border-divider: #2a2a36;
-  --border-default: #3a3a48;
-  --border-input: #6b6b78;
-  --border-primary: #8b5cf6;
-  --focus-ring: #c4b5fd;
-
-  --gradient-brand: linear-gradient(135deg, #2e1065 0%, #4c1d95 30%, #7c3aed 65%, #22d3ee 100%);
-  --gradient-line: linear-gradient(90deg, #7c3aed, #22d3ee);
-  --glow-primary: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 8px 24px rgba(124, 58, 237, 0.35);
-
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-[data-theme='light'] {
+:root {
   color-scheme: light;
-  --bg-canvas: #f4f4f7;
+  --bg-canvas: #f7f5fc;
   --bg-surface: #ffffff;
-  --bg-surface-raised: #fafafc;
-  --bg-surface-pressed: #ecebf2;
-  --bg-primary: #6d28d9;
-  --bg-primary-hover: #7c3aed;
-  --bg-primary-pressed: #5b21b6;
-  --bg-primary-tint: #f5f3ff;
-  --bg-transparent-hover: rgba(11, 11, 15, 0.04);
-  --bg-transparent-pressed: rgba(11, 11, 15, 0.08);
-  --scrim: rgba(11, 11, 15, 0.6);
-  --fg-default: #0b0b0f;
-  --fg-muted: #3b3a45;
-  --fg-subdued: #6b6a78;
-  --fg-placeholder: #6b6a78;
-  --fg-disabled: #a1a1ae;
-  --fg-primary: #6d28d9;
-  --fg-primary-hover: #5b21b6;
+  --bg-surface-raised: #faf8fe;
+  --bg-surface-pressed: #efeafb;
+  --bg-chrome: #7e22ce;
+  --bg-chrome-hover: rgba(255, 255, 255, 0.12);
+  --bg-image-plate: #f5f3fa;
+  --bg-primary: #9333ea;
+  --bg-primary-hover: #7e22ce;
+  --bg-primary-pressed: #6b21a8;
+  --bg-primary-tint: #f3e8ff;
+  --bg-primary-tint-hover: #e9d5ff;
+  --bg-accent-tint: #cffafe;
+  --bg-deal: #f5b83d;
+  --bg-success-tint: #dcfce7;
+  --bg-danger-tint: #ffe4e6;
+  --bg-warning-tint: #fef3c7;
+  --bg-transparent-hover: rgba(30, 21, 48, 0.04);
+  --bg-transparent-pressed: rgba(30, 21, 48, 0.08);
+  --scrim: rgba(30, 21, 48, 0.55);
+
+  --fg-default: #1e1530;
+  --fg-muted: #4a3f5c;
+  --fg-subdued: #6b6280;
+  --fg-placeholder: #756c88;
+  --fg-disabled: #a9a1b8;
+  --fg-on-primary: #ffffff;
+  --fg-on-chrome: #ffffff;
+  --fg-on-chrome-muted: #e9d5ff;
+  --fg-on-deal: #1e1530;
+  --fg-primary: #7e22ce;
+  --fg-primary-hover: #6b21a8;
   --fg-accent: #0e7490;
   --fg-deal: #b45309;
   --fg-success: #15803d;
-  --fg-danger: #e11d48;
+  --fg-danger: #be123c;
   --fg-warning: #b45309;
-  --border-divider: #e2e1ea;
-  --border-default: #c9c9d3;
-  --border-input: #8e8c9b;
-  --border-primary: #7c3aed;
-  --focus-ring: #6d28d9;
-  --shadow-xs: 0 2px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+  --border-divider: #e9e4f2;
+  --border-default: #d6cee6;
+  --border-input: #8c82a0;
+  --border-primary: #9333ea;
+  --border-on-chrome: rgba(255, 255, 255, 0.38);
+  --border-on-chrome-subtle: rgba(255, 255, 255, 0.22);
+  --focus-ring: #9333ea;
+  --focus-ring-on-chrome: #ffffff;
+
+  --gradient-brand: linear-gradient(135deg, #3b0764 0%, #6b21a8 35%, #9333ea 70%, #22d3ee 100%);
+  --gradient-logo: linear-gradient(135deg, #f0abfc, #ffffff);
+  --glow-primary: 0 0 0 1px rgba(147, 51, 234, 0.3), 0 6px 16px rgba(147, 51, 234, 0.25);
+
+  --shadow-xs: 0 2px 3px rgba(30, 21, 48, 0.05);
+  --shadow-md: 0 2px 8px rgba(30, 21, 48, 0.1);
+  --shadow-lg: 0 4px 24px rgba(30, 21, 48, 0.12);
 }
 
 :root {

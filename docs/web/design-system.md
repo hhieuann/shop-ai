@@ -6,84 +6,91 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** khớp `apps/web/src/styles/tokens.css` và `base.css`. Lệch thì code đúng; sửa tài liệu.
+- **Đổi bảng màu 06/10/2026:** chuyển từ nền tối "Midnight Violet" sang **nền sáng "Áo choàng phù thủy"** (issue #49). `tokens.css` và CSS của Header, Footer, trang chủ đã theo bảng màu mới.
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
 ---
 
 ## 1. Nguyên tắc
 
-- **Nền tối là mặc định** (`data-theme="dark"`, chính là `:root`). Giao diện sáng bật bằng `data-theme="light"` trên `<html>`. **Header và footer luôn tối** ở cả hai giao diện.
-- **Không ghi cứng mã màu trong component.** Chỉ dùng biến ngữ nghĩa `--bg-*`, `--fg-*`, `--border-*`. Ngoại lệ đã có: chữ trên header, footer và hero (vì các khối này không đổi theo theme).
+- **Nền sáng là giao diện duy nhất** (bảng màu "Áo choàng phù thủy": nền trắng ngả tím, tím rực làm màu hành động). Không còn giao diện tối và thuộc tính `data-theme`.
+- **Header và footer cùng một màu tím đậm** `--bg-chrome` (`#7E22CE`), chữ và icon trắng. Đây là "khung" thương hiệu bao lấy phần nội dung nền sáng, giúp nhận ra Black Magic ngay khi mở trang.
+- **Không ghi cứng mã màu trong component.** Chỉ dùng biến ngữ nghĩa `--bg-*`, `--fg-*`, `--border-*`. Chữ trên header, footer và hero dùng token `--fg-on-chrome` (trắng), không ghi `#FFFFFF` trong CSS module.
 - **Mỗi màu nhấn có một việc:**
 
   | Màu | Biến | Chỉ dùng cho |
   |---|---|---|
-  | Tím | `--bg-primary`, `--fg-primary`, `--border-primary` | Hành động và trạng thái đang chọn: nút chính, link, chip/ô đang chọn, focus |
-  | Cyan | `--fg-accent`, `--bg-accent-tint` | Điểm nhấn nhỏ (đường kẻ gradient, trạng thái "Đang giao") |
+  | Tím (`#9333EA`, chữ tím `#7E22CE`) | `--bg-primary`, `--fg-primary`, `--border-primary` | Hành động và trạng thái đang chọn: nút chính, link, chip/ô đang chọn, focus. Tím đậm `#7E22CE` của header/footer là màu khung, không phải màu hành động |
+  | Cyan (`#0E7490`) | `--fg-accent`, `--bg-accent-tint` | Điểm nhấn nhỏ (cuối gradient hero, trạng thái "Đang giao") |
   | Vàng | `--bg-deal`, `--fg-deal` | **Chưa dùng trong MVP** (không có giảm giá, catalog BR-05). Giữ token để dành |
   | Xanh lá / đỏ / cam | `--fg-success`, `--fg-danger`, `--fg-warning` + nền `*-tint` | Trạng thái: còn hàng, lỗi, sắp hết, giá đã đổi |
 
-  Không dùng tím để trang trí, để người dùng luôn biết chỗ nào bấm được. Mỗi màn hình chỉ có **một** nút tím chính.
-- **Ảnh sản phẩm luôn nằm trên ô nền sáng** `--bg-image-plate` (`#F4F4F7`) với `mix-blend-mode: multiply`, vì ảnh của hãng có nền trắng.
+  Trong vùng nội dung, không dùng tím để trang trí, để người dùng luôn biết chỗ nào bấm được. Mỗi màn hình chỉ có **một** nút tím chính.
+- **Ảnh sản phẩm luôn nằm trên ô nền nhạt** `--bg-image-plate` (`#F5F3FA`) với `mix-blend-mode: multiply`: ảnh của hãng có nền trắng, đặt thẳng lên thẻ trắng thì không thấy mép ảnh.
 - **Giá không tô đỏ**, luôn qua component `Price` (`24.990.000₫`).
 - **Phân tách bằng độ sáng nền** (canvas → surface → raised) và viền 1px, không bằng bóng đổ. Bóng chỉ dùng cho thứ nổi lên (nút tròn, menu, hộp thoại).
 
 ## 2. Màu (token)
 
-Giá trị lấy từ `tokens.css`. Cột "Tương phản" là tỉ lệ WCAG đã đo trên nền ghi bên cạnh.
+Bảng màu "Áo choàng phù thủy" (06/10/2026). Cột "Tương phản" là tỉ lệ WCAG đã đo; chữ thường cần ≥ 4,5, viền ô nhập và focus ≥ 3.
 
 ### 2.1 Nền
 
-| Token | Tối (mặc định) | Sáng | Dùng cho |
-|---|---|---|---|
-| `--bg-canvas` | `#0B0B0F` | `#F4F4F7` | Nền trang |
-| `--bg-surface` | `#16161D` | `#FFFFFF` | Thẻ, khối nội dung |
-| `--bg-surface-raised` | `#1F1F29` | `#FAFAFC` | Hover trên thẻ, ô nhập, nút phụ, ô trong khối |
-| `--bg-surface-pressed` | `#2A2A36` | `#ECEBF2` | Nhấn, hover của nút phụ |
-| `--bg-chrome` | `#111118` | (giữ tối) | Header, footer |
-| `--bg-image-plate` | `#F4F4F7` | `#F4F4F7` | Ô nền ảnh sản phẩm |
-| `--bg-primary` / `-hover` / `-pressed` | `#7C3AED` / `#854BF2` / `#6D28D9` | `#6D28D9` / `#7C3AED` / `#5B21B6` | Nút chính (chữ trắng: 5,70 / 4,90 / 7,10 ✓) |
-| `--bg-primary-tint` | `rgba(124,58,237,.16)` | `#F5F3FF` | Nền mục đang chọn |
-| `--bg-accent-tint` | `rgba(34,211,238,.12)` | (như tối) | Nhãn cyan |
-| `--bg-success-tint` / `--bg-warning-tint` / `--bg-danger-tint` | `rgba(34,197,94,.14)` / `rgba(251,191,36,.14)` / `rgba(244,63,94,.14)` | (như tối) | Nền nhãn trạng thái |
-| `--bg-transparent-hover` / `-pressed` | `rgba(255,255,255,.06)` / `.12` | `rgba(11,11,15,.04)` / `.08` | Hover và nhấn của nút trong suốt |
-| `--scrim` | `rgba(0,0,0,.70)` | `rgba(11,11,15,.60)` | Nền mờ sau hộp thoại |
-| `--bg-deal` | `#F5B83D` | `#F5B83D` | Để dành (sau MVP) |
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `--bg-canvas` | `#F7F5FC` | Nền trang (trắng ngả tím) |
+| `--bg-surface` | `#FFFFFF` | Thẻ, khối nội dung |
+| `--bg-surface-raised` | `#FAF8FE` | Hover trên thẻ, ô nhập, nút phụ, ô trong khối |
+| `--bg-surface-pressed` | `#EFEAFB` | Nhấn, hover của nút phụ |
+| `--bg-chrome` | `#7E22CE` | **Header và footer** (chữ trắng 6,98) |
+| `--bg-chrome-hover` | `rgba(255,255,255,.12)` | Hover của link, chip trên header |
+| `--bg-image-plate` | `#F5F3FA` | Ô nền ảnh sản phẩm |
+| `--bg-primary` / `-hover` / `-pressed` | `#9333EA` / `#7E22CE` / `#6B21A8` | Nút chính; hover và nhấn **tối đi** (chữ trắng: 5,38 / 6,98 / 8,72) |
+| `--bg-primary-tint` / `-tint-hover` | `#F3E8FF` / `#E9D5FF` | Nền mục đang chọn, nút tìm trên header (hover: `-tint-hover`) |
+| `--bg-accent-tint` | `#CFFAFE` | Nhãn cyan |
+| `--bg-success-tint` / `--bg-warning-tint` / `--bg-danger-tint` | `#DCFCE7` / `#FEF3C7` / `#FFE4E6` | Nền nhãn trạng thái |
+| `--bg-transparent-hover` / `-pressed` | `rgba(30,21,48,.04)` / `.08` | Hover và nhấn của nút trong suốt |
+| `--scrim` | `rgba(30,21,48,.55)` | Nền mờ sau hộp thoại |
+| `--bg-deal` | `#F5B83D` | Để dành (sau MVP) |
 
 ### 2.2 Chữ và icon
 
-| Token | Tối | Sáng | Tương phản (tối, trên `#16161D`) |
-|---|---|---|---|
-| `--fg-default` | `#F4F4F7` | `#0B0B0F` | 16,40 |
-| `--fg-muted` | `#C9C9D3` | `#3B3A45` | 10,95 |
-| `--fg-subdued` | `#A1A1AE` | `#6B6A78` | 7,05 |
-| `--fg-placeholder` | `#8B8A97` | `#6B6A78` | 5,30 |
-| `--fg-disabled` | `#6B6B78` | `#A1A1AE` | 3,43 (được miễn) |
-| `--fg-on-primary` | `#FFFFFF` | `#FFFFFF` | trên nút tím |
-| `--fg-primary` / `-hover` | `#A78BFA` / `#C4B5FD` | `#6D28D9` / `#5B21B6` | 6,61 / 9,75 |
-| `--fg-accent` | `#22D3EE` | `#0E7490` | 9,96 |
-| `--fg-success` | `#4ADE80` | `#15803D` | 10,33 |
-| `--fg-warning` | `#FBBF24` | `#B45309` | 10,78 |
-| `--fg-danger` | `#FB7185` | `#E11D48` | 6,69 |
-| `--fg-deal` / `--fg-on-deal` | `#F5B83D` / `#0B0B0F` | `#B45309` / `#0B0B0F` | để dành |
+| Token | Giá trị | Tương phản |
+|---|---|---|
+| `--fg-default` | `#1E1530` (đen ngả tím) | 17,43 trên trắng |
+| `--fg-muted` | `#4A3F5C` | 9,74 |
+| `--fg-subdued` | `#6B6280` | 5,70 (5,41 trên `--bg-surface-raised`) |
+| `--fg-placeholder` | `#756C88` | 4,68 trên ô nhập |
+| `--fg-disabled` | `#A9A1B8` | 2,48 (được miễn) |
+| `--fg-on-primary` | `#FFFFFF` | trên nút tím |
+| `--fg-on-chrome` / `--fg-on-chrome-muted` | `#FFFFFF` / `#E9D5FF` | 6,98 / 5,13 trên header, footer |
+| `--fg-primary` / `-hover` | `#7E22CE` / `#6B21A8` | 6,98 / 8,72 |
+| `--fg-accent` | `#0E7490` | 5,36 (4,79 trên `#CFFAFE`) |
+| `--fg-success` | `#15803D` | 5,02 (4,57 trên `#DCFCE7`) |
+| `--fg-warning` | `#B45309` | 5,02 (4,51 trên `#FEF3C7`) |
+| `--fg-danger` | `#BE123C` | 6,29 (5,24 trên `#FFE4E6`) |
+| `--fg-deal` / `--fg-on-deal` | `#B45309` / `#1E1530` | để dành |
 
 ### 2.3 Viền và focus
 
-| Token | Tối | Sáng | Dùng cho |
-|---|---|---|---|
-| `--border-divider` | `#2A2A36` | `#E2E1EA` | Viền thẻ, đường kẻ (trang trí) |
-| `--border-default` | `#3A3A48` | `#C9C9D3` | Viền nút phụ, chip, nút tròn |
-| `--border-input` | `#6B6B78` | `#8E8C9B` | Ô nhập, checkbox (≥ 3:1 ✓) |
-| `--border-primary` | `#8B5CF6` | `#7C3AED` | Mục đang chọn, ô nhập đang focus, hover có màu |
-| `--focus-ring` | `#C4B5FD` | `#6D28D9` | Viền focus 2px |
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `--border-divider` | `#E9E4F2` | Viền thẻ, đường kẻ (trang trí) |
+| `--border-default` | `#D6CEE6` | Viền nút phụ, chip, nút tròn, vòng danh mục |
+| `--border-input` | `#8C82A0` | Ô nhập, checkbox (3,43 trên ô nhập ✓) |
+| `--border-primary` | `#9333EA` | Mục đang chọn, ô nhập đang focus, hover có màu |
+| `--border-on-chrome` / `-subtle` | `rgba(255,255,255,.38)` / `.22` | Viền chip trên header / đường kẻ dưới hàng trên |
+| `--focus-ring` / `--focus-ring-on-chrome` | `#9333EA` / `#FFFFFF` | Viền focus 2px (5,38). Trên header, footer và hero dùng `--focus-ring-on-chrome` (trắng) |
 
 ### 2.4 Hiệu ứng thương hiệu
 
 | Token | Giá trị | Dùng ở đâu |
 |---|---|---|
-| `--gradient-brand` | `linear-gradient(135deg, #2E1065 0%, #4C1D95 30%, #7C3AED 65%, #22D3EE 100%)` | **Chỉ** hero trang chủ và ô logo |
-| `--gradient-line` | `linear-gradient(90deg, #7C3AED, #22D3EE)` | Đường kẻ 1px dưới hàng trên của header |
-| `--glow-primary` | `0 0 0 1px rgba(139,92,246,.40), 0 8px 24px rgba(124,58,237,.35)` | Hover của nút chính quan trọng (nút tìm, nút hero). Không dùng cho thẻ sản phẩm |
+| `--gradient-brand` | `linear-gradient(135deg, #3B0764 0%, #6B21A8 35%, #9333EA 70%, #22D3EE 100%)` | **Chỉ** hero trang chủ. Chữ trắng chỉ đặt trên khoảng 60% phía tối (trái, trên) |
+| `--gradient-logo` | `linear-gradient(135deg, #F0ABFC, #FFFFFF)` | Ô logo trên header tím |
+| `--glow-primary` | `0 0 0 1px rgba(147,51,234,.30), 0 6px 16px rgba(147,51,234,.25)` | Hover của nút chính quan trọng (nút hero, "Thêm vào giỏ"). Không dùng cho thẻ sản phẩm |
+
+`--gradient-line` (đường kẻ tím–cyan dưới header) **bỏ**: trên nền header tím, đường kẻ dùng `--border-on-chrome-subtle`.
 
 ## 3. Chữ
 
@@ -127,12 +134,12 @@ Hay dùng nhất: **16** (khoảng cách giữa các khối, giữa thẻ trong 
 
 Quy tắc lồng: khối 16px chứa phần tử 8px; phần tử 8px chứa nhãn 4px.
 
-**Bóng** (đã chỉnh cho nền tối):
-| Token | Tối | Sáng | Dùng cho |
-|---|---|---|---|
-| `--shadow-xs` | `0 1px 2px rgba(0,0,0,.4)` | `0 2px 3px rgba(0,0,0,.05)` | Nút nổi nhẹ |
-| `--shadow-md` | `0 2px 8px rgba(0,0,0,.45)` | `0 2px 8px rgba(0,0,0,.12)` | Nút tròn ‹ › |
-| `--shadow-lg` | `0 8px 24px rgba(0,0,0,.5)` | `0 4px 24px rgba(0,0,0,.12)` | Menu, hộp thoại |
+**Bóng** (nhẹ, cho nền sáng):
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `--shadow-xs` | `0 2px 3px rgba(30,21,48,.05)` | Nút nổi nhẹ |
+| `--shadow-md` | `0 2px 8px rgba(30,21,48,.10)` | Nút tròn ‹ › |
+| `--shadow-lg` | `0 4px 24px rgba(30,21,48,.12)` | Menu, hộp thoại |
 
 **Chuyển động:** `--dur-fast` 150ms (màu nền, viền), `--dur-base` 200ms (ô nhập, xoay icon), `--dur-medium` 300ms (hiện/ẩn nút carousel); easing `--ease-standard` `cubic-bezier(0,0,.2,1)` hoặc `ease-out`. `base.css` đã tắt toàn bộ animation khi `prefers-reduced-motion: reduce`. Không có hiệu ứng phóng to hay nhấc thẻ khi hover.
 
@@ -158,7 +165,7 @@ Quy tắc:
 
 | Thành phần | Hover | Focus bàn phím | Nhấn | Vô hiệu | Đang chọn |
 |---|---|---|---|---|---|
-| Nút chính | `--bg-primary-hover` (+ `--glow-primary` ở nút quan trọng) | viền focus | `--bg-primary-pressed` | opacity .4, `not-allowed` | — |
+| Nút chính | `--bg-primary-hover` (tối hơn; + `--glow-primary` ở nút quan trọng) | viền focus | `--bg-primary-pressed` | opacity .4, `not-allowed` | — |
 | Nút phụ (mặc định) | `--bg-surface-pressed` | viền focus | `--bg-surface-pressed` | chữ `--fg-disabled`, `not-allowed` | — |
 | Nút trong suốt / link-nút | `--bg-transparent-hover` | viền focus | `--bg-transparent-pressed` | chữ `--fg-disabled` | — |
 | Link | `--fg-primary-hover` + gạch chân | viền focus | — | — | `aria-current` → `--fg-primary` |
@@ -167,7 +174,7 @@ Quy tắc:
 | Ô nhập, select | — | viền `--border-primary` + viền focus | — | chữ `--fg-disabled` | — |
 | Nút tròn ‹ › | nền `--bg-surface-pressed`, viền `--border-primary` | hiện ra + viền focus | — | ẩn | — |
 
-**Viền focus** (`base.css`, áp cho mọi phần tử): `outline: 2px solid var(--focus-ring); outline-offset: 2px`. Không bao giờ xoá outline mà không thay bằng viền khác. Trên nền gradient hero, viền focus màu trắng.
+**Viền focus** (`base.css`, áp cho mọi phần tử): `outline: 2px solid var(--focus-ring); outline-offset: 2px`. Không bao giờ xoá outline mà không thay bằng viền khác. Trên header, footer và hero (nền tím), viền focus màu trắng.
 
 ## 7. Trợ năng
 
@@ -184,7 +191,7 @@ Quy tắc:
 
 - Icon: **`lucide-react`**, nét `strokeWidth={1.75}`, màu theo `currentColor`. Cỡ: 16 (trong chữ), 20 (trong chip), 24 (mặc định, nút tròn), 28 (header máy tính), 32 (ô danh mục), 48–56 (minh hoạ, ảnh thay thế).
 - Mỗi loại hàng có một icon cố định trong `CategoryIcon` (laptop → `Laptop`, gpu → `Gpu`, psu → `PlugZap`…). Dùng icon này ở mọi chỗ hiện loại hàng.
-- Ảnh sản phẩm: ô vuông (`aspect-ratio: 1`), `object-fit: contain`, `mix-blend-mode: multiply` trên `--bg-image-plate`, `loading="lazy" decoding="async"` và có `width`/`height`. Không có ảnh → icon loại hàng 48px màu `#6B6B78` giữa ô.
+- Ảnh sản phẩm: ô vuông (`aspect-ratio: 1`), `object-fit: contain`, `mix-blend-mode: multiply` trên `--bg-image-plate`, `loading="lazy" decoding="async"` và có `width`/`height`. Không có ảnh → icon loại hàng 48px màu `--border-input` (`#8C82A0`) giữa ô.
 - `alt=""` khi tên sản phẩm đã có ngay cạnh ảnh (tránh đọc lặp).
 
 ## 9. Component dùng chung
@@ -212,22 +219,22 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
 
 ### 9.1 Header (`app/Header`)
-Dính đầu trang (`position: sticky; top: 0; z-index: 210`), nền `--bg-chrome`, chữ `#F4F4F7` cố định.
+Dính đầu trang (`position: sticky; top: 0; z-index: 210`), nền `--bg-chrome` (tím đậm `#7E22CE`), chữ và icon `--fg-on-chrome` (trắng). Kích thước không đổi so với bản trước.
 
 | Phần | Máy tính | Điện thoại (<640) |
 |---|---|---|
 | Hàng trên | padding `20px` dọc × lề ngang; mọi phần tử cao **48px**; chữ 16/20 → hàng cao ~88px | padding `12px 16px`; phần tử 40px; chữ 14/18 |
 | Lề ngang | 24px → 32px (≥1200) → 48px (≥1600), trong khung `--content-max` | 16px |
-| Logo | ô 48px nền `--gradient-brand` bo 8px + chữ "Black Magic" 28/36/700, `letter-spacing: -0.01em`; cả cụm là link về trang chủ | chữ 20/28 |
-| Ô tìm kiếm | `role="search"`; ô nhập nền `#1F1F29`, viền `#3A3A48`, bo `8px 0 0 8px`, chữ 16px, `maxLength=30`, placeholder "Tìm laptop, card đồ hoạ, RAM…"; **nút tím** rộng 56px, bo `0 8px 8px 0`, icon 28, hover thêm glow. Từ 960px nằm cùng hàng với logo (co giãn chiếm chỗ trống), dưới 960px xuống hàng riêng | nút 48px, icon 24 |
-| Đơn hàng, Tài khoản, Giỏ hàng | `NavLink` cao 48px, padding `0 8px`, bo 8px, icon 28 + nhãn (nhãn hiện từ 960px), đậm 500; hover nền `rgba(255,255,255,.06)`; trang hiện tại chữ `--fg-primary` | chỉ icon 24 |
-| Đường kẻ | 1px `--gradient-line` dưới hàng trên, chạy hết chiều ngang | như máy tính |
-| Hàng chip loại hàng | 13 chip (`CATEGORIES`), link tới `/products?category=…`; chip cao **44px**, padding `0 20px`, bo tròn, nền `#1F1F29`, viền `#3A3A48`, icon 20 + chữ 16/20/600, cách nhau 8px; hàng padding 16px dọc. Hover viền `--border-primary`. **Loại đang xem** (`aria-current="page"`): viền 2px tím, padding 19px, nền `--bg-primary-tint`, chữ `--fg-primary`. Đủ chỗ thì căn giữa; thiếu chỗ thì cuộn ngang, có mép mờ 48px và nút tròn 40px ‹ › (ẩn trên màn cảm ứng) | chip 36px, hàng padding 12px |
+| Logo | ô 48px nền `--gradient-logo` bo 8px + chữ "Black Magic" 28/36/700 trắng, `letter-spacing: -0.01em`; cả cụm là link về trang chủ | chữ 20/28 |
+| Ô tìm kiếm | `role="search"`; ô nhập **nền trắng**, không viền, chữ `--fg-default`, placeholder `--fg-placeholder`, bo `8px 0 0 8px`, chữ 16px, `maxLength=30`, placeholder "Tìm laptop, card đồ hoạ, RAM…"; **nút tìm nền `--bg-primary-tint`** (`#F3E8FF`), icon `--fg-primary-hover` (`#6B21A8`, 7,39), rộng 56px, bo `0 8px 8px 0`, icon 28, hover nền `--bg-primary-tint-hover` (`#E9D5FF`). Nút tím rực đặt trên header tím sẽ chìm, nên nút tìm dùng nền nhạt. Focus: viền trắng. Từ 960px nằm cùng hàng với logo (co giãn chiếm chỗ trống), dưới 960px xuống hàng riêng | nút 48px, icon 24 |
+| Đơn hàng, Tài khoản, Giỏ hàng | `NavLink` cao 48px, padding `0 8px`, bo 8px, icon 28 + nhãn (nhãn hiện từ 960px), đậm 500; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn | chỉ icon 24 |
+| Đường kẻ | 1px `--border-on-chrome-subtle` dưới hàng trên, chạy hết chiều ngang | như máy tính |
+| Hàng chip loại hàng | 13 chip (`CATEGORIES`), link tới `/products?category=…`; chip cao **44px**, padding `0 20px`, bo tròn, nền trong suốt, viền `--border-on-chrome`, chữ và icon trắng, icon 20 + chữ 16/20/600, cách nhau 8px; hàng nằm trên cùng nền tím, padding 16px dọc. Hover nền `--bg-chrome-hover`. **Loại đang xem** (`aria-current="page"`): nền trắng, chữ và icon `--fg-primary-hover`, viền 2px trắng, padding 19px. Đủ chỗ thì căn giữa; thiếu chỗ thì cuộn ngang, có mép mờ 48px (màu `--bg-chrome`) và nút tròn 40px ‹ › (ẩn trên màn cảm ứng) | chip 36px, hàng padding 12px |
 
 Gõ từ khoá rồi Enter → `/products?q=…` (bỏ khoảng trắng hai đầu, rỗng thì về `/products`). Ô tìm kiếm hiện lại từ khoá đang có trên URL.
 
 ### 9.2 Footer (`app/Footer`)
-Nền `--bg-chrome`, viền trên 1px `--border-divider`, cách nội dung 48px; khung trong `padding: 32px var(--gutter)`; tên shop đậm 700 màu `#F4F4F7`, dòng ghi chú 12/18 màu `#A1A1AE`.
+**Cùng màu với header**: nền `--bg-chrome` (`#7E22CE`), không viền, cách nội dung 48px; khung trong `padding: 32px var(--gutter)`; tên shop đậm 700 `--fg-on-chrome` (trắng), dòng ghi chú 12/18 `--fg-on-chrome-muted` (`#E9D5FF`, 5,13). Link (nếu có) màu trắng, gạch chân khi hover; viền focus trắng.
 
 ### 9.3 Nút (`Button`, 📝)
 Hình dạng chung: `display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid; border-radius:8px`, chữ 14/20 **600** một dòng. (`base.css` hiện cho mọi `<button>` kiểu nút phụ, chữ 400; khi tách component `Button` thì dùng 600.)
@@ -244,8 +251,8 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 | `secondary` (mặc định) | `--bg-surface-raised` | `--border-default` | `--fg-default` | `--bg-surface-pressed` |
 | `ghost` | trong suốt | trong suốt | `--fg-primary` | `--bg-transparent-hover` / `-pressed` |
 | `danger` (Huỷ đơn, Xoá) | `--bg-surface-raised` | `--border-default` | `--fg-danger` | nền `--bg-danger-tint` |
-| `on-gradient` (chỉ hero) | `#FFFFFF` | không | `#2E1065` | nền `#F5F3FF` + glow |
-| `on-gradient-outline` (chỉ hero) | trong suốt | `rgba(255,255,255,.4)` | `#FFFFFF` | nền `rgba(255,255,255,.12)` |
+| `on-gradient` (chỉ hero) | `#FFFFFF` | không | `#3B0764` | nền `#F3E8FF` + glow |
+| `on-gradient-outline` (chỉ hero) | trong suốt | `rgba(255,255,255,.45)` | `#FFFFFF` | nền `rgba(255,255,255,.12)` |
 
 - `width: 100%` khi cần nút tràn ngang (thanh tổng tiền trên điện thoại).
 - **Đang xử lý** (`aria-busy="true"`): giữ nguyên bề rộng, đổi chữ thành "Đang …" (ví dụ "Đang huỷ…", "Đang tải…"), chặn bấm lại.
@@ -262,7 +269,7 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 | Nhãn | phía trên, cách 4px. Bộ lọc: 12/18 `--fg-subdued`. Form: 14/20/500 `--fg-default`, trường bắt buộc có dấu `*` màu `--fg-danger` |
 | Lỗi | viền `--fg-danger`; dòng lỗi 12/18 `--fg-danger` bên dưới, nối bằng `aria-describedby`, `aria-invalid="true"` |
 | Gợi ý | 12/18 `--fg-subdued` bên dưới |
-| Select | cùng hình dạng; mũi tên mặc định của trình duyệt (được, vì nền tối có `color-scheme: dark`) |
+| Select | cùng hình dạng; mũi tên mặc định của trình duyệt (`color-scheme: light`) |
 
 - **Cỡ 48px** dùng cho form đặt hàng, đăng nhập, tạo tài khoản; 40px cho bộ lọc và chỗ khác.
 - Dòng lỗi có icon `CircleAlert` 16px cùng màu đứng trước chữ, gap 4px.
@@ -351,7 +358,7 @@ Thẻ **không có** nút "Thêm vào giỏ", nút lưu, ô so sánh, sao đánh
 ### 9.12 Trạng thái tải, rỗng, lỗi
 | Trạng thái | Cách hiển thị |
 |---|---|
-| Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (cao 300px, bo 8px), gradient `#1F1F29 → #2A2A36` chạy 1,6s, `aria-hidden` |
+| Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (cao 300px, bo 8px), gradient `#EFEAFB → #F7F5FC` chạy 1,6s, `aria-hidden` |
 | Đang tải (trang) | dòng "Đang tải …" màu `--fg-subdued` |
 | Đang tải lại với bộ lọc mới | giữ kết quả cũ, lưới opacity .6, `aria-busy="true"` |
 | Rỗng (`EmptyState`) | khung `--bg-surface`, viền `--border-divider`, **bo 16px**, padding `40px 16px`, chữ căn giữa; một câu giải thích + một link/nút đi tiếp |
@@ -367,7 +374,7 @@ Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, n�
 | danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL` | `alert` |
 
 ### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, 📝; ví dụ "Huỷ đơn")
-Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface-raised`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger).
+Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger).
 
 ### 9.15 Tóm tắt đơn (`OrderSummary`, 📝; giỏ hàng, đặt hàng)
 Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, bo 16px, padding 24px (<640: 16px).
@@ -379,7 +386,7 @@ Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, b
 
 ### 9.16 Bố cục tập trung (`FocusLayout` + `MiniHeader`, 📝; đặt hàng, đăng nhập, tạo tài khoản)
 Thay `RootLayout` ở những trang khách cần tập trung hoàn tất một việc: bỏ ô tìm kiếm, hàng chip và các link điều hướng.
-- `MiniHeader`: nền `--bg-chrome`, **không dính**, cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (ô 40px + chữ "Black Magic" 20/28/700; <640 chỉ ô logo), là link về `/`; phải là **một** link 14/20/500 màu `#F4F4F7` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `rgba(255,255,255,.06)`. Đường kẻ `--gradient-line` 1px ở đáy như header.
+- `MiniHeader`: nền `--bg-chrome`, **không dính**, cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (ô 40px + chữ "Black Magic" 20/28/700; <640 chỉ ô logo), là link về `/`; phải là **một** link 14/20/500 `--fg-on-chrome` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `--bg-chrome-hover`. Không có đường kẻ ở đáy.
 - Vẫn có link "Bỏ qua tới nội dung chính", `<main id="main">` và `Footer`.
 - Bấm logo khi đang điền form không hỏi lại (form ngắn, dữ liệu món đã lưu `sessionStorage`).
 
@@ -389,4 +396,4 @@ Chưa có trong `tokens.css` vì chưa có chỗ dùng. Thêm đúng giá trị 
 
 | Token | Giá trị | Khi nào |
 |---|---|---|
-| `--shadow-up` | tối `0 -2px 8px rgba(0,0,0,.5)` / sáng `0 -2px 8px rgba(11,11,15,.15)` | Thanh tổng tiền dính đáy màn hình (giỏ hàng trên điện thoại) |
+| `--shadow-up` | `0 -2px 8px rgba(30,21,48,.12)` | Thanh tổng tiền dính đáy màn hình (giỏ hàng trên điện thoại) |
