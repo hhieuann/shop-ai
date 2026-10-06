@@ -1,0 +1,192 @@
+/* Khung hẹp 1280px cho giỏ hàng (design-system §5) */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-100);
+  margin-bottom: var(--space-200);
+}
+.title {
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  margin-bottom: var(--space-200);
+}
+.heading .title {
+  margin-bottom: 0;
+}
+.count {
+  color: var(--fg-subdued);
+}
+.alert {
+  margin: 0 0 var(--space-200);
+  padding: var(--space-150) var(--space-200);
+  border-left: 4px solid var(--fg-danger);
+  border-radius: var(--radius-lg);
+  background: var(--bg-danger-tint);
+  color: var(--fg-danger);
+}
+.message {
+  color: var(--fg-subdued);
+}
+
+/* Hai cột từ 960px: nội dung trái, tóm tắt 360px phải */
+.layout {
+  display: grid;
+  gap: var(--space-300);
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+.main {
+  display: grid;
+  gap: var(--space-300);
+  min-width: 0;
+}
+
+.list {
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.selectAll {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-100) var(--space-300) var(--space-100) var(--space-200);
+  background: var(--bg-surface-raised);
+  font-weight: 500;
+  cursor: pointer;
+}
+.lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Nút chính (design-system §9.3 primary lg) */
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-100) var(--space-300);
+  border: 1px solid var(--bg-primary);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  color: var(--fg-on-primary);
+  font-size: var(--text-body-lg);
+  font-weight: 600;
+}
+.primaryButton:hover:not(:disabled) {
+  background: var(--bg-primary-hover);
+  border-color: var(--bg-primary-hover);
+  color: var(--fg-on-primary);
+  text-decoration: none;
+  box-shadow: var(--glow-primary);
+}
+.primaryButton:active {
+  background: var(--bg-primary-pressed);
+}
+.primaryButton:disabled {
+  opacity: 0.4;
+  color: var(--fg-on-primary);
+}
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Giỏ rỗng */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-150);
+  padding: var(--space-500) var(--space-200);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  color: var(--fg-subdued);
+  text-align: center;
+}
+.emptyText {
+  margin: 0;
+  max-width: 480px;
+  color: var(--fg-muted);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+}
+
+/* Khung chờ */
+.skeletonList,
+.skeletonSummary {
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-pressed) 0%,
+    var(--bg-surface-pressed) 30%,
+    var(--bg-canvas) 50%,
+    var(--bg-surface-pressed) 70%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.skeletonList {
+  height: 480px;
+}
+.skeletonSummary {
+  height: 280px;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* Thanh tổng dính đáy: chỉ trên điện thoại, thay cho khối tóm tắt */
+.mobileBar {
+  display: none;
+}
+@media (max-width: 639px) {
+  .summary {
+    display: none;
+  }
+  .mobileBar {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-200);
+    margin: var(--space-300) calc(-1 * var(--gutter)) 0;
+    padding: var(--space-150) var(--space-200);
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-divider);
+    box-shadow: var(--shadow-up);
+  }
+  .mobileBar .primaryButton {
+    width: auto;
+  }
+  .mobileBarLabel {
+    display: block;
+    color: var(--fg-subdued);
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-body-sm);
+  }
+}
