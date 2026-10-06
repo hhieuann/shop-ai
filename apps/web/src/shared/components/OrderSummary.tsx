@@ -11,6 +11,8 @@ interface OrderSummaryProps {
   title: string;
   rows: readonly SummaryRow[];
   total: number;
+  /** Nội dung riêng của trang, nằm ngay dưới tiêu đề (danh sách món ở trang đặt hàng) */
+  content?: ReactNode;
   /** Nút chính, thông báo, chú thích dưới dòng tổng */
   children?: ReactNode;
   className?: string;
@@ -20,13 +22,21 @@ interface OrderSummaryProps {
  * Khối tóm tắt tiền ở cột phải (design-system §9.15), dùng cho giỏ hàng và đặt hàng.
  * Tổng tiền nằm trong vùng aria-live để trình đọc màn hình nghe được khi tick/bỏ tick.
  */
-export function OrderSummary({ title, rows, total, children, className }: OrderSummaryProps) {
+export function OrderSummary({
+  title,
+  rows,
+  total,
+  content,
+  children,
+  className,
+}: OrderSummaryProps) {
   const titleId = useId();
   return (
     <section className={`${styles.summary} ${className ?? ''}`} aria-labelledby={titleId}>
       <h2 id={titleId} className={styles.title}>
         {title}
       </h2>
+      {content}
       {rows.length > 0 && (
         <dl className={styles.rows}>
           {rows.map((row) => (
