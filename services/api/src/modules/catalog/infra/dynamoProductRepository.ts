@@ -26,7 +26,8 @@ export function categoryStatusKey(category: ProductCategory, status: ProductStat
   return `${category}#${status}`;
 }
 
-const productItem = z.object({
+/** Schema một item trong bảng products. Dùng chung cho adapter (đọc) và script nạp dữ liệu (kiểm file). */
+export const productItemSchema = z.object({
   productId: z.string(),
   name: z.string(),
   // Loại lạ trong bảng là dữ liệu hỏng: báo lỗi thay vì trả category ngoài 13 loại của OpenAPI
@@ -41,6 +42,11 @@ const productItem = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+
+/** Item để ghi vào bảng: sản phẩm kèm khoá GSI categoryStatus. */
+export function toProductItem(product: Product): Product & { readonly categoryStatus: string } {
+  return { ...product, categoryStatus: categoryStatusKey(product.category, product.status) };
+}
 
 export interface DynamoProductRepositoryOptions {
   /** Số item tối đa mỗi lần Query; để trống thì DynamoDB tự chia trang theo 1 MB. Test đặt nhỏ để thử đọc nhiều trang. */
@@ -60,7 +66,7 @@ export class DynamoProductRepository implements ProductRepository, ProductListRe
     );
     if (!Item) return null;
     // Dữ liệu trong bảng sai kiểu thì báo lỗi ngay, không trả dữ liệu hỏng cho web.
-    return productItem.parse(Item);
+    return productItemSchema.parse(Item);
   }
 
   /** Query GSI theo `<category>#ACTIVE`, đọc tới hết LastEvaluatedKey. Không Scan. */
@@ -79,7 +85,7 @@ export class DynamoProductRepository implements ProductRepository, ProductListRe
           Limit: this.options.queryPageSize,
         }),
       );
-      for (const item of page.Items ?? []) products.push(productItem.parse(item));
+      for (const item of page.Items ?? []) products.push(productItemSchema.parse(item));
       startKey = page.LastEvaluatedKey;
     } while (startKey);
 

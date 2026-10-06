@@ -1,8 +1,8 @@
 import type { CreateTableCommandInput } from '@aws-sdk/client-dynamodb';
 import type { Product } from '../../src/modules/catalog/domain/product.js';
 import {
-  categoryStatusKey,
   PRODUCTS_BY_CATEGORY_INDEX,
+  toProductItem,
 } from '../../src/modules/catalog/infra/dynamoProductRepository.js';
 
 /** Theo docs/business/dynamodb-design.md; giữ khớp với bảng products trong infra/. */
@@ -61,6 +61,4 @@ export function uniqueProduct(overrides: Partial<Product> = {}): Product {
 }
 
 /** Item như khi nạp vào bảng thật: sản phẩm kèm khoá GSI categoryStatus. */
-export function productItem(product: Product): Product & { readonly categoryStatus: string } {
-  return { ...product, categoryStatus: categoryStatusKey(product.category, product.status) };
-}
+export const productItem = toProductItem;
