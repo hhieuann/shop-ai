@@ -45,7 +45,7 @@ export function ProductDetailPage() {
       >
         <div>
           {data.imageUrl ? (
-            // Ảnh của hãng có nền trắng → đặt trên ô nền sáng, không đặt thẳng lên nền tối
+            // Ảnh của hãng có nền trắng → đặt trên ô nền nhạt để thấy mép ảnh trên thẻ trắng
             <div
               style={{
                 display: 'grid',

@@ -1,6 +1,6 @@
 .header {
   /*
-   * Thước đo của header (đo theo header Best Buy ở màn 1920px, làm tròn lưới 4/8px):
+   * Thước đo của header (thiết kế ở màn 1920px, làm tròn lưới 4/8px):
    * hàng trên padding 20px 24px, mọi phần tử cao 48px → 88px; chữ 16/20; icon 28px.
    * Hàng chip: chip cao 44px, chữ 16/20 đậm 600 → 76px. Đổi cỡ header chỉ cần sửa các biến này.
    */
@@ -13,7 +13,7 @@
   top: 0;
   z-index: 210;
   background: var(--bg-chrome);
-  color: #f4f4f7; /* header luôn tối, kể cả ở giao diện sáng */
+  color: var(--fg-on-chrome);
   font-size: 16px;
   line-height: 20px;
 }
@@ -43,7 +43,11 @@
     line-height: 18px;
   }
 }
-/* Đường kẻ 1px tím → cyan dưới hàng trên cùng, chạy hết chiều ngang màn hình */
+/* Viền focus trắng: viền tím mặc định không thấy trên nền tím của header */
+.header :focus-visible {
+  outline-color: var(--focus-ring-on-chrome);
+}
+/* Đường kẻ 1px trắng mờ dưới hàng trên cùng, chạy hết chiều ngang màn hình */
 .topBar {
   position: relative;
 }
@@ -54,7 +58,7 @@
   right: 0;
   bottom: 0;
   height: 1px;
-  background: var(--gradient-line);
+  background: var(--border-on-chrome-subtle);
 }
 .top {
   display: flex;
@@ -71,19 +75,18 @@
   align-items: center;
   gap: var(--space-150);
   height: var(--header-control);
-  color: #f4f4f7;
+  color: var(--fg-on-chrome);
   flex-shrink: 0;
 }
 .logo:hover {
-  color: #f4f4f7;
+  color: var(--fg-on-chrome);
   text-decoration: none;
 }
 .mark {
   width: var(--header-control);
   height: var(--header-control);
   border-radius: var(--radius-lg);
-  background: var(--gradient-brand);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  background: var(--gradient-logo);
 }
 .wordmark {
   font-size: 28px;
@@ -92,7 +95,7 @@
   letter-spacing: -0.01em;
 }
 
-/* Ô tìm kiếm: ô nhập + nút tím ghép liền */
+/* Ô tìm kiếm: ô nhập trắng + nút tím nhạt ghép liền (nút tím đậm trên header tím sẽ chìm) */
 .search {
   order: 3;
   display: flex;
@@ -104,19 +107,17 @@
   min-width: 0;
   height: var(--header-control);
   padding: 0 var(--space-150);
-  background: #1f1f29;
-  color: #f4f4f7;
-  border: 1px solid #3a3a48;
-  border-right: 0;
+  background: var(--bg-surface);
+  color: var(--fg-default);
+  border: 0;
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   font-size: 16px; /* điện thoại: ≥16px để iOS không tự phóng to khi gõ */
   line-height: 16px;
 }
 
 .searchInput:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--focus-ring-on-chrome);
   outline-offset: 2px;
-  border-color: var(--border-primary);
 }
 .searchButton {
   display: grid;
@@ -124,17 +125,14 @@
   width: 56px;
   height: var(--header-control);
   padding: 0;
-  background: var(--bg-primary);
-  border: 1px solid var(--bg-primary);
+  background: var(--bg-primary-tint);
+  border: 0;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  color: var(--fg-on-primary);
+  color: var(--fg-primary-hover);
 }
-.searchButton:hover:not(:disabled) {
-  background: var(--bg-primary-hover);
-  box-shadow: var(--glow-primary);
-}
+.searchButton:hover:not(:disabled),
 .searchButton:active {
-  background: var(--bg-primary-pressed);
+  background: var(--bg-primary-tint-hover);
 }
 
 .actions {
@@ -150,22 +148,25 @@
   height: var(--header-control);
   padding: 0 var(--space-100);
   border-radius: var(--radius-lg);
-  color: #f4f4f7;
+  color: var(--fg-on-chrome);
   font-weight: 500;
 }
 .action:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f4f4f7;
+  background: var(--bg-chrome-hover);
+  color: var(--fg-on-chrome);
   text-decoration: none;
 }
-.action[aria-current='page'] {
-  color: var(--fg-primary);
+/* Trang hiện tại: gạch chân 2px trắng dưới nhãn (chữ tím trên nền tím sẽ không đọc được) */
+.action[aria-current='page'] .actionLabel {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 }
 .actionLabel {
   display: none;
 }
 
-/* Hàng chip loại hàng: cuộn ngang, chip đang chọn có viền tím 2px (bù padding để không nhảy) */
+/* Hàng chip loại hàng: cuộn ngang, chip đang chọn nền trắng viền 2px (bù padding để không nhảy) */
 .categories {
   position: relative;
   max-width: var(--content-max);
@@ -225,13 +226,13 @@
   padding: 0;
   transform: translateY(-50%);
   border-radius: var(--radius-full);
-  background: #1f1f29;
-  border: 1px solid #3a3a48;
-  color: #f4f4f7;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--fg-default);
   box-shadow: var(--shadow-md);
 }
 .chipArrow:hover:not(:disabled) {
-  background: #2a2a36;
+  background: var(--bg-surface-pressed);
   border-color: var(--border-primary);
 }
 .chipPrev {
@@ -265,23 +266,23 @@
   gap: var(--space-100);
   min-height: var(--header-chip);
   padding: 0 20px;
-  border: 1px solid #3a3a48;
+  border: 1px solid var(--border-on-chrome);
   border-radius: var(--radius-full);
-  background: #1f1f29;
-  color: #f4f4f7;
+  background: transparent;
+  color: var(--fg-on-chrome);
   font-weight: 600;
   white-space: nowrap;
 }
 .chip:hover {
-  border-color: var(--border-primary);
-  color: #f4f4f7;
+  background: var(--bg-chrome-hover);
+  color: var(--fg-on-chrome);
   text-decoration: none;
 }
 .chip[aria-current='page'] {
   padding: 0 19px; /* viền 2px: bớt 1px mỗi bên để chip không nhảy */
-  border: 2px solid var(--border-primary);
-  background: var(--bg-primary-tint);
-  color: var(--fg-primary);
+  border: 2px solid var(--fg-on-chrome);
+  background: var(--bg-surface);
+  color: var(--fg-primary-hover);
 }
 
 @media (min-width: 960px) {

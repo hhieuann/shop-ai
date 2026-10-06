@@ -42,7 +42,7 @@ a:hover {
   outline-offset: 2px;
 }
 
-/* Nút và ô nhập mặc định = kiểu "secondary" trên nền tối, để trang nào chưa có kiểu riêng vẫn đọc được */
+/* Nút và ô nhập mặc định = kiểu "secondary", để trang nào chưa có kiểu riêng vẫn đọc được */
 button {
   font: inherit;
   color: var(--fg-default);

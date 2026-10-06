@@ -6,7 +6,7 @@ import { StockBadge } from './StockBadge';
 import styles from './ProductCard.module.css';
 
 /**
- * Thẻ sản phẩm: thẻ tối, ảnh nằm trên ô nền sáng (ảnh của hãng có nền trắng),
+ * Thẻ sản phẩm: thẻ trắng, ảnh nằm trên ô nền nhạt (ảnh của hãng có nền trắng),
  * tên 2 dòng, hãng, giá, nhãn tồn kho. Cả thẻ là một link.
  */
 export function ProductCard({ product }: { product: ProductSummary }) {

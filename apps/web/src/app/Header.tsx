@@ -11,7 +11,7 @@ import {
 import styles from './Header.module.css';
 
 /**
- * Header chung (nền tối ở cả hai theme): logo, ô tìm kiếm, đơn hàng, giỏ, tài khoản;
+ * Header chung (nền tím đậm --bg-chrome): logo, ô tìm kiếm, đơn hàng, giỏ, tài khoản;
  * hàng chip loại hàng bên dưới. Tìm kiếm là một ô duy nhất cho cả web: Enter → /products?q=…
  */
 export function Header() {
