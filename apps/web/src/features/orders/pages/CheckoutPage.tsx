@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Banknote, ShoppingCart } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
+import { Alert } from '../../../shared/components/Alert';
+import { Field } from '../../../shared/components/Field';
+import { FreeShipping, OrderSummary } from '../../../shared/components/OrderSummary';
 import { formatVnd } from '../../../shared/lib/format';
 import { clearCheckoutItems, loadCheckoutItems, saveCheckoutItems } from '../lib/checkoutStorage';
 import type {
@@ -11,6 +15,7 @@ import type {
   Order,
   ShippingAddress,
 } from '../../../shared/api/types';
+import styles from './CheckoutPage.module.css';
 
 /** Món đã tick ở giỏ, truyền sang checkout */
 type SelectedItem = Pick<CartItem, 'productId' | 'name' | 'price' | 'quantity'>;
@@ -50,14 +55,16 @@ export function CheckoutPage() {
   );
   const updateSelectedItems = (update: (items: SelectedItem[]) => SelectedItem[]) =>
     setSelectedItems((items) => saveCheckoutItems(update(items)));
+  // Món vừa đổi giá sau PRICE_CHANGED, để gắn nhãn "Giá mới" trong tóm tắt
+  const [repriced, setRepriced] = useState<ReadonlySet<string>>(() => new Set());
 
-  const [form, setForm] = useState<ShippingAddress>({
-    fullName: '',
-    phone: '',
-    address: '',
-    province: '',
-  });
+  const [form, setForm] = useState<ShippingAddress>(EMPTY_FORM);
   const [formError, setFormError] = useState<Partial<ShippingAddress>>({});
+  // Sau lần bấm đầu tiên thì kiểm lại từng ô khi rời ô
+  const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const alertRef = useRef<HTMLDivElement>(null);
+  const formId = useId();
 
   // ── Idempotency-Key (BR-04) ──────────────────────────────────────────────────
   // Sinh MỘT lần cho mỗi lượt checkout và giữ nguyên qua các lần bấm lại.
@@ -100,241 +107,249 @@ export function CheckoutPage() {
             newPrice.has(i.productId) ? { ...i, price: newPrice.get(i.productId)! } : i,
           ),
         );
+        setRepriced(new Set(newPrice.keys()));
       }
     },
   });
 
-  // ── Nếu vào trang này không qua giỏ → hướng về giỏ ─────────────────────────
+  // Thông báo lỗi vừa hiện → chuyển focus tới để người dùng bàn phím, trình đọc màn hình biết
+  useEffect(() => {
+    if (createOrder.isError) alertRef.current?.focus();
+  }, [createOrder.isError, createOrder.failureCount]);
+
+  // ── Vào trang này không qua giỏ (hoặc hết phiên) → hướng về giỏ ─────────────
   if (selectedItems.length === 0) {
     return (
-      <div style={{ textAlign: 'center', paddingTop: '3rem' }}>
-        <p>Không có sản phẩm nào được chọn.</p>
-        <button onClick={() => navigate('/cart')}>Quay lại giỏ hàng</button>
+      <div className={styles.page}>
+        <h1 className={styles.title}>Đặt hàng</h1>
+        <section className={styles.empty} aria-label="Chưa có sản phẩm">
+          <ShoppingCart size={48} strokeWidth={1.75} aria-hidden="true" />
+          <p className={styles.emptyText}>Chưa có sản phẩm nào để đặt.</p>
+          <Link to="/cart" className={styles.secondaryButton}>
+            Quay lại giỏ hàng
+          </Link>
+        </section>
       </div>
     );
   }
 
   const total = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const pending = createOrder.isPending;
 
-  // ── Validate form ────────────────────────────────────────────────────────────
-  const validate = (): boolean => {
+  const validate = (values: ShippingAddress): Partial<ShippingAddress> => {
     const errors: Partial<ShippingAddress> = {};
-    if (!form.fullName.trim()) errors.fullName = 'Vui lòng nhập họ tên';
-    if (!form.phone.trim()) errors.phone = 'Vui lòng nhập số điện thoại';
-    else if (!/^(0|\+84)\d{9}$/.test(normalizePhone(form.phone)))
+    if (!values.fullName.trim()) errors.fullName = 'Vui lòng nhập họ tên';
+    if (!values.phone.trim()) errors.phone = 'Vui lòng nhập số điện thoại';
+    else if (!/^(0|\+84)\d{9}$/.test(normalizePhone(values.phone)))
       errors.phone = 'Số điện thoại không hợp lệ';
-    if (!form.address.trim()) errors.address = 'Vui lòng nhập địa chỉ';
-    if (!form.province.trim()) errors.province = 'Vui lòng chọn tỉnh/thành phố';
-    setFormError(errors);
-    return Object.keys(errors).length === 0;
+    if (!values.address.trim()) errors.address = 'Vui lòng nhập địa chỉ';
+    if (!values.province.trim()) errors.province = 'Vui lòng nhập tỉnh/thành phố';
+    return errors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (createOrder.isPending || !validate()) return;
+    if (pending) return;
+    setSubmitted(true);
+    const errors = validate(form);
+    setFormError(errors);
+    const firstError = FIELDS.find((f) => errors[f.key]);
+    if (firstError) {
+      formRef.current?.querySelector<HTMLInputElement>(`[name="${firstError.key}"]`)?.focus();
+      return;
+    }
     createOrder.mutate();
   };
+
+  const fieldProps = (key: keyof ShippingAddress) => ({
+    name: key,
+    value: form[key],
+    error: formError[key],
+    readOnly: pending,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((f) => ({ ...f, [key]: e.target.value })),
+    onBlur: () => {
+      if (submitted) setFormError(validate(form));
+    },
+  });
 
   const nameOf = (productId: string) =>
     selectedItems.find((i) => i.productId === productId)?.name ?? productId;
 
-  const fieldStyle = (error?: string): React.CSSProperties => ({
-    width: '100%',
-    padding: '0.6rem 0.75rem',
-    border: `1px solid ${error ? 'var(--fg-danger)' : 'var(--border-input)'}`,
-    borderRadius: '6px',
-    fontSize: '1rem',
-    boxSizing: 'border-box',
-  });
-
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          marginBottom: '1rem',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--fg-primary)',
-        }}
-      >
-        ← Quay lại giỏ hàng
-      </button>
+    <div className={styles.page}>
+      <Link to="/cart" className={styles.back}>
+        <ArrowLeft size={16} aria-hidden="true" />
+        Quay lại giỏ hàng
+      </Link>
+      <h1 className={styles.title}>Đặt hàng</h1>
 
-      <h1>Xác nhận đặt hàng</h1>
+      <div className={styles.layout}>
+        <div className={styles.steps}>
+          <CheckoutStep number={1} title="Thông tin giao hàng">
+            <form
+              id={formId}
+              ref={formRef}
+              className={styles.form}
+              onSubmit={handleSubmit}
+              noValidate
+            >
+              <p className={styles.requiredNote}>* bắt buộc</p>
+              {FIELDS.map((f) => (
+                <Field
+                  key={f.key}
+                  className={f.wide ? styles.wide : undefined}
+                  label={f.label}
+                  type={f.type}
+                  inputMode={f.type === 'tel' ? 'tel' : undefined}
+                  autoComplete={f.autoComplete}
+                  placeholder={f.placeholder}
+                  maxLength={f.maxLength}
+                  hint={f.hint}
+                  size="lg"
+                  required
+                  {...fieldProps(f.key)}
+                />
+              ))}
+            </form>
+          </CheckoutStep>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '2rem',
-          alignItems: 'start',
-        }}
-      >
-        {/* ─── Form địa chỉ ──────────────────────────────── */}
-        <form onSubmit={handleSubmit}>
-          <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Thông tin giao hàng</h2>
-
-          {[
-            {
-              key: 'fullName',
-              label: 'Họ và tên',
-              placeholder: 'Nguyễn Văn A',
-              type: 'text',
-              maxLength: 100,
-            },
-            {
-              key: 'phone',
-              label: 'Số điện thoại',
-              placeholder: '0912 345 678',
-              type: 'tel',
-              maxLength: 16,
-            },
-            {
-              key: 'address',
-              label: 'Địa chỉ',
-              placeholder: 'Số nhà, tên đường, phường/xã',
-              type: 'text',
-              maxLength: 200,
-            },
-            {
-              key: 'province',
-              label: 'Tỉnh / Thành phố',
-              placeholder: 'TP. Hồ Chí Minh',
-              type: 'text',
-              maxLength: 100,
-            },
-          ].map(({ key, label, placeholder, type, maxLength }) => (
-            <div key={key} style={{ marginBottom: '1rem' }}>
-              <label
-                style={{
-                  display: 'block',
-                  marginBottom: '0.35rem',
-                  fontWeight: 500,
-                  fontSize: '0.9rem',
-                }}
-              >
-                {label} <span style={{ color: 'var(--fg-danger)' }}>*</span>
-              </label>
-              <input
-                type={type}
-                placeholder={placeholder}
-                maxLength={maxLength}
-                value={form[key as keyof ShippingAddress]}
-                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                style={fieldStyle(formError[key as keyof ShippingAddress])}
-              />
-              {formError[key as keyof ShippingAddress] && (
-                <p style={{ color: 'var(--fg-danger)', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
-                  {formError[key as keyof ShippingAddress]}
+          <CheckoutStep number={2} title="Thanh toán">
+            <div className={styles.payment}>
+              <Banknote size={24} className={styles.paymentIcon} aria-hidden="true" />
+              <div>
+                <p className={styles.paymentTitle}>Thanh toán khi nhận hàng (COD)</p>
+                <p className={styles.paymentNote}>
+                  Trả tiền mặt cho shipper đúng số tiền ở mục Tổng cộng, không phát sinh thêm.
                 </p>
-              )}
+              </div>
             </div>
-          ))}
+          </CheckoutStep>
+        </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Phương thức thanh toán</label>
-            <div
-              style={{
-                marginTop: '0.5rem',
-                padding: '0.75rem',
-                background: 'var(--bg-success-tint)',
-                border: '1px solid transparent',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-              }}
-            >
-              💵 Thanh toán khi nhận hàng (COD)
-            </div>
-          </div>
-
-          {/* Lỗi từ server */}
+        <OrderSummary
+          className={styles.summary}
+          title={`Đơn hàng (${selectedItems.length} sản phẩm)`}
+          content={
+            <ul className={styles.items}>
+              {selectedItems.map((item) => (
+                <li key={item.productId} className={styles.item}>
+                  <div className={styles.itemInfo}>
+                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemQty}>× {item.quantity}</span>
+                    {repriced.has(item.productId) && (
+                      <span className={styles.newPrice}>Giá mới</span>
+                    )}
+                  </div>
+                  <span className={styles.itemAmount}>{formatVnd(item.price * item.quantity)}</span>
+                </li>
+              ))}
+            </ul>
+          }
+          rows={[
+            { label: 'Tạm tính', value: formatVnd(total) },
+            { label: 'Phí vận chuyển', value: <FreeShipping /> },
+          ]}
+          total={total}
+        >
           {createOrder.isError && (
-            <div
-              style={{
-                padding: '0.75rem',
-                background: 'var(--bg-danger-tint)',
-                border: '1px solid var(--fg-danger)',
-                borderRadius: '6px',
-                marginBottom: '1rem',
-                fontSize: '0.9rem',
-                color: 'var(--fg-danger)',
-              }}
-            >
+            <Alert ref={alertRef} tone={alertTone(createOrder.error)}>
               <OrderErrorMessage error={createOrder.error} nameOf={nameOf} />
-            </div>
+            </Alert>
           )}
-
+          {/* Nút nằm cạnh con số tổng; thuộc tính form vẫn gửi form ở cột trái */}
           <button
             type="submit"
-            disabled={createOrder.isPending}
-            style={{
-              width: '100%',
-              padding: '0.85rem',
-              background: createOrder.isPending ? 'var(--bg-surface-pressed)' : 'var(--bg-primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              cursor: createOrder.isPending ? 'not-allowed' : 'pointer',
-            }}
+            form={formId}
+            className={styles.primaryButton}
+            disabled={pending}
+            aria-busy={pending || undefined}
           >
-            {createOrder.isPending ? 'Đang xử lý...' : `Xác nhận đặt hàng — ${formatVnd(total)}`}
+            {pending ? 'Đang đặt hàng…' : 'Xác nhận đặt hàng'}
           </button>
-        </form>
-
-        {/* ─── Tóm tắt đơn ───────────────────────────────── */}
-        <div>
-          <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>
-            Đơn hàng ({selectedItems.length} sản phẩm)
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {selectedItems.map((item) => (
-              <div
-                key={item.productId}
-                style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}
-              >
-                <span style={{ flex: 1, marginRight: '1rem' }}>
-                  {item.name} <span style={{ color: 'var(--fg-subdued)' }}>× {item.quantity}</span>
-                </span>
-                <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  {formatVnd(item.price * item.quantity)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <hr style={{ margin: '1rem 0' }} />
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '0.9rem',
-              marginBottom: '0.5rem',
-            }}
-          >
-            <span>Phí vận chuyển</span>
-            <span style={{ color: 'var(--fg-success)' }}>Miễn phí</span>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontWeight: 'bold',
-              fontSize: '1.1rem',
-            }}
-          >
-            <span>Tổng cộng</span>
-            <span className="tabular">{formatVnd(total)}</span>
-          </div>
-          <p style={{ color: 'var(--fg-subdued)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-            Thanh toán khi nhận hàng (COD), đúng số tiền trên, không phát sinh thêm.
+          <p className={styles.hint}>
+            <Banknote size={16} aria-hidden="true" /> Thanh toán khi nhận hàng (COD)
           </p>
-        </div>
+        </OrderSummary>
       </div>
     </div>
   );
+}
+
+const EMPTY_FORM: ShippingAddress = { fullName: '', phone: '', address: '', province: '' };
+
+/** Các ô của form giao hàng (dat-hang.md §3.2), theo thứ tự hiển thị */
+const FIELDS: readonly {
+  key: keyof ShippingAddress;
+  label: string;
+  type: 'text' | 'tel';
+  autoComplete: string;
+  maxLength: number;
+  placeholder?: string;
+  hint?: string;
+  wide?: boolean;
+}[] = [
+  { key: 'fullName', label: 'Họ và tên', type: 'text', autoComplete: 'name', maxLength: 100 },
+  {
+    key: 'phone',
+    label: 'Số điện thoại',
+    type: 'tel',
+    autoComplete: 'tel',
+    maxLength: 16,
+    placeholder: '0912 345 678',
+    hint: 'Shipper gọi số này khi giao hàng.',
+  },
+  {
+    key: 'address',
+    label: 'Địa chỉ',
+    type: 'text',
+    autoComplete: 'street-address',
+    maxLength: 200,
+    placeholder: 'Số nhà, tên đường, phường/xã',
+    wide: true,
+  },
+  {
+    key: 'province',
+    label: 'Tỉnh / Thành phố',
+    type: 'text',
+    autoComplete: 'address-level1',
+    maxLength: 100,
+    placeholder: 'TP. Hồ Chí Minh',
+  },
+];
+
+/** Khối có số thứ tự ở cột trái (dat-hang.md §3.1) */
+function CheckoutStep({
+  number,
+  title,
+  children,
+}: {
+  number: number;
+  title: string;
+  children: ReactNode;
+}) {
+  const titleId = useId();
+  return (
+    <section className={styles.step} aria-labelledby={titleId}>
+      <div className={styles.stepHead}>
+        <span className={styles.stepNumber} aria-hidden="true">
+          {number}
+        </span>
+        <h2 id={titleId} className={styles.stepTitle}>
+          {title}
+        </h2>
+      </div>
+      <div className={styles.stepBody}>{children}</div>
+    </section>
+  );
+}
+
+/** Giá đổi, đơn đang xử lý: cảnh báo; còn lại là lỗi */
+function alertTone(error: unknown): 'warning' | 'danger' {
+  return error instanceof ApiError &&
+    (error.code === 'PRICE_CHANGED' || error.code === 'ORDER_IN_PROGRESS')
+    ? 'warning'
+    : 'danger';
 }
 
 /** Thông báo lỗi đặt hàng theo mã nghiệp vụ (ordering.md "Trường hợp đặc biệt") */
@@ -353,8 +368,8 @@ function OrderErrorMessage({
     case 'OUT_OF_STOCK':
       return (
         <>
-          Một số sản phẩm không đủ hàng. Vui lòng quay lại giỏ để điều chỉnh:
-          <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
+          Một số sản phẩm không đủ hàng. <Link to="/cart">Quay lại giỏ hàng để điều chỉnh</Link>:
+          <ul>
             {error.invalidItems.map((i) => (
               <li key={i.productId}>
                 {nameOf(i.productId)}:{' '}
@@ -367,9 +382,8 @@ function OrderErrorMessage({
     case 'PRICE_CHANGED':
       return (
         <>
-          Giá đã thay đổi. Tóm tắt đơn bên cạnh đã cập nhật giá mới, vui lòng kiểm tra rồi bấm xác
-          nhận lại:
-          <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
+          Giá đã thay đổi. Tóm tắt đơn đã cập nhật giá mới, vui lòng kiểm tra rồi bấm xác nhận lại:
+          <ul>
             {error.changedItems.map((c) => (
               <li key={c.productId}>
                 {nameOf(c.productId)}: {formatVnd(c.expectedPrice)} → {formatVnd(c.currentPrice)}

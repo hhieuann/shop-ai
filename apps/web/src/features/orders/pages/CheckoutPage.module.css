@@ -1,0 +1,237 @@
+/* Khung hẹp 1280px như giỏ hàng (design-system §5); cách hàng chip của header 32px */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-top: var(--space-200);
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-50);
+  margin-bottom: var(--space-150);
+  font-weight: 500;
+}
+.title {
+  margin-bottom: var(--space-300);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+}
+
+/* Hai cột từ 960px: các bước bên trái, tóm tắt đơn 360px bên phải */
+.layout {
+  display: grid;
+  gap: var(--space-300);
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+  .summary {
+    position: sticky;
+    top: var(--space-300);
+  }
+}
+.steps {
+  display: grid;
+  gap: var(--space-200);
+  min-width: 0;
+}
+
+/* Khối bước có số thứ tự */
+.step {
+  padding: var(--space-300);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.stepHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  margin-bottom: 20px;
+}
+.stepNumber {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  background: var(--bg-surface-raised);
+  font-weight: 600;
+}
+.stepTitle {
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+}
+.stepBody {
+  min-width: 0;
+}
+@media (max-width: 639px) {
+  .step {
+    padding: var(--space-200);
+  }
+}
+
+/* Form giao hàng: 2 cột từ 640px, Địa chỉ chiếm cả hàng */
+.form {
+  display: grid;
+  gap: var(--space-200);
+}
+@media (min-width: 640px) {
+  .form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .wide,
+  .requiredNote {
+    grid-column: 1 / -1;
+  }
+}
+.requiredNote {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Thanh toán: một ô cố định, chỉ có COD */
+.payment {
+  display: flex;
+  gap: var(--space-150);
+  padding: var(--space-150) var(--space-200);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+.paymentIcon {
+  flex-shrink: 0;
+  color: var(--fg-success);
+}
+.paymentTitle {
+  margin: 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 500;
+}
+.paymentNote {
+  margin: var(--space-25) 0 0;
+  color: var(--fg-subdued);
+}
+
+/* Danh sách món trong khối tóm tắt */
+.items {
+  display: grid;
+  gap: var(--space-150);
+  margin: 0 0 var(--space-200);
+  padding: 0 0 var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+  list-style: none;
+}
+.item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-200);
+}
+.itemInfo {
+  display: grid;
+  gap: var(--space-25);
+  justify-items: start;
+  min-width: 0;
+}
+.itemName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.itemQty {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.newPrice {
+  padding: var(--space-25) var(--space-100);
+  border-radius: var(--radius-md);
+  background: var(--bg-warning-tint);
+  color: var(--fg-warning);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 500;
+}
+.itemAmount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Nút (design-system §9.3) */
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--space-100) var(--space-300);
+  border: 1px solid;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-body-lg);
+  font-weight: 600;
+}
+.primaryButton {
+  width: 100%;
+  border-color: var(--bg-primary);
+  background: var(--bg-primary);
+  color: var(--fg-on-primary);
+}
+.primaryButton:hover:not(:disabled) {
+  border-color: var(--bg-primary-hover);
+  background: var(--bg-primary-hover);
+  box-shadow: var(--glow-primary);
+}
+.primaryButton:active {
+  background: var(--bg-primary-pressed);
+}
+.primaryButton:disabled {
+  opacity: 0.4;
+  color: var(--fg-on-primary);
+}
+.secondaryButton {
+  border-color: var(--border-default);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+}
+.secondaryButton:hover {
+  background: var(--bg-surface-pressed);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Không có món để đặt */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-150);
+  padding: var(--space-500) var(--space-200);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  color: var(--fg-subdued);
+  text-align: center;
+}
+.emptyText {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+}
