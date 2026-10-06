@@ -36,13 +36,13 @@ Chỗ **duy nhất** của trang dùng `--gradient-brand`.
 
 | Phần | Giá trị |
 |---|---|
-| Khung | `<section aria-labelledby="hero-title">`, bo 16px, padding 24px (≥640: 40px), chữ trắng, `overflow:hidden` |
+| Khung | `<section aria-labelledby="hero-title">`, bo 16px, padding 24px (≥640: 40px), chữ trắng, `overflow:hidden`. Gradient tím đậm → tím rực → cyan (design-system §2.4); khối chữ nằm bên trái, trên phần tím đậm |
 | Bố cục | < 640: chữ trên, minh hoạ dưới (cột, gap 24); ≥ 640: hàng ngang, căn giữa dọc |
 | Chữ | khối chữ rộng tối đa 560px |
 | Tiêu đề `<h2>` | 32/44/600 → **44/56** từ 1280px |
 | Đoạn văn | 16/24, trắng 88%, cách tiêu đề 12px |
-| Nút | cách 24px, gap 8px, tự xuống dòng. Nút chính **trắng chữ `#2E1065`** (tím trên tím sẽ chìm), nút phụ viền trắng 40%; cả hai cao 48px, padding `8px 24px`, bo 8px, đậm 600 (`on-gradient`, `on-gradient-outline` trong design-system §9.3) |
-| Minh hoạ | `aria-hidden`: ô GPU + dấu "+" + ô bộ nguồn, nói đúng câu chuyện "mua kèm" của dự án. Ô 104×104 (điện thoại 72×72), bo 16px, nền `rgba(11,11,15,.35)`, viền `rgba(255,255,255,.22)`, icon 56px (điện thoại 36px); dấu "+" 32px đậm 300, trắng 70% |
+| Nút | cách 24px, gap 8px, tự xuống dòng. Nút chính **trắng chữ `#3B0764`** (tím trên tím sẽ chìm), nút phụ viền trắng 45%; cả hai cao 48px, padding `8px 24px`, bo 8px, đậm 600 (`on-gradient`, `on-gradient-outline` trong design-system §9.3) |
+| Minh hoạ | `aria-hidden`: ô GPU + dấu "+" + ô bộ nguồn, nói đúng câu chuyện "mua kèm" của dự án. Ô 104×104 (điện thoại 72×72), bo 16px, nền `rgba(59,7,100,.35)`, viền `rgba(255,255,255,.24)`, icon 56px (điện thoại 36px); dấu "+" 32px đậm 300, trắng 70% |
 | Focus | viền focus màu trắng bên trong hero |
 
 Nội dung hiện tại: tiêu đề "Mua card đồ hoạ, biết luôn nên lắp nguồn nào"; nút "Xem card đồ hoạ" → `/products?category=gpu`, "Xem tất cả sản phẩm" → `/products`.
@@ -63,7 +63,7 @@ Nội dung hiện tại: tiêu đề "Mua card đồ hoạ, biết luôn nên l�
 ### 3.3 Danh mục
 `StoryBlock` "Danh mục" chứa `Carousel centered` gồm 13 ô loại hàng (`CATEGORIES`, cùng thứ tự với chip trên header).
 - Ô: link cột, gap 8px, rộng 104px, chữ căn giữa.
-- Vòng tròn 96px nền `--bg-surface-raised`, viền `--border-default`, icon `CategoryIcon` 32px màu `--fg-muted`. Không dùng ảnh sản phẩm.
+- Vòng tròn 96px nền `--bg-surface` (trắng), viền `--border-default`, icon `CategoryIcon` 32px màu `--fg-muted`. Không dùng ảnh sản phẩm.
 - Nhãn đậm 500, `min-height: 40px` (giữ chỗ 2 dòng).
 - Hover: viền và icon chuyển `--border-primary` / `--fg-primary`.
 

@@ -54,7 +54,7 @@ column-gap: 16px;  align-items: start;
 | Cột | Nội dung |
 |---|---|
 | 1 | `Checkbox`, nhãn ẩn "Chọn {tên}", căn giữa theo ảnh (`align-self:center`) |
-| 2 | Ô ảnh 96×96, `--bg-image-plate`, bo 8px, padding 8px, ảnh `contain` + `multiply`, `alt=""`; là link tới trang sản phẩm. Không có ảnh → icon `Package` 32px màu `#6B6B78` |
+| 2 | Ô ảnh 96×96, `--bg-image-plate`, bo 8px, padding 8px, ảnh `contain` + `multiply`, `alt=""`; là link tới trang sản phẩm. Không có ảnh → icon `Package` 32px màu `--border-input` |
 | 3 | **Tên**: link 16/24/500 `--fg-default` (hover `--fg-primary`), tối đa 2 dòng. Dưới tên, cách 8px, hàng nhãn (gap 8px, tự xuống dòng): `Badge` lý do không đặt được (BR-07: "Hết hàng" / "Ngừng bán" danger, "Chỉ còn X sản phẩm" warning), `Badge warning` "Giá đã thay đổi" khi `priceChanged`. Món "Chỉ còn X" có thêm nút `secondary sm` "Giảm về X" ngay cạnh nhãn |
 | 4 | Căn phải, xếp dọc gap 8px: **thành tiền** `Price md` (giá × số lượng); khi số lượng > 1 thêm dòng "{giá} / sản phẩm" 12/18 `--fg-subdued`; `QuantityStepper` (1 … min(99, tồn kho)); nút `ghost sm` màu `--fg-subdued` "Xoá" với icon `Trash2` 16px (hover chữ `--fg-danger`) |
 

@@ -8,19 +8,20 @@ Quy ước giao diện chung cho `apps/web`. Mọi giá trị nằm trong [`apps
 
 ## 1. Nguyên tắc
 
-- **Nền tối là mặc định.** Giao diện sáng bật bằng `data-theme="light"` trên `<html>`. Header luôn tối ở cả hai giao diện.
-- **Không ghi cứng mã màu trong component.** Chỉ dùng biến ngữ nghĩa: `--bg-*`, `--fg-*`, `--border-*`. Đổi giao diện sáng hay đổi màu thương hiệu chỉ cần sửa `tokens.css`.
+- **Nền sáng** (bảng màu "Áo choàng phù thủy", đổi ngày 06/10/2026): nền trang `#F7F5FC`, thẻ trắng, chữ `#1E1530`. Không còn giao diện tối.
+- **Header và footer cùng màu tím đậm** `#7E22CE`, chữ trắng. Nút tìm trên header nền tím nhạt `#F3E8FF`.
+- **Không ghi cứng mã màu trong component.** Chỉ dùng biến ngữ nghĩa: `--bg-*`, `--fg-*`, `--border-*`. Đổi màu thương hiệu chỉ cần sửa `tokens.css`. Bảng token đầy đủ ở [design-system.md](design-system.md) §2.
 - **Mỗi màu nhấn có một việc:**
 
   | Màu | Biến | Chỉ dùng cho |
   |---|---|---|
-  | Tím | `--bg-primary`, `--fg-primary` | Hành động: nút chính, link, ô đang chọn |
-  | Cyan | `--fg-accent`, `--bg-accent-tint` | Điểm nhấn nhỏ, trạng thái "Đang giao" |
+  | Tím `#9333EA` (chữ tím `#7E22CE`) | `--bg-primary`, `--fg-primary` | Hành động: nút chính, link, ô đang chọn |
+  | Cyan `#0E7490` | `--fg-accent`, `--bg-accent-tint` | Điểm nhấn nhỏ, trạng thái "Đang giao" |
   | Vàng | `--bg-deal`, `--fg-deal` | Chưa dùng trong MVP (không có giảm giá) |
   | Xanh / đỏ / cam | `--fg-success`, `--fg-danger`, `--fg-warning` | Trạng thái: còn hàng, lỗi, sắp hết |
 
-  Không dùng tím để trang trí, để người dùng luôn biết chỗ nào bấm được.
-- **Ảnh sản phẩm đặt trên ô nền sáng** (`--bg-image-plate`), không đặt thẳng lên nền tối, vì ảnh của hãng thường có nền trắng.
+  Trong vùng nội dung không dùng tím để trang trí, để người dùng luôn biết chỗ nào bấm được (tím đậm của header/footer là màu khung).
+- **Ảnh sản phẩm đặt trên ô nền nhạt** (`--bg-image-plate`, `#F5F3FA`) với `multiply`: ảnh của hãng có nền trắng, đặt thẳng lên thẻ trắng sẽ không thấy mép.
 - **Giá không tô đỏ.** Hiển thị bằng component `Price`: `24.990.000₫` (dấu chấm ngăn nghìn, ₫ sau số).
 
 ## 2. Chữ

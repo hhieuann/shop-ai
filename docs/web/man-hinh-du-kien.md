@@ -273,7 +273,7 @@ Do not introduce: ngăn kéo giỏ hàng, hộp thoại "Đã thêm" kèm sản 
 
 Confidence: HIGH
 
-Reuse: design-system §9.12 (gradient `#1F1F29 → #2A2A36`, 1,6 giây, `aria-hidden`).
+Reuse: design-system §9.12 (gradient `#EFEAFB → #F7F5FC`, 1,6 giây, `aria-hidden`).
 
 Bố cục: mỗi trang vẽ khung chờ đúng kích thước khối thật (đã ghi ở mục Trạng thái của từng spec trang). Lịch sử đơn: 4 dòng cao 72px trong khối danh sách. Chi tiết đơn: 3 khối trái + khối tóm tắt cao 280px.
 
