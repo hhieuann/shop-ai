@@ -1,0 +1,51 @@
+/* Vùng bấm 40×40 bao quanh ô 20×20 */
+.box {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.input:disabled {
+  cursor: not-allowed;
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+  color: transparent;
+  pointer-events: none;
+  transition:
+    background-color var(--dur-fast) ease-out,
+    border-color var(--dur-fast) ease-out;
+}
+.input:hover:not(:disabled) + .mark {
+  border-color: var(--border-primary);
+}
+.input:checked + .mark,
+.input:indeterminate + .mark {
+  background: var(--bg-primary);
+  border-color: var(--bg-primary);
+  color: var(--fg-on-primary);
+}
+.input:focus-visible + .mark {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.input:disabled + .mark {
+  opacity: 0.4;
+}

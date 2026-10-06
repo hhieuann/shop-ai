@@ -1,0 +1,61 @@
+.summary {
+  padding: var(--space-300);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+@media (max-width: 639px) {
+  .summary {
+    padding: var(--space-200);
+  }
+}
+.title {
+  margin-bottom: var(--space-200);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+}
+.rows {
+  display: grid;
+  gap: var(--space-100);
+  margin: 0;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-200);
+}
+.row dt {
+  color: var(--fg-muted);
+}
+.row dd {
+  margin: 0;
+  color: var(--fg-default);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.free {
+  color: var(--fg-success);
+  font-weight: 500;
+}
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-200);
+}
+/* Có dòng tạm tính phía trên thì kẻ một đường ngăn trước dòng tổng */
+.divided {
+  margin-top: var(--space-200);
+  padding-top: var(--space-200);
+  border-top: 1px solid var(--border-divider);
+}
+.totalLabel {
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.actions {
+  display: grid;
+  gap: var(--space-100);
+  margin-top: var(--space-300);
+}
