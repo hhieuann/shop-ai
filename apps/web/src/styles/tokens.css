@@ -59,6 +59,7 @@
   --shadow-xs: 0 2px 3px rgba(30, 21, 48, 0.05);
   --shadow-md: 0 2px 8px rgba(30, 21, 48, 0.1);
   --shadow-lg: 0 4px 24px rgba(30, 21, 48, 0.12);
+  --shadow-up: 0 -2px 8px rgba(30, 21, 48, 0.12);
 }
 
 :root {

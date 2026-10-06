@@ -58,7 +58,7 @@ column-gap: 16px;  align-items: start;
 | 3 | **Tên**: link 16/24/500 `--fg-default` (hover `--fg-primary`), tối đa 2 dòng. Dưới tên, cách 8px, hàng nhãn (gap 8px, tự xuống dòng): `Badge` lý do không đặt được (BR-07: "Hết hàng" / "Ngừng bán" danger, "Chỉ còn X sản phẩm" warning), `Badge warning` "Giá đã thay đổi" khi `priceChanged`. Món "Chỉ còn X" có thêm nút `secondary sm` "Giảm về X" ngay cạnh nhãn |
 | 4 | Căn phải, xếp dọc gap 8px: **thành tiền** `Price md` (giá × số lượng); khi số lượng > 1 thêm dòng "{giá} / sản phẩm" 12/18 `--fg-subdued`; `QuantityStepper` (1 … min(99, tồn kho)); nút `ghost sm` màu `--fg-subdued` "Xoá" với icon `Trash2` 16px (hover chữ `--fg-danger`) |
 
-- Dòng đang tick **không đổi màu nền hay viền**: ô tick đã đủ báo trạng thái, và mặc định mọi món đều được tick nên tô tím cả danh sách là thừa. (Code hiện tô `--bg-primary-tint` → bỏ khi làm lại.)
+- Dòng đang tick **không đổi màu nền hay viền**: ô tick đã đủ báo trạng thái, và mặc định mọi món đều được tick nên tô tím cả danh sách là thừa.
 - Món không đặt được: ô ảnh opacity .6, checkbox vô hiệu. Hết hàng / Ngừng bán: bộ chọn số lượng vô hiệu, chỉ còn "Xoá". Chỉ còn X: bộ chọn vẫn dùng được để giảm.
 - Đang sửa số lượng hoặc đang xoá dòng nào: dòng đó `aria-busy="true"`, opacity .6, các nút của dòng vô hiệu. Xoá không cần hộp thoại xác nhận.
 - Lỗi sửa số lượng (`QUANTITY_LIMIT`, lỗi mạng): `Alert` ngay dưới tiêu đề trang, câu chữ như code ("Không thể tăng thêm: chỉ còn thêm được N sản phẩm.").
@@ -83,7 +83,7 @@ column-gap: 16px;  align-items: start;
 |---|---|
 | Đang tải | khung chờ 3 dòng cao 144px trong khối danh sách + khối tóm tắt cao 280px |
 | Lỗi tải | "Chưa tải được giỏ hàng. Tải lại trang để thử lần nữa." `role="alert"` |
-| Giỏ rỗng | `EmptyState` thay cả lưới (không có khối tóm tắt): icon `ShoppingCart` 48px `--fg-subdued`, "Giỏ hàng của bạn đang trống.", nút `primary md` "Mua sắm ngay" → `/products` |
+| Giỏ rỗng | **Giữ bố cục hai cột** để trang không đổi khung khi giỏ có hàng. Tiêu đề đổi thành "Giỏ hàng của bạn đang trống". Cột trái: `EmptyState` (icon `ShoppingCart` 48px, "Chưa có sản phẩm nào trong giỏ. Xem hàng mới về bên dưới, hoặc xem tất cả sản phẩm." có link `/products`), dưới là `ProductRail` "Hàng mới về" như trang chủ. Cột phải: `OrderSummary` không có dòng tạm tính, Tổng cộng 0₫, nút `primary lg` "Tiếp tục mua sắm" → `/products`. Điện thoại: không có thanh dính đáy, khối tóm tắt nằm dưới |
 | Có món không đặt được | như 3.2; số trong "Chọn tất cả" chỉ đếm món tick được |
 | Mọi món đều không đặt được | nút Đặt hàng vô hiệu, dòng gợi ý "Các sản phẩm trong giỏ hiện chưa đặt được." |
 | Giỏ đủ 50 dòng | không hiện gì ở đây; lỗi `CART_FULL` hiện ở trang chi tiết khi thêm |
@@ -103,5 +103,6 @@ column-gap: 16px;  align-items: start;
 - Tổng tiền nằm trong vùng `aria-live="polite"` để nghe được khi tick/bỏ tick.
 
 ## 7. Việc còn lại
-- Code hiện chỉ có `Checkbox` 18px viết thẳng và nút "✕": thay bằng `Checkbox` (§9.5), `QuantityStepper` (§9.6), `OrderSummary` (§9.15).
-- Thêm token `--shadow-up` (design-system §10) khi làm thanh dính đáy.
+- Widget "Thường mua kèm" (mục 3.4) chờ An làm `GET /api/v1/recs`.
+- Sau khi xoá một dòng, chuyển focus tới dòng kế tiếp (mục 6) chưa làm.
+- Nút trong trang đang là class riêng `primaryButton`; khi có component `Button` (design-system §9.3) thì thay.
