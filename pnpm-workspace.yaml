@@ -9,3 +9,12 @@ allowBuilds:
   esbuild: true
   protobufjs: false
   ssh2: false
+
+# Ép bản vá cho thư viện gián tiếp khi thư viện cha chưa kịp nâng (pnpm audit, 06/10/2026).
+# Bỏ dòng tương ứng khi thư viện cha đã dùng bản vá.
+overrides:
+  # GHSA-p6vx-979v-rg4c, GHSA-jp82-f5mq-hwhp; kéo theo từ @tanstack/react-query-devtools > solid-js
+  seroval: ^1.6.8
+  seroval-plugins: ^1.6.8
+  # GHSA-68fv-2mgg-jv7q; kéo theo từ vite > postcss
+  source-map-js: ^1.2.2
