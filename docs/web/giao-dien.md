@@ -4,6 +4,8 @@ Người viết: Hoàng · Ngày: 04/10/2026
 
 Quy ước giao diện chung cho `apps/web`. Mọi giá trị nằm trong [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu này giải thích **khi nào dùng cái gì**. Ai làm thêm trang hay widget (ví dụ widget gợi ý, trang đăng nhập) đọc mục 1, 2 và 6 là đủ.
 
+Đây là bản tóm tắt. Bản đầy đủ (mọi component, trạng thái, spec từng trang) nằm cùng thư mục: xem [README.md](README.md).
+
 ## 1. Nguyên tắc
 
 - **Nền tối là mặc định.** Giao diện sáng bật bằng `data-theme="light"` trên `<html>`. Header luôn tối ở cả hai giao diện.
@@ -13,8 +15,8 @@ Quy ước giao diện chung cho `apps/web`. Mọi giá trị nằm trong [`apps
   | Màu | Biến | Chỉ dùng cho |
   |---|---|---|
   | Tím | `--bg-primary`, `--fg-primary` | Hành động: nút chính, link, ô đang chọn |
-  | Cyan | `--fg-accent`, `--bg-accent-tint` | Nhãn "Mới", điểm nhấn trang trí nhỏ |
-  | Vàng | `--bg-deal`, `--fg-deal` | Ưu đãi, nổi bật về giá |
+  | Cyan | `--fg-accent`, `--bg-accent-tint` | Điểm nhấn nhỏ, trạng thái "Đang giao" |
+  | Vàng | `--bg-deal`, `--fg-deal` | Chưa dùng trong MVP (không có giảm giá) |
   | Xanh / đỏ / cam | `--fg-success`, `--fg-danger`, `--fg-warning` | Trạng thái: còn hàng, lỗi, sắp hết |
 
   Không dùng tím để trang trí, để người dùng luôn biết chỗ nào bấm được.
@@ -37,7 +39,7 @@ Font **Be Vietnam Pro** (thiết kế cho tiếng Việt), dự phòng Inter, Se
 
 - Khoảng cách theo bậc 4px: `--space-50` (4px), `--space-100` (8px), `--space-200` (16px), `--space-300` (24px), `--space-400` (32px), `--space-600` (48px), `--space-800` (64px).
 - Nội dung rộng tối đa `--content-max` (1920px), căn giữa. Lề hai bên `--gutter`: 16px (điện thoại) → 24px (≥640) → 40px (≥960) → 64px (≥1280).
-- Bo góc: `--radius-md` (4px) cho nút và ô nhập, `--radius-lg` (8px) cho thẻ, `--radius-xl` (16px) cho khối lớn ở trang chủ.
+- Bo góc: `--radius-md` (4px) cho nhãn/badge, `--radius-lg` (8px) cho nút, ô nhập và thẻ, `--radius-xl` (16px) cho khối lớn ở trang chủ.
 - **Kiểm giao diện ở 3 cỡ màn hình:** 1920px, 1366px, 390px (điện thoại).
 
 ## 4. Component dùng chung

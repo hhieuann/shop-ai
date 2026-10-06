@@ -10,6 +10,7 @@
 | [review-2026-09-30.md](review-2026-09-30.md) | Muốn biết vì sao kế hoạch ban đầu đổi; link lab theo vai |
 | [adr/](adr/) | Muốn biết vì sao chọn một công nghệ |
 | [business/](business/) | Viết hoặc đọc nghiệp vụ của một tính năng |
+| [web/](web/README.md) | Làm giao diện: màu, chữ, component, spec từng trang |
 | [runbooks/](runbooks/) | Alarm kêu |
 | [postmortems/](postmortems/) | Sau một sự cố |
 | [workshop/](workshop/) | Viết báo cáo FCAJ |
