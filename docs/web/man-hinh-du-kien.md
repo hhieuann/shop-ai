@@ -221,11 +221,11 @@ Confidence: MEDIUM
 
 Reuse: `EmptyState` (design-system §9.12).
 
-Bố cục và tương tác: như gio-hang.md §4: giữ tiêu đề "Giỏ hàng", thay lưới hai cột bằng `EmptyState` (icon `ShoppingCart` 48px, một câu, nút `primary md` "Mua sắm ngay"). Không hiện khối tóm tắt, không hiện widget "Thường mua kèm" (không có món để dựa vào).
+Đã làm (06/10/2026), spec ở gio-hang.md §4: giữ khung hai cột; cột trái `EmptyState` + dải "Hàng mới về"; cột phải `OrderSummary` Tổng cộng 0₫ và nút "Tiếp tục mua sắm" (bấm được, không phải nút vô hiệu). Không hiện widget "Thường mua kèm" (không có món để dựa vào).
 
-Assumptions: một nút duy nhất dẫn về danh sách sản phẩm.
+Assumptions: giữ khung hai cột để trang không đổi bố cục khi khách thêm món đầu tiên.
 
-Alternatives: giữ khung hai cột với khối tóm tắt ghi 0₫ và nút vô hiệu; không chọn vì hiện một nút không bấm được là thừa.
+Alternatives: `EmptyState` thay cả lưới, không có khối tóm tắt (bản đề xuất trước; đổi theo góp ý của Hoàng).
 
 ## 10. Tìm kiếm không có kết quả
 

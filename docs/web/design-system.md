@@ -140,6 +140,7 @@ Quy tắc lồng: khối 16px chứa phần tử 8px; phần tử 8px chứa nh�
 | `--shadow-xs` | `0 2px 3px rgba(30,21,48,.05)` | Nút nổi nhẹ |
 | `--shadow-md` | `0 2px 8px rgba(30,21,48,.10)` | Nút tròn ‹ › |
 | `--shadow-lg` | `0 4px 24px rgba(30,21,48,.12)` | Menu, hộp thoại |
+| `--shadow-up` | `0 -2px 8px rgba(30,21,48,.12)` | Thanh tổng tiền dính đáy màn hình (giỏ hàng trên điện thoại) |
 
 **Chuyển động:** `--dur-fast` 150ms (màu nền, viền), `--dur-base` 200ms (ô nhập, xoay icon), `--dur-medium` 300ms (hiện/ẩn nút carousel); easing `--ease-standard` `cubic-bezier(0,0,.2,1)` hoặc `ease-out`. `base.css` đã tắt toàn bộ animation khi `prefers-reduced-motion: reduce`. Không có hiệu ứng phóng to hay nhấc thẻ khi hover.
 
@@ -209,13 +210,13 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `CategoryIcon` | `features/catalog/components/CategoryIcon.tsx` | ✅ |
 | `Button` (biến thể, cỡ, đang tải) | nên đặt `shared/components/Button.tsx` | 📝 |
 | `Field` (nhãn + ô nhập/select + lỗi) | `shared/components/Field.tsx` | 📝 |
-| `Checkbox` | `shared/components/Checkbox.tsx` | 📝 |
-| `QuantityStepper` | `shared/components/QuantityStepper.tsx` | 📝 |
+| `Checkbox` | `shared/components/Checkbox.tsx` | ✅ |
+| `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng; trang chi tiết chưa dùng) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx` | 📝 |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | 📝 |
 | `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
-| `OrderSummary` (khối tóm tắt tiền) | `features/orders/components/OrderSummary.tsx` | 📝 (giỏ hàng, đặt hàng) |
+| `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ giỏ hàng; 📝 đặt hàng |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
 
 ### 9.1 Header (`app/Header`)
@@ -278,10 +279,10 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 
 Form cụ thể ở [pages/dat-hang.md](pages/dat-hang.md) và [pages/dang-nhap.md](pages/dang-nhap.md).
 
-### 9.5 Checkbox (`Checkbox`, 📝; dùng ở giỏ hàng để tick món)
+### 9.5 Checkbox (`Checkbox`, ✅; dùng ở giỏ hàng để tick món)
 20×20px, bo 4px, nền `--bg-surface-raised`, viền 1px `--border-input`. Được chọn: nền và viền `--bg-primary`, dấu tick trắng (lucide `Check` 14px). Hover: viền `--border-primary`. Focus: viền focus. Không chọn được (món hết hàng, ngừng bán, vượt tồn kho): opacity .4, `not-allowed`, kèm lý do bằng `StockBadge` cạnh tên món. Nhãn cách 8px; vùng bấm tối thiểu 40×40. Chọn một phần (`indeterminate`, ô "Chọn tất cả" ở giỏ): nền và viền `--bg-primary`, gạch ngang trắng (lucide `Minus` 14px).
 
-### 9.6 Bộ chọn số lượng (`QuantityStepper`, 📝; trang chi tiết và giỏ hàng)
+### 9.6 Bộ chọn số lượng (`QuantityStepper`, ✅; trang chi tiết và giỏ hàng)
 `[−] [số] [+]` liền nhau, cao 40px: hai nút vuông 40×40 kiểu nút phụ (bo `8px 0 0 8px` và `0 8px 8px 0`), ô giữa rộng 48px, chữ 14/20/600 `tabular-nums`, căn giữa, viền trên và dưới `--border-default`. Giới hạn **1 … min(99, tồn kho)** (cart BR-03): tới biên thì nút tương ứng vô hiệu. Nhãn nút: "Giảm số lượng {tên}", "Tăng số lượng {tên}". Server trả `QUANTITY_LIMIT` → dòng `Alert` cảnh báo "Chỉ thêm được tối đa {maxAddable} sản phẩm nữa".
 
 ### 9.7 Nhãn (`Badge` 📝 / `StockBadge` ✅)
@@ -376,13 +377,14 @@ Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, n�
 ### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, 📝; ví dụ "Huỷ đơn")
 Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger).
 
-### 9.15 Tóm tắt đơn (`OrderSummary`, 📝; giỏ hàng, đặt hàng)
+### 9.15 Tóm tắt đơn (`OrderSummary`, ✅; giỏ hàng, đặt hàng)
 Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, bo 16px, padding 24px (<640: 16px).
 - Tiêu đề `<h2>` 20/28/600, cách nội dung 16px. Nội dung riêng của trang (danh sách món ở trang đặt hàng) nằm ngay dưới tiêu đề.
 - Các dòng tiền: `<dl>`, mỗi dòng `display:flex; justify-content:space-between; gap:16px`, 14/20, cách nhau 8px; nhãn `--fg-muted`, số `--fg-default` `tabular-nums`. "Phí vận chuyển" luôn là chữ "Miễn phí" màu `--fg-success`.
 - Đường kẻ 1px `--border-divider` cách 16px trên dưới, rồi dòng **Tổng cộng**: nhãn 16/24/600, số là `Price md`.
 - Dưới tổng, cách 24px: (tuỳ trang) `Alert`, rồi một `Button primary lg` rộng 100%, rồi chú thích 12/18 `--fg-subdued` (gap 8px).
-- Không có dòng giảm giá, thuế, mã khuyến mãi, điểm thưởng, nút PayPal.
+- Không có dòng tạm tính (giỏ rỗng) thì bỏ luôn đường kẻ, dòng Tổng cộng nằm ngay dưới tiêu đề.
+- Không có dòng giảm giá, thuế, mã khuyến mãi, điểm thưởng, thanh toán trực tuyến.
 
 ### 9.16 Bố cục tập trung (`FocusLayout` + `MiniHeader`, 📝; đặt hàng, đăng nhập, tạo tài khoản)
 Thay `RootLayout` ở những trang khách cần tập trung hoàn tất một việc: bỏ ô tìm kiếm, hàng chip và các link điều hướng.
@@ -392,8 +394,4 @@ Thay `RootLayout` ở những trang khách cần tập trung hoàn tất một v
 
 ## 10. Token sẽ thêm khi cần
 
-Chưa có trong `tokens.css` vì chưa có chỗ dùng. Thêm đúng giá trị này khi cần:
-
-| Token | Giá trị | Khi nào |
-|---|---|---|
-| `--shadow-up` | `0 -2px 8px rgba(30,21,48,.12)` | Thanh tổng tiền dính đáy màn hình (giỏ hàng trên điện thoại) |
+Hiện chưa có token nào chờ thêm. Cần token mới thì ghi vào đây (tên, giá trị, khi nào dùng) trước, rồi thêm vào `tokens.css` trong cùng PR với chỗ dùng đầu tiên.
