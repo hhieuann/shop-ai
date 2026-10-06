@@ -209,14 +209,14 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `StockBadge` | `features/catalog/components/StockBadge.tsx` | ✅ |
 | `CategoryIcon` | `features/catalog/components/CategoryIcon.tsx` | ✅ |
 | `Button` (biến thể, cỡ, đang tải) | nên đặt `shared/components/Button.tsx` | 📝 |
-| `Field` (nhãn + ô nhập/select + lỗi) | `shared/components/Field.tsx` | 📝 |
+| `Field` (nhãn + ô nhập + lỗi/gợi ý) | `shared/components/Field.tsx` | ✅ (ô nhập; select chưa có) |
 | `Checkbox` | `shared/components/Checkbox.tsx` | ✅ |
 | `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng; trang chi tiết chưa dùng) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx` | 📝 |
-| `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | 📝 |
+| `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
 | `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
-| `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ giỏ hàng; 📝 đặt hàng |
+| `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
 
 ### 9.1 Header (`app/Header`)
@@ -228,7 +228,9 @@ Dính đầu trang (`position: sticky; top: 0; z-index: 210`), nền `--bg-chrom
 | Lề ngang | 24px → 32px (≥1200) → 48px (≥1600), trong khung `--content-max` | 16px |
 | Logo | ô 48px nền `--gradient-logo` bo 8px + chữ "Black Magic" 28/36/700 trắng, `letter-spacing: -0.01em`; cả cụm là link về trang chủ | chữ 20/28 |
 | Ô tìm kiếm | `role="search"`; ô nhập **nền trắng**, không viền, chữ `--fg-default`, placeholder `--fg-placeholder`, bo `8px 0 0 8px`, chữ 16px, `maxLength=30`, placeholder "Tìm laptop, card đồ hoạ, RAM…"; **nút tìm nền `--bg-primary-tint`** (`#F3E8FF`), icon `--fg-primary-hover` (`#6B21A8`, 7,39), rộng 56px, bo `0 8px 8px 0`, icon 28, hover nền `--bg-primary-tint-hover` (`#E9D5FF`). Nút tím rực đặt trên header tím sẽ chìm, nên nút tìm dùng nền nhạt. Focus: viền trắng. Từ 960px nằm cùng hàng với logo (co giãn chiếm chỗ trống), dưới 960px xuống hàng riêng | nút 48px, icon 24 |
-| Đơn hàng, Tài khoản, Giỏ hàng | `NavLink` cao 48px, padding `0 8px`, bo 8px, icon 28 + nhãn (nhãn hiện từ 960px), đậm 500; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn | chỉ icon 24 |
+| Đơn hàng, Tài khoản | `NavLink` cao 48px, padding `0 8px`, bo 8px, icon 28 + nhãn (nhãn hiện từ 960px), đậm 500; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn | chỉ icon 24 |
+| Vạch ngăn | sau Tài khoản: vạch dọc 1px × 32px `--border-on-chrome`, cách hai bên 8px | cao 24px, cách 4px |
+| Giỏ hàng | **chỉ icon** `ShoppingCart` **32px**, không nhãn (`aria-label="Giỏ hàng"`), ô vuông 48×48; hover nền `--bg-chrome-hover`; trang hiện tại có vạch trắng 2px dưới icon | icon 28 |
 | Đường kẻ | 1px `--border-on-chrome-subtle` dưới hàng trên, chạy hết chiều ngang | như máy tính |
 | Hàng chip loại hàng | 13 chip (`CATEGORIES`), link tới `/products?category=…`; chip cao **44px**, padding `0 20px`, bo tròn, nền trong suốt, viền `--border-on-chrome`, chữ và icon trắng, icon 20 + chữ 16/20/600, cách nhau 8px; hàng nằm trên cùng nền tím, padding 16px dọc. Hover nền `--bg-chrome-hover`. **Loại đang xem** (`aria-current="page"`): nền trắng, chữ và icon `--fg-primary-hover`, viền 2px trắng, padding 19px. Đủ chỗ thì căn giữa; thiếu chỗ thì cuộn ngang, có mép mờ 48px (màu `--bg-chrome`) và nút tròn 40px ‹ › (ẩn trên màn cảm ứng) | chip 36px, hàng padding 12px |
 
@@ -259,7 +261,7 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 - **Đang xử lý** (`aria-busy="true"`): giữ nguyên bề rộng, đổi chữ thành "Đang …" (ví dụ "Đang huỷ…", "Đang tải…"), chặn bấm lại.
 - Mỗi màn hình chỉ một nút `primary`.
 
-### 9.4 Ô nhập và select (`Field`, 📝)
+### 9.4 Ô nhập và select (`Field`, ✅)
 | Thuộc tính | Giá trị |
 |---|---|
 | Chiều cao | 40px (mặc định), 48px (form đặt hàng) |
@@ -366,7 +368,7 @@ Thẻ **không có** nút "Thêm vào giỏ", nút lưu, ô so sánh, sao đánh
 | Lỗi tải | dòng chữ `--fg-subdued` "Chưa tải được … Tải lại trang để thử lần nữa.", `role="alert"` |
 | Lỗi nghiệp vụ (`Alert`) | xem 9.13 |
 
-### 9.13 Thông báo (`Alert`, 📝)
+### 9.13 Thông báo (`Alert`, ✅)
 Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, nền `*-tint` tương ứng, chữ 14/20 `--fg-default`, icon lucide 20px màu trạng thái bên trái (`CircleCheck`, `TriangleAlert`, `CircleX`).
 | Loại | Ví dụ trong nghiệp vụ | Vai trò ARIA |
 |---|---|---|

@@ -2,7 +2,7 @@
 
 Code: `features/orders/pages/CheckoutPage.tsx`, `features/orders/lib/checkoutStorage.ts`. Nghiệp vụ: `docs/business/ordering.md` (BR-01 … BR-09). Đọc kèm [design-system.md](../design-system.md).
 
-Bố cục: header thu gọn (chỉ logo và "Quay lại giỏ"), các khối có số thứ tự bên trái, khối tóm tắt bên phải. Black Magic chỉ có **một bước điền** (địa chỉ) và một cách thanh toán cố định (COD), nên trang ngắn hơn nhiều.
+Bố cục: các khối có số thứ tự bên trái, khối tóm tắt bên phải. Black Magic chỉ có **một bước điền** (địa chỉ) và một cách thanh toán cố định (COD), nên trang ngắn hơn nhiều.
 
 ## 1. Đường dẫn và dữ liệu
 
@@ -14,7 +14,7 @@ Bố cục: header thu gọn (chỉ logo và "Quay lại giỏ"), các khối c�
 
 ## 2. Bố cục
 
-Trang dùng `FocusLayout` (design-system §9.16): header thu gọn, không có ô tìm kiếm và hàng chip, để khách tập trung đặt hàng. Link bên phải header: "Quay lại giỏ hàng" (icon `ArrowLeft`) → `/cart`.
+Hiện trang dùng header đầy đủ như các trang khác. Link "Quay lại giỏ hàng" (icon `ArrowLeft` 16px, chữ 14/20/500 `--fg-primary`) nằm trên tiêu đề, cách 12px. Dự kiến chuyển sang `FocusLayout` (design-system §9.16: header thu gọn, không có ô tìm kiếm và hàng chip) ở mục 8.
 
 ```
 H1 Đặt hàng                                         
@@ -34,19 +34,18 @@ H1 Đặt hàng
 
 | Phần | Giá trị |
 |---|---|
-| Khung | rộng tối đa **1280px**, căn giữa, lề `--gutter`; cách header 24px |
-| Tiêu đề | `<h1>` 24/32/600 "Đặt hàng", cách nội dung 16px |
+| Khung | rộng tối đa **1280px**, căn giữa, lề `--gutter`; cách hàng chip của header 32px (16px của `<main>` + 16px của trang) |
+| Tiêu đề | `<h1>` 24/32/600 "Đặt hàng", cách nội dung 24px |
 | Lưới (≥960) | `grid-template-columns: minmax(0,1fr) 360px; gap:24px; align-items:start` (design-system §5) |
 | Cột trái | các khối bước xếp dọc, cách nhau 16px |
-| Cột phải | `OrderSummary`, `position: sticky; top: 24px` (header thu gọn không dính nên dính được) |
+| Cột phải | `OrderSummary`, `position: sticky; top: 24px` |
 
 ## 3. Các khối
 
 ### 3.1 Khối bước (`CheckoutStep`, riêng trang này)
 `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, bo 16px, padding 24px (<640: 16px).
 - Đầu khối: số thứ tự trong vòng tròn 28px (nền `--bg-surface-raised`, viền `--border-default`, chữ 14/20/600, `aria-hidden`) + `<h2>` 20/28/600, gap 12px; cách nội dung 20px.
-- Từ 1280px: đầu khối thành cột trái rộng 200px, nội dung bên phải (`grid-template-columns: 200px minmax(0,1fr); gap:24px`).
-- Nội dung form rộng tối đa 640px.
+- Đầu khối luôn nằm trên nội dung; nội dung chiếm hết bề ngang khối (bản trước đặt đầu khối thành cột 200px từ 1280px, bỏ vì tiêu đề bị xuống dòng và form chừa trống bên phải).
 
 ### 3.2 ① Thông tin giao hàng
 `<form id="checkout-form" noValidate>`, các ô là `Field` cỡ **48px** (design-system §9.4):
@@ -91,8 +90,7 @@ Sau khi `Alert` xuất hiện, chuyển focus tới nó (`tabIndex={-1}`).
 
 | Màn | Khác biệt |
 |---|---|
-| ≥1280 | Khối bước có cột tiêu đề 200px bên trái |
-| 960–1279 | Hai cột; tiêu đề khối bước nằm trên nội dung |
+| ≥960 | Hai cột như mục 2 |
 | <960 | Một cột theo thứ tự: ① Giao hàng → ② Thanh toán → Đơn hàng (không dính) với nút xác nhận ở cuối. Ô nhập chữ 16px |
 
 ## 6. Trợ năng
@@ -106,5 +104,4 @@ Sau khi `Alert` xuất hiện, chuyển focus tới nó (`tabIndex={-1}`).
 
 ## 8. Việc còn lại
 - Tỉnh / Thành phố đang là ô chữ tự do. Đổi thành select cần danh sách tỉnh thành chuẩn (sau sáp nhập 2025) và sửa OpenAPI; chưa có trong nghiệp vụ, giữ ô chữ.
-- Tách `Field`, `Alert`, `OrderSummary`; bỏ style viết thẳng trong `CheckoutPage.tsx`.
-- Thêm `FocusLayout` vào router cho `/checkout`.
+- Thêm `FocusLayout` vào router cho `/checkout` (header thu gọn).
