@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:unit": "vitest run src",
     "test:int": "vitest run test/integration",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:products": "tsx scripts/seed-products.ts"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^2.35.0",
@@ -22,6 +23,7 @@
     "@types/node": "^24.19.0",
     "@vitest/coverage-v8": "^5.0.0",
     "testcontainers": "^12.2.0",
+    "tsx": "^4.23.14",
     "typescript": "~6.0.3",
     "vitest": "^5.0.0"
   }

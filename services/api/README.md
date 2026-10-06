@@ -56,3 +56,21 @@ Module mẫu để làm theo: `catalog` với `GET /api/v1/products/{productId}`
 aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx4070-active.json
 aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> --item file://services/api/seed/catalog/rtx3060-inactive.json
 ```
+
+### Nạp cả bộ sản phẩm demo (104 sản phẩm)
+
+`seed/catalog/products.json` có 104 sản phẩm, 13 loại × 8, có hàng hết, hàng sắp hết và 2 sản phẩm ngừng bán. Tên và hãng là sản phẩm có trên thị trường; giá và tồn kho là số tham khảo làm tròn, không phải giá thật. Không có ảnh để tránh dùng ảnh có bản quyền.
+
+```bash
+# Chỉ kiểm file, không ghi gì
+pnpm --filter api seed:products --dry-run
+
+# Ghi vào bảng (sau khi aws login và deploy sandbox)
+pnpm --filter api seed:products --table <ProductsTableName>
+```
+
+- Script kiểm toàn bộ file trước khi ghi: sai một sản phẩm (thiếu trường, loại lạ, `productId` trùng hoặc không phải ULID, trường gõ sai tên) thì báo đúng vị trí và không ghi gì.
+- Tự thêm `categoryStatus`, ghi theo lô 25 (giới hạn `BatchWriteItem`), tự thử lại phần DynamoDB chưa xử lý.
+- Chạy lại nhiều lần không nhân đôi: ghi đè theo `productId`.
+- Từ chối bảng prod (tên có đoạn `prd` hoặc `prod`, vd. `shop-prd-…`).
+- Sửa `products.json` xong thì chạy `pnpm --filter api test:unit`: có test kiểm file vẫn hợp lệ và đủ 13 loại.
