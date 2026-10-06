@@ -34,7 +34,7 @@ H1 Giỏ hàng  (3 sản phẩm)
 | Phần | Giá trị |
 |---|---|
 | Khung | rộng tối đa **1280px**, căn giữa trong lề `--gutter` (giỏ hàng không cần trải rộng 1920) |
-| Tiêu đề | `<h1>` 24/32/600 "Giỏ hàng" + số dòng "(3 sản phẩm)" 14/20 `--fg-subdued` cùng hàng, cách 8px; cách nội dung 16px |
+| Tiêu đề | `<h1>` 24/32/600 "Giỏ hàng" + số dòng "(3 sản phẩm)" 14/20 `--fg-subdued` cùng hàng, cách 8px; cách hàng chip của header **32px** (16px của `<main>` + 16px của trang), cách nội dung 16px |
 | Lưới (≥960) | `grid-template-columns: minmax(0,1fr) 360px; gap:24px; align-items:start` (bố cục 2 cột, design-system §5) |
 | Danh sách | một khối: `--bg-surface`, viền `--border-divider`, bo 16px, `overflow:hidden`; các dòng cách nhau bằng viền trên 1px `--border-divider` |
 | Tóm tắt | `OrderSummary` (design-system §9.15) |

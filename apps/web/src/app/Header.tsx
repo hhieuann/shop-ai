@@ -68,9 +68,10 @@ export function Header() {
               <User size={28} aria-hidden="true" />
               <span className={styles.actionLabel}>Tài khoản</span>
             </NavLink>
-            <NavLink to="/cart" className={styles.action}>
-              <ShoppingCart size={28} aria-hidden="true" />
-              <span className={styles.actionLabel}>Giỏ hàng</span>
+            {/* Giỏ hàng chỉ có icon (lớn hơn các mục khác), ngăn với Tài khoản bằng một vạch dọc */}
+            <span className={styles.divider} aria-hidden="true" />
+            <NavLink to="/cart" className={`${styles.action} ${styles.cart}`} aria-label="Giỏ hàng">
+              <ShoppingCart size={32} aria-hidden="true" />
             </NavLink>
           </nav>
         </div>
