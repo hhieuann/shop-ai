@@ -165,6 +165,34 @@
 .actionLabel {
   display: none;
 }
+/* Vạch dọc 1px ngăn Tài khoản với Giỏ hàng */
+.divider {
+  width: 1px;
+  height: 32px;
+  margin: 0 var(--space-100);
+  background: var(--border-on-chrome);
+}
+/* Giỏ hàng: chỉ icon 32px, ô vuông bằng chiều cao header; trang hiện tại có vạch trắng dưới icon */
+.cart {
+  position: relative;
+  justify-content: center;
+  width: var(--header-control);
+  padding: 0;
+}
+/*
+ * Phần giỏ của icon lucide nằm lệch phải (tay cầm ở bên trái), nên vạch dời phải 2px
+ * để thẳng giữa phần giỏ và hai bánh xe thay vì giữa ô 48px.
+ */
+.cart[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 6px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--fg-on-chrome);
+}
 
 /* Hàng chip loại hàng: cuộn ngang, chip đang chọn nền trắng viền 2px (bù padding để không nhảy) */
 .categories {
@@ -312,5 +340,13 @@
   }
   .searchButton {
     width: 48px;
+  }
+  .cart svg {
+    width: 28px;
+    height: 28px;
+  }
+  .divider {
+    height: 24px;
+    margin: 0 var(--space-50);
   }
 }

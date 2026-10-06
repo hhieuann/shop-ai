@@ -2,6 +2,8 @@
 .page {
   max-width: 1280px;
   margin: 0 auto;
+  /* <main> đã có 16px; thêm 16px để tiêu đề cách hàng chip của header 32px */
+  padding-top: var(--space-200);
 }
 .heading {
   display: flex;
