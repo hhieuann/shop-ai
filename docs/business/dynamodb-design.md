@@ -90,6 +90,14 @@ updatedAt  String   (ISO 8601 UTC)
 >
 > Giới hạn 50 dòng (cart.md BR-02): mỗi dòng khoảng 100 byte, 50 dòng khoảng 5 KB, còn rất xa giới hạn 400 KB của một item DynamoDB.
 
+### Gộp giỏ khách khi đăng nhập (cart.md BR-10)
+
+Giỏ của khách vãng lai **không lưu trong bảng này** mà nằm trên trình duyệt; bảng `carts` vẫn chỉ có giỏ của người đã đăng nhập (khoá `userId`). `POST /api/v1/cart/merge` đọc giỏ tài khoản, cộng dồn các món của giỏ khách theo luật BR-03, BR-04, rồi ghi lại cả item bằng **ghi có điều kiện** trên `updatedAt` (hai lần gộp chạy song song thì một lần phải đọc lại và làm lại).
+
+Chống gộp hai lần bằng Powertools Idempotency, khoá `userId#idempotencyKey`, TTL 24 giờ, giống `POST /orders`. Theo luật mỗi module một bảng (ADR-0009), module `cart` có bảng idempotency **riêng** (`cart-idempotency`), không dùng chung bảng của `ordering`.
+
+> ⚠️ **Cần An chốt:** thêm bảng `cart-idempotency` trong CDK, hay cho hai module dùng chung một bảng idempotency với tiền tố khoá (`cart#…`, `order#…`)?
+
 ---
 
 ## Bảng `orders` (module ordering)

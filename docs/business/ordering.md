@@ -2,7 +2,7 @@
 
 - Module: ordering
 - Vai trò: khách hàng đã đăng nhập; admin (huỷ đơn, chuyển trạng thái giao hàng)
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng)
 
 ## Luồng đặt hàng (checkout flow)
 
@@ -18,6 +18,16 @@
                                                         → POST /api/v1/orders ◀── đây mới tạo đơn
 ```
 
+Khách vãng lai (chưa đăng nhập) vẫn thêm giỏ và tick chọn được (cart.md BR-01). Khi bấm "Đặt hàng":
+
+```
+[Giỏ khách]  Bấm "Đặt hàng"  →  [Đăng nhập / Tạo tài khoản]  →  Gộp giỏ             →  [Trang checkout]
+ (trình duyệt)                    thành công                     POST /cart/merge         các món đã tick
+                                                                 (cart.md BR-10)
+                                                                 có thay đổi số lượng →  [Trang giỏ] xem lại
+                                                                 (cart.md BR-11)
+```
+
 > **Bấm "Đặt hàng"** trên trang giỏ chỉ chuyển sang trang checkout, chưa tạo đơn.
 > Đơn chỉ được tạo khi bấm **"Xác nhận đặt hàng"** sau khi điền đầy đủ thông tin.
 
@@ -29,7 +39,7 @@ Là khách hàng, tôi muốn tick chọn các sản phẩm trong giỏ mà tôi
 
 ### Tạo đơn
 
-- BR-01: Bắt buộc đăng nhập để đặt hàng.
+- BR-01: Bắt buộc đăng nhập để đặt hàng. Khách vãng lai bấm "Đặt hàng" thì phải đăng nhập hoặc tạo tài khoản trước; xong thì gộp giỏ và đi tiếp theo cart.md BR-10, BR-11. Trang checkout mở khi chưa đăng nhập → chuyển sang trang đăng nhập.
 - BR-02: Phải tick chọn ít nhất 1 sản phẩm trước khi bấm "Đặt hàng". Một đơn có tối đa 50 dòng sản phẩm.
 - BR-03: Khi bấm "Xác nhận đặt hàng", server kiểm lại từng món, không tin dữ liệu từ client:
   - `status = ACTIVE`
