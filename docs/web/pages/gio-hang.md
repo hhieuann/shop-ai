@@ -6,12 +6,15 @@ Bố cục: danh sách món bên trái, khối tóm tắt đơn bên phải, m�
 
 ## 1. Đường dẫn và dữ liệu
 
-- Phải đăng nhập (cart BR-01). Chưa đăng nhập vào `/cart` → sang `/login` với `from: '/cart'`.
+- **Không bắt đăng nhập** (cart BR-01). Code chỉ dùng hook `features/cart/hooks/useCart.ts`, hook tự chọn nguồn giỏ:
+  - Khách vãng lai: giỏ khách trong `localStorage` (`features/cart/lib/guestCart.ts`, khoá `shop-ai:guest-cart`); tên, ảnh, giá, tồn kho lấy từ `GET /api/v1/products/{id}` cho từng dòng. Sản phẩm 404 → hiện "Sản phẩm không còn bán", nhãn Ngừng bán, để khách tự xoá. Giới hạn 99 / tồn kho / 50 dòng kiểm ngay trên trình duyệt, lỗi mang cùng mã với API.
+  - Đã đăng nhập: giỏ tài khoản qua API như dưới đây.
 - `GET /api/v1/cart` trả `{ items, totalAmount }`. Mỗi `CartItem`: `productId`, `name`, `imageUrl?`, `price` (giá **hiện tại**), `quantity`, `stock`, `status`, `priceChanged?`. Không có hãng hay loại hàng.
 - Sửa số lượng `PUT /cart/items/{id}`, xoá `DELETE /cart/items/{id}`; xong thì tải lại giỏ.
 - **Tick chọn** chỉ nằm ở trình duyệt (`selection.ts`): mặc định chọn mọi món đặt được; món không đặt được (Hết hàng, Ngừng bán, Chỉ còn X < số trong giỏ) không tick được.
 - Tổng trên trang = tổng các món **đang tick** (BR-09), tính ở web; không dùng `totalAmount` để hiển thị.
-- "Đặt hàng" → `/checkout` mang theo các món đã tick.
+- "Đặt hàng" → `/checkout` mang theo các món đã tick. **Khách vãng lai**: lưu các món đã tick (`saveCheckoutIntent`), sang `/login` với `{ from: '/checkout', reason: 'checkout' }`; đăng nhập xong gộp giỏ và đi tiếp theo cart BR-11 (`features/cart/lib/afterSignIn.ts`). Dưới nút có dòng 12/18 `--fg-subdued`: "Bạn sẽ đăng nhập hoặc tạo tài khoản ở bước tiếp theo. Các món đã chọn được giữ nguyên."
+- **Sau khi gộp** (đến từ `/login`) mà có thay đổi: chỉ đưa về trang giỏ, **không** hiện thông báo riêng (số lượng, nhãn "Chỉ còn X", "Giá đã thay đổi" trên từng dòng đã đủ). Gộp lỗi (mạng, server) → vẫn về trang giỏ. Đã đăng nhập mà trình duyệt còn giỏ khách → `Alert warning` **trong cột trái** (rộng bằng danh sách món, không lấn sang khối tóm tắt), nằm trên danh sách (hoặc trên ô giỏ rỗng): "Còn N sản phẩm bạn chọn lúc chưa đăng nhập chưa được thêm vào giỏ." + nút `secondary sm` "Gộp vào giỏ" (thử lại cùng `Idempotency-Key` nên không cộng dồn hai lần). Máy tính: icon, chữ, nút cùng hàng, nút sát mép phải khung. Điện thoại (<640): nút xuống dòng dưới chữ, thẳng lề trái với chữ. Bấm mà vẫn lỗi → khung đổi sang `danger` "Vẫn chưa gộp được. Kiểm tra kết nối rồi thử lại."
 - Widget "Thường mua kèm" dưới giỏ (ADR-0016, An làm): `GET /api/v1/recs`, đã lọc hàng hết và hàng đã có trong giỏ.
 
 ## 2. Bố cục

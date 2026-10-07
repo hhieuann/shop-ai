@@ -36,7 +36,7 @@ Là khách hàng, kể cả khi chưa đăng nhập, tôi muốn thêm sản ph�
   - Gộp thành công → web xoá giỏ khách. Gộp thất bại → giữ giỏ khách, lần đăng nhập sau gộp lại.
 - BR-11: **Sau khi gộp, đi tiếp tới đâu** (khi khách đăng nhập từ nút "Đặt hàng"):
   - Các món khách đã tick được gộp **đúng số lượng** khách đã chọn (giỏ tài khoản chưa có món đó, không món nào bị chặn hay bỏ qua) → sang thẳng trang checkout với các món đó.
-  - Ngược lại (món đã tick trùng với món trong giỏ tài khoản nên số lượng đổi, hoặc có món bị chặn, bỏ qua) → về trang giỏ hàng với thông báo liệt kê thay đổi, để khách xem lại rồi bấm "Đặt hàng" lần nữa. Không đưa khách vào checkout với số lượng khác cái họ vừa chọn.
+  - Ngược lại (món đã tick trùng với món trong giỏ tài khoản nên số lượng đổi, hoặc có món bị chặn, bỏ qua) → về trang giỏ hàng (không hiện thông báo riêng; số lượng và nhãn trên từng dòng đã cho thấy thay đổi), để khách xem lại rồi bấm "Đặt hàng" lần nữa. Không đưa khách vào checkout với số lượng khác cái họ vừa chọn.
   - Khách đăng nhập theo cách khác (bấm "Tài khoản" trên header) → vẫn gộp giỏ, rồi ở lại trang đang xem.
 
 ## Trường hợp đặc biệt
@@ -60,7 +60,7 @@ Là khách hàng, kể cả khi chưa đăng nhập, tôi muốn thêm sản ph�
 - Given khách vãng lai có món A trong giỏ, When tải lại trang hoặc đóng mở trình duyệt, Then giỏ vẫn còn món A.
 - Given khách vãng lai tick món A, B, When bấm "Đặt hàng", Then chuyển sang trang đăng nhập; When đăng nhập thành công và giỏ tài khoản chưa có A, B, Then sang trang checkout với đúng A, B và số lượng đã chọn.
 - Given khách vãng lai, When bấm "Đặt hàng" rồi chọn tạo tài khoản và hoàn tất, Then cũng gộp giỏ và sang trang checkout như trên.
-- Given giỏ tài khoản có A `quantity: 2`, giỏ khách có A `quantity: 3`, tồn kho A là 10, When gộp, Then giỏ tài khoản có A `quantity: 5` và khách được đưa về trang giỏ với thông báo A đã cộng dồn.
+- Given giỏ tài khoản có A `quantity: 2`, giỏ khách có A `quantity: 3`, tồn kho A là 10, When gộp, Then giỏ tài khoản có A `quantity: 5` và khách được đưa về trang giỏ (không sang thẳng checkout).
 - Given giỏ tài khoản có A `quantity: 8`, giỏ khách có A `quantity: 5`, tồn kho A là 10, When gộp, Then A `quantity: 10` và danh sách điều chỉnh báo A bị chặn ở 10.
 - Given giỏ khách có món đã ngừng bán, When gộp, Then món đó bị bỏ qua và có trong danh sách điều chỉnh.
 - Given gộp giỏ thành công với Idempotency-Key K, When gọi lại với cùng K, Then giỏ không cộng dồn thêm lần nữa.
