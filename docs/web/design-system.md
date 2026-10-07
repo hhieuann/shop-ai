@@ -218,6 +218,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
+| `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
 
 ### 9.1 Header (`app/Header`)
 Dính đầu trang (`position: sticky; top: 0; z-index: 210`), nền `--bg-chrome` (tím đậm `#7E22CE`), chữ và icon `--fg-on-chrome` (trắng). Kích thước không đổi so với bản trước.
@@ -228,8 +229,9 @@ Dính đầu trang (`position: sticky; top: 0; z-index: 210`), nền `--bg-chrom
 | Lề ngang | 24px → 32px (≥1200) → 48px (≥1600), trong khung `--content-max` | 16px |
 | Logo | ô 48px nền `--gradient-logo` bo 8px + chữ "Black Magic" 28/36/700 trắng, `letter-spacing: -0.01em`; cả cụm là link về trang chủ | chữ 20/28 |
 | Ô tìm kiếm | `role="search"`; ô nhập **nền trắng**, không viền, chữ `--fg-default`, placeholder `--fg-placeholder`, bo `8px 0 0 8px`, chữ 16px, `maxLength=30`, placeholder "Tìm laptop, card đồ hoạ, RAM…"; **nút tìm nền `--bg-primary-tint`** (`#F3E8FF`), icon `--fg-primary-hover` (`#6B21A8`, 7,39), rộng 56px, bo `0 8px 8px 0`, icon 28, hover nền `--bg-primary-tint-hover` (`#E9D5FF`). Nút tím rực đặt trên header tím sẽ chìm, nên nút tìm dùng nền nhạt. Focus: viền trắng. Từ 960px nằm cùng hàng với logo (co giãn chiếm chỗ trống), dưới 960px xuống hàng riêng | nút 48px, icon 24 |
-| Đơn hàng, Tài khoản | `NavLink` cao 48px, padding `0 8px`, bo 8px, icon 28 + nhãn (nhãn hiện từ 960px), đậm 500; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn | chỉ icon 24 |
-| Vạch ngăn | sau Tài khoản: vạch dọc 1px × 32px `--border-on-chrome`, cách hai bên 8px | cao 24px, cách 4px |
+| Đơn hàng | `NavLink` cao 48px, padding `0 8px`, bo 8px, icon 28 + nhãn (nhãn hiện từ 960px), đậm 500; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn | chỉ icon 24 |
+| Tài khoản | **nút** "Đăng nhập" hoặc username, mở menu tài khoản (§9.17); không còn là link tới `/login` | chỉ icon 24 |
+| Vạch ngăn | sau nút tài khoản: vạch dọc 1px × 32px `--border-on-chrome`, cách hai bên 8px | cao 24px, cách 4px |
 | Giỏ hàng | **chỉ icon** `ShoppingCart` **32px**, không nhãn (`aria-label="Giỏ hàng"`), ô vuông 48×48; hover nền `--bg-chrome-hover`; trang hiện tại có vạch trắng 2px dưới icon | icon 28 |
 | Đường kẻ | 1px `--border-on-chrome-subtle` dưới hàng trên, chạy hết chiều ngang | như máy tính |
 | Hàng chip loại hàng | 13 chip (`CATEGORIES`), link tới `/products?category=…`; chip cao **44px**, padding `0 20px`, bo tròn, nền trong suốt, viền `--border-on-chrome`, chữ và icon trắng, icon 20 + chữ 16/20/600, cách nhau 8px; hàng nằm trên cùng nền tím, padding 16px dọc. Hover nền `--bg-chrome-hover`. **Loại đang xem** (`aria-current="page"`): nền trắng, chữ và icon `--fg-primary-hover`, viền 2px trắng, padding 19px. Đủ chỗ thì căn giữa; thiếu chỗ thì cuộn ngang, có mép mờ 48px (màu `--bg-chrome`) và nút tròn 40px ‹ › (ẩn trên màn cảm ứng) | chip 36px, hàng padding 12px |
@@ -390,9 +392,54 @@ Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, b
 
 ### 9.16 Bố cục tập trung (`FocusLayout` + `MiniHeader`, 📝; đặt hàng, đăng nhập, tạo tài khoản)
 Thay `RootLayout` ở những trang khách cần tập trung hoàn tất một việc: bỏ ô tìm kiếm, hàng chip và các link điều hướng.
-- `MiniHeader`: nền `--bg-chrome`, **không dính**, cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (ô 40px + chữ "Black Magic" 20/28/700; <640 chỉ ô logo), là link về `/`; phải là **một** link 14/20/500 `--fg-on-chrome` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `--bg-chrome-hover`. Không có đường kẻ ở đáy.
+- `MiniHeader`: nền `--bg-chrome`, **không dính**, **không có nút tài khoản** (§9.17), cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (ô 40px + chữ "Black Magic" 20/28/700; <640 chỉ ô logo), là link về `/`; phải là **một** link 14/20/500 `--fg-on-chrome` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `--bg-chrome-hover`. Không có đường kẻ ở đáy.
 - Vẫn có link "Bỏ qua tới nội dung chính", `<main id="main">` và `Footer`.
 - Bấm logo khi đang điền form không hỏi lại (form ngắn, dữ liệu món đã lưu `sessionStorage`).
+
+### 9.17 Nút và menu tài khoản (`AccountMenu`, ✅; mọi trang có header đầy đủ)
+Thay cho link "Tài khoản" cũ trên header. Không có các mục ngoài phạm vi ([ngoai-pham-vi.md](ngoai-pham-vi.md)). Bản mẫu tương tác đã duyệt ngày 07/10/2026. Chỉ có ở header đầy đủ; header thu gọn (§9.16) **không có**.
+
+**Nút trên header** (`<button>`, vị trí cũ của "Tài khoản", trước vạch ngăn và Giỏ hàng):
+
+| Phần | Máy tính (≥960) | Dưới 960 |
+|---|---|---|
+| Hình dạng | như link header: cao 48px, padding `0 8px`, bo 8px, icon `User` 28 + nhãn 16/20/500 + mũi tên `ChevronDown` 16, gap 8px | chỉ icon `User` (28; <640: 24), không nhãn, không mũi tên |
+| Nhãn khi chưa đăng nhập | "Đăng nhập" | — |
+| Nhãn khi đã đăng nhập | **username** (tên điền lúc tạo tài khoản, dang-nhap.md §3.2) | — |
+| Bề rộng nhãn | **cố định bằng bề rộng chữ "Đăng nhập"** ở cùng cỡ chữ. Cách làm không cần số đo: nhãn là lưới 1 ô chứa một chữ "Đăng nhập" ẩn (`visibility:hidden`, `aria-hidden`) và tên thật chồng lên cùng ô; tên `white-space:nowrap; overflow:hidden` | — |
+| Tên dài hơn ô | phần cuối mờ dần: `mask-image: linear-gradient(90deg, #000 62%, transparent)`, chỉ bật khi tên tràn (`scrollWidth > clientWidth`). Không có nút cuộn, không có dấu `…` (cùng cách làm mờ như mép hàng chip, §9.1) | — |
+| Đang mở | nền `--bg-chrome-hover`, viền trong 1px `--border-on-chrome`, mũi tên xoay 180° (200ms) | nền `--bg-chrome-hover` |
+| ARIA | `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`; `aria-label` là "Đăng nhập" hoặc "Tài khoản của {username}" (để trình đọc màn hình đọc đủ tên dù chữ bị mờ) | như máy tính |
+
+**Bảng thả xuống:**
+
+| Phần | Giá trị |
+|---|---|
+| Vị trí | ≥960: ngay dưới nút, cách 12px, mép phải bảng lệch phải 40px so với mép phải nút nhưng không vượt lề `--gutter`. Dưới 960: rộng hết màn hình trừ lề 16px mỗi bên, ngay dưới hàng trên của header |
+| Khung | rộng 360px (tối đa `calc(100vw - 32px)`), `--bg-surface`, viền 1px `--border-divider`, bo 16px, `--shadow-lg`, padding `20px 24px 24px`; nằm trên vùng tối |
+| Mũi nhọn | ô vuông 14px xoay 45°, nền `--bg-surface`, viền trái và trên `--border-divider`, ở mép trên bảng, thẳng giữa nút |
+| Nút đóng | góc trên phải cách 12px, nút `ghost` vuông 40×40, icon `X` 24 `--fg-muted`, `aria-label="Đóng"` |
+| Vùng tối | phủ **mọi thứ dưới header** (nội dung và footer), `--scrim`, hiện/ẩn 200ms. Header (kể cả hàng chip) không bị tối và vẫn bấm được. Khoá cuộn trang khi bảng mở |
+
+Nội dung **khi chưa đăng nhập**:
+- Đầu bảng: icon `UserRound` 28 `--fg-primary` + tiêu đề `<h2>` 18/26/600 "Đăng nhập để mua sắm dễ hơn", gap 12px.
+- Danh sách lợi ích (cách 16px, mỗi dòng gap 10px): icon 20 `--fg-primary` + chữ 14/20 `--fg-muted`: `ShoppingCart` "Giỏ hàng lưu theo tài khoản"; `Package` "Theo dõi đơn hàng"; `Sparkles` "Gợi ý sản phẩm dành riêng cho bạn". Chỉ ghi điều có thật trong nghiệp vụ (giỏ tài khoản, lịch sử đơn, widget "Dành cho bạn").
+- Hai nút ngang, chia đôi, gap 8px, cách 20px: "Đăng nhập" (`primary md`) → `/login`; "Tạo tài khoản" (`secondary md`) → `/register`. Cả hai mang `state.from` là trang đang xem.
+
+Nội dung **khi đã đăng nhập**:
+- Đầu bảng: icon `UserRound` 28 + "Xin chào," 14/20/500 `--fg-subdued`, username 16/24/600 (xuống dòng được, `overflow-wrap:anywhere`), email 12/18 `--fg-subdued`.
+- Danh sách (`<ul>`, viền trên `--border-divider`, cách 16px, padding trên 12px): mỗi mục cao tối thiểu 44px, padding `0 8px`, bo 8px, icon 24 `--fg-muted` + chữ 16/24/500, gap 12px, hover nền `--bg-surface-raised`.
+  - "Trang quản trị" (`LayoutDashboard`), **chỉ khi tài khoản thuộc nhóm `admin`**, dẫn tới trang admin (man-hinh-du-kien.md §16); sau mục này có đường kẻ 1px.
+  - "Đăng xuất" (`LogOut`): đăng xuất (dang-nhap.md §8), gọi `notifyAuthChanged()`, đóng bảng. Đang ở trang bắt buộc đăng nhập (`/orders`, `/checkout`, trang admin) thì về `/`; trang khác ở nguyên chỗ.
+- **Không** có "Đơn hàng của tôi": header đã có nút "Đơn hàng" ở mọi trang.
+
+**Mở, đóng và focus:**
+- Mở: bấm nút. Focus vào phần tử bấm được đầu tiên trong bảng (nút "Đăng nhập" hoặc mục đầu tiên).
+- Đóng: bấm lại nút, nút ×, phím Esc, bấm vùng tối, Tab ra khỏi bảng, bấm một link khác trên header, hoặc đổi trang. Đóng bằng ×, Esc, vùng tối thì focus quay về nút.
+- `role="dialog"`, `aria-modal="false"` (header vẫn dùng được), `aria-labelledby` trỏ tới tiêu đề hoặc dòng "Xin chào".
+- Không mở khi rê chuột (chỉ bấm), để dùng được trên màn cảm ứng.
+
+**Không có:** ảnh đại diện, trang hồ sơ, cài đặt tài khoản, phương thức thanh toán, danh sách yêu thích, hỗ trợ, quyền lợi "miễn phí vận chuyển" (mọi đơn đều miễn phí, ordering BR-06).
 
 ## 10. Token sẽ thêm khi cần
 

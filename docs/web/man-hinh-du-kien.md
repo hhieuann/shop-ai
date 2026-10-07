@@ -29,7 +29,7 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 | 2 | Chi tiết đơn `/orders/:orderId` | MEDIUM | chưa có |
 | 3 | Hộp thoại xác nhận huỷ đơn | MEDIUM | design-system §9.14 |
 | 4 | Sau khi đặt hàng thành công | MEDIUM | chưa có |
-| 5 | Header khi đã đăng nhập, đăng xuất | LOW | chưa có |
+| 5 | Nút và menu tài khoản trên header | HIGH / MEDIUM | design-system §9.17 |
 | 6 | Nhập mã xác nhận email | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.3 |
 | 7 | Nhập mã MFA của admin | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.1 |
 | 8 | Lỗi ở form đăng nhập, tạo tài khoản | HIGH | [dang-nhap.md](pages/dang-nhap.md) §4 |
@@ -165,21 +165,24 @@ Alternatives: trang "Cảm ơn" riêng `/orders/:id/success` giống trang xác 
 
 Do not introduce: pháo giấy, gợi ý mua thêm trong thông báo, nút chia sẻ.
 
-## 5. Header khi đã đăng nhập, đăng xuất
+## 5. Nút và menu tài khoản trên header
 
-Confidence: LOW
+Confidence: HIGH (chưa đăng nhập) · MEDIUM (đã đăng nhập)
 
-Reuse: `NavLink` của header (design-system §9.1).
+Đã chốt ngày 07/10/2026, spec chuẩn ở **design-system §9.17**.
 
-Bố cục và tương tác:
-- Đã đăng nhập: mục "Tài khoản" đổi nhãn thành "Đăng xuất" (icon `LogOut`), bấm thì đăng xuất ngay và về `/`. Không mở menu.
-- Chưa đăng nhập: giữ "Tài khoản" → `/login` như hiện tại.
+Tóm tắt:
+- Nút trên header ghi "Đăng nhập"; đã đăng nhập thì ghi username (rộng bằng chữ "Đăng nhập", tên dài mờ dần). Dưới 960px chỉ icon.
+- Bấm mở bảng ngay dưới nút, vùng dưới header tối lại.
+- Chưa đăng nhập: 3 lợi ích, nút "Đăng nhập" + "Tạo tài khoản".
+- Đã đăng nhập: "Xin chào", username, email; "Trang quản trị" (chỉ admin); "Đăng xuất". Không lặp "Đơn hàng" (header đã có).
+- Header thu gọn (đăng nhập, tạo tài khoản, đặt hàng) không có nút này.
 
-Assumptions: chọn phương án đơn giản nhất vì không có trang tài khoản trong phạm vi. **Cần An quyết** (dang-nhap.md §8) trước khi làm.
+Assumptions: đăng nhập bằng email, username chỉ để hiển thị (chờ An).
 
-Alternatives: menu thả xuống từ mục "Tài khoản" chứa "Đơn hàng" và "Đăng xuất"; giữ "Tài khoản" và thêm link "Đăng xuất" riêng trong footer.
+Alternatives: đưa "Đơn hàng" vào menu và bỏ khỏi header; nhãn 2 dòng "Xin chào / {username}".
 
-Do not introduce: menu thả xuống tài khoản, ảnh đại diện, trang hồ sơ.
+Do not introduce: ảnh đại diện, trang hồ sơ, cài đặt, yêu thích, hỗ trợ.
 
 ## 6. Nhập mã xác nhận email
 
