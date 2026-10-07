@@ -229,6 +229,52 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  /api/v1/cart/merge:
+    post:
+      operationId: mergeCart
+      summary: Gộp giỏ khách vãng lai vào giỏ tài khoản sau khi đăng nhập
+      description: |
+        Gọi một lần ngay sau khi đăng nhập hoặc tạo tài khoản, gửi toàn bộ giỏ khách đang lưu
+        trên trình duyệt (cart.md BR-01, BR-10). Món đã có thì cộng dồn nhưng không vượt
+        min(99, tồn kho); món mới thêm nếu giỏ còn dưới 50 dòng; món ngừng bán, hết hàng hoặc
+        không tồn tại thì bỏ qua. Không trả 409 cho từng món: mọi điều chỉnh nằm trong `adjustments`.
+        Bắt buộc header Idempotency-Key (UUID v4): gọi lại cùng khoá trả cùng kết quả,
+        không cộng dồn lần hai.
+      tags: [cart]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: UUID v4 do client sinh cho mỗi lần gộp
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeCartRequest'
+      responses:
+        '200':
+          description: Giỏ tài khoản sau khi gộp, kèm các món bị điều chỉnh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MergeCartResult'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '422':
+          description: '`IDEMPOTENCY_KEY_REUSED` cùng khoá nhưng nội dung khác'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
   /api/v1/cart/items/{productId}:
     put:
       operationId: updateCartItem
@@ -647,6 +693,92 @@ components:
             stock: 5
             status: 'ACTIVE'
             priceChanged: false
+
+    MergeCartRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: Toàn bộ giỏ khách; mỗi productId xuất hiện một lần
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 99
+      example:
+        items:
+          - productId: '01J9XKPQ0000000000000001'
+            quantity: 1
+          - productId: '01J9XKPQ0000000000000002'
+            quantity: 2
+
+    MergeAdjustment:
+      type: object
+      description: Một món trong giỏ khách không được gộp đúng như yêu cầu
+      required: [productId, reason, requested, merged]
+      properties:
+        productId:
+          type: string
+        reason:
+          type: string
+          enum: [QUANTITY_LIMITED, PRODUCT_UNAVAILABLE, OUT_OF_STOCK, NOT_FOUND, CART_FULL]
+          description: |
+            `QUANTITY_LIMITED` cộng dồn vượt min(99, tồn kho), đã chặn ·
+            `PRODUCT_UNAVAILABLE` ngừng bán · `OUT_OF_STOCK` hết hàng ·
+            `NOT_FOUND` không còn trong catalog · `CART_FULL` giỏ đã đủ 50 dòng
+        requested:
+          type: integer
+          description: Số lượng trong giỏ khách
+        merged:
+          type: integer
+          minimum: 0
+          description: Số lượng thực sự cộng thêm vào giỏ tài khoản (0 nếu bỏ qua)
+
+    MergeCartResult:
+      type: object
+      required: [cart, adjustments]
+      properties:
+        cart:
+          $ref: '#/components/schemas/Cart'
+        mergedExisting:
+          type: array
+          description: productId của các món đã có sẵn trong giỏ tài khoản nên được cộng dồn
+          items:
+            type: string
+        adjustments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MergeAdjustment'
+      example:
+        cart:
+          totalAmount: 16550000
+          items:
+            - productId: '01J9XKPQ0000000000000001'
+              name: 'ASUS TUF Gaming GeForce RTX 4070'
+              imageUrl: 'https://placehold.co/400x300?text=RTX+4070'
+              price: 15900000
+              quantity: 1
+              stock: 12
+              status: 'ACTIVE'
+              priceChanged: false
+            - productId: '01J9XKPQ0000000000000002'
+              name: 'Chuột Logitech G502 X Plus'
+              imageUrl: 'https://placehold.co/400x300?text=G502+X'
+              price: 650000
+              quantity: 2
+              stock: 5
+              status: 'ACTIVE'
+              priceChanged: false
+        mergedExisting: []
+        adjustments: []
 
     # ─── Errors ─────────────────────────────────────────────────────────────
     Problem:

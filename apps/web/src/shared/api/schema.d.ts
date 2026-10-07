@@ -98,6 +98,31 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/cart/merge': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Gộp giỏ khách vãng lai vào giỏ tài khoản sau khi đăng nhập
+     * @description Gọi một lần ngay sau khi đăng nhập hoặc tạo tài khoản, gửi toàn bộ giỏ khách đang lưu
+     *     trên trình duyệt (cart.md BR-01, BR-10). Món đã có thì cộng dồn nhưng không vượt
+     *     min(99, tồn kho); món mới thêm nếu giỏ còn dưới 50 dòng; món ngừng bán, hết hàng hoặc
+     *     không tồn tại thì bỏ qua. Không trả 409 cho từng món: mọi điều chỉnh nằm trong `adjustments`.
+     *     Bắt buộc header Idempotency-Key (UUID v4): gọi lại cùng khoá trả cùng kết quả,
+     *     không cộng dồn lần hai.
+     */
+    post: operations['mergeCart'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/cart/items/{productId}': {
     parameters: {
       query?: never;
@@ -320,6 +345,80 @@ export interface components {
        * @example 16550000
        */
       totalAmount: number;
+    };
+    /**
+     * @example {
+     *       "items": [
+     *         {
+     *           "productId": "01J9XKPQ0000000000000001",
+     *           "quantity": 1
+     *         },
+     *         {
+     *           "productId": "01J9XKPQ0000000000000002",
+     *           "quantity": 2
+     *         }
+     *       ]
+     *     }
+     */
+    MergeCartRequest: {
+      /** @description Toàn bộ giỏ khách; mỗi productId xuất hiện một lần */
+      items: {
+        productId: string;
+        quantity: number;
+      }[];
+    };
+    /** @description Một món trong giỏ khách không được gộp đúng như yêu cầu */
+    MergeAdjustment: {
+      productId: string;
+      /**
+       * @description `QUANTITY_LIMITED` cộng dồn vượt min(99, tồn kho), đã chặn ·
+       *     `PRODUCT_UNAVAILABLE` ngừng bán · `OUT_OF_STOCK` hết hàng ·
+       *     `NOT_FOUND` không còn trong catalog · `CART_FULL` giỏ đã đủ 50 dòng
+       * @enum {string}
+       */
+      reason:
+        'QUANTITY_LIMITED' | 'PRODUCT_UNAVAILABLE' | 'OUT_OF_STOCK' | 'NOT_FOUND' | 'CART_FULL';
+      /** @description Số lượng trong giỏ khách */
+      requested: number;
+      /** @description Số lượng thực sự cộng thêm vào giỏ tài khoản (0 nếu bỏ qua) */
+      merged: number;
+    };
+    /**
+     * @example {
+     *       "cart": {
+     *         "totalAmount": 16550000,
+     *         "items": [
+     *           {
+     *             "productId": "01J9XKPQ0000000000000001",
+     *             "name": "ASUS TUF Gaming GeForce RTX 4070",
+     *             "imageUrl": "https://placehold.co/400x300?text=RTX+4070",
+     *             "price": 15900000,
+     *             "quantity": 1,
+     *             "stock": 12,
+     *             "status": "ACTIVE",
+     *             "priceChanged": false
+     *           },
+     *           {
+     *             "productId": "01J9XKPQ0000000000000002",
+     *             "name": "Chuột Logitech G502 X Plus",
+     *             "imageUrl": "https://placehold.co/400x300?text=G502+X",
+     *             "price": 650000,
+     *             "quantity": 2,
+     *             "stock": 5,
+     *             "status": "ACTIVE",
+     *             "priceChanged": false
+     *           }
+     *         ]
+     *       },
+     *       "mergedExisting": [],
+     *       "adjustments": []
+     *     }
+     */
+    MergeCartResult: {
+      cart: components['schemas']['Cart'];
+      /** @description productId của các món đã có sẵn trong giỏ tài khoản nên được cộng dồn */
+      mergedExisting?: string[];
+      adjustments: components['schemas']['MergeAdjustment'][];
     };
     /** @description Lỗi theo RFC 9457 */
     Problem: {
@@ -640,6 +739,45 @@ export interface operations {
         };
         content: {
           'application/problem+json': components['schemas']['CartProblem'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  mergeCart: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description UUID v4 do client sinh cho mỗi lần gộp */
+        'Idempotency-Key': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MergeCartRequest'];
+      };
+    };
+    responses: {
+      /** @description Giỏ tài khoản sau khi gộp, kèm các món bị điều chỉnh */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MergeCartResult'];
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Problem'];
+      /** @description `IDEMPOTENCY_KEY_REUSED` cùng khoá nhưng nội dung khác */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
         };
       };
       default: components['responses']['Problem'];
