@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Package, Search, ShoppingCart, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Search, ShoppingCart } from 'lucide-react';
 import { useHorizontalScroll } from '../shared/hooks/useHorizontalScroll';
 import { CategoryIcon } from '../features/catalog/components/CategoryIcon';
 import {
@@ -8,6 +8,7 @@ import {
   SEARCH_MAX_LENGTH,
   normalizeSearch,
 } from '../features/catalog/lib/productFilters';
+import { AccountMenu } from './AccountMenu';
 import styles from './Header.module.css';
 
 /**
@@ -64,11 +65,8 @@ export function Header() {
               <Package size={28} aria-hidden="true" />
               <span className={styles.actionLabel}>Đơn hàng</span>
             </NavLink>
-            <NavLink to="/login" className={styles.action}>
-              <User size={28} aria-hidden="true" />
-              <span className={styles.actionLabel}>Tài khoản</span>
-            </NavLink>
-            {/* Giỏ hàng chỉ có icon (lớn hơn các mục khác), ngăn với Tài khoản bằng một vạch dọc */}
+            <AccountMenu />
+            {/* Giỏ hàng chỉ có icon (lớn hơn các mục khác), ngăn với nút tài khoản bằng một vạch dọc */}
             <span className={styles.divider} aria-hidden="true" />
             <NavLink to="/cart" className={`${styles.action} ${styles.cart}`} aria-label="Giỏ hàng">
               <ShoppingCart size={32} aria-hidden="true" />

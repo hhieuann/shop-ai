@@ -6,7 +6,7 @@ import { continueAfterSignIn } from '../../cart/lib/afterSignIn';
 /**
  * TRANG TẠM. Đăng nhập thật bằng Cognito do An làm; khi xong, An thay file này.
  * Hợp đồng với các trang khác (giữ nguyên khi thay, xem docs/web/pages/dang-nhap.md §8):
- *   - Được mở bằng navigate('/login', { state: { from, reason? } })
+ *   - Được mở bằng navigate('/login', { state: { from, reason? } }); /register cũng dùng trang này
  *     · from: đường dẫn cần quay lại
  *     · reason: 'checkout' khi khách vãng lai bấm "Đặt hàng" ở giỏ (hiện câu giải thích)
  *   - Đăng nhập HOẶC tạo tài khoản xong: gọi notifyAuthChanged() (token.ts), rồi
@@ -19,6 +19,8 @@ export function LoginPage() {
   const queryClient = useQueryClient();
   const state = location.state as { from?: string; reason?: string } | null;
   const from = state?.from ?? '/products';
+  // /register dùng chung trang tạm này cho tới khi An làm form tạo tài khoản
+  const registering = location.pathname === '/register';
 
   const devLogin = async () => {
     if (signInWithDevToken()) await continueAfterSignIn(navigate, queryClient, from);
@@ -26,7 +28,7 @@ export function LoginPage() {
 
   return (
     <div style={{ maxWidth: '420px', margin: '3rem auto', textAlign: 'center' }}>
-      <h1>Đăng nhập</h1>
+      <h1>{registering ? 'Tạo tài khoản' : 'Đăng nhập'}</h1>
       <p>
         {state?.reason === 'checkout'
           ? 'Đăng nhập hoặc tạo tài khoản để đặt hàng. Các sản phẩm bạn đã chọn được giữ nguyên.'

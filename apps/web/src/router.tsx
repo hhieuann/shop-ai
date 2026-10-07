@@ -65,6 +65,13 @@ export const router = createBrowserRouter([
         }),
       },
       {
+        // Trang tạm như /login; An thay bằng form tạo tài khoản Cognito (dang-nhap.md §3.2)
+        path: 'register',
+        lazy: async () => ({
+          Component: (await import('./features/auth/pages/LoginPage')).LoginPage,
+        }),
+      },
+      {
         path: '*',
         element: <NotFoundPage />,
       },
