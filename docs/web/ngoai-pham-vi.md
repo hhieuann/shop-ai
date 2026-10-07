@@ -27,5 +27,7 @@ Các tính năng cửa hàng điện tử lớn thường có, nhưng **không c
 | Email liên hệ và đăng ký nhận SMS ở bước đặt hàng | Đã có email tài khoản; số điện thoại chỉ để giao hàng |
 | Đăng nhập bằng số điện thoại, passkey, Google, Apple; tài khoản doanh nghiệp; số điện thoại khôi phục | Cognito email + mật khẩu (ADR-0007) |
 | Trang tài khoản tổng quan, sổ địa chỉ, theo dõi vận chuyển, đổi trả | Không có trong nghiệp vụ |
+| Trong menu tài khoản: hồ sơ (Account), phương thức thanh toán, thẻ tín dụng, gói dịch vụ, sản phẩm đã lưu, cài đặt tài khoản, hỗ trợ, ảnh đại diện | Không có trang nào trong số này; chỉ COD; không có yêu thích (design-system §9.17) |
+| Quyền lợi tài khoản "miễn phí vận chuyển", "thanh toán nhanh", "*Áp dụng có điều kiện" | Mọi đơn đều miễn phí vận chuyển (ordering BR-06); không lưu địa chỉ hay thẻ; không có điều kiện ưu đãi |
 
 Muốn làm một mục ở trên: viết hoặc sửa tài liệu nghiệp vụ trước (`docs/business/_template.md`), rồi mới thêm spec giao diện.

@@ -65,10 +65,76 @@ export function signInWithDevToken(): boolean {
 
 /** Đăng xuất token giả (chỉ khi dev), để thử lại luồng khách vãng lai */
 export function signOutDevToken() {
+  removeDevToken();
+  notifyAuthChanged();
+}
+
+function removeDevToken() {
   try {
     localStorage.removeItem(DEV_TOKEN_KEY);
   } catch {
     // bỏ qua
   }
+}
+
+// ── Thông tin tài khoản cho nút tài khoản trên header (design-system §9.17) ───
+// An gọi setProfileProvider(() => <đọc username, email, nhóm admin từ ID token Cognito>)
+// và setSignOutHandler(() => <đăng xuất Cognito>) lúc khởi động app.
+
+export interface UserProfile {
+  /** Tên điền lúc tạo tài khoản, hiện trên header (dang-nhap.md §3.2) */
+  username: string;
+  email: string;
+  /** Thuộc nhóm `admin` của user pool: hiện mục "Trang quản trị" */
+  isAdmin: boolean;
+}
+
+type ProfileProvider = () => UserProfile | null | Promise<UserProfile | null>;
+
+// Khi chạy dev với token giả: đổi tên, email, quyền admin trong DevTools Console để thử giao diện:
+//   localStorage.setItem('shop-ai:dev-username', 'mot_ten_rat_dai_de_thu')
+//   localStorage.setItem('shop-ai:dev-admin', '1')
+function readDevProfile(): UserProfile | null {
+  if (!readDevToken()) return null;
+  const get = (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+  const username = get('shop-ai:dev-username') || 'khachthu';
+  return {
+    username,
+    email: `${username}@example.com`,
+    isAdmin: get('shop-ai:dev-admin') === '1',
+  };
+}
+
+let profileProvider: ProfileProvider = readDevProfile;
+
+export function setProfileProvider(next: ProfileProvider) {
+  profileProvider = next;
+  notifyAuthChanged();
+}
+
+/** Hồ sơ người đang đăng nhập; null khi chưa đăng nhập */
+export async function getUserProfile(): Promise<UserProfile | null> {
+  return profileProvider();
+}
+
+type SignOutHandler = () => void | Promise<void>;
+let signOutHandler: SignOutHandler = removeDevToken;
+
+export function setSignOutHandler(next: SignOutHandler) {
+  signOutHandler = next;
+}
+
+/**
+ * Đăng xuất (menu tài khoản). Không xoá giỏ khách `shop-ai:guest-cart`: sau khi đăng xuất,
+ * đó là giỏ khách mới (dang-nhap.md §8).
+ */
+export async function signOut(): Promise<void> {
+  await signOutHandler();
   notifyAuthChanged();
 }

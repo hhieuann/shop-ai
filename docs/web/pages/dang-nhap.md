@@ -11,7 +11,7 @@ Bố cục: header thu gọn, một thẻ form hẹp ở giữa trang, nhãn đ�
 | Đường dẫn | Màn hình |
 |---|---|
 | `/login` | Đăng nhập: email + mật khẩu |
-| `/register` | Tạo tài khoản: email + mật khẩu + nhập lại; xong chuyển sang bước nhập mã |
+| `/register` | Tạo tài khoản: username + email + mật khẩu + nhập lại; xong chuyển sang bước nhập mã |
 | `/register` (bước 2) | Nhập mã xác nhận gửi về email. Cùng đường dẫn, đổi bằng state; F5 thì quay về bước 1 |
 
 **Hợp đồng với các trang khác (giữ nguyên):** trang được mở bằng `navigate('/login', { state: { from, reason? } })`. Link "Tạo tài khoản" và "Đăng nhập" chuyển tiếp **cả `from` lẫn `reason`** cho nhau. Tạo tài khoản và xác nhận mã xong thì **đăng nhập luôn**, khách không phải gõ lại.
@@ -72,6 +72,7 @@ Tài khoản admin (nhóm `admin`, bắt buộc MFA theo ADR-0007): sau mật kh
 |---|---|
 | Tiêu đề | "Tạo tài khoản" |
 | Dòng phụ | "Mua hàng nhanh hơn và theo dõi đơn của bạn." |
+| Username | `Field` 48px, nhãn "Username", gợi ý dưới ô "Tên hiện trên header khi bạn đăng nhập.", `autocomplete="nickname"`, `autoCapitalize="none"`, `spellCheck={false}`. Đề xuất (chờ An): 3–20 ký tự, chữ thường không dấu, số, dấu chấm, gạch dưới; không trùng với người khác. Lỗi: "Vui lòng nhập username", "Username chỉ gồm chữ thường không dấu, số, dấu chấm, gạch dưới", "Username này đã có người dùng." |
 | Email | như đăng nhập, `autocomplete="email"` |
 | Mật khẩu | `PasswordField`, `autocomplete="new-password"`, kèm **danh sách điều kiện** bên dưới |
 | Nhập lại mật khẩu | `PasswordField`, `autocomplete="new-password"`; lỗi "Mật khẩu nhập lại không khớp." |
@@ -80,7 +81,7 @@ Tài khoản admin (nhóm `admin`, bắt buộc MFA theo ADR-0007): sau mật kh
 
 **Danh sách điều kiện mật khẩu** (thay cho thanh đo độ mạnh mật khẩu): `<ul>` ngay dưới ô, cách 8px, mỗi dòng 12/18 gap 4px với icon 16px. Chưa đạt: icon `Circle` + chữ `--fg-subdued`; đạt: icon `CircleCheck` + chữ `--fg-success`. Cập nhật khi gõ; nối vào ô bằng `aria-describedby`. Nội dung lấy đúng **chính sách mật khẩu của user pool** (engineering-plan: An đặt). Nếu An giữ mặc định của Cognito thì là: ít nhất 8 ký tự; có chữ hoa; có chữ thường; có số; có ký tự đặc biệt.
 
-Không có ô họ tên và số điện thoại: họ tên, số điện thoại nhập ở trang đặt hàng cho từng đơn.
+Username là tên hiển thị trên nút tài khoản ở header (design-system §9.17). Không có ô họ tên và số điện thoại: họ tên, số điện thoại nhập ở trang đặt hàng cho từng đơn.
 
 ### 3.3 Nhập mã xác nhận (bước 2)
 | Thứ | Nội dung |
@@ -99,14 +100,15 @@ Lỗi từ Cognito hiện bằng `Alert danger` ở đầu form (dưới dòng p
 |---|---|---|
 | `NotAuthorizedException` (sai email/mật khẩu) | "Email hoặc mật khẩu không đúng." (không nói rõ sai cái nào) | Alert |
 | `UserNotConfirmedException` khi đăng nhập | chuyển sang bước nhập mã (3.3) và tự gửi lại mã | — |
-| `UsernameExistsException` | "Email này đã có tài khoản." + link "Đăng nhập" | dưới ô Email |
+| `UsernameExistsException` (trùng email) | "Email này đã có tài khoản." + link "Đăng nhập" | dưới ô Email |
+| Trùng username (cách Cognito báo lỗi này do An chọn) | "Username này đã có người dùng." | dưới ô Username |
 | `InvalidPasswordException` | "Mật khẩu chưa đạt điều kiện bên dưới." | dưới ô Mật khẩu |
 | `CodeMismatchException` | "Mã không đúng. Kiểm tra lại email mới nhất." | dưới ô mã |
 | `ExpiredCodeException` | "Mã đã hết hạn. Bấm Gửi lại mã." | dưới ô mã |
 | `LimitExceededException`, `TooManyRequestsException` | "Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại." | Alert |
 | Lỗi mạng | "Không kết nối được máy chủ, vui lòng thử lại." | Alert |
 
-Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhập email"), email sai dạng ("Email không hợp lệ"), mật khẩu chưa đạt điều kiện, nhập lại không khớp. Đang gửi: nút `aria-busy`, các ô `readOnly`.
+Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhập username", "Vui lòng nhập email"), username sai ký tự, email sai dạng ("Email không hợp lệ"), mật khẩu chưa đạt điều kiện, nhập lại không khớp. Đang gửi: nút `aria-busy`, các ô `readOnly`.
 
 ## 5. Responsive
 
@@ -130,6 +132,9 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 - Gọi `setTokenProvider(...)` lúc khởi động app (đã có từ trước) và gọi `notifyAuthChanged()` mỗi khi đăng nhập, tạo tài khoản xong, đăng xuất, hoặc token hết hạn không làm mới được.
 - Sau khi đăng nhập **và** sau khi tạo tài khoản + xác nhận mã: `await continueAfterSignIn(navigate, queryClient, from)` thay cho `navigate(from)`.
 - Link qua lại giữa `/login` và `/register` giữ nguyên `state` (`from`, `reason`).
+- Nút tài khoản trên header (design-system §9.17, đã code ở `app/AccountMenu.tsx`) đọc tên và quyền từ `token.ts`. Lúc khởi động app gọi thêm:
+  - `setProfileProvider(() => ({ username, email, isAdmin }))`: đọc từ ID token (username theo thuộc tính An chọn, `isAdmin` = có nhóm `admin` trong `cognito:groups`); trả `null` khi chưa đăng nhập.
+  - `setSignOutHandler(() => <đăng xuất Cognito>)`: menu gọi `signOut()`, hàm này chạy handler rồi tự gọi `notifyAuthChanged()`.
 - Khi đăng xuất: **không** xoá `localStorage` `shop-ai:guest-cart` (đó là giỏ khách mới sau khi đăng xuất, mặc định rỗng).
 - Thử lại luồng: chưa đăng nhập thêm 2 món → Giỏ → "Đặt hàng" → tạo tài khoản mới → nhập mã → phải tới thẳng `/checkout` với đúng 2 món.
 
@@ -138,4 +143,10 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 - Chính sách mật khẩu thật (để viết danh sách điều kiện ở 3.2).
 - **Quên mật khẩu**: Cognito hỗ trợ sẵn nhưng tài liệu dự án chưa nhắc. Nếu làm thì thêm link "Quên mật khẩu?" (ghost, căn phải) ngay dưới ô mật khẩu ở `/login`, và một màn hai bước như 3.2–3.3 (email → mã + mật khẩu mới). Chưa làm cho tới khi An quyết.
 - Admin đăng nhập ở cùng `/login` hay một trang riêng.
-- **Đăng xuất**: tài liệu chưa nhắc. Header hiện luôn trỏ "Tài khoản" tới `/login`; khi đã đăng nhập cần chỗ đăng xuất (ví dụ link "Tài khoản" đổi thành "Đăng xuất"). Chưa thiết kế cho tới khi An quyết.
+- **Username** (đã chốt 07/10/2026: bắt buộc khi đăng ký, dùng làm tên trên header):
+  - Khách **đăng nhập bằng email** (như hiện tại) hay bằng username? Spec này giả định email; username chỉ để hiển thị.
+  - Lưu username ở thuộc tính nào của user pool (`preferred_username` hay thuộc tính riêng), và cách kiểm tra trùng.
+  - Quy tắc ký tự và độ dài (đề xuất ở 3.2).
+  - Web đọc username từ đâu sau khi đăng nhập (ID token) để hiện lên header.
+
+**Đã chốt (07/10/2026):** đăng xuất nằm trong menu tài khoản trên header (design-system §9.17). Khi đăng xuất: gọi `notifyAuthChanged()`, không xoá giỏ khách (`shop-ai:guest-cart`), đang ở trang bắt buộc đăng nhập thì về `/`.
