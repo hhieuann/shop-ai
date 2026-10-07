@@ -1,6 +1,9 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import * as path from 'node:path';
 import {
   CfnOutput,
+  CustomResource,
   Duration,
   RemovalPolicy,
   Stack,
@@ -21,11 +24,21 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
 const API_SRC = path.join(REPO_ROOT, 'services', 'api', 'src');
+/** 104 sản phẩm demo (services/api/seed/catalog), nạp tự động khi deploy môi trường không phải prod */
+const DEMO_PRODUCTS_FILE = path.join(
+  REPO_ROOT,
+  'services',
+  'api',
+  'seed',
+  'catalog',
+  'products.json',
+);
 
 /** Tên GSI, trùng với PRODUCTS_BY_CATEGORY_INDEX trong services/api/src/modules/catalog/infra/. */
 export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
@@ -162,7 +175,81 @@ export class ApiStack extends Stack {
       });
     }
 
+    if (!shopEnv.isProd) this.seedDemoProducts(products, removalPolicy);
+
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
+  }
+
+  /**
+   * Nạp sản phẩm demo vào bảng products mỗi lần deploy mà products.json đổi (sandbox, dev, staging).
+   * Không bao giờ có ở prod. Nhờ vậy dev có dữ liệu thật mà không ai phải chạy script bằng tay
+   * hay cần quyền ghi bảng trên tài khoản demo.
+   */
+  private seedDemoProducts(products: Table, removalPolicy: RemovalPolicy) {
+    const seedFn = new NodejsFunction(this, 'SeedProductsFunction', {
+      entry: path.join(API_SRC, 'modules', 'catalog', 'seedLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.minutes(2),
+      logGroup: new LogGroup(this, 'SeedProductsLogs', {
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy,
+      }),
+      environment: { PRODUCTS_TABLE: products.tableName, NODE_OPTIONS: '--enable-source-maps' },
+      bundling: {
+        format: OutputFormat.ESM,
+        target: 'node24',
+        minify: true,
+        sourceMap: true,
+        mainFields: ['module', 'main'],
+        banner:
+          "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
+        externalModules: [],
+        // Đặt products.json cạnh code đã đóng gói; Lambda đọc file này lúc chạy
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (_inputDir: string, outputDir: string) => [
+            `cp "${DEMO_PRODUCTS_FILE}" "${path.join(outputDir, 'products.json')}"`,
+          ],
+        },
+      },
+    });
+    // Chỉ ghi theo lô vào bảng products, không đọc, không xoá
+    seedFn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:BatchWriteItem'], resources: [products.tableArn] }),
+    );
+
+    const provider = new Provider(this, 'SeedProductsProvider', {
+      onEventHandler: seedFn,
+      logGroup: new LogGroup(this, 'SeedProductsProviderLogs', {
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy,
+      }),
+    });
+    const seed = new CustomResource(this, 'SeedProducts', {
+      serviceToken: provider.serviceToken,
+      // Đổi nội dung file thì mã băm đổi, CloudFormation gửi Update và Lambda nạp lại
+      properties: {
+        dataHash: createHash('sha256').update(readFileSync(DEMO_PRODUCTS_FILE)).digest('hex'),
+      },
+    });
+    seed.node.addDependency(products);
+
+    Tags.of(seedFn).add('module', 'catalog');
+    Validations.of(provider).acknowledge({
+      id: 'AwsSolutions-IAM5[Resource::<SeedProductsFunction9F24CE6C.Arn>:*]',
+      reason:
+        'Policy do Provider của CDK tự sinh: cho Lambda framework gọi Lambda nạp dữ liệu (kèm version).',
+    });
+    for (const construct of [seedFn, provider]) {
+      Validations.of(construct).acknowledge({
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      });
+    }
   }
 }

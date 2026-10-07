@@ -61,6 +61,10 @@ aws dynamodb put-item --region ap-southeast-1 --table-name <ProductsTableName> -
 
 `seed/catalog/products.json` có 104 sản phẩm, 13 loại × 8, có hàng hết, hàng sắp hết và 2 sản phẩm ngừng bán. Tên và hãng là sản phẩm có trên thị trường; giá và tồn kho là số tham khảo làm tròn, không phải giá thật. Không có ảnh để tránh dùng ảnh có bản quyền.
 
+**Sandbox, dev, staging tự có dữ liệu khi deploy**, không cần chạy lệnh: stack `-api` có custom resource gọi Lambda `src/modules/catalog/seedLambda.ts` nạp file này (xem `infra/lib/api-stack.ts`). Sửa `products.json` rồi merge thì lần deploy sau tự nạp lại (ghi đè theo `productId`, nên tồn kho của các sản phẩm trong file cũng bị đặt lại). Prod không có custom resource này.
+
+Muốn nạp tay (vd. sandbox chưa deploy lại):
+
 ```bash
 # Chỉ kiểm file, không ghi gì
 pnpm --filter api seed:products --dry-run
