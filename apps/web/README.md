@@ -20,9 +20,23 @@ pnpm dlx @stoplight/prism-cli mock contracts/openapi.yaml
 pnpm --filter web dev
 ```
 
-- Prism chỉ trả ví dụ cố định trong OpenAPI, nên lọc, tìm và phân trang chưa đổi kết quả thật. Khi có API trên dev thì hết.
+- Prism chỉ trả ví dụ cố định trong OpenAPI, nên lọc, tìm và phân trang chưa đổi kết quả thật. Muốn dữ liệu thật thì chạy với API dev (dưới đây).
 - Trang giỏ và đơn hàng cần đăng nhập. Trước khi có Cognito, vào `/login` và bấm nút đăng nhập thử (token giả, chỉ chạy ở chế độ dev).
 - Sửa `contracts/openapi.yaml` xong thì sinh lại type: `pnpm --filter web generate:types`.
+
+## Chạy web ở máy với API dev thật
+
+Không cần Prism. Lấy `ApiUrl` của stack `shop-dev-api` (output của bước `cdk deploy` trong workflow "Deploy dev & staging" trên GitHub Actions, hoặc hỏi An), rồi:
+
+```bash
+# Cách 1: một lần
+API_PROXY_TARGET=https://<mã>.execute-api.ap-southeast-1.amazonaws.com pnpm --filter web dev
+
+# Cách 2: lâu dài. Chép apps/web/.env.example thành apps/web/.env.local (đã gitignore), điền API_PROXY_TARGET
+pnpm --filter web dev
+```
+
+Vite chuyển `/api/*` sang API dev, nên không cần CORS. Dev hiện mới có catalog (danh sách, chi tiết, 104 sản phẩm demo); giỏ của khách vãng lai chạy được vì chỉ cần catalog, còn giỏ khi đã đăng nhập và đặt hàng thì chờ module `cart`, `ordering`.
 
 ## Giao diện
 

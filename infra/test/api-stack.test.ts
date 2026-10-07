@@ -91,10 +91,13 @@ describe('ApiStack', () => {
     // Act
     const template = synth(dev);
 
-    // Assert: chỉ 2 quyền DynamoDB, đúng chỗ; không Scan, không ghi
-    const statements = Object.values(template.findResources('AWS::IAM::Policy')).flatMap(
-      (policy) => policy.Properties.PolicyDocument.Statement,
-    );
+    // Assert: chỉ 2 quyền DynamoDB, đúng chỗ; không Scan, không ghi.
+    // Chỉ xét policy gắn vào role của CatalogFunction (Lambda nạp dữ liệu demo có quyền riêng)
+    const statements = Object.values(template.findResources('AWS::IAM::Policy'))
+      .filter((policy) =>
+        JSON.stringify(policy.Properties.Roles).includes('CatalogFunctionServiceRole'),
+      )
+      .flatMap((policy) => policy.Properties.PolicyDocument.Statement);
     const dynamo = statements.filter((s) =>
       [s.Action].flat().some((action: string) => action.startsWith('dynamodb:')),
     );
@@ -141,5 +144,33 @@ describe('ApiStack', () => {
         ThrottlingBurstLimit: Match.anyValue(),
       }),
     });
+  });
+
+  it('demoProducts_areSeededOnDeploy_whenNotProd', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: custom resource nạp dữ liệu, chạy lại khi products.json đổi (dataHash)
+    template.resourceCountIs('AWS::CloudFormation::CustomResource', 1);
+    template.hasResourceProperties('AWS::CloudFormation::CustomResource', {
+      dataHash: Match.stringLikeRegexp('^[0-9a-f]{64}$'),
+    });
+    // Lambda nạp dữ liệu chỉ được BatchWriteItem vào bảng products
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({ Action: 'dynamodb:BatchWriteItem', Effect: 'Allow' }),
+        ]),
+      },
+    });
+  });
+
+  it('demoProducts_areNeverSeeded_whenProd', () => {
+    // Act
+    const template = synth(prod);
+
+    // Assert
+    template.resourceCountIs('AWS::CloudFormation::CustomResource', 0);
+    expect(JSON.stringify(template.toJSON())).not.toContain('dynamodb:BatchWriteItem');
   });
 });
