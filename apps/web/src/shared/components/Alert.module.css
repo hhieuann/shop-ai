@@ -1,6 +1,12 @@
+/*
+ * Lưới 3 cột: icon 20px | chữ | nút (nếu có). Icon cao 20px bằng line-height của chữ
+ * (14/20) nên thẳng hàng với dòng chữ đầu tiên.
+ */
 .alert {
-  display: flex;
-  gap: var(--space-150);
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--space-150);
   padding: var(--space-150) var(--space-200);
   border-left: 4px solid;
   border-radius: var(--radius-lg);
@@ -14,11 +20,26 @@
   outline-offset: 2px;
 }
 .icon {
-  flex-shrink: 0;
-  margin-top: 0;
+  display: block;
 }
 .body {
   min-width: 0;
+  line-height: var(--leading-body-md);
+}
+/* Máy tính, có nút: icon, chữ, nút cùng nằm giữa theo chiều cao; nút sát mép phải */
+.withAction {
+  align-items: center;
+}
+/* Điện thoại: nút xuống dòng dưới chữ, thẳng lề trái với chữ (cột 2) */
+@media (max-width: 639px) {
+  .withAction {
+    align-items: start;
+  }
+  .action {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: var(--space-100);
+  }
 }
 .body ul {
   margin: var(--space-100) 0 0;
