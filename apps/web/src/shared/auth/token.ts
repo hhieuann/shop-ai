@@ -27,6 +27,24 @@ let provider: TokenProvider = readDevToken;
 
 export function setTokenProvider(next: TokenProvider) {
   provider = next;
+  notifyAuthChanged();
+}
+
+// ── Báo cho web biết trạng thái đăng nhập vừa đổi ─────────────────────────────
+// Giỏ hàng cần biết lúc khách vừa đăng nhập hoặc đăng xuất để đổi giữa giỏ khách (trình duyệt)
+// và giỏ tài khoản (server). Cognito (An làm) gọi notifyAuthChanged() sau khi đăng nhập,
+// tạo tài khoản xong, đăng xuất hoặc khi token bị thu hồi.
+type AuthListener = () => void;
+const listeners = new Set<AuthListener>();
+
+/** Đăng ký nghe thay đổi đăng nhập; trả về hàm huỷ đăng ký */
+export function onAuthChange(listener: AuthListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function notifyAuthChanged() {
+  for (const listener of listeners) listener();
 }
 
 export async function getAccessToken(): Promise<string | null> {
@@ -38,8 +56,19 @@ export function signInWithDevToken(): boolean {
   if (!import.meta.env.DEV) return false;
   try {
     localStorage.setItem(DEV_TOKEN_KEY, 'dev');
-    return true;
   } catch {
     return false;
   }
+  notifyAuthChanged();
+  return true;
+}
+
+/** Đăng xuất token giả (chỉ khi dev), để thử lại luồng khách vãng lai */
+export function signOutDevToken() {
+  try {
+    localStorage.removeItem(DEV_TOKEN_KEY);
+  } catch {
+    // bỏ qua
+  }
+  notifyAuthChanged();
 }

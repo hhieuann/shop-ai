@@ -192,3 +192,11 @@
     line-height: var(--leading-body-sm);
   }
 }
+
+/* Nút "Gộp vào giỏ" trong khung cảnh báo (vị trí do Alert lo) */
+.inlineButton {
+  min-height: 32px;
+  padding: 0 var(--space-150);
+  font-weight: 600;
+  white-space: nowrap;
+}

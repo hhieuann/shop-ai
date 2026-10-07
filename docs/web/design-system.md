@@ -369,7 +369,7 @@ Thẻ **không có** nút "Thêm vào giỏ", nút lưu, ô so sánh, sao đánh
 | Lỗi nghiệp vụ (`Alert`) | xem 9.13 |
 
 ### 9.13 Thông báo (`Alert`, ✅)
-Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, nền `*-tint` tương ứng, chữ 14/20 `--fg-default`, icon lucide 20px màu trạng thái bên trái (`CircleCheck`, `TriangleAlert`, `CircleX`).
+Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, nền `*-tint` tương ứng, chữ 14/20 `--fg-default`, icon lucide 20px màu trạng thái bên trái (`CircleCheck`, `TriangleAlert`, `CircleX`). Lưới 3 cột `20px | chữ | nút`: icon thẳng hàng với dòng chữ đầu. Có nút đi kèm (prop `action`, vd. "Gộp vào giỏ"): máy tính đặt sát mép phải, icon, chữ, nút cùng nằm giữa theo chiều cao; điện thoại (<640) nút xuống dòng dưới chữ, thẳng lề trái với chữ.
 | Loại | Ví dụ trong nghiệp vụ | Vai trò ARIA |
 |---|---|---|
 | success | "Đã thêm vào giỏ", "Đặt hàng thành công! Email xác nhận sẽ được gửi trong ít phút." | `status` |

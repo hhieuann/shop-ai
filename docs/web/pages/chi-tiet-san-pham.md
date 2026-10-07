@@ -8,7 +8,7 @@ Bố cục: khối ảnh + thông tin bên trái, hộp mua hàng bên phải, t
 
 - `GET /api/v1/products/{productId}` trả `Product`: `name`, `brand`, `category`, `price`, `stock`, `status`, `imageUrl?` (**một ảnh**), `description`, `specs?` (object khoá → giá trị, tuỳ loại hàng), `createdAt`, `updatedAt`.
 - Không có nhiều ảnh, không có biến thể, không có đánh giá → không có dải ảnh nhỏ, không có ô chọn màu/cấu hình, không có sao.
-- Thêm vào giỏ: `POST /api/v1/cart/items`. Chưa đăng nhập → sang `/login` (giữ `from`), đăng nhập xong quay lại và **tự thêm** (cart BR-01, đã có trong `AddToCart`).
+- Thêm vào giỏ qua `useCart().add` (cart BR-01): đã đăng nhập thì `POST /api/v1/cart/items`; chưa đăng nhập thì thêm vào giỏ khách trên trình duyệt, **không** chuyển sang `/login`.
 - `INACTIVE` → API trả 404 (catalog BR-04), nên trang không có trạng thái "Ngừng bán".
 - Widget "Thường mua kèm" ở cuối trang (ADR-0016, An làm): `GET /api/v1/recs`, đã lọc hàng hết và hàng đã có trong giỏ.
 
@@ -88,7 +88,7 @@ Một khối (§2), gap 16px giữa các phần:
 | 404 | `EmptyState`: "Sản phẩm không tồn tại hoặc đã bị gỡ." + link "Xem tất cả sản phẩm" |
 | Lỗi tải | "Chưa tải được sản phẩm. Tải lại trang để thử lần nữa." `role="alert"` |
 | Hết hàng (`stock = 0`) | ô ảnh opacity .6; badge "Hết hàng"; ẩn bộ chọn số lượng; nút `secondary` vô hiệu "Hết hàng" |
-| Chưa đăng nhập | giao diện như thường; bấm nút → sang `/login`, quay lại tự thêm và hiện `Alert success` |
+| Chưa đăng nhập | giao diện và thông báo như khi đã đăng nhập; món vào giỏ khách. Phiên đăng nhập hết hạn (401) → `Alert danger` "Phiên đăng nhập đã hết…" kèm link Đăng nhập |
 | Tồn kho thấp | badge "Chỉ còn N"; nút + của bộ chọn vô hiệu khi đạt N |
 
 ## 5. Responsive

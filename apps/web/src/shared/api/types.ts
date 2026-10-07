@@ -20,6 +20,8 @@ export type ProductSort = NonNullable<
 export type Cart = Schemas['Cart'];
 export type CartItem = Schemas['CartItem'];
 export type CartProblem = Schemas['CartProblem'];
+export type MergeCartResult = Schemas['MergeCartResult'];
+export type MergeAdjustment = Schemas['MergeAdjustment'];
 
 export type ShippingAddress = Schemas['ShippingAddress'];
 export type OrderStatus = Schemas['OrderStatus'];

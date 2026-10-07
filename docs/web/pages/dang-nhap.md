@@ -14,7 +14,13 @@ Bố cục: header thu gọn, một thẻ form hẹp ở giữa trang, nhãn đ�
 | `/register` | Tạo tài khoản: email + mật khẩu + nhập lại; xong chuyển sang bước nhập mã |
 | `/register` (bước 2) | Nhập mã xác nhận gửi về email. Cùng đường dẫn, đổi bằng state; F5 thì quay về bước 1 |
 
-**Hợp đồng với các trang khác (giữ nguyên):** trang được mở bằng `navigate('/login', { state: { from } })`; đăng nhập xong `navigate(from, { replace: true })`, mặc định `from = '/'`. Link "Tạo tài khoản" và "Đăng nhập" chuyển tiếp `from` cho nhau. Tạo tài khoản và xác nhận mã xong thì **đăng nhập luôn** rồi về `from`, khách không phải gõ lại.
+**Hợp đồng với các trang khác (giữ nguyên):** trang được mở bằng `navigate('/login', { state: { from, reason? } })`. Link "Tạo tài khoản" và "Đăng nhập" chuyển tiếp **cả `from` lẫn `reason`** cho nhau. Tạo tài khoản và xác nhận mã xong thì **đăng nhập luôn**, khách không phải gõ lại.
+
+Đăng nhập hoặc tạo tài khoản thành công thì **không tự `navigate(from)`** nữa, mà làm đúng hai việc (cart BR-10, BR-11):
+1. Gọi `notifyAuthChanged()` (`shared/auth/token.ts`) để giỏ hàng biết đã đăng nhập.
+2. `await continueAfterSignIn(navigate, queryClient, from)` (`features/cart/lib/afterSignIn.ts`). Hàm này gộp giỏ khách vào giỏ tài khoản rồi tự chuyển trang: sang `/checkout`, về `/cart` kèm thông báo, hoặc về `from`. Trang đăng nhập không cần biết gì về giỏ.
+
+`reason: 'checkout'`: khách vãng lai bấm "Đặt hàng" ở giỏ. Dưới tiêu đề hiện câu "Đăng nhập hoặc tạo tài khoản để đặt hàng. Các sản phẩm bạn đã chọn được giữ nguyên." (trang tạm đã có câu này).
 
 Đã đăng nhập mà vào `/login` hoặc `/register` → về `from` (hoặc `/`).
 
@@ -119,6 +125,15 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 Đăng nhập bằng số điện thoại; passkey; đăng nhập Google/Apple; tài khoản doanh nghiệp; số điện thoại khôi phục tài khoản; tên và họ tách riêng khi đăng ký; điều khoản chương trình hội viên. Lý do: [ngoai-pham-vi.md](../ngoai-pham-vi.md).
 
 ## 8. Cần An xác nhận
+
+**Phải làm khi thay trang tạm bằng Cognito (giỏ khách vãng lai, 07/10/2026):**
+- Gọi `setTokenProvider(...)` lúc khởi động app (đã có từ trước) và gọi `notifyAuthChanged()` mỗi khi đăng nhập, tạo tài khoản xong, đăng xuất, hoặc token hết hạn không làm mới được.
+- Sau khi đăng nhập **và** sau khi tạo tài khoản + xác nhận mã: `await continueAfterSignIn(navigate, queryClient, from)` thay cho `navigate(from)`.
+- Link qua lại giữa `/login` và `/register` giữ nguyên `state` (`from`, `reason`).
+- Khi đăng xuất: **không** xoá `localStorage` `shop-ai:guest-cart` (đó là giỏ khách mới sau khi đăng xuất, mặc định rỗng).
+- Thử lại luồng: chưa đăng nhập thêm 2 món → Giỏ → "Đặt hàng" → tạo tài khoản mới → nhập mã → phải tới thẳng `/checkout` với đúng 2 món.
+
+**Câu hỏi còn mở:**
 - User pool có **tự đăng ký** (self sign-up) và xác nhận bằng **mã gửi email** không? Spec này giả định có.
 - Chính sách mật khẩu thật (để viết danh sách điều kiện ở 3.2).
 - **Quên mật khẩu**: Cognito hỗ trợ sẵn nhưng tài liệu dự án chưa nhắc. Nếu làm thì thêm link "Quên mật khẩu?" (ghost, căn phải) ngay dưới ô mật khẩu ở `/login`, và một màn hai bước như 3.2–3.3 (email → mã + mật khẩu mới). Chưa làm cho tới khi An quyết.
