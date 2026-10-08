@@ -213,7 +213,8 @@ export class ApiStack extends Stack {
           beforeBundling: () => [],
           beforeInstall: () => [],
           afterBundling: (_inputDir: string, outputDir: string) => [
-            `cp "${DEMO_PRODUCTS_FILE}" "${path.join(outputDir, 'products.json')}"`,
+            // Chép bằng Node thay vì `cp` để chạy được cả trên Windows (cmd.exe không có cp)
+            `node -e "require('fs').copyFileSync(process.argv[1], process.argv[2])" "${DEMO_PRODUCTS_FILE}" "${path.join(outputDir, 'products.json')}"`,
           ],
         },
       },
