@@ -1,7 +1,9 @@
-import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
+import type { APIGatewayProxyEventV2WithJWTAuthorizer, Context } from 'aws-lambda';
 import { z } from 'zod';
 import { json, problem, validationProblem, type HttpResult } from '../../shared/http/response.js';
-import { MAX_QUANTITY, type CartView } from './domain/cart.js';
+import { parseIdempotencyKey } from '../../shared/idempotency.js';
+import type { MergeCartResult } from './application/cartService.js';
+import { MAX_LINES, MAX_QUANTITY, type CartView, type GuestItem } from './domain/cart.js';
 
 /** Use case mà handler cần. lambda.ts truyền bản thật, test truyền mock. */
 export interface CartUseCases {
@@ -17,12 +19,22 @@ export interface CartUseCases {
     readonly quantity: number;
   }): Promise<CartView>;
   removeCartItem(input: { readonly userId: string; readonly productId: string }): Promise<CartView>;
+  /** Đã bọc chống gộp hai lần (shared/idempotency); replayed = trả lại kết quả lần trước */
+  mergeCart(
+    input: {
+      readonly userId: string;
+      readonly idempotencyKey: string;
+      readonly items: readonly GuestItem[];
+    },
+    context?: Context,
+  ): Promise<{ readonly value: MergeCartResult; readonly replayed: boolean }>;
 }
 
 type Route = (
   event: APIGatewayProxyEventV2WithJWTAuthorizer,
   userId: string,
   useCases: CartUseCases,
+  context?: Context,
 ) => Promise<HttpResult>;
 
 /** Cùng quy tắc với catalog (routes.ts của catalog) */
@@ -39,6 +51,17 @@ const quantity = z
 const itemParams = z.object({ productId });
 const addBody = z.object({ productId, quantity });
 const updateBody = z.object({ quantity });
+/** MergeCartRequest: 1 … 50 món, mỗi productId một lần (cart.md, Trường hợp đặc biệt) */
+const mergeBody = z.object({
+  items: z
+    .array(z.object({ productId, quantity }))
+    .min(1, 'items cần ít nhất 1 món')
+    .max(MAX_LINES, `items tối đa ${MAX_LINES} món`)
+    .refine(
+      (items) => new Set(items.map((i) => i.productId)).size === items.length,
+      'items có productId trùng nhau',
+    ),
+});
 
 /** Body JSON; sai cú pháp thì trả undefined để zod báo lỗi 400 như thiếu trường */
 function readJson(event: APIGatewayProxyEventV2WithJWTAuthorizer): unknown {
@@ -52,7 +75,7 @@ function readJson(event: APIGatewayProxyEventV2WithJWTAuthorizer): unknown {
 }
 
 /** Giỏ là dữ liệu riêng của từng người: không cache ở CloudFront hay trình duyệt */
-function cartResponse(view: CartView): HttpResult {
+function cartResponse(view: CartView | MergeCartResult): HttpResult {
   const result = json(200, view);
   return { ...result, headers: { ...result.headers, 'cache-control': 'no-store' } };
 }
@@ -89,6 +112,18 @@ export const routes: Readonly<Record<string, Route>> = {
     return cartResponse(
       await updateCartItem({ userId, productId: params.data.productId, ...body.data }),
     );
+  },
+
+  'POST /api/v1/cart/merge': async (event, userId, { mergeCart }, context) => {
+    // Thiếu hoặc sai dạng Idempotency-Key → BadRequestError → 400
+    const idempotencyKey = parseIdempotencyKey(event.headers ?? {});
+    const raw = readJson(event);
+    if (raw === undefined) return badBody(event);
+    const body = mergeBody.safeParse(raw);
+    if (!body.success) return validationProblem(body.error, event.requestContext.requestId);
+    // Gọi lại cùng khoá trả đúng kết quả lần đầu, cùng mã 200
+    const { value } = await mergeCart({ userId, idempotencyKey, items: body.data.items }, context);
+    return cartResponse(value);
   },
 
   'DELETE /api/v1/cart/items/{productId}': async (event, userId, { removeCartItem }) => {

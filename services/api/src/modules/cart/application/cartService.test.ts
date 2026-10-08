@@ -11,6 +11,7 @@ import {
   addCartItem,
   getCart,
   MAX_ATTEMPTS,
+  mergeCart,
   removeCartItem,
   updateCartItem,
   type CartDeps,
@@ -213,5 +214,52 @@ describe('removeCartItem', () => {
     // Assert
     expect(view).toEqual({ items: [], totalAmount: 0 });
     expect(carts.saved[0]?.lines).toEqual([]);
+  });
+});
+
+describe('mergeCart', () => {
+  it('mergeCart_savesMergedCartAndReturnsAdjustments', async () => {
+    // Arrange: tài khoản có gpu 1; khách có gpu 2, ram 3 (ram chỉ còn 2), một món không tồn tại
+    const carts = new FakeCarts({ lines: [gpuLine], version: 'v1' });
+    const catalog = new FakeCatalog([gpu, ram]);
+
+    // Act
+    const result = await mergeCart(deps(carts, catalog), {
+      userId: 'u1',
+      items: [
+        { productId: 'gpu-1', quantity: 2 },
+        { productId: 'ram-1', quantity: 3 },
+        { productId: 'khong-co', quantity: 1 },
+      ],
+    });
+
+    // Assert
+    expect(catalog.requests).toEqual([['gpu-1', 'ram-1', 'khong-co']]);
+    expect(result.cart.items.map((i) => [i.productId, i.quantity])).toEqual([
+      ['gpu-1', 3],
+      ['ram-1', 2],
+    ]);
+    expect(result.mergedExisting).toEqual(['gpu-1']);
+    expect(result.adjustments).toEqual([
+      { productId: 'ram-1', reason: 'QUANTITY_LIMITED', requested: 3, merged: 2 },
+      { productId: 'khong-co', reason: 'NOT_FOUND', requested: 1, merged: 0 },
+    ]);
+    expect(carts.saved).toHaveLength(1);
+  });
+
+  it('mergeCart_reportsOutcomeOfFinalAttempt_whenRetriedAfterConflict', async () => {
+    // Arrange
+    const carts = new FakeCarts({ lines: [gpuLine], version: 'v1' });
+    carts.conflictsLeft = 1;
+
+    // Act
+    const result = await mergeCart(deps(carts), {
+      userId: 'u1',
+      items: [{ productId: 'gpu-1', quantity: 1 }],
+    });
+
+    // Assert
+    expect(result.cart.items[0]?.quantity).toBe(2);
+    expect(result.mergedExisting).toEqual(['gpu-1']);
   });
 });
