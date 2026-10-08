@@ -39,6 +39,31 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  # ─── Account ───────────────────────────────────────────────────────────────
+  /api/v1/me:
+    get:
+      operationId: getMe
+      summary: Người đang đăng nhập, lấy từ token
+      description: >
+        Không đọc dữ liệu: mọi thông tin lấy từ token Cognito mà JWT authorizer của HTTP API đã kiểm.
+        `email` chỉ có khi gửi ID token; access token của Cognito không chứa email.
+      responses:
+        '200':
+          description: Thông tin người đang đăng nhập
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '401':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
   # ─── Catalog ───────────────────────────────────────────────────────────────
   /api/v1/products:
     get:
@@ -781,6 +806,23 @@ components:
         adjustments: []
 
     # ─── Errors ─────────────────────────────────────────────────────────────
+    Me:
+      type: object
+      required: [userId, groups]
+      properties:
+        userId:
+          type: string
+          description: 'sub của Cognito, cố định suốt đời tài khoản'
+          example: f1b2c3d4-0000-4000-8000-000000000001
+        email:
+          type: string
+          format: email
+        groups:
+          type: array
+          items:
+            type: string
+          example: [admin]
+
     Problem:
       type: object
       description: Lỗi theo RFC 9457

@@ -199,4 +199,56 @@ describe('ApiStack', () => {
       .flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((st) => st.Action));
     expect(actions.filter((a) => a.startsWith('dynamodb:'))).toEqual([]);
   });
+
+  it('userPool_signsInWithEmailAndAllowsOptionalTotpMfa', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: khách tự đăng ký bằng email, xác minh email, MFA tuỳ chọn bằng app (không SMS)
+    template.hasResourceProperties('AWS::Cognito::UserPool', {
+      UsernameAttributes: ['email'],
+      AutoVerifiedAttributes: ['email'],
+      AdminCreateUserConfig: { AllowAdminCreateUserOnly: false },
+      MfaConfiguration: 'OPTIONAL',
+      EnabledMfas: ['SOFTWARE_TOKEN_MFA'],
+    });
+    template.hasResourceProperties('AWS::Cognito::UserPoolGroup', { GroupName: 'admin' });
+  });
+
+  it('webClient_usesSrpWithoutSecretAndHidesExistingUsers', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: web là ứng dụng công khai, không giữ được secret; chỉ SRP và refresh token
+    template.hasResourceProperties('AWS::Cognito::UserPoolClient', {
+      GenerateSecret: false,
+      ExplicitAuthFlows: ['ALLOW_USER_SRP_AUTH', 'ALLOW_REFRESH_TOKEN_AUTH'],
+      PreventUserExistenceErrors: 'ENABLED',
+      EnableTokenRevocation: true,
+    });
+  });
+
+  it('meRoute_requiresCognitoJwt_whileProductRoutesStayPublic', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: authorizer kiểu JWT trỏ tới user pool
+    template.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', {
+      AuthorizerType: 'JWT',
+      IdentitySource: ['$request.header.Authorization'],
+    });
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'GET /api/v1/me',
+      AuthorizationType: 'JWT',
+    });
+    for (const key of ['GET /api/v1/products', 'GET /api/v1/health']) {
+      const routes = template.findResources('AWS::ApiGatewayV2::Route', {
+        Properties: { RouteKey: key },
+      });
+      const route = Object.values(routes)[0] as { Properties: { AuthorizationType?: string } };
+      expect(route.Properties.AuthorizationType ?? 'NONE').toBe('NONE');
+    }
+    template.hasOutput('UserPoolId', {});
+    template.hasOutput('UserPoolClientId', {});
+  });
 });

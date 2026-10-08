@@ -18,7 +18,15 @@ import {
   HttpStage,
   LogGroupLogDestination,
 } from 'aws-cdk-lib/aws-apigatewayv2';
+import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import {
+  AccountRecovery,
+  CfnUserPoolGroup,
+  FeaturePlan,
+  Mfa,
+  UserPool,
+} from 'aws-cdk-lib/aws-cognito';
 import { AttributeType, BillingMode, ProjectionType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
@@ -64,6 +72,8 @@ export interface ApiStackProps extends StackProps {
 export class ApiStack extends Stack {
   /** HTTP API của shop; stack web chuyển /api/* sang đây. */
   public readonly httpApi: HttpApi;
+  /** JWT authorizer của Cognito; module nào có route cần đăng nhập thì truyền vào addRoutes. */
+  public readonly authorizer: HttpUserPoolAuthorizer;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -129,35 +139,7 @@ export class ApiStack extends Stack {
     });
 
     // Health chỉ báo API còn sống: không đọc dữ liệu, nên không cấp quyền DynamoDB nào
-    const healthFn = new NodejsFunction(this, 'HealthFunction', {
-      entry: path.join(API_SRC, 'modules', 'health', 'lambda.ts'),
-      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
-      runtime: Runtime.NODEJS_24_X,
-      architecture: Architecture.ARM_64,
-      memorySize: 128,
-      timeout: Duration.seconds(3),
-      tracing: Tracing.ACTIVE,
-      logGroup: new LogGroup(this, 'HealthLogs', {
-        retention: RetentionDays.TWO_WEEKS,
-        removalPolicy,
-      }),
-      environment: {
-        POWERTOOLS_SERVICE_NAME: 'health',
-        NODE_OPTIONS: '--enable-source-maps',
-      },
-      bundling: API_BUNDLING,
-    });
-    Validations.of(healthFn).acknowledge(
-      {
-        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
-        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
-      },
-      {
-        id: 'AwsSolutions-IAM5[Resource::*]',
-        reason:
-          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
-      },
-    );
+    const healthFn = this.noDataFunction('Health', 'health', removalPolicy);
 
     const httpApi = new HttpApi(this, 'HttpApi', {
       apiName: `${shopEnv.stackPrefix}-api`,
@@ -222,10 +204,121 @@ export class ApiStack extends Stack {
       reason: 'Health là công khai để smoke test và giám sát gọi được; không trả dữ liệu gì.',
     });
 
+    // Đăng nhập (ADR-0007): route nào cần đăng nhập thì gắn this.authorizer
+    this.authorizer = this.addCognito(shopEnv, removalPolicy);
+    const accountFn = this.noDataFunction('Account', 'account', removalPolicy);
+    httpApi.addRoutes({
+      path: '/api/v1/me',
+      methods: [HttpMethod.GET],
+      integration: new HttpLambdaIntegration('AccountIntegration', accountFn),
+      authorizer: this.authorizer,
+    });
+
     if (!shopEnv.isProd) this.seedDemoProducts(products, removalPolicy);
 
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
+  }
+
+  /** Lambda nhỏ không đọc dữ liệu (health, account): 128 MB, chỉ có quyền ghi log và X-Ray. */
+  private noDataFunction(name: string, module: string, removalPolicy: RemovalPolicy) {
+    const fn = new NodejsFunction(this, `${name}Function`, {
+      entry: path.join(API_SRC, 'modules', module, 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 128,
+      timeout: Duration.seconds(3),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, `${name}Logs`, {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        POWERTOOLS_SERVICE_NAME: module,
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+    return fn;
+  }
+
+  /**
+   * Cognito cho khách đăng nhập (ADR-0007): đăng nhập bằng email, tự đăng ký, MFA tuỳ chọn bằng app.
+   * Web dùng luồng SRP nên mật khẩu không bao giờ gửi đi dạng rõ. Trả về JWT authorizer cho HTTP API.
+   */
+  private addCognito(shopEnv: ShopEnvironment, removalPolicy: RemovalPolicy) {
+    const userPool = new UserPool(this, 'UserPool', {
+      userPoolName: `${shopEnv.stackPrefix}-users`,
+      // Lite đủ cho SRP, MFA TOTP; 10.000 người dùng hoạt động mỗi tháng đầu tiên miễn phí
+      featurePlan: FeaturePlan.LITE,
+      selfSignUpEnabled: true,
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      standardAttributes: { email: { required: true, mutable: true } },
+      passwordPolicy: {
+        minLength: 8,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireDigits: true,
+        requireSymbols: true,
+      },
+      accountRecovery: AccountRecovery.EMAIL_ONLY,
+      mfa: Mfa.OPTIONAL,
+      mfaSecondFactor: { otp: true, sms: false },
+      deletionProtection: shopEnv.isProd,
+      removalPolicy,
+    });
+    const webClient = userPool.addClient('WebClient', {
+      userPoolClientName: `${shopEnv.stackPrefix}-web`,
+      authFlows: { userSrp: true },
+      generateSecret: false,
+      preventUserExistenceErrors: true,
+      enableTokenRevocation: true,
+      accessTokenValidity: Duration.hours(1),
+      idTokenValidity: Duration.hours(1),
+      refreshTokenValidity: Duration.days(30),
+    });
+    new CfnUserPoolGroup(this, 'AdminGroup', {
+      userPoolId: userPool.userPoolId,
+      groupName: 'admin',
+      description: 'Quản trị shop: thêm sản phẩm, xem đơn',
+    });
+    Validations.of(userPool).acknowledge(
+      {
+        id: 'AwsSolutions-COG2',
+        reason:
+          'MFA tuỳ chọn cho khách mua hàng để không cản việc đăng ký; trang admin sẽ bắt buộc nhóm admin bật MFA.',
+      },
+      {
+        id: 'AwsSolutions-COG3',
+        reason:
+          'Threat protection (advanced security) cần gói Plus tính phí theo người dùng; ngoài ngân sách demo.',
+      },
+      {
+        id: 'AwsSolutions::AwsSolutions-COG8',
+        reason:
+          'Gói Plus tính phí theo người dùng hoạt động; gói Lite đủ cho SRP và MFA của shop demo.',
+      },
+    );
+
+    new CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
+    new CfnOutput(this, 'UserPoolClientId', { value: webClient.userPoolClientId });
+
+    return new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
+      userPoolClients: [webClient],
+    });
   }
 
   /**
