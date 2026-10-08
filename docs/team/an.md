@@ -32,13 +32,13 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 - [x] CDK bootstrap ở tài khoản của mình (vừa là demo vừa là sandbox), cả ap-southeast-1 và us-east-1 (01/10)
 - [x] Budget $20/tháng, cảnh báo ở $5, $10, $17, $20 và khi dự báo vượt $20 (01/10)
 - [ ] Hướng dẫn Hoàng và Nhân bootstrap tài khoản của họ
-- [ ] Bật cost allocation tag `project` (tag hiện trong Billing khoảng 24 giờ sau lần deploy đầu tiên ngày 04/10)
+- [x] Bật cost allocation tag `project`, `env`, `module` (08/10)
 - [x] OIDC provider và 4 role theo [infra/README.md](../../infra/README.md); đặt biến; bật `DEPLOY_ENABLED=true` (01/10 và 04/10; trust policy sửa theo `sub` bất biến ở PR #25)
 - [ ] Nhờ Nhân review trust policy OIDC trong `infra/bootstrap/github-oidc.yaml`
 - [x] Module mẫu `GET /api/v1/products/{productId}` trong `catalog`, đủ handler, application, domain, ports, infra, kèm unit, handler và integration test theo [hands-on-testing-guide.md](../hands-on-testing-guide.md) (PR #22, 04/10). Hoàng đã làm tiếp API danh sách (PR #29, #31)
 - [ ] Buổi 60 phút đi qua module mẫu với cả nhóm
 - [x] Hỏi mentor 3 câu (01/10): workshop chấm theo nhóm; không dùng Personalize mà tự xây mô hình gợi ý ([ADR-0016](../adr/0016-tu-xay-mo-hinh-goi-y.md)); trọng số theo thang điểm của chương trình
-- [ ] Gom nghiệp vụ của cả nhóm vào `docs/business/` trước 05/10: catalog, giỏ hàng, đặt hàng đã có (Hoàng); còn phần gợi ý và sự kiện (Nhân), tài khoản và quy mô demo (An)
+- [ ] Gom nghiệp vụ của cả nhóm vào `docs/business/` trước 05/10: catalog, giỏ hàng, đặt hàng (Hoàng), tài khoản và quy mô demo (An, 08/10) đã có; còn phần gợi ý và sự kiện (Nhân)
 
 ## Lộ trình 8 tuần
 
