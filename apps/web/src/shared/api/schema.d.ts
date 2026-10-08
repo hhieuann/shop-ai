@@ -21,6 +21,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Người đang đăng nhập, lấy từ token
+     * @description Không đọc dữ liệu: mọi thông tin lấy từ token Cognito mà JWT authorizer của HTTP API đã kiểm. `email` chỉ có khi gửi ID token; access token của Cognito không chứa email.
+     */
+    get: operations['getMe'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/products': {
     parameters: {
       query?: never;
@@ -420,6 +440,21 @@ export interface components {
       mergedExisting?: string[];
       adjustments: components['schemas']['MergeAdjustment'][];
     };
+    Me: {
+      /**
+       * @description sub của Cognito, cố định suốt đời tài khoản
+       * @example f1b2c3d4-0000-4000-8000-000000000001
+       */
+      userId: string;
+      /** Format: email */
+      email?: string;
+      /**
+       * @example [
+       *       "admin"
+       *     ]
+       */
+      groups: string[];
+    };
     /** @description Lỗi theo RFC 9457 */
     Problem: {
       /** Format: uri-reference */
@@ -563,6 +598,29 @@ export interface operations {
           };
         };
       };
+      default: components['responses']['Problem'];
+    };
+  };
+  getMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Thông tin người đang đăng nhập */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Me'];
+        };
+      };
+      401: components['responses']['Problem'];
       default: components['responses']['Problem'];
     };
   };
