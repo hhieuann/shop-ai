@@ -58,17 +58,17 @@ export const router = createBrowserRouter([
         }),
       },
       {
-        // Trang tạm; An thay bằng đăng nhập Cognito (xem LoginPage.tsx)
+        // Đăng nhập Cognito (dang-nhap.md §3.1)
         path: 'login',
         lazy: async () => ({
           Component: (await import('./features/auth/pages/LoginPage')).LoginPage,
         }),
       },
       {
-        // Trang tạm như /login; An thay bằng form tạo tài khoản Cognito (dang-nhap.md §3.2)
+        // Tạo tài khoản và xác nhận email (dang-nhap.md §3.2, §3.3)
         path: 'register',
         lazy: async () => ({
-          Component: (await import('./features/auth/pages/LoginPage')).LoginPage,
+          Component: (await import('./features/auth/pages/RegisterPage')).RegisterPage,
         }),
       },
       {

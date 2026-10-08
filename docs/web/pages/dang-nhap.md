@@ -1,6 +1,6 @@
 # Đăng nhập và tạo tài khoản `/login`, `/register`
 
-Code: `features/auth/pages/LoginPage.tsx` (**trang tạm**, An thay khi làm Cognito), `shared/auth/token.ts`. Quyết định: `docs/adr/0007-http-api-jwt-cognito.md` (Cognito user pool, đăng nhập SRP, nhóm `admin` bắt buộc MFA). Phạm vi: `project-plan.md` ("Đăng ký, đăng nhập, phân quyền khách/admin"). Đọc kèm [design-system.md](../design-system.md).
+Code: `features/auth/pages/LoginPage.tsx`, `RegisterPage.tsx`, `features/auth/components/`, `shared/auth/cognito.ts`, `shared/auth/token.ts`. Quyết định: `docs/adr/0007-http-api-jwt-cognito.md` (Cognito user pool, đăng nhập SRP, nhóm `admin` bắt buộc MFA). Phạm vi: `project-plan.md` ("Đăng ký, đăng nhập, phân quyền khách/admin"). Đọc kèm [design-system.md](../design-system.md).
 
 Người làm: **An**. File này chỉ quy định giao diện; luồng Cognito (gọi API nào, lưu token ra sao) An quyết.
 
@@ -137,6 +137,16 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
   - `setSignOutHandler(() => <đăng xuất Cognito>)`: menu gọi `signOut()`, hàm này chạy handler rồi tự gọi `notifyAuthChanged()`.
 - Khi đăng xuất: **không** xoá `localStorage` `shop-ai:guest-cart` (đó là giỏ khách mới sau khi đăng xuất, mặc định rỗng).
 - Thử lại luồng: chưa đăng nhập thêm 2 món → Giỏ → "Đặt hàng" → tạo tài khoản mới → nhập mã → phải tới thẳng `/checkout` với đúng 2 món.
+
+**Trả lời của An (08/10/2026, #69, #71, #73):**
+- Tự đăng ký: **có**; xác nhận bằng **mã 6 số gửi email** (email mặc định của Cognito, giới hạn khoảng 50 email/ngày; đủ cho demo, chuyển sang SES khi cần).
+- Chính sách mật khẩu: ít nhất 8 ký tự, có chữ hoa, chữ thường, số, ký tự đặc biệt (đúng danh sách điều kiện ở 3.2).
+- Đăng nhập bằng **email**; username chỉ để hiển thị, lưu ở `preferred_username`, đọc từ ID token.
+- Username: 3–20 ký tự, chữ thường không dấu, số, `.`, `_`. Lambda Pre sign-up chặn sai luật và trùng; web nhận lỗi `UserLambdaValidationException` có mã `USERNAME_TAKEN`, `USERNAME_INVALID`, `USERNAME_REQUIRED` và hiện câu ở mục 4.
+- **Quên mật khẩu**: để sau v0.1.0.
+- **Admin** đăng nhập chung `/login`; tài khoản đã bật MFA (ứng dụng xác thực, TOTP) thì thêm bước "Xác thực hai lớp". Bắt buộc admin bật MFA làm cùng trang quản trị.
+- Token lưu cookie `Secure; SameSite=Strict` (không dùng localStorage). Cấu hình Cognito đọc lúc chạy từ `/config.json`; chạy `vite dev` trên mock (không có `/config.json`) thì vẫn dùng token giả như cũ.
+- Chưa có `FocusLayout`: trang đăng nhập tạm nằm trong layout thường như checkout.
 
 **Câu hỏi còn mở:**
 - User pool có **tự đăng ký** (self sign-up) và xác nhận bằng **mã gửi email** không? Spec này giả định có.

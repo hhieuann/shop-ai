@@ -16,6 +16,9 @@ const queryClient = new QueryClient({
   },
 });
 
+// Nạp Cognito (Amplify) ở gói riêng, không chặn trang hiện lên. Có /config.json thì token.ts tự báo đăng nhập đã đổi.
+void import('./shared/auth/cognito').then(({ initAuth }) => initAuth());
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
