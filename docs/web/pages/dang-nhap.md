@@ -135,7 +135,7 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 - Nút tài khoản trên header (design-system §9.17, đã code ở `app/AccountMenu.tsx`) đọc tên và quyền từ `token.ts`. Lúc khởi động app gọi thêm:
   - `setProfileProvider(() => ({ username, email, isAdmin }))`: đọc từ ID token (username theo thuộc tính An chọn, `isAdmin` = có nhóm `admin` trong `cognito:groups`); trả `null` khi chưa đăng nhập.
   - `setSignOutHandler(() => <đăng xuất Cognito>)`: menu gọi `signOut()`, hàm này chạy handler rồi tự gọi `notifyAuthChanged()`.
-- Khi đăng xuất: **không** xoá `localStorage` `shop-ai:guest-cart` (đó là giỏ khách mới sau khi đăng xuất, mặc định rỗng).
+- Khi đăng xuất: web tự xoá giỏ khách (`shop-ai:guest-cart`), dữ liệu phiên trong `sessionStorage`, giỏ và đơn trong bộ nhớ đệm (`AccountMenu.tsx`, account.md BR-09). Trang đăng nhập không phải làm gì thêm.
 - Thử lại luồng: chưa đăng nhập thêm 2 món → Giỏ → "Đặt hàng" → tạo tài khoản mới → nhập mã → phải tới thẳng `/checkout` với đúng 2 món.
 
 **Trả lời của An (08/10/2026, #69, #71, #73):**
@@ -159,4 +159,4 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
   - Quy tắc ký tự và độ dài (đề xuất ở 3.2).
   - Web đọc username từ đâu sau khi đăng nhập (ID token) để hiện lên header.
 
-**Đã chốt (07/10/2026):** đăng xuất nằm trong menu tài khoản trên header (design-system §9.17). Khi đăng xuất: gọi `notifyAuthChanged()`, không xoá giỏ khách (`shop-ai:guest-cart`), đang ở trang bắt buộc đăng nhập thì về `/`.
+**Đã chốt (07/10/2026):** đăng xuất nằm trong menu tài khoản trên header (design-system §9.17). Khi đăng xuất: gọi `notifyAuthChanged()`, xoá giỏ khách (`shop-ai:guest-cart`) và dữ liệu phiên trên trình duyệt, đang ở trang bắt buộc đăng nhập thì về `/` (sửa 08/10/2026 cho khớp account.md BR-09).

@@ -8,6 +8,7 @@ import {
   type FocusEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronDown,
@@ -20,7 +21,10 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
+import { queryKeys } from '../shared/api/queryKeys';
 import { signOut } from '../shared/auth/token';
+import { clearCartSession } from '../features/cart/lib/afterSignIn';
+import { clearCheckoutItems } from '../features/orders/lib/checkoutStorage';
 import { useAccount } from '../shared/auth/useSession';
 import styles from './AccountMenu.module.css';
 
@@ -41,6 +45,7 @@ export function AccountMenu() {
   const signedIn = status === 'signedIn';
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -118,6 +123,11 @@ export function AccountMenu() {
 
   const doSignOut = async () => {
     await signOut();
+    // Đăng xuất là hết phiên trên trình duyệt này: giỏ khách rỗng, không để lại giỏ và đơn của
+    // người vừa dùng (account.md BR-09). Danh sách sản phẩm vẫn giữ trong bộ nhớ đệm.
+    clearCartSession(queryClient);
+    clearCheckoutItems();
+    queryClient.removeQueries({ queryKey: queryKeys.orders.all });
     close(true);
     if (isSignedInOnly(location.pathname)) navigate('/', { replace: true });
   };

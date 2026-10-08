@@ -103,6 +103,26 @@ export function decideAfterMerge(
   return { to: 'checkout', selectedItems };
 }
 
+// ── Đăng xuất ────────────────────────────────────────────────────────────────
+
+/**
+ * Gọi ngay sau khi đăng xuất (account.md BR-09, cart.md dòng "đăng nhập rồi đăng xuất"):
+ * giỏ khách trên trình duyệt bắt đầu lại từ rỗng, bỏ khoá gộp và ý định đặt hàng của phiên cũ,
+ * và xoá giỏ tài khoản khỏi bộ nhớ đệm để người dùng chung máy không thấy lại.
+ * Bình thường giỏ khách đã rỗng vì gộp lúc đăng nhập thành công là xoá; hàm này lo nốt trường hợp
+ * gộp lỗi mà khách đăng xuất trước khi bấm "Gộp vào giỏ" (các món đó bỏ, cart.md BR-10).
+ */
+export function clearCartSession(queryClient: QueryClient) {
+  clearGuestCart();
+  dropMergeKey();
+  try {
+    sessionStorage.removeItem(INTENT_KEY);
+  } catch {
+    // bỏ qua
+  }
+  queryClient.removeQueries({ queryKey: queryKeys.cart.all });
+}
+
 // ── Gộp và đi tiếp ───────────────────────────────────────────────────────────
 
 export async function mergeGuestCart(lines: readonly GuestLine[]): Promise<MergeCartResult> {
