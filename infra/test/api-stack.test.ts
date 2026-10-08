@@ -7,11 +7,19 @@ import type { ShopEnvironment } from '../lib/config.js';
 const dev: ShopEnvironment = { name: 'dev', stackPrefix: 'shop-dev', isProd: false };
 const prod: ShopEnvironment = { name: 'prod', stackPrefix: 'shop-prd', isProd: true };
 
-function synth(shopEnv: ShopEnvironment): Template {
+function synthUncached(shopEnv: ShopEnvironment): Template {
   // Bỏ qua bước esbuild cho test chạy nhanh; đóng gói thật do `cdk synth` kiểm.
   const app = new App({ context: { 'aws:cdk:bundling-stacks': [] } });
   const stack = new ApiStack(app, 'TestApi', { shopEnv, env: { region: 'ap-southeast-1' } });
   return Template.fromStack(stack);
+}
+
+// Synth một stack CDK mất vài giây; các test chỉ đọc template nên synth một lần cho mỗi môi trường
+const templates = new Map<string, Template>();
+function synth(shopEnv: ShopEnvironment): Template {
+  let template = templates.get(shopEnv.name);
+  if (!template) templates.set(shopEnv.name, (template = synthUncached(shopEnv)));
+  return template;
 }
 
 describe('ApiStack', () => {
