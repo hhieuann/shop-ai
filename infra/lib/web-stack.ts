@@ -1,6 +1,7 @@
 import type { CfnResource } from 'aws-cdk-lib';
 import {
   CfnOutput,
+  Duration,
   Fn,
   RemovalPolicy,
   Stack,
@@ -11,7 +12,10 @@ import {
 import type { HttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import {
   AllowedMethods,
+  CacheCookieBehavior,
+  CacheHeaderBehavior,
   CachePolicy,
+  CacheQueryStringBehavior,
   Distribution,
   Function as CloudFrontFunction,
   FunctionCode,
@@ -66,6 +70,21 @@ export class WebStack extends Stack {
 
     // apiEndpoint dạng https://<id>.execute-api.<region>.amazonaws.com, CloudFront chỉ cần phần tên miền
     const apiDomain = Fn.select(2, Fn.split('/', httpApi.apiEndpoint));
+    const apiOrigin = new HttpOrigin(apiDomain);
+
+    // Danh sách và chi tiết sản phẩm là công khai, chấp nhận chậm tối đa 60 giây (catalog.md).
+    // Khoá cache gồm mọi query string (q, category, sort, limit, cursor), không có header hay cookie.
+    const productsCache = new CachePolicy(this, 'ProductsCache', {
+      comment: 'shop-ai: sản phẩm công khai, cache 60 giây',
+      defaultTtl: Duration.seconds(60),
+      maxTtl: Duration.seconds(60),
+      minTtl: Duration.seconds(0),
+      queryStringBehavior: CacheQueryStringBehavior.all(),
+      headerBehavior: CacheHeaderBehavior.none(),
+      cookieBehavior: CacheCookieBehavior.none(),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
 
     const distribution = new Distribution(this, 'Distribution', {
       comment: `shop-ai web (${shopEnv.name})`,
@@ -80,9 +99,17 @@ export class WebStack extends Stack {
           { function: spaRewrite, eventType: FunctionEventType.VIEWER_REQUEST },
         ],
       },
+      // CloudFront so khớp theo thứ tự: /api/v1/products* phải đứng trước /api/*
       additionalBehaviors: {
+        '/api/v1/products*': {
+          origin: apiOrigin,
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: productsCache,
+          originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
         '/api/*': {
-          origin: new HttpOrigin(apiDomain),
+          origin: apiOrigin,
           viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
           allowedMethods: AllowedMethods.ALLOW_ALL,
           cachePolicy: CachePolicy.CACHING_DISABLED,
