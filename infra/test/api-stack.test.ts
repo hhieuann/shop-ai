@@ -251,4 +251,31 @@ describe('ApiStack', () => {
     template.hasOutput('UserPoolId', {});
     template.hasOutput('UserPoolClientId', {});
   });
+
+  it('userPool_runsPreSignUpTriggerThatCanOnlyListUsers', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: kiểm username trước khi tạo tài khoản
+    template.hasResourceProperties('AWS::Cognito::UserPool', {
+      LambdaConfig: { PreSignUp: Match.anyValue() },
+    });
+    // Assert: Lambda trigger chỉ có quyền đọc danh sách user để kiểm trùng, không sửa gì
+    const fns = template.findResources('AWS::Lambda::Function', {
+      Properties: { Environment: { Variables: { POWERTOOLS_SERVICE_NAME: 'account-signup' } } },
+    });
+    expect(Object.keys(fns)).toHaveLength(1);
+    const roleRef = (Object.values(fns)[0] as { Properties: { Role: { 'Fn::GetAtt': string[] } } })
+      .Properties.Role['Fn::GetAtt'][0];
+    const policies = Object.values(template.findResources('AWS::IAM::Policy')) as {
+      Properties: {
+        Roles: { Ref: string }[];
+        PolicyDocument: { Statement: { Action: string | string[] }[] };
+      };
+    }[];
+    const actions = policies
+      .filter((p) => p.Properties.Roles.some((r) => r.Ref === roleRef))
+      .flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((st) => st.Action));
+    expect(actions.filter((a) => a.startsWith('cognito-idp:'))).toEqual(['cognito-idp:ListUsers']);
+  });
 });

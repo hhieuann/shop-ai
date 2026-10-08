@@ -28,6 +28,8 @@ function synth(shopEnv: ShopEnvironment): Template {
     shopEnv,
     env,
     httpApi: api.httpApi,
+    userPoolId: api.userPool.userPoolId,
+    userPoolClientId: api.webClient.userPoolClientId,
     webDistPath: fakeWebDist(),
   });
   return Template.fromStack(web);
@@ -118,7 +120,7 @@ describe('WebStack', () => {
     // Assert: không xoá file cũ có hash (trang đang mở vẫn tải được), chỉ làm mới index.html
     template.hasResourceProperties('Custom::CDKBucketDeployment', {
       Prune: false,
-      DistributionPaths: ['/index.html'],
+      DistributionPaths: ['/index.html', '/config.json'],
     });
   });
 
@@ -164,5 +166,17 @@ describe('WebStack', () => {
         }),
       }),
     });
+  });
+
+  it('webDeployment_publishesRuntimeConfigForCognito', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: web đọc config.json lúc chạy nên không phải build lại web cho từng môi trường
+    const deployments = Object.values(template.findResources('Custom::CDKBucketDeployment')) as {
+      Properties: { SourceMarkers?: Record<string, unknown>[] };
+    }[];
+    const markers = JSON.stringify(deployments.map((d) => d.Properties.SourceMarkers ?? []));
+    expect(markers).toContain('UserPool');
   });
 });

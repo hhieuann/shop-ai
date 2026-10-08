@@ -311,6 +311,9 @@ importers:
       '@aws-lambda-powertools/logger':
         specifier: ^2.35.0
         version: 2.35.0
+      '@aws-sdk/client-cognito-identity-provider':
+        specifier: ^3.1147.0
+        version: 3.1147.0
       '@aws-sdk/client-dynamodb':
         specifier: ^3.1100.0
         version: 3.1146.0
@@ -385,6 +388,10 @@ packages:
         optional: true
       '@middy/core':
         optional: true
+
+  '@aws-sdk/client-cognito-identity-provider@3.1147.0':
+    resolution: {integrity: sha512-xyursHPDx+eIqjkYcPbYfuP+X3i8lOJiHyZJYsvs6rKUrdhKptBB3dblWntrQPVXlKZ0LxXuXUNOFfZHINdiig==}
+    engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-dynamodb@3.1146.0':
     resolution: {integrity: sha512-3Mc8YkSu2KlgNNSuspaW+Fo0pTwX+fLYlC5ovH3yX3OoDg2RPtp3Py8KuQJr0FDlQj1tHw0K3+AtaH4NXlI3aQ==}
@@ -3356,6 +3363,17 @@ snapshots:
     dependencies:
       '@aws-lambda-powertools/commons': 2.35.0
       '@aws/lambda-invoke-store': 0.3.0
+
+  '@aws-sdk/client-cognito-identity-provider@3.1147.0':
+    dependencies:
+      '@aws-sdk/core': 3.978.1
+      '@aws-sdk/credential-provider-node': 3.972.84
+      '@aws-sdk/types': 3.974.6
+      '@smithy/core': 3.35.1
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.12.1
+      '@smithy/types': 4.19.0
+      tslib: 2.8.1
 
   '@aws-sdk/client-dynamodb@3.1146.0':
     dependencies:

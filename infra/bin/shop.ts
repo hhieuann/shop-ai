@@ -34,6 +34,8 @@ new WebStack(app, `${shopEnv.stackPrefix}-web`, {
   shopEnv,
   env,
   httpApi: api.httpApi,
+  userPoolId: api.userPool.userPoolId,
+  userPoolClientId: api.webClient.userPoolClientId,
   webDistPath,
   terminationProtection: shopEnv.isProd,
   description: `shop-ai web (${shopEnv.name})`,
