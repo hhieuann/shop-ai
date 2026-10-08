@@ -1,5 +1,13 @@
 import type { CfnResource } from 'aws-cdk-lib';
-import { CfnOutput, Fn, RemovalPolicy, Stack, Validations, type StackProps } from 'aws-cdk-lib';
+import {
+  CfnOutput,
+  Fn,
+  RemovalPolicy,
+  Stack,
+  Token,
+  Validations,
+  type StackProps,
+} from 'aws-cdk-lib';
 import type { HttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import {
   AllowedMethods,
@@ -146,7 +154,7 @@ export class WebStack extends Stack {
       },
       {
         // Bucket asset do CDK bootstrap tạo, tên chứa account và region nên tính ra thay vì ghi cứng
-        id: `AwsSolutions-IAM5[Resource::arn:aws:s3:::cdk-hnb659fds-assets-${this.account}-${this.region}/*]`,
+        id: `AwsSolutions-IAM5[Resource::arn:aws:s3:::cdk-hnb659fds-assets-${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}-${this.region}/*]`,
         reason: 'Lambda BucketDeployment đọc bản build web từ bucket asset của CDK bootstrap.',
       },
       {
