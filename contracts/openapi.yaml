@@ -60,7 +60,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Me'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -204,7 +204,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Cart'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -240,7 +240,7 @@ paths:
         '400':
           $ref: '#/components/responses/Problem'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Problem'
         '409':
@@ -290,7 +290,7 @@ paths:
         '400':
           $ref: '#/components/responses/Problem'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '422':
           description: '`IDEMPOTENCY_KEY_REUSED` cùng khoá nhưng nội dung khác'
           content:
@@ -333,7 +333,7 @@ paths:
         '400':
           $ref: '#/components/responses/Problem'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Problem'
         '409':
@@ -362,7 +362,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Cart'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Problem'
         default:
@@ -432,7 +432,7 @@ paths:
         '400':
           $ref: '#/components/responses/Problem'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '409':
           description: |
             `OUT_OF_STOCK` có món hết hàng, không đủ số lượng hoặc ngừng bán, kèm `invalidItems` ·
@@ -485,7 +485,7 @@ paths:
         '400':
           $ref: '#/components/responses/Problem'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -508,7 +508,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Order'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Problem'
         default:
@@ -532,7 +532,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Order'
         '401':
-          $ref: '#/components/responses/Problem'
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/Problem'
         '409':
@@ -1017,6 +1017,20 @@ components:
           format: date-time
 
   responses:
+    Unauthorized:
+      description: |
+        Thiếu token, token sai hoặc hết hạn. JWT authorizer của HTTP API chặn trước khi tới Lambda
+        (ADR-0007) và trả body cố định, **không** theo RFC 9457: HTTP API không có Gateway Responses,
+        CloudFront cũng không cho đổi body lỗi 401. Client chỉ dựa vào mã 401.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message:
+                type: string
+                example: Unauthorized
     Problem:
       description: Lỗi
       content:

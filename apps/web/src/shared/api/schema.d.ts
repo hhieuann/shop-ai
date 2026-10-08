@@ -560,6 +560,22 @@ export interface components {
     };
   };
   responses: {
+    /**
+     * @description Thiếu token, token sai hoặc hết hạn. JWT authorizer của HTTP API chặn trước khi tới Lambda
+     *     (ADR-0007) và trả body cố định, **không** theo RFC 9457: HTTP API không có Gateway Responses,
+     *     CloudFront cũng không cho đổi body lỗi 401. Client chỉ dựa vào mã 401.
+     */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': {
+          /** @example Unauthorized */
+          message: string;
+        };
+      };
+    };
     /** @description Lỗi */
     Problem: {
       headers: {
@@ -620,7 +636,7 @@ export interface operations {
           'application/json': components['schemas']['Me'];
         };
       };
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       default: components['responses']['Problem'];
     };
   };
@@ -755,7 +771,7 @@ export interface operations {
           'application/json': components['schemas']['Cart'];
         };
       };
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       default: components['responses']['Problem'];
     };
   };
@@ -785,7 +801,7 @@ export interface operations {
         };
       };
       400: components['responses']['Problem'];
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       404: components['responses']['Problem'];
       /**
        * @description `QUANTITY_LIMIT` vượt min(99, tồn kho), kèm `maxAddable` ·
@@ -828,7 +844,7 @@ export interface operations {
         };
       };
       400: components['responses']['Problem'];
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       /** @description `IDEMPOTENCY_KEY_REUSED` cùng khoá nhưng nội dung khác */
       422: {
         headers: {
@@ -868,7 +884,7 @@ export interface operations {
         };
       };
       400: components['responses']['Problem'];
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       404: components['responses']['Problem'];
       /** @description `QUANTITY_LIMIT` số lượng mới vượt min(99, tồn kho), kèm `maxAddable` */
       409: {
@@ -902,7 +918,7 @@ export interface operations {
           'application/json': components['schemas']['Cart'];
         };
       };
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       404: components['responses']['Problem'];
       default: components['responses']['Problem'];
     };
@@ -932,7 +948,7 @@ export interface operations {
         };
       };
       400: components['responses']['Problem'];
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       default: components['responses']['Problem'];
     };
   };
@@ -980,7 +996,7 @@ export interface operations {
         };
       };
       400: components['responses']['Problem'];
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       /**
        * @description `OUT_OF_STOCK` có món hết hàng, không đủ số lượng hoặc ngừng bán, kèm `invalidItems` ·
        *     `PRICE_CHANGED` giá đã đổi, kèm `changedItems` · `ORDER_IN_PROGRESS` lần gửi trước
@@ -1026,7 +1042,7 @@ export interface operations {
           'application/json': components['schemas']['Order'];
         };
       };
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       404: components['responses']['Problem'];
       default: components['responses']['Problem'];
     };
@@ -1051,7 +1067,7 @@ export interface operations {
           'application/json': components['schemas']['Order'];
         };
       };
-      401: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
       404: components['responses']['Problem'];
       /** @description `CANNOT_CANCEL` đơn đã SHIPPED, DELIVERED hoặc đã CANCELLED */
       409: {
