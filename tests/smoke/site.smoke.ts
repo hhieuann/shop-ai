@@ -53,8 +53,9 @@ describe.skipIf(!BASE_URL)(`smoke ${BASE_URL ?? ''}`, () => {
     // Act
     const res = await get('/api/v1/me');
 
-    // Assert: JWT authorizer của Cognito chặn khi không có token
+    // Assert: JWT authorizer của Cognito chặn khi không có token, body cố định (openapi Unauthorized)
     expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ message: 'Unauthorized' });
   });
 
   it('web_servesAppShellForHomeAndReactRoutes', async () => {
