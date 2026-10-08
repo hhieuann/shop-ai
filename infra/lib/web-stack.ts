@@ -36,6 +36,9 @@ export interface WebStackProps extends StackProps {
   readonly httpApi: HttpApi;
   /** Thư mục bản build web (apps/web/dist). */
   readonly webDistPath: string;
+  /** Cognito của stack api; web đọc qua /config.json lúc chạy. */
+  readonly userPoolId: string;
+  readonly userPoolClientId: string;
 }
 
 /**
@@ -46,7 +49,7 @@ export interface WebStackProps extends StackProps {
 export class WebStack extends Stack {
   constructor(scope: Construct, id: string, props: WebStackProps) {
     super(scope, id, props);
-    const { shopEnv, httpApi, webDistPath } = props;
+    const { shopEnv, httpApi, webDistPath, userPoolId, userPoolClientId } = props;
 
     const bucket = new Bucket(this, 'WebBucket', {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
@@ -122,10 +125,14 @@ export class WebStack extends Stack {
     // File có hash trong tên không bao giờ đổi nội dung nên không xoá (prune: false): trang đang mở
     // ở bản cũ vẫn tải được. Chỉ index.html đổi theo mỗi bản, nên invalidate đúng file đó.
     new BucketDeployment(this, 'DeployWeb', {
-      sources: [Source.asset(webDistPath)],
+      // config.json ghi lúc deploy nên một bản build web dùng được cho mọi môi trường
+      sources: [
+        Source.asset(webDistPath),
+        Source.jsonData('config.json', { region: this.region, userPoolId, userPoolClientId }),
+      ],
       destinationBucket: bucket,
       distribution,
-      distributionPaths: ['/index.html'],
+      distributionPaths: ['/index.html', '/config.json'],
       prune: false,
       memoryLimit: 512,
     });

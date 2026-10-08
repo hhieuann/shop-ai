@@ -8,6 +8,7 @@ import {
   RemovalPolicy,
   Stack,
   Tags,
+  Token,
   Validations,
   type StackProps,
 } from 'aws-cdk-lib';
@@ -20,12 +21,14 @@ import {
 } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import type { UserPoolClient } from 'aws-cdk-lib/aws-cognito';
 import {
   AccountRecovery,
   CfnUserPoolGroup,
   FeaturePlan,
   Mfa,
   UserPool,
+  UserPoolOperation,
 } from 'aws-cdk-lib/aws-cognito';
 import { AttributeType, BillingMode, ProjectionType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
@@ -74,6 +77,9 @@ export class ApiStack extends Stack {
   public readonly httpApi: HttpApi;
   /** JWT authorizer của Cognito; module nào có route cần đăng nhập thì truyền vào addRoutes. */
   public readonly authorizer: HttpUserPoolAuthorizer;
+  /** User pool và app client của web; stack web ghi id của chúng vào config.json. */
+  public readonly userPool: UserPool;
+  public readonly webClient: UserPoolClient;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -205,7 +211,10 @@ export class ApiStack extends Stack {
     });
 
     // Đăng nhập (ADR-0007): route nào cần đăng nhập thì gắn this.authorizer
-    this.authorizer = this.addCognito(shopEnv, removalPolicy);
+    const auth = this.addCognito(shopEnv, removalPolicy);
+    this.userPool = auth.userPool;
+    this.webClient = auth.webClient;
+    this.authorizer = auth.authorizer;
     const accountFn = this.noDataFunction('Account', 'account', removalPolicy);
     httpApi.addRoutes({
       path: '/api/v1/me',
@@ -221,9 +230,15 @@ export class ApiStack extends Stack {
   }
 
   /** Lambda nhỏ không đọc dữ liệu (health, account): 128 MB, chỉ có quyền ghi log và X-Ray. */
-  private noDataFunction(name: string, module: string, removalPolicy: RemovalPolicy) {
+  private noDataFunction(
+    name: string,
+    module: string,
+    removalPolicy: RemovalPolicy,
+    entryFile = 'lambda.ts',
+    serviceName = module,
+  ) {
     const fn = new NodejsFunction(this, `${name}Function`, {
-      entry: path.join(API_SRC, 'modules', module, 'lambda.ts'),
+      entry: path.join(API_SRC, 'modules', module, entryFile),
       depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
       runtime: Runtime.NODEJS_24_X,
       architecture: Architecture.ARM_64,
@@ -235,7 +250,7 @@ export class ApiStack extends Stack {
         removalPolicy,
       }),
       environment: {
-        POWERTOOLS_SERVICE_NAME: module,
+        POWERTOOLS_SERVICE_NAME: serviceName,
         NODE_OPTIONS: '--enable-source-maps',
       },
       bundling: API_BUNDLING,
@@ -280,6 +295,35 @@ export class ApiStack extends Stack {
       deletionProtection: shopEnv.isProd,
       removalPolicy,
     });
+    // Username (preferred_username) bắt buộc, đúng luật và không trùng: kiểm trước khi tạo tài khoản
+    const preSignUpFn = this.noDataFunction(
+      'PreSignUp',
+      'account',
+      removalPolicy,
+      'preSignUpLambda.ts',
+      'account-signup',
+    );
+    // Không dùng userPool.userPoolArn: user pool đã trỏ tới Lambda này, trỏ ngược lại sẽ thành vòng
+    preSignUpFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:ListUsers'],
+        resources: [
+          Stack.of(this).formatArn({
+            service: 'cognito-idp',
+            resource: 'userpool',
+            resourceName: '*',
+          }),
+        ],
+      }),
+    );
+    Validations.of(preSignUpFn).acknowledge({
+      // Tên ghi nhận chứa region và account thật; CI synth khi chưa biết account nên dùng chữ thay thế
+      id: `AwsSolutions-IAM5[Resource::arn:aws:cognito-idp:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:userpool/*]`,
+      reason:
+        'Chỉ ListUsers (đọc) để kiểm trùng username; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
+    });
+    userPool.addTrigger(UserPoolOperation.PRE_SIGN_UP, preSignUpFn);
+
     const webClient = userPool.addClient('WebClient', {
       userPoolClientName: `${shopEnv.stackPrefix}-web`,
       authFlows: { userSrp: true },
@@ -316,9 +360,10 @@ export class ApiStack extends Stack {
     new CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new CfnOutput(this, 'UserPoolClientId', { value: webClient.userPoolClientId });
 
-    return new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
+    const authorizer = new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
       userPoolClients: [webClient],
     });
+    return { userPool, webClient, authorizer };
   }
 
   /**
