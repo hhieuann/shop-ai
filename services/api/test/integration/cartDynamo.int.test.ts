@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { CreateTableCommand } from '@aws-sdk/client-dynamodb';
 import { PutCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
-import { addCartItem, getCart } from '../../src/modules/cart/application/cartService.js';
+import { addCartItem, getCart, mergeCart } from '../../src/modules/cart/application/cartService.js';
+import { makeIdempotentUseCase } from '../../src/shared/idempotency.js';
 import type { CartLine } from '../../src/modules/cart/domain/cart.js';
 import { DynamoCartRepository } from '../../src/modules/cart/infra/dynamoCartRepository.js';
 import { DynamoProductCatalog } from '../../src/modules/cart/infra/dynamoProductCatalog.js';
@@ -13,6 +15,7 @@ import { startDynamoLocal, type DynamoLocal } from '../helpers/dynamo.js';
 
 const CARTS = 'carts-test';
 const PRODUCTS = 'products-test';
+const IDEMPOTENCY = 'cart-idempotency-test';
 const NOW = '2026-10-13T03:00:00.000Z';
 let dynamo: DynamoLocal;
 let carts: DynamoCartRepository;
@@ -29,6 +32,14 @@ beforeAll(async () => {
   dynamo = await startDynamoLocal();
   await dynamo.client.send(new CreateTableCommand(cartsTableDefinition(CARTS)));
   await dynamo.client.send(new CreateTableCommand(productsTableDefinition(PRODUCTS)));
+  await dynamo.client.send(
+    new CreateTableCommand({
+      TableName: IDEMPOTENCY,
+      AttributeDefinitions: [{ AttributeName: 'id', AttributeType: 'S' }],
+      KeySchema: [{ AttributeName: 'id', KeyType: 'HASH' }],
+      BillingMode: 'PAY_PER_REQUEST',
+    }),
+  );
   carts = new DynamoCartRepository(dynamo.doc, CARTS);
   catalog = new DynamoProductCatalog(dynamo.doc, PRODUCTS, { baseDelayMs: 0 });
 });
@@ -206,5 +217,34 @@ describe('cart use cases on DynamoDB Local', () => {
     expect(view.items).toHaveLength(1);
     expect(view.items[0]).toMatchObject({ productId: 'cat-gpu-1', quantity: 3, stock: 3 });
     expect(view.totalAmount).toBe(3 * 15_900_000);
+  });
+
+  it('mergeCart_withIdempotency_addsGuestItemsOnlyOnce_whenSameKeySentTwice', async () => {
+    // Arrange: cách lambda.ts ghép use case gộp giỏ với helper idempotency (ADR-0017)
+    const deps = { carts, catalog, now: () => NOW };
+    const merge = makeIdempotentUseCase(
+      (payload: { items: { productId: string; quantity: number }[] }, userId: string) =>
+        mergeCart(deps, { userId, items: payload.items }),
+      { tableName: IDEMPOTENCY, inProgressCode: 'MERGE_IN_PROGRESS', client: dynamo.client },
+    );
+    await addCartItem(deps, { userId: 'user-merge', productId: 'cat-gpu-1', quantity: 1 });
+    const request = {
+      userId: 'user-merge',
+      // Sinh lúc chạy, không viết cứng (gitleaks báo nhầm chuỗi UUID là khoá API)
+      idempotencyKey: randomUUID(),
+      payload: { items: [{ productId: 'cat-gpu-1', quantity: 1 }] },
+    };
+
+    // Act: mạng lỗi, web gửi lại cùng khoá
+    const first = await merge(request);
+    const second = await merge(request);
+
+    // Assert: tiêu chí "gọi lại cùng khoá thì giỏ không cộng dồn thêm lần nữa"
+    expect(first.replayed).toBe(false);
+    expect(second.replayed).toBe(true);
+    expect(second.value).toEqual(first.value);
+    expect(first.value.mergedExisting).toEqual(['cat-gpu-1']);
+    const view = await getCart(deps, { userId: 'user-merge' });
+    expect(view.items[0]?.quantity).toBe(2);
   });
 });
