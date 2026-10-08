@@ -2,7 +2,7 @@
 
 - Module: cart
 - Vai trò: khách vãng lai (chưa đăng nhập), khách hàng đã đăng nhập
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (giới hạn theo tồn kho, cờ đổi giá); 07/10/2026 (giỏ cho khách vãng lai, gộp giỏ khi đăng nhập)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (giới hạn theo tồn kho, cờ đổi giá); 07/10/2026 (giỏ cho khách vãng lai, gộp giỏ khi đăng nhập); 08/10/2026 (đăng xuất xoá giỏ khách)
 
 ## User story
 
@@ -33,7 +33,7 @@ Là khách hàng, kể cả khi chưa đăng nhập, tôi muốn thêm sản ph�
   - Món ngừng bán, hết hàng hoặc không còn trong catalog → bỏ qua.
   - Server trả giỏ sau khi gộp **và** danh sách món bị điều chỉnh (số lượng bị chặn, bị bỏ qua) để web báo cho khách.
   - Bắt buộc header `Idempotency-Key`: gọi lại cùng khoá (mạng lỗi, bấm lại) trả cùng kết quả, không cộng dồn lần hai.
-  - Gộp thành công → web xoá giỏ khách. Gộp thất bại → giữ giỏ khách, lần đăng nhập sau gộp lại.
+  - Gộp thành công → web xoá giỏ khách. Gộp thất bại → giữ giỏ khách, trang giỏ hiện khung cảnh báo kèm nút "Gộp vào giỏ" để thử lại; khách đăng xuất trước khi gộp thì các món đó bỏ (đăng xuất luôn xoá giỏ khách, account.md BR-09).
 - BR-11: **Sau khi gộp, đi tiếp tới đâu** (khi khách đăng nhập từ nút "Đặt hàng"):
   - Các món khách đã tick được gộp **đúng số lượng** khách đã chọn (giỏ tài khoản chưa có món đó, không món nào bị chặn hay bỏ qua) → sang thẳng trang checkout với các món đó.
   - Ngược lại (món đã tick trùng với món trong giỏ tài khoản nên số lượng đổi, hoặc có món bị chặn, bỏ qua) → về trang giỏ hàng (không hiện thông báo riêng; số lượng và nhãn trên từng dòng đã cho thấy thay đổi), để khách xem lại rồi bấm "Đặt hàng" lần nữa. Không đưa khách vào checkout với số lượng khác cái họ vừa chọn.
