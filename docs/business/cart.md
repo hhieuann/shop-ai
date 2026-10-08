@@ -2,7 +2,7 @@
 
 - Module: cart
 - Vai trò: khách vãng lai (chưa đăng nhập), khách hàng đã đăng nhập
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (giới hạn theo tồn kho, cờ đổi giá); 07/10/2026 (giỏ cho khách vãng lai, gộp giỏ khi đăng nhập); 08/10/2026 (đăng xuất xoá giỏ khách)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (giới hạn theo tồn kho, cờ đổi giá); 07/10/2026 (giỏ cho khách vãng lai, gộp giỏ khi đăng nhập); 08/10/2026 (đăng xuất xoá giỏ khách; sản phẩm đã bị xoá khỏi catalog; hai request cùng sửa giỏ)
 
 ## User story
 
@@ -47,6 +47,8 @@ Là khách hàng, kể cả khi chưa đăng nhập, tôi muốn thêm sản ph�
 - `productId` không tồn tại khi thêm giỏ → 404.
 - Giỏ đã đủ 50 dòng mà thêm món mới → 409 `CART_FULL`.
 - Sửa hoặc xoá món không có trong giỏ → 404.
+- Sản phẩm trong giỏ đã bị xoá hẳn khỏi catalog (khác ngừng bán: không còn trong bảng `products`) → khi xem giỏ vẫn hiện dòng đó với tên "Sản phẩm không còn bán", giá bằng `addedPrice`, `status: INACTIVE`, `stock: 0`, không tick được, để khách tự xoá (như giỏ khách trên trình duyệt). Sửa số lượng món đó → 409 `QUANTITY_LIMIT` với `maxAddable: 0`; xoá thì được.
+- Hai request cùng sửa một giỏ (hai tab, bấm nhanh) → server ghi có điều kiện; request ghi sau tự đọc lại giỏ mới nhất và áp lại thay đổi, không làm mất thay đổi của request trước.
 - Giỏ rỗng khi checkout → frontend chặn, không gửi request; nếu vẫn gửi thì server trả 400.
 - Gộp giỏ với danh sách rỗng, hơn 50 dòng, `productId` trùng nhau trong cùng request, hoặc số lượng ngoài 1 … 99 → 400.
 - Gộp giỏ thiếu `Idempotency-Key` → 400. Cùng khoá nhưng nội dung khác → 422 `IDEMPOTENCY_KEY_REUSED`.
