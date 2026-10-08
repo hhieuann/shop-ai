@@ -7,16 +7,20 @@ export type ErrorKind = 'BAD_REQUEST' | 'NOT_FOUND' | 'CONFLICT' | 'UNPROCESSABL
 export interface AppErrorOptions {
   /** Mã lỗi nghiệp vụ cho frontend, trả trong trường `code` của Problem, vd. OUT_OF_STOCK */
   readonly code?: string;
+  /** Trường riêng thêm vào body lỗi, vd. { maxAddable: 2 } của CartProblem */
+  readonly extensions?: Readonly<Record<string, unknown>>;
 }
 
 export abstract class AppError extends Error {
   abstract readonly kind: ErrorKind;
   readonly code?: string;
+  readonly extensions?: Readonly<Record<string, unknown>>;
 
   constructor(message: string, options: AppErrorOptions = {}) {
     super(message);
     this.name = new.target.name;
     if (options.code !== undefined) this.code = options.code;
+    if (options.extensions !== undefined) this.extensions = options.extensions;
   }
 }
 

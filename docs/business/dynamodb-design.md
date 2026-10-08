@@ -83,10 +83,13 @@ Giỏ hàng dùng **single-item per user** — lưu toàn bộ giỏ dưới 1 i
 ```
 userId     String   PK
 items      List     [{productId, quantity, addedPrice, addedAt}, ...]   tối đa 50 phần tử
+version    String   (UUID, đổi mỗi lần ghi; dùng cho ghi có điều kiện)
 updatedAt  String   (ISO 8601 UTC)
 ```
 
 > `addedPrice` — giá lúc thêm hoặc sửa số lượng gần nhất; khác giá hiện tại thì bật cờ `priceChanged` (cart.md BR-06).
+>
+> Ghi có điều kiện (`modules/cart/infra/dynamoCartRepository.ts`): mọi thao tác thêm, sửa, xoá đọc giỏ (`ConsistentRead`), áp luật, rồi `PutItem` với điều kiện `version` chưa đổi (giỏ mới: `attribute_not_exists(userId)`). Có request khác ghi trước thì đọc lại và làm lại, tối đa 3 lần. Dùng `version` ngẫu nhiên thay vì `updatedAt` để hai lần ghi trong cùng một mili giây không bị coi là cùng phiên bản.
 >
 > Giới hạn 50 dòng (cart.md BR-02): mỗi dòng khoảng 100 byte, 50 dòng khoảng 5 KB, còn rất xa giới hạn 400 KB của một item DynamoDB.
 

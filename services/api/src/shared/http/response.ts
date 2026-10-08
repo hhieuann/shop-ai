@@ -19,14 +19,16 @@ interface ProblemInit {
   readonly code?: string;
   readonly traceId: string;
   readonly errors?: readonly { field: string; message: string }[];
+  /** Trường riêng của từng loại lỗi, vd. maxAddable; không ghi đè được các trường chuẩn ở trên */
+  readonly extensions?: Readonly<Record<string, unknown>>;
 }
 
 /** Lỗi theo RFC 9457 (application/problem+json), khớp schema Problem trong contracts/openapi.yaml. */
-export function problem({ status, title, ...rest }: ProblemInit): HttpResult {
+export function problem({ status, title, extensions, ...rest }: ProblemInit): HttpResult {
   return {
     statusCode: status,
     headers: { 'content-type': 'application/problem+json' },
-    body: JSON.stringify({ type: 'about:blank', title, status, ...rest }),
+    body: JSON.stringify({ ...extensions, type: 'about:blank', title, status, ...rest }),
   };
 }
 
@@ -44,6 +46,7 @@ export function errorToProblem(error: unknown, traceId: string): HttpResult {
       ...HTTP_BY_KIND[error.kind],
       detail: error.message,
       ...(error.code === undefined ? {} : { code: error.code }),
+      ...(error.extensions === undefined ? {} : { extensions: error.extensions }),
       traceId,
     });
   }
