@@ -17,6 +17,7 @@ Mỗi quyết định kiến trúc quan trọng được ghi thành một file: 
 | [0014](0014-canary-ordering.md) | Deploy Lambda ordering kiểu canary bằng CodeDeploy | Đề xuất |
 | [0015](0015-repo-public.md) | Repo public | Chấp nhận |
 | [0016](0016-tu-xay-mo-hinh-goi-y.md) | Tự xây mô hình gợi ý trên Lambda + DynamoDB, không dùng Personalize | Chấp nhận |
+| [0017](0017-ngoai-le-bang-cheo-module-va-idempotency.md) | Ngoại lệ có ghi lại: `cart` đọc `products`, `ordering` ghi `products` và `carts` trong một giao dịch; bảng idempotency riêng từng module | Chấp nhận |
 
 ## Mẫu cho ADR mới
 

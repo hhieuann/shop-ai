@@ -96,7 +96,7 @@ Giỏ của khách vãng lai **không lưu trong bảng này** mà nằm trên t
 
 Chống gộp hai lần bằng Powertools Idempotency, khoá `userId#idempotencyKey`, TTL 24 giờ, giống `POST /orders`. Theo luật mỗi module một bảng (ADR-0009), module `cart` có bảng idempotency **riêng** (`cart-idempotency`), không dùng chung bảng của `ordering`.
 
-> ⚠️ **Cần An chốt:** thêm bảng `cart-idempotency` trong CDK, hay cho hai module dùng chung một bảng idempotency với tiền tố khoá (`cart#…`, `order#…`)?
+> ✅ **Đã chốt 08/10 ([ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md)):** bảng `cart-idempotency` riêng (khoá `id`, TTL `expiration` theo Powertools); `ordering` dùng `order-idempotency`. Cấu hình chung ở `shared/idempotency`.
 
 ---
 
@@ -158,11 +158,7 @@ updatedAt       String   (ISO 8601 UTC)
 
 **Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần.
 
-> ⚠️ **Cần An chốt:** giao dịch này ghi vào bảng của 3 module (`products` của catalog, `carts` của cart). Điều đó đi ngược luật "module không đụng bảng của nhau" (ADR-0009, ADR-0012). Hai hướng:
-> 1. Cho phép ngoại lệ có ghi lại: role IAM của `ordering` chỉ được `UpdateItem` vào thuộc tính `stock` của `products` và `items` của `carts`. Đơn giản, bảo đảm không bán vượt tồn kho.
-> 2. Tách bằng sự kiện: `ordering` giữ chỗ tồn kho qua port, `cart` tự xoá món khi nhận sự kiện `OrderPlaced`. Đúng luật hơn nhưng phức tạp hơn nhiều (phải xử lý bù trừ khi một bước lỗi).
->
-> Hoàng đề xuất hướng 1 cho 8 tuần.
+> ✅ **Đã chốt 08/10 ([ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md)): hướng 1.** Role của `ordering` chỉ có `dynamodb:UpdateItem` trên `products` và `carts`, không `PutItem` hay `DeleteItem`; phần ghi nằm trong `modules/ordering/infra/` sau port. `cart` đọc `products` chỉ bằng `BatchGetItem`.
 
 ---
 
