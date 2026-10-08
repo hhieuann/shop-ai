@@ -286,4 +286,29 @@ describe('ApiStack', () => {
       .flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((st) => st.Action));
     expect(actions.filter((a) => a.startsWith('cognito-idp:'))).toEqual(['cognito-idp:ListUsers']);
   });
+
+  it('e2eClient_existsOnlyOutsideProd_andUsesPasswordAuth', () => {
+    // Assert: dev có client E2E cho Newman (USER_PASSWORD_AUTH), authorizer chấp nhận token của nó
+    const devTemplate = synth(dev);
+    devTemplate.hasResourceProperties('AWS::Cognito::UserPoolClient', {
+      ClientName: 'shop-dev-e2e',
+      GenerateSecret: false,
+      ExplicitAuthFlows: ['ALLOW_USER_PASSWORD_AUTH', 'ALLOW_REFRESH_TOKEN_AUTH'],
+    });
+    const authorizer = Object.values(
+      devTemplate.findResources('AWS::ApiGatewayV2::Authorizer'),
+    )[0] as {
+      Properties: { JwtConfiguration: { Audience: unknown[] } };
+    };
+    expect(authorizer.Properties.JwtConfiguration.Audience).toHaveLength(2);
+    devTemplate.hasOutput('UserPoolE2eClientId', {});
+
+    // Assert: prod không bao giờ có client cho phép gửi mật khẩu trực tiếp
+    const prodTemplate = synth(prod);
+    const clients = Object.values(prodTemplate.findResources('AWS::Cognito::UserPoolClient')) as {
+      Properties: { ExplicitAuthFlows: string[] };
+    }[];
+    expect(clients).toHaveLength(1);
+    expect(clients[0]?.Properties.ExplicitAuthFlows).not.toContain('ALLOW_USER_PASSWORD_AUTH');
+  });
 });

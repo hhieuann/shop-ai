@@ -360,8 +360,26 @@ export class ApiStack extends Stack {
     new CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new CfnOutput(this, 'UserPoolClientId', { value: webClient.userPoolClientId });
 
+    // Client cho E2E (Newman) đăng nhập bằng USER_PASSWORD_AUTH (hands-on-testing-guide.md mục 6.3).
+    // Chỉ ở dev và staging: prod không bao giờ có client nhận mật khẩu gửi thẳng.
+    const clients = [webClient];
+    if (!shopEnv.isProd) {
+      const e2eClient = userPool.addClient('E2eClient', {
+        userPoolClientName: `${shopEnv.stackPrefix}-e2e`,
+        authFlows: { userPassword: true },
+        generateSecret: false,
+        preventUserExistenceErrors: true,
+        enableTokenRevocation: true,
+        accessTokenValidity: Duration.hours(1),
+        idTokenValidity: Duration.hours(1),
+        refreshTokenValidity: Duration.days(1),
+      });
+      clients.push(e2eClient);
+      new CfnOutput(this, 'UserPoolE2eClientId', { value: e2eClient.userPoolClientId });
+    }
+
     const authorizer = new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
-      userPoolClients: [webClient],
+      userPoolClients: clients,
     });
     return { userPool, webClient, authorizer };
   }
