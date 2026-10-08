@@ -51,7 +51,7 @@ Là khách hàng, kể cả khi chưa đăng nhập, tôi muốn thêm sản ph�
 - Hai request cùng sửa một giỏ (hai tab, bấm nhanh) → server ghi có điều kiện; request ghi sau tự đọc lại giỏ mới nhất và áp lại thay đổi, không làm mất thay đổi của request trước.
 - Giỏ rỗng khi checkout → frontend chặn, không gửi request; nếu vẫn gửi thì server trả 400.
 - Gộp giỏ với danh sách rỗng, hơn 50 dòng, `productId` trùng nhau trong cùng request, hoặc số lượng ngoài 1 … 99 → 400.
-- Gộp giỏ thiếu `Idempotency-Key` → 400. Cùng khoá nhưng nội dung khác → 422 `IDEMPOTENCY_KEY_REUSED`.
+- Gộp giỏ thiếu `Idempotency-Key` → 400. Cùng khoá nhưng nội dung khác → 422 `IDEMPOTENCY_KEY_REUSED`. Lần gộp trước cùng khoá chưa xong → 409 `MERGE_IN_PROGRESS`; web giữ giỏ khách để khách bấm "Gộp vào giỏ" lại.
 - Giỏ khách trên trình duyệt bị sửa tay (số lượng âm, `productId` lạ) → web bỏ dòng hỏng khi đọc; server vẫn kiểm lại khi gộp.
 - Khách đang đăng nhập rồi đăng xuất → trình duyệt bắt đầu một giỏ khách rỗng; giỏ tài khoản vẫn ở server.
 

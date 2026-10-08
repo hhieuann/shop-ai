@@ -845,6 +845,18 @@ export interface operations {
       };
       400: components['responses']['Problem'];
       401: components['responses']['Unauthorized'];
+      /**
+       * @description `MERGE_IN_PROGRESS` lần gộp trước với cùng Idempotency-Key chưa xong; giữ nguyên khoá
+       *     và thử lại sau (web giữ giỏ khách, khách bấm "Gộp vào giỏ")
+       */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
       /** @description `IDEMPOTENCY_KEY_REUSED` cùng khoá nhưng nội dung khác */
       422: {
         headers: {
