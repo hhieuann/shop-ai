@@ -16,6 +16,7 @@ interface ProblemInit {
   readonly status: number;
   readonly title: string;
   readonly detail?: string;
+  readonly code?: string;
   readonly traceId: string;
   readonly errors?: readonly { field: string; message: string }[];
 }
@@ -33,12 +34,18 @@ const HTTP_BY_KIND: Readonly<Record<ErrorKind, { status: number; title: string }
   BAD_REQUEST: { status: 400, title: 'Bad Request' },
   NOT_FOUND: { status: 404, title: 'Not Found' },
   CONFLICT: { status: 409, title: 'Conflict' },
+  UNPROCESSABLE: { status: 422, title: 'Unprocessable Content' },
 };
 
 /** Chỗ duy nhất đổi lỗi nghiệp vụ sang HTTP. Lỗi không lường trước trả 500 và không lộ chi tiết. */
 export function errorToProblem(error: unknown, traceId: string): HttpResult {
   if (error instanceof AppError) {
-    return problem({ ...HTTP_BY_KIND[error.kind], detail: error.message, traceId });
+    return problem({
+      ...HTTP_BY_KIND[error.kind],
+      detail: error.message,
+      ...(error.code === undefined ? {} : { code: error.code }),
+      traceId,
+    });
   }
   return problem({ status: 500, title: 'Internal Server Error', traceId });
 }

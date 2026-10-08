@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { parseBody } from '../../../test/helpers/http.js';
-import { BadRequestError, ConflictError, NotFoundError } from '../errors.js';
+import { BadRequestError, ConflictError, NotFoundError, UnprocessableError } from '../errors.js';
 import { errorToProblem, validationProblem } from './response.js';
 
 describe('errorToProblem', () => {
@@ -40,6 +40,39 @@ describe('errorToProblem', () => {
       status,
       detail,
       traceId: 'req-1',
+    });
+  });
+
+  it.each([
+    {
+      name: 'errorToProblem_returns422WithCode_whenUnprocessableError',
+      error: new UnprocessableError('Idempotency-Key đã dùng cho nội dung khác', {
+        code: 'IDEMPOTENCY_KEY_REUSED',
+      }),
+      status: 422,
+      title: 'Unprocessable Content',
+      code: 'IDEMPOTENCY_KEY_REUSED',
+    },
+    {
+      name: 'errorToProblem_returns409WithCode_whenConflictErrorHasCode',
+      error: new ConflictError('Lần gửi trước chưa xong', { code: 'ORDER_IN_PROGRESS' }),
+      status: 409,
+      title: 'Conflict',
+      code: 'ORDER_IN_PROGRESS',
+    },
+  ])('$name', ({ error, status, title, code }) => {
+    // Act
+    const res = errorToProblem(error, 'req-4');
+
+    // Assert
+    expect(res.statusCode).toBe(status);
+    expect(parseBody(res)).toEqual({
+      type: 'about:blank',
+      title,
+      status,
+      detail: error.message,
+      code,
+      traceId: 'req-4',
     });
   });
 
