@@ -10,7 +10,9 @@ DynamoDB cho phép gộp mọi thực thể vào một bảng (single-table) ho�
 
 ## Quyết định
 
-Mỗi module sở hữu bảng riêng: `products`, `carts`, `orders`, `idempotency`, `events`, `recs`. Mọi bảng dùng on-demand. Ở prod, `orders` và `products` bật point-in-time recovery và chống xoá nhầm.
+Mỗi module sở hữu bảng riêng: `products`, `carts`, `orders`, `idempotency`, `events`, `recs`.
+
+> Sửa 08/10/2026 theo [ADR-0017](0017-ngoai-le-bang-cheo-module-va-idempotency.md): bảng `idempotency` tách theo module thành `cart-idempotency` và `order-idempotency`; `cart` và `ordering` có ngoại lệ đọc, ghi bảng của module khác, ghi rõ quyền trong ADR-0017. Mọi bảng dùng on-demand. Ở prod, `orders` và `products` bật point-in-time recovery và chống xoá nhầm.
 
 ## Hệ quả
 

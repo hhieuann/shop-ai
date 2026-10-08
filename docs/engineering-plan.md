@@ -203,7 +203,8 @@ services/api/src/shared/  logger, tracer, lỗi chuẩn, http helpers, config, i
 | `products` | catalog | PK `productId`; GSI theo `category` | Chi tiết; liệt kê theo loại, phân trang |
 | `carts` | cart | PK `userId` | Đọc và ghi giỏ của chính mình |
 | `orders` | ordering | PK `userId`, SK `orderId` (ULID); GSI theo `status` + thời gian | Lịch sử đơn; admin lọc theo trạng thái |
-| `idempotency` | ordering | PK khoá, TTL 24 giờ | Chống tạo đơn trùng |
+| `cart-idempotency` | cart | PK `id`, TTL 24 giờ (Powertools) | Chống gộp giỏ hai lần (ADR-0017) |
+| `order-idempotency` | ordering | PK `id`, TTL 24 giờ (Powertools) | Chống tạo đơn trùng (ADR-0017) |
 | `events` | events | PK mã người dùng đã ẩn danh, SK thời gian; TTL 90 ngày | Job đêm gom sự kiện đi train |
 | `recs` | recommendation | PK `USER#…` hoặc `ITEM#…`, SK phiên bản | Đọc gợi ý của phiên bản đang bật |
 
