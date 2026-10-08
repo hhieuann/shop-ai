@@ -4,6 +4,7 @@ import {
   isOrderable,
   lineLimit,
   MAX_LINES,
+  mergeGuestItems,
   REMOVED_PRODUCT_NAME,
   removeItem,
   toCartView,
@@ -347,5 +348,177 @@ describe('toCartView', () => {
 
     // Assert
     expect(view.items[0]).not.toHaveProperty('imageUrl');
+  });
+});
+
+describe('mergeGuestItems', () => {
+  const ram = product({ productId: 'ram-1', price: 3_200_000, stock: 10 });
+
+  it('mergeGuestItems_addsNewLinesAtGuestQuantity_whenAccountCartEmpty', () => {
+    // Arrange: tiêu chí "giỏ tài khoản chưa có A, B → đúng A, B và số lượng đã chọn"
+    const products = new Map([
+      ['gpu-1', product()],
+      ['ram-1', ram],
+    ]);
+
+    // Act
+    const result = mergeGuestItems(
+      [],
+      [
+        { productId: 'gpu-1', quantity: 1 },
+        { productId: 'ram-1', quantity: 2 },
+      ],
+      products,
+      NOW,
+    );
+
+    // Assert
+    expect(result).toEqual({
+      lines: [
+        { productId: 'gpu-1', quantity: 1, addedPrice: 15_900_000, addedAt: NOW },
+        { productId: 'ram-1', quantity: 2, addedPrice: 3_200_000, addedAt: NOW },
+      ],
+      mergedExisting: [],
+      adjustments: [],
+    });
+  });
+
+  it('mergeGuestItems_sumsAndMarksMergedExisting_whenAlreadyInAccountCart', () => {
+    // Arrange: tiêu chí "tài khoản có A 2, khách có A 3, tồn kho 10 → A 5"
+    const lines = [line({ quantity: 2 })];
+
+    // Act
+    const result = mergeGuestItems(
+      lines,
+      [{ productId: 'gpu-1', quantity: 3 }],
+      new Map([['gpu-1', product({ stock: 10 })]]),
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines).toEqual([line({ quantity: 5 })]);
+    expect(result.mergedExisting).toEqual(['gpu-1']);
+    expect(result.adjustments).toEqual([]);
+  });
+
+  it('mergeGuestItems_capsAtStockAndReportsQuantityLimited', () => {
+    // Arrange: tiêu chí "tài khoản có A 8, khách có A 5, tồn kho 10 → A 10, báo bị chặn"
+    const lines = [line({ quantity: 8 })];
+
+    // Act
+    const result = mergeGuestItems(
+      lines,
+      [{ productId: 'gpu-1', quantity: 5 }],
+      new Map([['gpu-1', product({ stock: 10 })]]),
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines[0]?.quantity).toBe(10);
+    expect(result.adjustments).toEqual([
+      { productId: 'gpu-1', reason: 'QUANTITY_LIMITED', requested: 5, merged: 2 },
+    ]);
+  });
+
+  it('mergeGuestItems_capsNewLineAtStock', () => {
+    // Act
+    const result = mergeGuestItems(
+      [],
+      [{ productId: 'gpu-1', quantity: 5 }],
+      new Map([['gpu-1', product({ stock: 3 })]]),
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines[0]?.quantity).toBe(3);
+    expect(result.adjustments).toEqual([
+      { productId: 'gpu-1', reason: 'QUANTITY_LIMITED', requested: 5, merged: 3 },
+    ]);
+  });
+
+  it('mergeGuestItems_keepsLineAndReportsZeroMerged_whenExistingAlreadyAtLimit', () => {
+    // Act
+    const result = mergeGuestItems(
+      [line({ quantity: 3 })],
+      [{ productId: 'gpu-1', quantity: 2 }],
+      new Map([['gpu-1', product({ stock: 3 })]]),
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines).toEqual([line({ quantity: 3 })]);
+    expect(result.mergedExisting).toEqual(['gpu-1']);
+    expect(result.adjustments[0]).toMatchObject({ reason: 'QUANTITY_LIMITED', merged: 0 });
+  });
+
+  it.each([
+    { name: 'mergeGuestItems_skipsNotFound', products: new Map(), reason: 'NOT_FOUND' },
+    {
+      name: 'mergeGuestItems_skipsInactive',
+      products: new Map([['gpu-1', product({ status: 'INACTIVE' })]]),
+      reason: 'PRODUCT_UNAVAILABLE',
+    },
+    {
+      name: 'mergeGuestItems_skipsOutOfStock',
+      products: new Map([['gpu-1', product({ stock: 0 })]]),
+      reason: 'OUT_OF_STOCK',
+    },
+  ])('$name', ({ products, reason }) => {
+    // Act: tiêu chí "giỏ khách có món đã ngừng bán → bỏ qua và có trong danh sách điều chỉnh"
+    const result = mergeGuestItems(
+      [],
+      [{ productId: 'gpu-1', quantity: 2 }],
+      products as Map<string, ProductSnapshot>,
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines).toEqual([]);
+    expect(result.adjustments).toEqual([{ productId: 'gpu-1', reason, requested: 2, merged: 0 }]);
+  });
+
+  it('mergeGuestItems_skipsNewLineWithCartFull_butStillSumsExisting', () => {
+    // Arrange: giỏ đủ 50 dòng, trong đó có gpu-1
+    const lines = Array.from({ length: MAX_LINES }, (_, i) =>
+      line({ productId: i === 0 ? 'gpu-1' : `p-${i}` }),
+    );
+    const products = new Map([
+      ['gpu-1', product()],
+      ['ram-1', ram],
+    ]);
+
+    // Act
+    const result = mergeGuestItems(
+      lines,
+      [
+        { productId: 'ram-1', quantity: 1 },
+        { productId: 'gpu-1', quantity: 1 },
+      ],
+      products,
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines).toHaveLength(MAX_LINES);
+    expect(result.lines[0]?.quantity).toBe(2);
+    expect(result.adjustments).toEqual([
+      { productId: 'ram-1', reason: 'CART_FULL', requested: 1, merged: 0 },
+    ]);
+  });
+
+  it('mergeGuestItems_updatesAddedPrice_ofSummedLine', () => {
+    // Arrange: BR-06, cộng thêm thì giá lúc thêm cập nhật
+    const lines = [line({ addedPrice: 500_000 })];
+
+    // Act
+    const result = mergeGuestItems(
+      lines,
+      [{ productId: 'gpu-1', quantity: 1 }],
+      new Map([['gpu-1', product({ price: 600_000 })]]),
+      NOW,
+    );
+
+    // Assert
+    expect(result.lines[0]?.addedPrice).toBe(600_000);
   });
 });

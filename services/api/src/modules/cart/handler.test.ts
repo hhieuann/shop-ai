@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { apiEvent, parseBody } from '../../../test/helpers/http.js';
 import type { CartView } from './domain/cart.js';
@@ -8,6 +9,7 @@ import {
   ProductUnavailableError,
   QuantityLimitError,
 } from './domain/errors.js';
+import { UnprocessableError, ConflictError } from '../../shared/errors.js';
 import { makeHandler } from './handler.js';
 import type { CartUseCases } from './routes.js';
 
@@ -15,6 +17,9 @@ const GET_CART = 'GET /api/v1/cart';
 const ADD_ITEM = 'POST /api/v1/cart/items';
 const UPDATE_ITEM = 'PUT /api/v1/cart/items/{productId}';
 const REMOVE_ITEM = 'DELETE /api/v1/cart/items/{productId}';
+const MERGE = 'POST /api/v1/cart/merge';
+/** Idempotency-Key sinh lúc chạy (UUID); không viết cứng chuỗi trông như khoá để gitleaks không báo nhầm */
+const IDEMPOTENCY_HEADER = randomUUID();
 const USER = 'user-sub-1';
 const PRODUCT_ID = '01K6PZ3Q5G0000000000000001';
 
@@ -40,6 +45,10 @@ function useCases(overrides: Partial<CartUseCases> = {}): CartUseCases {
     addCartItem: vi.fn().mockResolvedValue(view),
     updateCartItem: vi.fn().mockResolvedValue(view),
     removeCartItem: vi.fn().mockResolvedValue(view),
+    mergeCart: vi.fn().mockResolvedValue({
+      value: { cart: view, mergedExisting: [], adjustments: [] },
+      replayed: false,
+    }),
     ...overrides,
   };
 }
@@ -237,5 +246,125 @@ describe('cart handler', () => {
     // Assert
     expect(res.statusCode).toBe(500);
     expect(parseBody(res)).not.toHaveProperty('detail');
+  });
+
+  it('merge_passesUserKeyItemsAndContext_andReturnsResult', async () => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+    const items = [{ productId: PRODUCT_ID, quantity: 2 }];
+    const event = apiEvent({
+      routeKey: MERGE,
+      userId: USER,
+      headers: { 'idempotency-key': IDEMPOTENCY_HEADER },
+      body: { items },
+    });
+    const context = { functionName: 'cart' } as never;
+
+    // Act
+    const res = await handler(event, context);
+
+    // Assert
+    expect(res.statusCode).toBe(200);
+    expect(res.headers?.['cache-control']).toBe('no-store');
+    expect(parseBody(res)).toEqual({ cart: view, mergedExisting: [], adjustments: [] });
+    expect(cases.mergeCart).toHaveBeenCalledWith(
+      { userId: USER, idempotencyKey: IDEMPOTENCY_HEADER, items },
+      context,
+    );
+  });
+
+  it.each([
+    { name: 'merge_returns400_whenIdempotencyKeyMissing', headers: {} as Record<string, string> },
+    { name: 'merge_returns400_whenIdempotencyKeyNotUuid', headers: { 'idempotency-key': 'abc' } },
+  ])('$name', async ({ headers }) => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(
+      apiEvent({
+        routeKey: MERGE,
+        userId: USER,
+        headers,
+        body: { items: [{ productId: PRODUCT_ID, quantity: 1 }] },
+      }),
+    );
+
+    // Assert
+    expect(res.statusCode).toBe(400);
+    expect(cases.mergeCart).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { name: 'merge_returns400_whenItemsEmpty', items: [] },
+    {
+      name: 'merge_returns400_whenOver50Items',
+      items: Array.from({ length: 51 }, (_, i) => ({ productId: `p-${i}`, quantity: 1 })),
+    },
+    {
+      name: 'merge_returns400_whenProductIdDuplicated',
+      items: [
+        { productId: PRODUCT_ID, quantity: 1 },
+        { productId: PRODUCT_ID, quantity: 2 },
+      ],
+    },
+    {
+      name: 'merge_returns400_whenQuantityOutOfRange',
+      items: [{ productId: PRODUCT_ID, quantity: 100 }],
+    },
+  ])('$name', async ({ items }) => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(
+      apiEvent({
+        routeKey: MERGE,
+        userId: USER,
+        headers: { 'idempotency-key': IDEMPOTENCY_HEADER },
+        body: { items },
+      }),
+    );
+
+    // Assert
+    expect(res.statusCode).toBe(400);
+    expect(cases.mergeCart).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      name: 'merge_returns422_whenKeyReusedWithDifferentItems',
+      error: new UnprocessableError('Idempotency-Key đã dùng cho nội dung khác', {
+        code: 'IDEMPOTENCY_KEY_REUSED',
+      }),
+      status: 422,
+      code: 'IDEMPOTENCY_KEY_REUSED',
+    },
+    {
+      name: 'merge_returns409_whenPreviousMergeStillRunning',
+      error: new ConflictError('Lần gửi trước chưa xong', { code: 'MERGE_IN_PROGRESS' }),
+      status: 409,
+      code: 'MERGE_IN_PROGRESS',
+    },
+  ])('$name', async ({ error, status, code }) => {
+    // Arrange
+    const handler = makeHandler(useCases({ mergeCart: vi.fn().mockRejectedValue(error) }));
+
+    // Act
+    const res = await handler(
+      apiEvent({
+        routeKey: MERGE,
+        userId: USER,
+        headers: { 'idempotency-key': IDEMPOTENCY_HEADER },
+        body: { items: [{ productId: PRODUCT_ID, quantity: 1 }] },
+      }),
+    );
+
+    // Assert
+    expect(res.statusCode).toBe(status);
+    expect(parseBody(res)).toMatchObject({ status, code });
   });
 });

@@ -337,7 +337,7 @@ describe('ApiStack', () => {
     const dynamo = statements.filter((s) =>
       [s.Action].flat().some((action: string) => action.startsWith('dynamodb:')),
     );
-    expect(dynamo).toHaveLength(2);
+    expect(dynamo).toHaveLength(3);
 
     const onCarts = dynamo.find((s) => JSON.stringify(s.Resource).includes('CartsTable'));
     expect([onCarts.Action].flat().sort()).toEqual(['dynamodb:GetItem', 'dynamodb:PutItem']);
@@ -349,6 +349,19 @@ describe('ApiStack', () => {
     expect(onProducts.Action).toBe('dynamodb:BatchGetItem');
     expect(onProducts.Resource).toEqual({
       'Fn::GetAtt': [expect.stringMatching(/^ProductsTable/), 'Arn'],
+    });
+
+    const onIdempotency = dynamo.find((s) =>
+      JSON.stringify(s.Resource).includes('CartIdempotencyTable'),
+    );
+    expect([onIdempotency.Action].flat().sort()).toEqual([
+      'dynamodb:DeleteItem',
+      'dynamodb:GetItem',
+      'dynamodb:PutItem',
+      'dynamodb:UpdateItem',
+    ]);
+    expect(onIdempotency.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^CartIdempotencyTable/), 'Arn'],
     });
   });
 
@@ -362,6 +375,7 @@ describe('ApiStack', () => {
         Variables: Match.objectLike({
           CARTS_TABLE: { Ref: Match.stringLikeRegexp('^CartsTable') },
           PRODUCTS_TABLE: { Ref: Match.stringLikeRegexp('^ProductsTable') },
+          CART_IDEMPOTENCY_TABLE: { Ref: Match.stringLikeRegexp('^CartIdempotencyTable') },
           POWERTOOLS_SERVICE_NAME: 'cart',
         }),
       },
@@ -376,6 +390,7 @@ describe('ApiStack', () => {
     for (const key of [
       'GET /api/v1/cart',
       'POST /api/v1/cart/items',
+      'POST /api/v1/cart/merge',
       'PUT /api/v1/cart/items/{productId}',
       'DELETE /api/v1/cart/items/{productId}',
     ]) {
@@ -384,5 +399,17 @@ describe('ApiStack', () => {
         AuthorizationType: 'JWT',
       });
     }
+  });
+
+  it('cartIdempotencyTable_usesPowertoolsSchemaWithTtl', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: ADR-0017, khoá `id`, TTL trên `expiration`
+    template.hasResourceProperties('AWS::DynamoDB::Table', {
+      KeySchema: [{ AttributeName: 'id', KeyType: 'HASH' }],
+      TimeToLiveSpecification: { AttributeName: 'expiration', Enabled: true },
+      BillingMode: 'PAY_PER_REQUEST',
+    });
   });
 });

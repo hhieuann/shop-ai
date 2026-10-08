@@ -164,3 +164,102 @@ export function toCartView(
     .reduce((sum, item) => sum + item.price * item.quantity, 0);
   return { items, totalAmount };
 }
+
+// ── Gộp giỏ khách khi đăng nhập (BR-10) ──────────────────────────────────────
+
+/** Một món trong giỏ khách web gửi lên (MergeCartRequest) */
+export interface GuestItem {
+  readonly productId: string;
+  readonly quantity: number;
+}
+
+/** Lý do một món không được gộp đúng như yêu cầu, khớp enum MergeAdjustment.reason */
+export type MergeReason =
+  'QUANTITY_LIMITED' | 'PRODUCT_UNAVAILABLE' | 'OUT_OF_STOCK' | 'NOT_FOUND' | 'CART_FULL';
+
+/** Khớp schema MergeAdjustment trong contracts/openapi.yaml */
+export interface MergeAdjustment {
+  readonly productId: string;
+  readonly reason: MergeReason;
+  /** Số lượng trong giỏ khách */
+  readonly requested: number;
+  /** Số lượng thực sự cộng thêm vào giỏ tài khoản (0 nếu bỏ qua) */
+  readonly merged: number;
+}
+
+export interface MergeOutcome {
+  readonly lines: CartLine[];
+  /** productId của các món đã có sẵn trong giỏ tài khoản nên được cộng dồn */
+  readonly mergedExisting: string[];
+  readonly adjustments: MergeAdjustment[];
+}
+
+/**
+ * Gộp giỏ khách vào giỏ tài khoản (BR-10). Không ném lỗi cho từng món: mọi điều chỉnh nằm trong
+ * `adjustments`, để web quyết định đi tiếp tới đâu (BR-11).
+ * - Món đã có: cộng dồn nhưng không vượt min(99, tồn kho); phần vượt bị bỏ (QUANTITY_LIMITED).
+ * - Món mới: thêm dòng nếu giỏ còn dưới 50 dòng (CART_FULL nếu đầy), cũng chặn theo giới hạn.
+ * - Không còn trong catalog, ngừng bán, hết hàng: bỏ qua.
+ * Món được cộng thêm cập nhật addedPrice (BR-06), như khi thêm lại bằng nút "Thêm vào giỏ".
+ */
+export function mergeGuestItems(
+  lines: readonly CartLine[],
+  guestItems: readonly GuestItem[],
+  products: ReadonlyMap<string, ProductSnapshot>,
+  now: string,
+): MergeOutcome {
+  const result: CartLine[] = [...lines];
+  const mergedExisting: string[] = [];
+  const adjustments: MergeAdjustment[] = [];
+  const skip = (item: GuestItem, reason: MergeReason) =>
+    adjustments.push({ productId: item.productId, reason, requested: item.quantity, merged: 0 });
+
+  for (const item of guestItems) {
+    const product = products.get(item.productId);
+    if (!product) {
+      skip(item, 'NOT_FOUND');
+      continue;
+    }
+    if (product.status !== 'ACTIVE') {
+      skip(item, 'PRODUCT_UNAVAILABLE');
+      continue;
+    }
+    if (product.stock <= 0) {
+      skip(item, 'OUT_OF_STOCK');
+      continue;
+    }
+
+    const limit = lineLimit(product.stock);
+    const index = result.findIndex((l) => l.productId === item.productId);
+    const existing = index >= 0 ? result[index] : undefined;
+    if (!existing && result.length >= MAX_LINES) {
+      skip(item, 'CART_FULL');
+      continue;
+    }
+
+    const current = existing?.quantity ?? 0;
+    const added = Math.min(item.quantity, Math.max(0, limit - current));
+    if (existing) {
+      mergedExisting.push(item.productId);
+      if (added > 0) {
+        result[index] = { ...existing, quantity: current + added, addedPrice: product.price };
+      }
+    } else {
+      result.push({
+        productId: item.productId,
+        quantity: added,
+        addedPrice: product.price,
+        addedAt: now,
+      });
+    }
+    if (added < item.quantity) {
+      adjustments.push({
+        productId: item.productId,
+        reason: 'QUANTITY_LIMITED',
+        requested: item.quantity,
+        merged: added,
+      });
+    }
+  }
+  return { lines: result, mergedExisting, adjustments };
+}

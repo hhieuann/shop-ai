@@ -1,10 +1,13 @@
 import {
   addItem,
+  mergeGuestItems,
   removeItem,
   toCartView,
   updateItem,
   type CartLine,
   type CartView,
+  type GuestItem,
+  type MergeAdjustment,
 } from '../domain/cart.js';
 import { CartVersionConflictError, type CartRepository, type ProductCatalog } from '../ports.js';
 
@@ -35,7 +38,7 @@ export async function getCart(
 async function changeCart(
   deps: CartDeps,
   userId: string,
-  touchedProductId: string,
+  touchedProductIds: readonly string[],
   change: (
     lines: readonly CartLine[],
     products: Awaited<ReturnType<ProductCatalog['findMany']>>,
@@ -44,7 +47,7 @@ async function changeCart(
 ): Promise<CartView> {
   for (let attempt = 1; ; attempt++) {
     const stored = await deps.carts.get(userId);
-    const ids = [...new Set([...stored.lines.map((l) => l.productId), touchedProductId])];
+    const ids = [...new Set([...stored.lines.map((l) => l.productId), ...touchedProductIds])];
     const products = await deps.catalog.findMany(ids);
     const now = deps.now();
     const lines = change(stored.lines, products, now);
@@ -62,7 +65,7 @@ export function addCartItem(
   deps: CartDeps,
   input: { readonly userId: string; readonly productId: string; readonly quantity: number },
 ): Promise<CartView> {
-  return changeCart(deps, input.userId, input.productId, (lines, products, now) =>
+  return changeCart(deps, input.userId, [input.productId], (lines, products, now) =>
     addItem(lines, products.get(input.productId) ?? null, input.productId, input.quantity, now),
   );
 }
@@ -72,7 +75,7 @@ export function updateCartItem(
   deps: CartDeps,
   input: { readonly userId: string; readonly productId: string; readonly quantity: number },
 ): Promise<CartView> {
-  return changeCart(deps, input.userId, input.productId, (lines, products) =>
+  return changeCart(deps, input.userId, [input.productId], (lines, products) =>
     updateItem(lines, products.get(input.productId) ?? null, input.productId, input.quantity),
   );
 }
@@ -82,7 +85,41 @@ export function removeCartItem(
   deps: CartDeps,
   input: { readonly userId: string; readonly productId: string },
 ): Promise<CartView> {
-  return changeCart(deps, input.userId, input.productId, (lines) =>
+  return changeCart(deps, input.userId, [input.productId], (lines) =>
     removeItem(lines, input.productId),
   );
+}
+
+/** Khớp schema MergeCartResult trong contracts/openapi.yaml */
+export interface MergeCartResult {
+  readonly cart: CartView;
+  readonly mergedExisting: string[];
+  readonly adjustments: MergeAdjustment[];
+}
+
+/**
+ * POST /api/v1/cart/merge: gộp giỏ khách vào giỏ tài khoản (BR-10). Chống gộp hai lần
+ * (Idempotency-Key) do lambda.ts bọc bằng shared/idempotency, không nằm ở đây.
+ */
+export async function mergeCart(
+  deps: CartDeps,
+  input: { readonly userId: string; readonly items: readonly GuestItem[] },
+): Promise<MergeCartResult> {
+  let outcome: { mergedExisting: string[]; adjustments: MergeAdjustment[] } | undefined;
+  const cart = await changeCart(
+    deps,
+    input.userId,
+    input.items.map((i) => i.productId),
+    (lines, products, now) => {
+      const merged = mergeGuestItems(lines, input.items, products, now);
+      outcome = { mergedExisting: merged.mergedExisting, adjustments: merged.adjustments };
+      return merged.lines;
+    },
+  );
+  // changeCart chỉ trả về sau khi đã chạy hàm gộp ở lần ghi thành công
+  return {
+    cart,
+    mergedExisting: outcome?.mergedExisting ?? [],
+    adjustments: outcome?.adjustments ?? [],
+  };
 }

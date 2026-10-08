@@ -235,7 +235,8 @@ export class ApiStack extends Stack {
   /**
    * Module cart: bảng carts (mỗi người một item, khoá userId) và Lambda cart.
    * Quyền tối thiểu: GetItem, PutItem trên carts; đọc products CHỈ bằng BatchGetItem trên ARN bảng,
-   * không gồm index (ngoại lệ có ghi lại ở ADR-0017). Mọi route gắn JWT authorizer của Cognito.
+   * không gồm index (ngoại lệ có ghi lại ở ADR-0017); bảng cart-idempotency riêng cho gộp giỏ.
+   * Mọi route gắn JWT authorizer của Cognito.
    */
   private addCart(
     shopEnv: ShopEnvironment,
@@ -254,6 +255,18 @@ export class ApiStack extends Stack {
       reason:
         'Theo ADR-0012 chỉ orders và products bật point-in-time recovery; giỏ hàng mất thì khách thêm lại được.',
     });
+    // Chống gộp giỏ hai lần (ADR-0017): schema Powertools Idempotency, khoá `id`, TTL `expiration`
+    const cartIdempotency = new Table(this, 'CartIdempotencyTable', {
+      partitionKey: { name: 'id', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiration',
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    Validations.of(cartIdempotency).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-DDB3',
+      reason:
+        'Bản ghi chống gộp hai lần chỉ sống 24 giờ, mất thì không ảnh hưởng gì; không cần sao lưu.',
+    });
 
     const cartFn = new NodejsFunction(this, 'CartFunction', {
       entry: path.join(API_SRC, 'modules', 'cart', 'lambda.ts'),
@@ -270,6 +283,7 @@ export class ApiStack extends Stack {
       environment: {
         CARTS_TABLE: carts.tableName,
         PRODUCTS_TABLE: products.tableName,
+        CART_IDEMPOTENCY_TABLE: cartIdempotency.tableName,
         POWERTOOLS_SERVICE_NAME: 'cart',
         POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
         NODE_OPTIONS: '--enable-source-maps',
@@ -285,7 +299,20 @@ export class ApiStack extends Stack {
     cartFn.addToRolePolicy(
       new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
     );
+    // Các thao tác Powertools Idempotency cần, chỉ trên bảng idempotency của chính cart
+    cartFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: [
+          'dynamodb:GetItem',
+          'dynamodb:PutItem',
+          'dynamodb:UpdateItem',
+          'dynamodb:DeleteItem',
+        ],
+        resources: [cartIdempotency.tableArn],
+      }),
+    );
     Tags.of(carts).add('module', 'cart');
+    Tags.of(cartIdempotency).add('module', 'cart');
     Tags.of(cartFn).add('module', 'cart');
     Validations.of(cartFn).acknowledge(
       {
@@ -308,6 +335,12 @@ export class ApiStack extends Stack {
     });
     httpApi.addRoutes({
       path: '/api/v1/cart/items',
+      methods: [HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/cart/merge',
       methods: [HttpMethod.POST],
       integration,
       authorizer: this.authorizer,

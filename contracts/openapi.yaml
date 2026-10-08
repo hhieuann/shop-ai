@@ -291,6 +291,14 @@ paths:
           $ref: '#/components/responses/Problem'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: |
+            `MERGE_IN_PROGRESS` lần gộp trước với cùng Idempotency-Key chưa xong; giữ nguyên khoá
+            và thử lại sau (web giữ giỏ khách, khách bấm "Gộp vào giỏ")
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '422':
           description: '`IDEMPOTENCY_KEY_REUSED` cùng khoá nhưng nội dung khác'
           content:
