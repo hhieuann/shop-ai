@@ -1,0 +1,134 @@
+/* dang-nhap.md §2 và §5 */
+.page {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-500) var(--gutter) var(--space-600);
+}
+.card {
+  display: grid;
+  gap: var(--space-300);
+  width: 100%;
+  max-width: 440px;
+  padding: var(--space-400);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.title {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-headline-sm);
+  line-height: var(--leading-headline-sm);
+  font-weight: 600;
+}
+.title:focus {
+  outline: none;
+}
+.subtitle {
+  margin: calc(-1 * var(--space-200)) 0 0;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.body {
+  display: grid;
+  gap: var(--space-200);
+}
+.footer {
+  margin: 0;
+  padding-top: var(--space-300);
+  border-top: 1px solid var(--border-divider);
+  text-align: center;
+  color: var(--fg-subdued);
+}
+.footer a {
+  color: var(--fg-primary);
+  font-weight: 500;
+}
+@media (max-width: 639px) {
+  .page {
+    padding-top: var(--space-200);
+  }
+  .card {
+    padding: var(--space-300) var(--space-200);
+  }
+}
+
+/* Nút chính tràn ngang (Button primary lg, design-system §9.3) */
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: var(--space-100);
+  padding: var(--space-100) var(--space-300);
+  border: 1px solid var(--bg-primary);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  color: var(--fg-on-primary);
+  font-weight: 600;
+}
+.primary:hover {
+  background: var(--bg-primary-hover);
+  border-color: var(--bg-primary-hover);
+  box-shadow: var(--glow-primary);
+}
+.primary[aria-busy='true'] {
+  cursor: progress;
+  opacity: 0.85;
+}
+.ghost {
+  justify-self: center;
+  min-height: 40px;
+  padding: var(--space-100) var(--space-200);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+.ghost:hover {
+  background: var(--bg-transparent-hover);
+}
+.ghost:disabled {
+  color: var(--fg-subdued);
+}
+.codeInput input {
+  text-align: center;
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3em;
+}
+.rules {
+  display: grid;
+  gap: var(--space-50);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  color: var(--fg-subdued);
+}
+.rules li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+}
+.rules .met {
+  color: var(--fg-success);
+}
+.emphasis {
+  color: var(--fg-default);
+  font-weight: 500;
+}
+.inlineLink {
+  justify-self: start;
+  margin-top: calc(-1 * var(--space-100));
+  color: var(--fg-primary);
+  font-weight: 500;
+  font-size: var(--text-body-sm);
+}

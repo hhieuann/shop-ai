@@ -19,7 +19,7 @@ function fakeWebDist(): string {
   return dir;
 }
 
-function synth(shopEnv: ShopEnvironment): Template {
+function synthUncached(shopEnv: ShopEnvironment): Template {
   // Bỏ qua bước esbuild cho test chạy nhanh; đóng gói thật do `cdk synth` kiểm.
   const app = new App({ context: { 'aws:cdk:bundling-stacks': [] } });
   const env = { account: '111111111111', region: 'ap-southeast-1' };
@@ -33,6 +33,14 @@ function synth(shopEnv: ShopEnvironment): Template {
     webDistPath: fakeWebDist(),
   });
   return Template.fromStack(web);
+}
+
+// Synth một stack CDK mất vài giây; các test chỉ đọc template nên synth một lần cho mỗi môi trường
+const templates = new Map<string, Template>();
+function synth(shopEnv: ShopEnvironment): Template {
+  let template = templates.get(shopEnv.name);
+  if (!template) templates.set(shopEnv.name, (template = synthUncached(shopEnv)));
+  return template;
 }
 
 describe('WebStack', () => {
