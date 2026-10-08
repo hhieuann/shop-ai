@@ -131,8 +131,8 @@ export function setSignOutHandler(next: SignOutHandler) {
 }
 
 /**
- * Đăng xuất (menu tài khoản). Không xoá giỏ khách `shop-ai:guest-cart`: sau khi đăng xuất,
- * đó là giỏ khách mới (dang-nhap.md §8).
+ * Đăng xuất phiên đăng nhập. Dọn dữ liệu phiên trên trình duyệt (giỏ khách, đơn hàng trong bộ nhớ
+ * đệm) do nơi gọi lo, vì phần đó thuộc tính năng giỏ và đơn hàng: xem AccountMenu.tsx.
  */
 export async function signOut(): Promise<void> {
   await signOutHandler();
