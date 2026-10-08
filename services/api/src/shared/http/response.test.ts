@@ -76,6 +76,29 @@ describe('errorToProblem', () => {
     });
   });
 
+  it('errorToProblem_addsExtensions_withoutOverridingStandardFields', () => {
+    // Arrange
+    const error = new ConflictError('Chỉ thêm được tối đa 2 sản phẩm nữa', {
+      code: 'QUANTITY_LIMIT',
+      extensions: { maxAddable: 2, status: 999 },
+    });
+
+    // Act
+    const res = errorToProblem(error, 'req-5');
+
+    // Assert
+    expect(res.statusCode).toBe(409);
+    expect(parseBody(res)).toEqual({
+      type: 'about:blank',
+      title: 'Conflict',
+      status: 409,
+      detail: 'Chỉ thêm được tối đa 2 sản phẩm nữa',
+      code: 'QUANTITY_LIMIT',
+      maxAddable: 2,
+      traceId: 'req-5',
+    });
+  });
+
   it('errorToProblem_returns500WithoutDetail_whenErrorIsUnexpected', () => {
     // Arrange
     const error = new Error('connect ECONNREFUSED 10.0.0.1:443');
