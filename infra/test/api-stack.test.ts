@@ -311,4 +311,78 @@ describe('ApiStack', () => {
     expect(clients).toHaveLength(1);
     expect(clients[0]?.Properties.ExplicitAuthFlows).not.toContain('ALLOW_USER_PASSWORD_AUTH');
   });
+
+  it('cartsTable_usesUserIdAsPartitionKeyWithOnDemandBilling', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert
+    template.hasResourceProperties('AWS::DynamoDB::Table', {
+      KeySchema: [{ AttributeName: 'userId', KeyType: 'HASH' }],
+      BillingMode: 'PAY_PER_REQUEST',
+    });
+    template.hasOutput('CartsTableName', {});
+  });
+
+  it('cartFunction_hasOnlyCartTableAccessAndReadOnlyBatchGetOnProducts', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: ADR-0017, cart chỉ đọc products bằng BatchGetItem trên ARN bảng, không gồm index
+    const statements = Object.values(template.findResources('AWS::IAM::Policy'))
+      .filter((policy) =>
+        JSON.stringify(policy.Properties.Roles).includes('CartFunctionServiceRole'),
+      )
+      .flatMap((policy) => policy.Properties.PolicyDocument.Statement);
+    const dynamo = statements.filter((s) =>
+      [s.Action].flat().some((action: string) => action.startsWith('dynamodb:')),
+    );
+    expect(dynamo).toHaveLength(2);
+
+    const onCarts = dynamo.find((s) => JSON.stringify(s.Resource).includes('CartsTable'));
+    expect([onCarts.Action].flat().sort()).toEqual(['dynamodb:GetItem', 'dynamodb:PutItem']);
+    expect(onCarts.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^CartsTable/), 'Arn'],
+    });
+
+    const onProducts = dynamo.find((s) => JSON.stringify(s.Resource).includes('ProductsTable'));
+    expect(onProducts.Action).toBe('dynamodb:BatchGetItem');
+    expect(onProducts.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^ProductsTable/), 'Arn'],
+    });
+  });
+
+  it('cartFunction_getsBothTableNames', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: {
+        Variables: Match.objectLike({
+          CARTS_TABLE: { Ref: Match.stringLikeRegexp('^CartsTable') },
+          PRODUCTS_TABLE: { Ref: Match.stringLikeRegexp('^ProductsTable') },
+          POWERTOOLS_SERVICE_NAME: 'cart',
+        }),
+      },
+    });
+  });
+
+  it('cartRoutes_allRequireCognitoJwt', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: cart.md BR-01, API giỏ bắt buộc đăng nhập
+    for (const key of [
+      'GET /api/v1/cart',
+      'POST /api/v1/cart/items',
+      'PUT /api/v1/cart/items/{productId}',
+      'DELETE /api/v1/cart/items/{productId}',
+    ]) {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: key,
+        AuthorizationType: 'JWT',
+      });
+    }
+  });
 });

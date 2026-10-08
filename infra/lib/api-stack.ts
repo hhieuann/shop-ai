@@ -223,10 +223,103 @@ export class ApiStack extends Stack {
       authorizer: this.authorizer,
     });
 
+    // Giỏ hàng (cart.md): mọi route cần đăng nhập
+    this.addCart(shopEnv, removalPolicy, httpApi, products);
+
     if (!shopEnv.isProd) this.seedDemoProducts(products, removalPolicy);
 
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
+  }
+
+  /**
+   * Module cart: bảng carts (mỗi người một item, khoá userId) và Lambda cart.
+   * Quyền tối thiểu: GetItem, PutItem trên carts; đọc products CHỈ bằng BatchGetItem trên ARN bảng,
+   * không gồm index (ngoại lệ có ghi lại ở ADR-0017). Mọi route gắn JWT authorizer của Cognito.
+   */
+  private addCart(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    products: Table,
+  ) {
+    const carts = new Table(this, 'CartsTable', {
+      partitionKey: { name: 'userId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      deletionProtection: shopEnv.isProd,
+      removalPolicy,
+    });
+    Validations.of(carts).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-DDB3',
+      reason:
+        'Theo ADR-0012 chỉ orders và products bật point-in-time recovery; giỏ hàng mất thì khách thêm lại được.',
+    });
+
+    const cartFn = new NodejsFunction(this, 'CartFunction', {
+      entry: path.join(API_SRC, 'modules', 'cart', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 512,
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'CartLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        CARTS_TABLE: carts.tableName,
+        PRODUCTS_TABLE: products.tableName,
+        POWERTOOLS_SERVICE_NAME: 'cart',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    cartFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+        resources: [carts.tableArn],
+      }),
+    );
+    cartFn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
+    );
+    Tags.of(carts).add('module', 'cart');
+    Tags.of(cartFn).add('module', 'cart');
+    Validations.of(cartFn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('CartIntegration', cartFn);
+    httpApi.addRoutes({
+      path: '/api/v1/cart',
+      methods: [HttpMethod.GET],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/cart/items',
+      methods: [HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/cart/items/{productId}',
+      methods: [HttpMethod.PUT, HttpMethod.DELETE],
+      integration,
+      authorizer: this.authorizer,
+    });
+
+    new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
   }
 
   /** Lambda nhỏ không đọc dữ liệu (health, account): 128 MB, chỉ có quyền ghi log và X-Ray. */
