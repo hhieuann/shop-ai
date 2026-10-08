@@ -173,4 +173,30 @@ describe('ApiStack', () => {
     template.resourceCountIs('AWS::CloudFormation::CustomResource', 0);
     expect(JSON.stringify(template.toJSON())).not.toContain('dynamodb:BatchWriteItem');
   });
+
+  it('httpApi_routesHealthToDedicatedFunctionWithoutDataAccess', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: có route health
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', { RouteKey: 'GET /api/v1/health' });
+
+    // Assert: Lambda health không có quyền DynamoDB nào, chỉ ghi log và X-Ray
+    const fns = template.findResources('AWS::Lambda::Function', {
+      Properties: { Environment: { Variables: { POWERTOOLS_SERVICE_NAME: 'health' } } },
+    });
+    expect(Object.keys(fns)).toHaveLength(1);
+    const policies = Object.values(template.findResources('AWS::IAM::Policy')) as {
+      Properties: {
+        Roles: { Ref: string }[];
+        PolicyDocument: { Statement: { Action: string | string[] }[] };
+      };
+    }[];
+    const roleRef = (Object.values(fns)[0] as { Properties: { Role: { 'Fn::GetAtt': string[] } } })
+      .Properties.Role['Fn::GetAtt'][0];
+    const actions = policies
+      .filter((p) => p.Properties.Roles.some((r) => r.Ref === roleRef))
+      .flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((st) => st.Action));
+    expect(actions.filter((a) => a.startsWith('dynamodb:'))).toEqual([]);
+  });
 });

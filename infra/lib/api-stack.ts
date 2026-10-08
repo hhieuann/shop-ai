@@ -43,6 +43,19 @@ const DEMO_PRODUCTS_FILE = path.join(
 /** Tên GSI, trùng với PRODUCTS_BY_CATEGORY_INDEX trong services/api/src/modules/catalog/infra/. */
 export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
 
+/** Cách đóng gói chung cho các Lambda API: ESM cho Node 24, đóng gói cả AWS SDK. */
+const API_BUNDLING = {
+  format: OutputFormat.ESM,
+  target: 'node24',
+  minify: true,
+  sourceMap: true,
+  mainFields: ['module', 'main'],
+  // Thư viện CommonJS nằm trong bundle ESM vẫn cần `require`
+  banner: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
+  // Đóng gói AWS SDK cùng code để cố định phiên bản, không dựa vào bản có sẵn trong runtime
+  externalModules: [],
+};
+
 export interface ApiStackProps extends StackProps {
   readonly shopEnv: ShopEnvironment;
 }
@@ -92,18 +105,7 @@ export class ApiStack extends Stack {
         POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
         NODE_OPTIONS: '--enable-source-maps',
       },
-      bundling: {
-        format: OutputFormat.ESM,
-        target: 'node24',
-        minify: true,
-        sourceMap: true,
-        mainFields: ['module', 'main'],
-        // Thư viện CommonJS nằm trong bundle ESM vẫn cần `require`
-        banner:
-          "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
-        // Đóng gói AWS SDK cùng code để cố định phiên bản, không dựa vào bản có sẵn trong runtime
-        externalModules: [],
-      },
+      bundling: API_BUNDLING,
     });
     // Quyền tối thiểu: GetItem trên bảng (chi tiết), Query chỉ trên GSI byCategory (danh sách). Không Scan.
     catalogFn.addToRolePolicy(
@@ -125,6 +127,37 @@ export class ApiStack extends Stack {
       id: 'AwsSolutions-IAM5[Resource::*]',
       reason: 'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
     });
+
+    // Health chỉ báo API còn sống: không đọc dữ liệu, nên không cấp quyền DynamoDB nào
+    const healthFn = new NodejsFunction(this, 'HealthFunction', {
+      entry: path.join(API_SRC, 'modules', 'health', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 128,
+      timeout: Duration.seconds(3),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'HealthLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        POWERTOOLS_SERVICE_NAME: 'health',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    Validations.of(healthFn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
 
     const httpApi = new HttpApi(this, 'HttpApi', {
       apiName: `${shopEnv.stackPrefix}-api`,
@@ -178,6 +211,16 @@ export class ApiStack extends Stack {
           'Xem sản phẩm là công khai. Route cần đăng nhập dùng JWT authorizer của Cognito (ADR-0007).',
       });
     }
+
+    const [healthRoute] = httpApi.addRoutes({
+      path: '/api/v1/health',
+      methods: [HttpMethod.GET],
+      integration: new HttpLambdaIntegration('HealthIntegration', healthFn),
+    });
+    Validations.of(healthRoute!).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-APIG4',
+      reason: 'Health là công khai để smoke test và giám sát gọi được; không trả dữ liệu gì.',
+    });
 
     if (!shopEnv.isProd) this.seedDemoProducts(products, removalPolicy);
 

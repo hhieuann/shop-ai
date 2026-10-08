@@ -80,14 +80,14 @@ describe('WebStack', () => {
     // Assert: /api/* đi thẳng tới API Gateway, mọi method, không cache (managed CachingDisabled)
     template.hasResourceProperties('AWS::CloudFront::Distribution', {
       DistributionConfig: Match.objectLike({
-        CacheBehaviors: [
+        CacheBehaviors: Match.arrayWith([
           Match.objectLike({
             PathPattern: '/api/*',
             AllowedMethods: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'PATCH', 'POST', 'DELETE'],
             CachePolicyId: '4135ea2d-6df8-44a3-9df3-4b5a84be39ad',
             ViewerProtocolPolicy: 'https-only',
           }),
-        ],
+        ]),
       }),
     });
   });
@@ -136,5 +136,33 @@ describe('WebStack', () => {
 
     // Assert
     template.hasOutput('WebUrl', {});
+  });
+
+  it('distribution_cachesProductReadsForSixtySecondsKeyedByQueryString', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: /api/v1/products* đứng trước /api/* (CloudFront so khớp theo thứ tự), chỉ GET và HEAD
+    const dist = Object.values(template.findResources('AWS::CloudFront::Distribution'))[0] as {
+      Properties: {
+        DistributionConfig: { CacheBehaviors: { PathPattern: string; AllowedMethods: string[] }[] };
+      };
+    };
+    const behaviors = dist.Properties.DistributionConfig.CacheBehaviors;
+    expect(behaviors.map((b) => b.PathPattern)).toEqual(['/api/v1/products*', '/api/*']);
+    expect(behaviors[0]?.AllowedMethods).toEqual(['GET', 'HEAD']);
+
+    // Assert: TTL 60 giây; khoá cache gồm mọi query string (q, category, sort, limit, cursor)
+    template.hasResourceProperties('AWS::CloudFront::CachePolicy', {
+      CachePolicyConfig: Match.objectLike({
+        DefaultTTL: 60,
+        MaxTTL: 60,
+        MinTTL: 0,
+        ParametersInCacheKeyAndForwardedToOrigin: Match.objectLike({
+          QueryStringsConfig: { QueryStringBehavior: 'all' },
+          CookiesConfig: { CookieBehavior: 'none' },
+        }),
+      }),
+    });
   });
 });
