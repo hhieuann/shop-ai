@@ -27,13 +27,16 @@ infra/
 
 Chạy ở thư mục gốc repo, sau khi `aws login`. Lệnh nào cũng phải có `-c env=...`; thiếu thì CDK dừng ngay để không deploy nhầm môi trường.
 
+App có 2 stack: `<prefix>-api` (bảng, Lambda, HTTP API) và `<prefix>-web` (S3 + CloudFront, `/api/*` chuyển sang HTTP API). Stack web đóng gói `apps/web/dist`, nên phải build web trước: `pnpm --filter web build`. Thiếu bản build thì synth dừng và báo lệnh cần chạy.
+
 | Việc | Lệnh |
 |---|---|
+| Build web (trước synth, diff, deploy) | `pnpm --filter web build` |
 | Synth và kiểm cdk-nag, giống CI | `pnpm --filter infra run synth` |
 | Unit test cho stack | `pnpm --filter infra run test` |
-| Xem thay đổi trước khi deploy sandbox | `pnpm --filter infra exec cdk diff -c env=sbx -c owner=<tên>` |
-| Deploy sandbox của mình | `pnpm --filter infra exec cdk deploy -c env=sbx -c owner=<tên>` |
-| Xoá sandbox | `pnpm --filter infra exec cdk destroy -c env=sbx -c owner=<tên>` |
+| Xem thay đổi trước khi deploy sandbox | `pnpm --filter infra exec cdk diff --all -c env=sbx -c owner=<tên>` |
+| Deploy sandbox của mình | `pnpm --filter infra exec cdk deploy --all -c env=sbx -c owner=<tên>` |
+| Xoá sandbox | `pnpm --filter infra exec cdk destroy --all -c env=sbx -c owner=<tên>` |
 
 Script `deploy:dev`, `deploy:staging`, `deploy:prod`, `diff:staging` dành cho workflow, không chạy từ máy. CDK CLI được ghim phiên bản trong `infra/package.json`; luôn gọi qua `pnpm --filter infra exec cdk`, không dùng `npx aws-cdk@latest`.
 

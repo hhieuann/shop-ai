@@ -49,6 +49,9 @@ export interface ApiStackProps extends StackProps {
 
 /** API của shop: bảng dữ liệu, Lambda theo từng module, HTTP API. Module mẫu: catalog. */
 export class ApiStack extends Stack {
+  /** HTTP API của shop; stack web chuyển /api/* sang đây. */
+  public readonly httpApi: HttpApi;
+
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
     const { shopEnv } = props;
@@ -127,6 +130,7 @@ export class ApiStack extends Stack {
       apiName: `${shopEnv.stackPrefix}-api`,
       createDefaultStage: false,
     });
+    this.httpApi = httpApi;
     const accessLogs = new LogGroup(this, 'ApiAccessLogs', {
       retention: RetentionDays.TWO_WEEKS,
       removalPolicy,

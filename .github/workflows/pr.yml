@@ -148,6 +148,9 @@ jobs:
       - name: Cài thư viện
         if: hashFiles('infra/cdk.json') != ''
         run: pnpm install --frozen-lockfile
+      - name: Build web (stack web đóng gói apps/web/dist)
+        if: hashFiles('infra/cdk.json') != ''
+        run: pnpm --filter web build
       - name: cdk synth (cdk-nag chạy trong bước này)
         if: hashFiles('infra/cdk.json') != ''
         run: pnpm --filter infra run synth
