@@ -41,10 +41,17 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - name: cdk deploy shop-prd (canary cho ordering)
-        run: pnpm --filter infra run deploy:prod
-      - name: Smoke test
+        run: pnpm --filter infra run deploy:prod --outputs-file cdk-outputs.json
+      - name: Lấy URL CloudFront từ output của stack web
+        # Lần deploy đầu của một môi trường chưa có biến BASE_URL; đọc thẳng output WebUrl để smoke test vẫn chạy.
+        # Biến BASE_URL của environment chỉ còn là dự phòng.
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
+          FALLBACK_BASE_URL: ${{ vars.BASE_URL }}
+        run: |
+          url=$(node -p "const o = require('./infra/cdk-outputs.json'); Object.entries(o).find(([k]) => k.endsWith('-web'))?.[1].WebUrl ?? ''")
+          echo "BASE_URL=${url:-$FALLBACK_BASE_URL}" >> "$GITHUB_ENV"
+          echo "Smoke test chạy với ${url:-$FALLBACK_BASE_URL}"
+      - name: Smoke test
         run: pnpm run test:smoke
 
   github-release:
