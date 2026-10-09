@@ -121,6 +121,8 @@ Không rebase nhánh có người khác cùng commit.
 
 ### 4.4. Phát hành (An làm, cuối mỗi sprint)
 
+Mỗi đợt có checklist chi tiết ở `docs/releases/<phiên bản>.md`, ví dụ [v0.1.0](releases/v0.1.0.md).
+
 ```bash
 # 1. Tách nhánh release từ develop
 git checkout develop
