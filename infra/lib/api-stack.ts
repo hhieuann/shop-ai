@@ -226,7 +226,8 @@ export class ApiStack extends Stack {
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
     this.addCart(shopEnv, removalPolicy, httpApi, products);
 
-    if (!shopEnv.isProd) this.seedDemoProducts(products, removalPolicy);
+    // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
+    this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
 
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
@@ -515,7 +516,11 @@ export class ApiStack extends Stack {
    * Không bao giờ có ở prod. Nhờ vậy dev có dữ liệu thật mà không ai phải chạy script bằng tay
    * hay cần quyền ghi bảng trên tài khoản demo.
    */
-  private seedDemoProducts(products: Table, removalPolicy: RemovalPolicy) {
+  private seedDemoProducts(
+    products: Table,
+    removalPolicy: RemovalPolicy,
+    mode: 'overwrite' | 'insert-missing',
+  ) {
     const seedFn = new NodejsFunction(this, 'SeedProductsFunction', {
       entry: path.join(API_SRC, 'modules', 'catalog', 'seedLambda.ts'),
       depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
@@ -527,7 +532,11 @@ export class ApiStack extends Stack {
         retention: RetentionDays.ONE_WEEK,
         removalPolicy,
       }),
-      environment: { PRODUCTS_TABLE: products.tableName, NODE_OPTIONS: '--enable-source-maps' },
+      environment: {
+        PRODUCTS_TABLE: products.tableName,
+        SEED_MODE: mode,
+        NODE_OPTIONS: '--enable-source-maps',
+      },
       bundling: {
         format: OutputFormat.ESM,
         target: 'node24',
@@ -548,9 +557,12 @@ export class ApiStack extends Stack {
         },
       },
     });
-    // Chỉ ghi theo lô vào bảng products, không đọc, không xoá
+    // Không đọc, không xoá. overwrite: chỉ ghi theo lô. insert-missing (prod): chỉ PutItem có điều kiện
     seedFn.addToRolePolicy(
-      new PolicyStatement({ actions: ['dynamodb:BatchWriteItem'], resources: [products.tableArn] }),
+      new PolicyStatement({
+        actions: [mode === 'overwrite' ? 'dynamodb:BatchWriteItem' : 'dynamodb:PutItem'],
+        resources: [products.tableArn],
+      }),
     );
 
     const provider = new Provider(this, 'SeedProductsProvider', {

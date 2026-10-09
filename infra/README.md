@@ -11,7 +11,7 @@ Hạ tầng viết bằng AWS CDK v2 (TypeScript). An phụ trách.
 | staging | Tài khoản demo | `shop-stg` | `deploy.yml` khi push `release/*` |
 | prod | Tài khoản demo | `shop-prd` | `deploy-prod.yml` khi có tag `v*` |
 
-Mỗi môi trường có các stack mang tiền tố trên, hiện có `<tiền tố>-api` (vd. `shop-dev-api`): bảng DynamoDB, Lambda theo module, HTTP API. Trừ prod, stack này còn có custom resource `SeedProducts` nạp 104 sản phẩm demo (`services/api/seed/catalog/products.json`) vào bảng `products` ở mỗi lần deploy mà file đó đổi. Mọi tài nguyên gắn tag `project=shop-ai`, `env`; tài nguyên của module gắn thêm `module`. Region: `ap-southeast-1`.
+Mỗi môi trường có các stack mang tiền tố trên, hiện có `<tiền tố>-api` (vd. `shop-dev-api`): bảng DynamoDB, Lambda theo module, HTTP API. Stack này còn có custom resource `SeedProducts` nạp 104 sản phẩm demo (`services/api/seed/catalog/products.json`) vào bảng `products` ở mỗi lần deploy mà file đó đổi: sandbox, dev, staging ghi đè theo `productId`; prod chỉ thêm sản phẩm chưa có (`PutItem` có điều kiện), không ghi đè tồn kho và giá đang chạy. Mọi tài nguyên gắn tag `project=shop-ai`, `env`; tài nguyên của module gắn thêm `module`. Region: `ap-southeast-1`.
 
 ## Cấu trúc
 

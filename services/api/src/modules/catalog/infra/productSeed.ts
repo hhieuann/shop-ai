@@ -1,8 +1,11 @@
 /**
- * Nạp danh sách sản phẩm từ file JSON vào bảng products (sandbox, dev, staging; không bao giờ prod).
+ * Nạp danh sách sản phẩm từ file JSON vào bảng products.
+ * - sandbox, dev, staging: writeProducts ghi đè theo productId.
+ * - prod: insertMissingProducts chỉ thêm sản phẩm chưa có, không đụng tồn kho và giá đang chạy.
  * CLI ở scripts/seed-products.ts; file này chứa phần kiểm file và ghi bảng để test được.
  */
-import { BatchWriteCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
+import { BatchWriteCommand, PutCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
 import type { Product } from '../domain/product.js';
 import { productItemSchema, toProductItem } from './dynamoProductRepository.js';
@@ -113,6 +116,40 @@ export async function writeProducts(
   }
 
   return products.length;
+}
+
+export interface InsertResult {
+  readonly inserted: number;
+  /** Sản phẩm đã có trong bảng, giữ nguyên */
+  readonly skipped: number;
+}
+
+/**
+ * Chỉ thêm sản phẩm chưa có (PutItem có điều kiện attribute_not_exists), dùng cho prod:
+ * đơn hàng trừ tồn kho, admin đổi giá, nên deploy lại với products.json mới không được ghi đè.
+ * Không bao giờ ghi đè nên không cần chặn bảng prod như writeProducts.
+ */
+export async function insertMissingProducts(
+  db: DynamoDBDocumentClient,
+  tableName: string,
+  products: readonly Product[],
+): Promise<InsertResult> {
+  let inserted = 0;
+  for (const product of products) {
+    try {
+      await db.send(
+        new PutCommand({
+          TableName: tableName,
+          Item: toProductItem(product),
+          ConditionExpression: 'attribute_not_exists(productId)',
+        }),
+      );
+      inserted += 1;
+    } catch (error) {
+      if (!(error instanceof ConditionalCheckFailedException)) throw error;
+    }
+  }
+  return { inserted, skipped: products.length - inserted };
 }
 
 /** Danh sách PutRequest của một bảng trong BatchWriteCommand */

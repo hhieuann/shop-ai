@@ -163,7 +163,10 @@ describe('ApiStack', () => {
     template.hasResourceProperties('AWS::CloudFormation::CustomResource', {
       dataHash: Match.stringLikeRegexp('^[0-9a-f]{64}$'),
     });
-    // Lambda nạp dữ liệu chỉ được BatchWriteItem vào bảng products
+    // Lambda nạp dữ liệu chỉ được BatchWriteItem vào bảng products, ghi đè theo productId
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: { Variables: Match.objectLike({ SEED_MODE: 'overwrite' }) },
+    });
     template.hasResourceProperties('AWS::IAM::Policy', {
       PolicyDocument: {
         Statement: Match.arrayWith([
@@ -173,12 +176,23 @@ describe('ApiStack', () => {
     });
   });
 
-  it('demoProducts_areNeverSeeded_whenProd', () => {
+  it('demoProducts_onlyInsertMissing_whenProd', () => {
     // Act
     const template = synth(prod);
 
-    // Assert
-    template.resourceCountIs('AWS::CloudFormation::CustomResource', 0);
+    // Assert: prod cũng có sản phẩm demo (chưa có trang admin), nhưng chỉ thêm sản phẩm còn thiếu,
+    // không ghi đè tồn kho và giá đã đổi; role không có quyền ghi theo lô
+    template.resourceCountIs('AWS::CloudFormation::CustomResource', 1);
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: { Variables: Match.objectLike({ SEED_MODE: 'insert-missing' }) },
+    });
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({ Action: 'dynamodb:PutItem', Effect: 'Allow' }),
+        ]),
+      },
+    });
     expect(JSON.stringify(template.toJSON())).not.toContain('dynamodb:BatchWriteItem');
   });
 
