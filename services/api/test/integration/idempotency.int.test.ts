@@ -84,26 +84,34 @@ describe('makeIdempotentUseCase', () => {
   });
 
   it('throwsConflictWithCode_whenFirstRequestStillRunning', async () => {
-    // Arrange: lần đầu treo cho tới khi test cho chạy tiếp
+    // Arrange: lần đầu báo đã bắt đầu rồi treo cho tới khi test cho chạy tiếp.
+    // Powertools chỉ gọi use case sau khi ghi xong bản ghi IN_PROGRESS, nên chờ `started` là chắc chắn
+    // lần gọi sau sẽ thấy IN_PROGRESS, không đua nhau ghi bản ghi.
+    let markStarted: () => void = () => undefined;
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
     const { merge } = setup(
       vi.fn(async () => {
+        markStarted();
         await gate;
         return { lines: 1 };
       }),
     );
     const request = { userId: 'user-1', idempotencyKey: 'key-slow', payload };
     const first = merge(request);
-    await vi.waitFor(async () => {
-      // Act: gửi lại trong lúc lần đầu chưa xong
-      await expect(merge(request)).rejects.toBeInstanceOf(ConflictError);
-    });
+    await started;
+
+    // Act: gửi lại trong lúc lần đầu chưa xong
+    const second = merge(request);
 
     // Assert
-    await expect(merge(request)).rejects.toMatchObject({ code: 'MERGE_IN_PROGRESS' });
+    await expect(second).rejects.toBeInstanceOf(ConflictError);
+    await expect(second).rejects.toMatchObject({ code: 'MERGE_IN_PROGRESS' });
     release();
     await expect(first).resolves.toEqual({ value: { lines: 1 }, replayed: false });
   });
