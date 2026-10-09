@@ -90,7 +90,7 @@ aws cloudformation describe-stacks --stack-name shop-github-oidc --region ap-sou
 | Repo variable | `AWS_DIFF_ROLE_ARN` | ARN của `gh-diff-readonly` |
 | Repo variable | `STAGING_URL` | URL CloudFront của staging, cho `nightly.yml` |
 | Environment `dev`, `staging`, `production` | `AWS_DEPLOY_ROLE_ARN` | ARN role deploy của môi trường đó |
-| Environment `dev`, `staging`, `production` | `BASE_URL` | URL CloudFront của môi trường đó |
+| Environment `dev`, `staging`, `production` | `BASE_URL` | Tuỳ chọn, dự phòng. Workflow tự lấy URL CloudFront từ output `WebUrl` của stack web sau khi deploy |
 | Environment `dev`, `staging` | `E2E_COGNITO_CLIENT_ID`, `E2E_USERNAME` | App client và người dùng dành cho E2E |
 | Environment `dev`, `staging` | secret `E2E_PASSWORD` | Mật khẩu người dùng E2E |
 

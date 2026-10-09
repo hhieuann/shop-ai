@@ -45,17 +45,23 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - name: cdk deploy
-        run: pnpm --filter infra run "deploy:$TARGET"
-      - name: Smoke test
+        run: pnpm --filter infra run "deploy:$TARGET" --outputs-file cdk-outputs.json
+      - name: Lấy URL CloudFront từ output của stack web
+        # Lần deploy đầu của một môi trường chưa có biến BASE_URL; đọc thẳng output WebUrl để smoke test vẫn chạy.
+        # Biến BASE_URL của environment chỉ còn là dự phòng.
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
+          FALLBACK_BASE_URL: ${{ vars.BASE_URL }}
+        run: |
+          url=$(node -p "const o = require('./infra/cdk-outputs.json'); Object.entries(o).find(([k]) => k.endsWith('-web'))?.[1].WebUrl ?? ''")
+          echo "BASE_URL=${url:-$FALLBACK_BASE_URL}" >> "$GITHUB_ENV"
+          echo "Smoke test chạy với ${url:-$FALLBACK_BASE_URL}"
+      - name: Smoke test
         run: pnpm run test:smoke
       - name: Cài trình duyệt cho E2E giao diện
         if: hashFiles('tests/e2e-ui/package.json') != ''
         run: pnpm --filter e2e-ui exec playwright install --with-deps chromium
       - name: E2E (Postman/Newman, Playwright nếu có)
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
           COGNITO_CLIENT_ID: ${{ vars.E2E_COGNITO_CLIENT_ID }}
           E2E_USERNAME: ${{ vars.E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
