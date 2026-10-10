@@ -164,6 +164,109 @@ updatedAt       String   (ISO 8601 UTC)
 > ✅ **Đã chốt 08/10 ([ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md)): hướng 1.** Role của `ordering` chỉ có `dynamodb:UpdateItem` trên `products` và `carts`, không `PutItem` hay `DeleteItem`; phần ghi nằm trong `modules/ordering/infra/` sau port. `cart` đọc `products` chỉ bằng `BatchGetItem`.
 
 ---
+## Bảng `events` (module events)
+
+Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, cần An/Hoàng góp ý.
+
+### Truy vấn cần có
+
+| # | Truy vấn | Tần suất |
+|---|---|---|
+| Q1 | Ghi 1 sự kiện (`VIEW`/`ADD_TO_CART` từ API; `PURCHASE` từ luồng đơn `CONFIRMED`, xem mục "Câu hỏi 4" cuối file) | Cao |
+| Q2 | Job đêm đọc **toàn bộ** sự kiện trong một khoảng thời gian, để tính luật mua kèm và item-based CF | 1 lần/đêm, nhưng đọc hết bảng |
+| Q3 | (tuỳ chọn) Đếm nhanh lượt xem/mua gần đây của 1 sản phẩm — phục vụ phát hiện đầu độc gợi ý (tuần 5) | Thấp |
+
+### Thiết kế khoá
+
+| Thuộc tính | Kiểu | Giá trị | Phục vụ |
+|---|---|---|---|
+| **PK** | String | `userIdHash` | Q1 — PutItem |
+| **SK** | String | `<timestamp ISO 8601>#<eventId>` | Sắp theo thời gian tự nhiên |
+| **GSI1-PK** | String | `itemId` | Q3 — Query trên GSI1 |
+| **GSI1-SK** | String | `timestamp` | Q3 — mới nhất trước |
+
+### Schema thuộc tính
+
+```
+userIdHash   String   PK   (HMAC, không phải userId thật)
+timestamp    String   SK component (ISO 8601 UTC, do server đặt)
+eventId      String   SK component (ULID)
+itemId       String
+eventType    String   (VIEW | ADD_TO_CART | PURCHASE)
+```
+
+### Vấn đề cần quyết định: Q2 có được Scan không?
+
+Quy tắc "không Scan ở bất kỳ đâu" trong `catalog.md` áp dụng cho Lambda **phục vụ
+request của người dùng** — chưa rõ có áp dụng cho job phân tích chạy nền mỗi đêm hay
+không, vì bản chất khác nhau (một cái phải nhanh theo từng click, một cái chỉ cần
+xong trong 15 phút của Lambda). Hai hướng:
+
+| Hướng | Cách làm | Đánh đổi |
+|---|---|---|
+| **A. Scan trực tiếp bảng `events`** | Job đêm Scan toàn bộ, lọc theo thời gian | Đơn giản, nhưng tốn RCU của bảng đang phục vụ ghi sự kiện thật, tăng độ trễ ghi lúc job chạy |
+| **B. DynamoDB Streams → Firehose/S3** | Mọi sự kiện ghi xong tự động chảy sang S3 (qua Streams), job đêm đọc file trên S3 | Tách biệt khỏi traffic ghi thật, nhưng thêm một thành phần hạ tầng cần An dựng |
+
+**Đề xuất của mình: hướng A trước (đơn giản, kịp 8 tuần), vì quy mô demo (vài trăm
+sản phẩm, vài trăm nghìn sự kiện theo `demo-scale.md`) nhỏ.** Chuyển sang B nếu
+Scan làm chậm ghi sự kiện thật rõ rệt khi đo thử. *(Mình chưa đọc `demo-scale.md`
+nên con số quy mô ở đây là suy đoán — cần kiểm tra lại.)*
+
+---
+
+## Bảng `recs` (module recommendation)
+
+Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, cần An/Hoàng góp ý.
+
+### Truy vấn cần có
+
+| # | Truy vấn | Tần suất |
+|---|---|---|
+| Q1 | API đọc top 10 gợi ý **đang ACTIVE** cho 1 `anchorId` (`userIdHash` hoặc `itemId`) | Cao |
+| Q2 | Job đêm ghi 1 version mới (10 dòng cho mỗi anchor) | 1 lần/đêm, ghi nhiều dòng |
+| Q3 | Job đêm đọc version đang ACTIVE để so chỉ số trước khi quyết định chuyển cờ | 1 lần/đêm |
+
+### Thiết kế khoá
+
+Mỗi anchor có **một item con trỏ** (lưu version nào đang ACTIVE) và **nhiều item
+dòng gợi ý** (mỗi version 10 dòng), cùng PK, phân biệt bằng SK:
+
+| Thuộc tính | Kiểu | Giá trị | Phục vụ |
+|---|---|---|---|
+| **PK** | String | `<recType>#<anchorId>`, ví dụ `FOR_YOU#u0a1b2c` hoặc `ALSO_BOUGHT#gpu-001` | |
+| **SK** | String | `ACTIVE` (item con trỏ) hoặc `<version>#<rank>` (item dòng gợi ý) | |
+
+**Cách đọc (Q1):** 2 lần đọc — `GetItem(PK, SK="ACTIVE")` lấy `activeVersion`, rồi
+`Query(PK, SK begins_with "<activeVersion>#")` lấy đúng 10 dòng. Rõ ràng, không cần
+GSI, nhưng tốn 2 round-trip. *(Có thể gộp còn 1 lần đọc nếu chấp nhận ghi lặp dữ
+liệu — chưa quyết, cần bàn thêm nếu độ trễ API là vấn đề.)*
+
+### Schema thuộc tính
+
+```
+# Item con trỏ (1 cái mỗi anchor)
+pk              String   PK   (<recType>#<anchorId>)
+sk              String   SK   ("ACTIVE")
+activeVersion   Number
+updatedAt       String   (ISO 8601 UTC)
+
+# Item dòng gợi ý (10 cái mỗi version mỗi anchor)
+pk              String   PK   (<recType>#<anchorId>)
+sk              String   SK   (<version>#<rank>, ví dụ "7#1")
+itemId          String
+score           Number
+source          String   (ASSOCIATION_RULE | ITEM_CF | BESTSELLER)
+generatedAt     String   (ISO 8601 UTC)
+```
+
+### Dọn version cũ
+
+Theo ADR-0016, version kém hơn baseline thì không kích hoạt nhưng vẫn giữ lại để
+rollback thủ công. **Đề xuất: giữ 3 version gần nhất mỗi anchor, version cũ hơn xoá
+bằng TTL** (ví dụ 7 ngày sau khi bị thay bởi version mới) — số 3 và số 7 ngày là số
+mình tự chọn, chưa có cơ sở, cần góp ý.
+
+---
 
 ## Bảng `idempotency` (module ordering)
 
@@ -183,5 +286,5 @@ updatedAt       String   (ISO 8601 UTC)
 1. ~~**`carts`** — giới hạn 400KB~~ — đã giới hạn giỏ tối đa 50 dòng (khoảng 5 KB).
 2. **`orders` GSI `byOrderId`** — có cần không hay đủ khi admin luôn biết `userId`?
 3. **`products` GSI1-PK = `category#status`** — nếu thêm filter giá sau này thì cần thêm GSI hay dùng filter expression? (Với cache trong Lambda ở Q4, Q5, lọc giá cũng làm được trên mảng trong bộ nhớ.)
-4. Bảng `events` (Nhân) — dùng chung hay bảng riêng? Ảnh hưởng tới IAM role của module ordering.
+4. ~~Bảng `events` (Nhân) — dùng chung hay bảng riêng?~~ **Đã trả lời 09/10:** bảng riêng (`events`, tên đã chốt sẵn ở ADR-0012). Về cách `ordering` báo cho `events` khi đơn `CONFIRMED`: đề xuất `order-processor` bắn thêm một bản tin SNS sau bước ghi `CONFIRMED` thành công (tận dụng topic SNS đang có sẵn để báo admin, thêm `events` làm subscriber thứ hai, hoặc tách topic riêng nếu An thấy hợp lý hơn). Lambda `events` subscribe topic này, ghi `PURCHASE` vào bảng `events`. **Chưa kiểm tra hướng này có khớp với cách Hoàng đã dựng SNS/SQS thật hay không** — cần xác nhận trước khi code. (Chi tiết: `docs/business/events.md`.)
 5. **Giao dịch đặt hàng** ghi vào `products` và `carts` — chọn hướng 1 hay 2 (xem mục "Giao dịch đặt hàng và huỷ đơn")?
