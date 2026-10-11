@@ -1,40 +1,41 @@
+/* Khối sản phẩm không khung (docs/web/design-system.md §9.10) */
 .block {
   display: flex;
   flex-direction: column;
+  gap: var(--space-200);
   min-width: 0;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-divider);
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
+  padding: 20px 0 var(--space-50);
 }
 .header {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-100);
-  padding: var(--space-200);
-}
-.titles {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-25);
-  min-width: 0;
+  align-items: center;
+  gap: var(--space-150);
 }
 .title {
-  font-size: var(--text-title-sm);
-  line-height: var(--leading-title-sm);
-  font-weight: 600;
-}
-.subtitle {
-  margin: 0;
-  color: var(--fg-subdued);
+  min-width: 0;
+  color: var(--fg-default);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
 }
 .action {
   margin-left: auto;
-  font-weight: 500;
+  color: var(--fg-primary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
   white-space: nowrap;
 }
-@media (min-width: 640px) {
-  .header {
-    padding: var(--space-300) var(--space-300) var(--space-200);
+@media (min-width: 1280px) {
+  .block {
+    padding-top: var(--space-300);
+  }
+  .title {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .action {
+    font-size: 16px;
+    line-height: 22px;
   }
 }

@@ -6,8 +6,8 @@ import { StockBadge } from './StockBadge';
 import styles from './ProductCard.module.css';
 
 /**
- * Thẻ sản phẩm: thẻ trắng, ảnh nằm trên ô nền nhạt (ảnh của hãng có nền trắng),
- * tên 2 dòng, hãng, giá, nhãn tồn kho. Cả thẻ là một link.
+ * Thẻ sản phẩm (design-system §9.9): thẻ trắng bo 12px, ô ảnh vuông chạm mép, tên một dòng,
+ * giá và nhãn tồn kho cùng hàng. Cả thẻ bấm được nhờ link tiêu đề phủ kín thẻ.
  */
 export function ProductCard({ product }: { product: ProductSummary }) {
   const unavailable = product.status !== 'ACTIVE' || product.stock <= 0;
@@ -21,25 +21,24 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             alt=""
             loading="lazy"
             decoding="async"
-            width={168}
-            height={168}
+            width={240}
+            height={240}
           />
         ) : (
           <span className={styles.noImage}>
-            <CategoryIcon category={product.category} size={48} />
+            <CategoryIcon category={product.category} size={56} />
           </span>
         )}
       </div>
       <div className={styles.body}>
         <h3 className={styles.title}>
-          <Link className={styles.link} to={`/products/${product.productId}`}>
+          <Link className={styles.link} to={`/products/${product.productId}`} title={product.name}>
             {product.name}
           </Link>
         </h3>
-        <p className={styles.brand}>{product.brand}</p>
         <div className={styles.footer}>
           <Price amount={product.price} />
-          <StockBadge stock={product.stock} status={product.status} />
+          <StockBadge stock={product.stock} status={product.status} size="sm" />
         </div>
       </div>
     </article>
