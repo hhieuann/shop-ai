@@ -31,9 +31,8 @@ updates:
       actions:
         patterns: ['*']
 
-  # Thêm khi đã có data/pyproject.toml:
-  # - package-ecosystem: uv
-  #   directory: /data
-  #   target-branch: develop
-  #   schedule:
-  #     interval: weekly
+  - package-ecosystem: uv
+    directory: /data
+    target-branch: develop
+    schedule:
+      interval: weekly
