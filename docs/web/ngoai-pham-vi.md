@@ -1,6 +1,6 @@
 # Ngoài phạm vi giao diện
 
-Người viết: Hoàng · Ngày: 06/10/2026
+Người viết: Hoàng · Ngày: 06/10/2026 · Thêm mục: 11/10/2026
 
 Các tính năng cửa hàng điện tử lớn thường có, nhưng **không có** trong tài liệu dự án (`project-plan.md`, `docs/business/`). **Không thiết kế, không code** các mục dưới đây, trừ khi tài liệu nghiệp vụ được bổ sung trước.
 
@@ -29,5 +29,9 @@ Các tính năng cửa hàng điện tử lớn thường có, nhưng **không c
 | Trang tài khoản tổng quan, sổ địa chỉ, theo dõi vận chuyển, đổi trả | Không có trong nghiệp vụ |
 | Trong menu tài khoản: hồ sơ (Account), phương thức thanh toán, thẻ tín dụng, gói dịch vụ, sản phẩm đã lưu, cài đặt tài khoản, hỗ trợ, ảnh đại diện | Không có trang nào trong số này; chỉ COD; không có yêu thích (design-system §9.17) |
 | Quyền lợi tài khoản "miễn phí vận chuyển", "thanh toán nhanh", "*Áp dụng có điều kiện" | Mọi đơn đều miễn phí vận chuyển (ordering BR-06); không lưu địa chỉ hay thẻ; không có điều kiện ưu đãi |
+| Các mục trang tham khảo có (11/10/2026): banner khuyến mãi và dải banner nhỏ, ô "Mua kèm giá ưu đãi", ô "Tặng …", nhãn "Giảm N%", flash sale | catalog BR-05: không có giảm giá, quà tặng hay khuyến mãi. Chỗ banner ở trang chủ thay bằng nội dung có thật (trang-chu.md §3.2–3.4) |
+| Nút lọc dòng máy, hãng trong khối sản phẩm (PC I3, I5…), menu con nhiều tầng theo hãng | Chỉ lọc theo `category` (catalog BR-02) |
+| Link "Tin tức", "Tra cứu bảo hành", "Dịch vụ tận nhà", "Thu cũ đổi mới", "Hệ thống showroom"; khối tin tức; nút chat Zalo nổi | Không có trong nghiệp vụ |
+| Tim, số lượt thích, nút "…" trên thẻ sản phẩm (ảnh tham khảo bản 9) | Không có yêu thích, đánh giá; thẻ không có thao tác riêng (design-system §9.9) |
 
 Muốn làm một mục ở trên: viết hoặc sửa tài liệu nghiệp vụ trước (`docs/business/_template.md`), rồi mới thêm spec giao diện.

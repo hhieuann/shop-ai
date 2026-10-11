@@ -1,68 +1,75 @@
 # Giao diện web: Black Magic
 
-Người viết: Hoàng · Ngày: 04/10/2026
+Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 11/10/2026 (bố cục mới, màu chàm)
 
-Quy ước giao diện chung cho `apps/web`. Mọi giá trị nằm trong [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu này giải thích **khi nào dùng cái gì**. Ai làm thêm trang hay widget (ví dụ widget gợi ý, trang đăng nhập) đọc mục 1, 2 và 6 là đủ.
+Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví dụ widget gợi ý, trang đăng nhập) đọc mục 1, 2 và 6 là đủ.
 
-Đây là bản tóm tắt. Bản đầy đủ (mọi component, trạng thái, spec từng trang) nằm cùng thư mục: xem [README.md](README.md).
+Đây là bản tóm tắt. Bản đầy đủ (mọi token, component, trạng thái) ở [design-system.md](design-system.md); spec từng trang ở [`pages/`](pages/).
+
+> **Đang chuyển giao diện (11/10/2026):** tài liệu đã theo bản chàm, **code chưa đổi** (còn tím, Be Vietnam Pro). Tới khi `tokens.css` được sửa, `design-system.md` là chuẩn.
 
 ## 1. Nguyên tắc
 
-- **Nền sáng** (bảng màu "Áo choàng phù thủy", đổi ngày 06/10/2026): nền trang `#F7F5FC`, thẻ trắng, chữ `#1E1530`. Không còn giao diện tối.
-- **Header và footer cùng màu tím đậm** `#7E22CE`, chữ trắng. Nút tìm trên header nền tím nhạt `#F3E8FF`.
-- **Không ghi cứng mã màu trong component.** Chỉ dùng biến ngữ nghĩa: `--bg-*`, `--fg-*`, `--border-*`. Đổi màu thương hiệu chỉ cần sửa `tokens.css`. Bảng token đầy đủ ở [design-system.md](design-system.md) §2.
+- **Bố cục theo trang tham khảo chính** (đổi 11/10/2026). Nhóm nút bên phải header giữ như bản trước: nút Đơn hàng, nút Đăng nhập và icon Giỏ hàng.
+- **Màu chủ đạo chàm.** Nền trang xám nhạt `#F5F5F5`, khối và thẻ trắng, chữ `#1A1A1A`. Không có giao diện tối.
+- **Header và footer cùng màu chàm** `#4338CA`, chữ trắng. Hàng 2 của header nền trắng có 6 link mua theo nhu cầu.
+- **Không ghi cứng mã màu trong component.** Chỉ dùng biến ngữ nghĩa: `--bg-*`, `--fg-*`, `--border-*`.
 - **Mỗi màu nhấn có một việc:**
 
   | Màu | Biến | Chỉ dùng cho |
   |---|---|---|
-  | Tím `#9333EA` (chữ tím `#7E22CE`) | `--bg-primary`, `--fg-primary` | Hành động: nút chính, link, ô đang chọn |
+  | Chàm `#4F46E5` (chữ chàm `#4338CA`) | `--bg-primary`, `--fg-primary` | Hành động: nút chính, link, mục đang chọn |
   | Cyan `#0E7490` | `--fg-accent`, `--bg-accent-tint` | Điểm nhấn nhỏ, trạng thái "Đang giao" |
-  | Vàng | `--bg-deal`, `--fg-deal` | Chưa dùng trong MVP (không có giảm giá) |
   | Xanh / đỏ / cam | `--fg-success`, `--fg-danger`, `--fg-warning` | Trạng thái: còn hàng, lỗi, sắp hết |
 
-  Trong vùng nội dung không dùng tím để trang trí, để người dùng luôn biết chỗ nào bấm được (tím đậm của header/footer là màu khung).
-- **Ảnh sản phẩm đặt trên ô nền nhạt** (`--bg-image-plate`, `#F5F3FA`) với `multiply`: ảnh của hãng có nền trắng, đặt thẳng lên thẻ trắng sẽ không thấy mép.
-- **Giá không tô đỏ.** Hiển thị bằng component `Price`: `24.990.000₫` (dấu chấm ngăn nghìn, ₫ sau số).
+- **Giá màu đen**, đậm 700, qua component `Price`. Không giá gốc, không "-%".
+- **Hàng sản phẩm không khung**: tiêu đề và hàng thẻ nằm thẳng trên nền xám; **thẻ sản phẩm** trắng bo 12px, ô ảnh vuông chạm mép, tên một dòng, giá và nhãn tồn kho cùng hàng, có bóng khi rê chuột.
+- **Ô tìm kiếm dạng viên thuốc** (bo tròn hẳn hai đầu, nút tìm tròn đen trong ô).
 
 ## 2. Chữ
 
-Font **Be Vietnam Pro** (thiết kế cho tiếng Việt), dự phòng Inter, Segoe UI, Roboto. Line-height được nới so với thông thường để dấu tiếng Việt không bị cắt.
+Font **Inter** (có dấu tiếng Việt), dự phòng system-ui, Segoe UI, Roboto. Nội dung mặc định 16/24.
 
-| Vai trò | Cỡ / line-height | Biến |
-|---|---|---|
-| Tiêu đề lớn trang chủ | 44 / 56 | `--text-display-sm` |
-| Tiêu đề trang | 32 / 44 | `--text-headline-sm` |
-| Tiêu đề khối | 24 / 32, 20 / 28 | `--text-title-md`, `--text-title-sm` |
-| Nội dung | 16 / 24, 14 / 20 | `--text-body-lg`, `--text-body-md` |
-| Chú thích | 12 / 18 | `--text-body-sm` |
+| Vai trò | Cỡ / line-height / đậm |
+|---|---|
+| Tiêu đề hero | 28 / 36 / 700 |
+| Tiêu đề khối sản phẩm, H1 trang | 24 / 32 / 700 và 600 (điện thoại 20 / 28) |
+| Giá thẻ | 17 / 24 / 700 (điện thoại 15 / 22) |
+| Nội dung, link nav | 16 / 24, 16 / 22 / 600 |
+| Nội dung phụ, mục menu | 14 / 20, 14 / 18 / 500 |
+| Tên sản phẩm trong thẻ | 13 / 20 / 600, một dòng |
 
 ## 3. Khoảng cách và bố cục
 
-- Khoảng cách theo bậc 4px: `--space-50` (4px), `--space-100` (8px), `--space-200` (16px), `--space-300` (24px), `--space-400` (32px), `--space-600` (48px), `--space-800` (64px).
-- Nội dung rộng tối đa `--content-max` (1920px), căn giữa. Lề hai bên `--gutter`: 16px (điện thoại) → 24px (≥640) → 40px (≥960) → 64px (≥1280).
-- Bo góc: `--radius-md` (4px) cho nhãn/badge, `--radius-lg` (8px) cho nút, ô nhập và thẻ, `--radius-xl` (16px) cho khối lớn ở trang chủ.
-- **Kiểm giao diện ở 3 cỡ màn hình:** 1920px, 1366px, 390px (điện thoại).
+- Khoảng cách theo bậc 4px; hay dùng 8, 12, 16, 24, 32.
+- Nội dung rộng tối đa 1920px, căn giữa. Lề hai bên `--gutter`: 16px → 24px (≥640) → 40px (≥960) → 64px (≥1280).
+- Header đầy đủ 2 hàng từ 1280px; dưới 1280px dùng header điện thoại.
+- Bo góc: 4px nhãn, 8px nút/ô nhập, 10px nút header, 12px thẻ sản phẩm/menu/hero/ô, 16px hộp thoại, tròn hẳn cho ô tìm kiếm.
+- **Kiểm giao diện ở 3 cỡ màn hình:** 1920px, 1366px, 390px.
 
 ## 4. Component dùng chung
 
 | Component | Ở đâu | Dùng khi |
 |---|---|---|
+| Header, Footer | `app/` | Mọi trang khách (trừ đặt hàng, đăng nhập dùng `FocusLayout`) |
+| `AccountMenu` | `app/AccountMenu.tsx` | Nút Đăng nhập / username trên header |
+| `CategoryMenu` (chưa có) | `app/CategoryMenu.tsx` | 13 loại hàng: cột trái trang chủ, nút "Danh mục" |
 | `Price` | `shared/components/Price.tsx` | Mọi chỗ hiện giá |
-| `StoryBlock` | `shared/components/StoryBlock.tsx` | Một khối có tiêu đề trên trang chủ |
-| `Carousel` | `shared/components/Carousel.tsx` | Dải cuộn ngang có nút ‹ › (tự ẩn nút ở hai đầu) |
-| `ProductCard` | `features/catalog/components/ProductCard.tsx` | Thẻ sản phẩm trong lưới hoặc carousel |
-| `StockBadge` | `features/catalog/components/StockBadge.tsx` | Nhãn còn hàng / chỉ còn N / hết hàng |
+| `StoryBlock` | `shared/components/StoryBlock.tsx` | Một khối có tiêu đề (khối sản phẩm) |
+| `Carousel` | `shared/components/Carousel.tsx` | Dải thẻ sản phẩm có nút mũi tên |
+| `ProductCard`, `StockBadge`, `CategoryIcon` | `features/catalog/components/` | Thẻ sản phẩm, nhãn tồn kho, icon loại hàng |
+| `Field`, `PasswordField`, `Checkbox`, `QuantityStepper`, `Alert`, `OrderSummary` | `shared/components/` | Form, giỏ hàng, đặt hàng |
 
-Style viết bằng **CSS Modules** (`*.module.css` cạnh component), không dùng thư viện UI. Icon dùng `lucide-react`.
+Style viết bằng **CSS Modules** (`*.module.css` cạnh component), không dùng thư viện UI. Icon dùng `lucide-react`, nét 1.75.
 
 ## 5. Truy cập (accessibility)
 
-- Mọi thứ bấm được phải dùng được bằng bàn phím, có viền focus `--focus-ring`.
+- Mọi thứ bấm được phải dùng được bằng bàn phím, có viền focus `--focus-ring` (trên nền chàm: trắng).
 - Có link "Bỏ qua tới nội dung chính" ở đầu trang.
-- Tương phản chữ trên nền đạt WCAG AA (4.5:1 cho chữ thường). Các cặp màu trong `tokens.css` đã kiểm.
+- Tương phản chữ trên nền đạt WCAG AA (4.5:1 cho chữ thường). `--fg-subdued` `#737373` chỉ dùng trên nền trắng.
 - Ảnh có `alt`; icon chỉ để trang trí thì `aria-hidden`.
 
 ## 6. Ghi chú cho phần của An
 
-- **Widget gợi ý** ("Dành cho bạn", "Thường mua kèm"): bọc trong `StoryBlock`, hiện sản phẩm bằng `ProductCard` trong `Carousel`, giống các dải sản phẩm ở trang chủ. Như vậy tự khớp giao diện, không cần CSS riêng.
-- **Đăng nhập:** trang `/login` hiện tại là trang **tạm** (nhập token giả để test giỏ hàng). Khi có Cognito, thay trang này và gọi `setTokenProvider()` trong `shared/auth/token.ts` với hàm trả về JWT; mọi request API sẽ tự gắn token.
+- **Widget gợi ý** ("Đang được mua nhiều" / "Dành cho bạn" ở trang chủ, "Thường mua kèm" ở trang chi tiết và giỏ): bọc trong `StoryBlock`, hiện sản phẩm bằng `ProductCard` trong `Carousel`, giống các khối sản phẩm ở trang chủ ([pages/trang-chu.md](pages/trang-chu.md) §3.5–3.6). Như vậy tự khớp giao diện, không cần CSS riêng.
+- **Đăng nhập:** spec ở [pages/dang-nhap.md](pages/dang-nhap.md); trang dùng `FocusLayout` (header thu gọn màu chàm).

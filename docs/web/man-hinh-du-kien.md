@@ -1,6 +1,6 @@
 # Màn hình dự kiến
 
-Người viết: Hoàng · Ngày: 06/10/2026
+Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm)
 
 Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đơn hàng, đăng nhập nhiều bước, trạng thái rỗng, lỗi, 404, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
 
@@ -172,7 +172,7 @@ Confidence: HIGH (chưa đăng nhập) · MEDIUM (đã đăng nhập)
 Đã chốt ngày 07/10/2026, spec chuẩn ở **design-system §9.17**.
 
 Tóm tắt:
-- Nút trên header ghi "Đăng nhập"; đã đăng nhập thì ghi username (rộng bằng chữ "Đăng nhập", tên dài mờ dần). Dưới 960px chỉ icon.
+- Nút trên header ghi "Đăng nhập"; đã đăng nhập thì ghi username (rộng bằng chữ "Đăng nhập", tên dài mờ dần). Dưới 1280px chỉ icon.
 - Bấm mở bảng ngay dưới nút, vùng dưới header tối lại.
 - Chưa đăng nhập: 3 lợi ích, nút "Đăng nhập" + "Tạo tài khoản".
 - Đã đăng nhập: "Xin chào", username, email; "Trang quản trị" (chỉ admin); "Đăng xuất". Không lặp "Đơn hàng" (header đã có).
@@ -276,7 +276,7 @@ Do not introduce: ngăn kéo giỏ hàng, hộp thoại "Đã thêm" kèm sản 
 
 Confidence: HIGH
 
-Reuse: design-system §9.12 (gradient `#EFEAFB → #F7F5FC`, 1,6 giây, `aria-hidden`).
+Reuse: design-system §9.12 (gradient `#EEEEEE → #F5F5F5`, 1,6 giây, `aria-hidden`).
 
 Bố cục: mỗi trang vẽ khung chờ đúng kích thước khối thật (đã ghi ở mục Trạng thái của từng spec trang). Lịch sử đơn: 4 dòng cao 72px trong khối danh sách. Chi tiết đơn: 3 khối trái + khối tóm tắt cao 280px.
 
@@ -321,7 +321,7 @@ Confidence: LOW
 
 Phạm vi (đã có trong tài liệu): `project-plan.md` "Admin cơ bản: thêm sản phẩm, xem đơn"; `ordering.md` admin chuyển `SHIPPED`, `DELIVERED` và huỷ đơn (BR-11); `dynamodb-design.md` admin xem cả sản phẩm `INACTIVE` và lọc đơn theo trạng thái. **Chưa có** `docs/business/admin.md`.
 
-Reuse: `MiniHeader` (design-system §9.16), chip của header (§9.1), khung nội dung `--content-max`.
+Reuse: `MiniHeader` (design-system §9.16), chip (trạng thái ở design-system §6), khung nội dung `--content-max`.
 
 Bố cục và tương tác:
 - `MiniHeader` với chữ "Quản trị" 14/20/500 `--fg-subdued` cạnh logo; link bên phải "Về cửa hàng".
@@ -342,7 +342,7 @@ Reuse: khối 16px, `Badge` (`StockBadge`, `neutral` cho "Đã ẩn"), `Price md
 
 Bố cục và tương tác:
 - Hàng tiêu đề: `<h1>` "Sản phẩm" bên trái; bên phải select "Loại" (13 loại) + nút `primary md` "Thêm sản phẩm".
-- Bảng trong khối 16px: cột Ảnh (48×48 trên `--bg-image-plate`), Tên (+ hãng 12/18), Loại, Giá (căn phải, `tabular-nums`), Tồn kho (căn phải + `StockBadge`), Trạng thái (`Badge`: "Đang bán" success / "Đã ẩn" neutral). Hàng tiêu đề bảng nền `--bg-surface-raised`, chữ 12/18/500 `--fg-subdued`; mỗi hàng cao tối thiểu 56px, ngăn bằng viền `--border-divider`.
+- Bảng trong khối 16px: cột Ảnh (48×48 trên `--bg-subtle`), Tên (+ hãng 12/18), Loại, Giá (căn phải, `tabular-nums`), Tồn kho (căn phải + `StockBadge`), Trạng thái (`Badge`: "Đang bán" success / "Đã ẩn" neutral). Hàng tiêu đề bảng nền `--bg-surface-raised`, chữ 12/18/500 `--fg-subdued`; mỗi hàng cao tối thiểu 56px, ngăn bằng viền `--border-divider`.
 - Gồm cả sản phẩm `INACTIVE`.
 
 Assumptions: chưa biết admin có sửa sản phẩm không (`project-plan.md` chỉ ghi "thêm"). Nếu không sửa được thì hàng không bấm được.
@@ -355,12 +355,12 @@ Do not introduce: sửa hàng loạt, xuất file, kéo thả sắp xếp.
 
 Confidence: MEDIUM
 
-Reuse: `Field` 48px, select, `CheckoutStep` không đánh số (dat-hang.md §3.1), `Button`, `Alert`, ô ảnh `--bg-image-plate`.
+Reuse: `Field` 48px, select, `CheckoutStep` không đánh số (dat-hang.md §3.1), `Button`, `Alert`, ô ảnh `--bg-subtle`.
 
 Bố cục và tương tác (trường lấy đúng bảng thuộc tính trong `catalog.md`):
 - Khối "Thông tin cơ bản": Tên *, Loại * (select 13 loại), Hãng *, Mô tả * (textarea, tối thiểu 4 dòng).
 - Khối "Giá và kho": Giá (VND) * (`inputMode="numeric"`, số nguyên, hiện xem trước bằng `Price` bên dưới), Tồn kho *, Trạng thái (2 lựa chọn "Đang bán" / "Ẩn", mặc định "Đang bán").
-- Khối "Ảnh": ô URL ảnh + ô xem trước vuông 160px trên `--bg-image-plate`.
+- Khối "Ảnh": ô URL ảnh + ô xem trước vuông 160px trên `--bg-subtle`.
 - Khối "Thông số kỹ thuật": danh sách dòng `[Tên thông số][Giá trị][Xoá]` + nút `ghost md` "Thêm dòng".
 - Hai cột từ 960px: form trái, cột phải 360px là khối xem trước dùng `ProductCard` thật. Nút `primary lg` "Lưu sản phẩm" cuối form; "Huỷ" là link về danh sách.
 
