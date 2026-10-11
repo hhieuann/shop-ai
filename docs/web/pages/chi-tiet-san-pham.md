@@ -49,7 +49,7 @@ Hộp mua **không dính** (`sticky`) vì header đã dính và cao; xem lại k
 - Thay cho nút "← Quay lại" hiện có.
 
 ### 3.2 Ảnh sản phẩm
-- Ô vuông, `--bg-image-plate`, bo 8px, padding 24px, rộng tối đa 560px; ảnh `contain` + `multiply`, `alt` = tên sản phẩm (ảnh lớn đứng một mình nên cần alt).
+- Ô vuông, `--bg-subtle`, bo 8px, padding 24px, rộng tối đa 560px; ảnh `contain` + `multiply`, `alt` = tên sản phẩm (ảnh lớn đứng một mình nên cần alt).
 - Không có ảnh: icon loại hàng 56px màu `--border-input` (`#8C82A0`) giữa ô (design-system §8), không ghi chữ "Không có ảnh".
 - Không có dải ảnh nhỏ, không phóng to khi rê chuột (chỉ có một ảnh).
 

@@ -40,7 +40,7 @@
   display: grid;
   place-items: center;
   aspect-ratio: 1;
-  background: var(--bg-image-plate);
+  background: var(--bg-subtle);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }

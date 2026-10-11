@@ -32,7 +32,7 @@
   gap: var(--space-300);
   min-width: 0;
   padding: var(--space-300);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   background: var(--gradient-brand);
   color: var(--fg-on-chrome);
   overflow: hidden;
@@ -85,14 +85,13 @@
 }
 /* Trên nền gradient, nút chính là nút trắng chữ tối (tím trên tím sẽ chìm) */
 .heroPrimary {
-  background: #ffffff;
-  color: #3b0764;
+  background: var(--bg-surface);
+  color: var(--hero-ink);
 }
 .heroPrimary:hover {
   background: var(--bg-primary-tint);
-  color: #3b0764;
+  color: var(--hero-ink);
   text-decoration: none;
-  box-shadow: var(--glow-primary);
 }
 .heroSecondary {
   border: 1px solid rgba(255, 255, 255, 0.45);
@@ -119,8 +118,8 @@
   place-items: center;
   width: 104px;
   height: 104px;
-  border-radius: var(--radius-xl);
-  background: rgba(59, 7, 100, 0.35);
+  border-radius: var(--radius-2xl);
+  background: rgba(30, 27, 75, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.24);
   color: var(--fg-on-chrome);
 }

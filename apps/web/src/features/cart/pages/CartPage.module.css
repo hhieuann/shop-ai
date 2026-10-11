@@ -55,7 +55,7 @@
   overflow: hidden;
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
 }
 .selectAll {
   display: flex;
@@ -92,7 +92,6 @@
   border-color: var(--bg-primary-hover);
   color: var(--fg-on-primary);
   text-decoration: none;
-  box-shadow: var(--glow-primary);
 }
 .primaryButton:active {
   background: var(--bg-primary-pressed);
@@ -119,7 +118,7 @@
   padding: var(--space-500) var(--space-200);
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   color: var(--fg-subdued);
   text-align: center;
 }
@@ -134,7 +133,7 @@
 /* Khung chờ */
 .skeletonList,
 .skeletonSummary {
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   background: linear-gradient(
     90deg,
     var(--bg-surface-pressed) 0%,

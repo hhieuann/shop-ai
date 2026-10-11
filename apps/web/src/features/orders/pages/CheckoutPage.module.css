@@ -43,7 +43,7 @@
   padding: var(--space-300);
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
 }
 .stepHead {
   display: flex;
@@ -188,7 +188,6 @@
 .primaryButton:hover:not(:disabled) {
   border-color: var(--bg-primary-hover);
   background: var(--bg-primary-hover);
-  box-shadow: var(--glow-primary);
 }
 .primaryButton:active {
   background: var(--bg-primary-pressed);
@@ -225,7 +224,7 @@
   padding: var(--space-500) var(--space-200);
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   color: var(--fg-subdued);
   text-align: center;
 }
