@@ -8,11 +8,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-100);
+  justify-content: center;
   height: var(--header-control);
+  min-width: var(--header-control);
   min-height: 0;
-  padding: 0 var(--space-100);
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-btn);
   background: transparent;
   color: var(--fg-on-chrome);
   font: inherit;
@@ -48,7 +50,7 @@
   min-width: 100%;
   overflow: hidden;
 }
-/* Tên dài hơn ô: phần cuối mờ dần (cùng cách làm mờ như mép hàng chip) */
+/* Tên dài hơn ô: phần cuối mờ dần  */
 .fade {
   -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent);
   mask-image: linear-gradient(90deg, #000 62%, transparent);
@@ -61,7 +63,10 @@
   transform: rotate(180deg);
 }
 
-@media (min-width: 960px) {
+@media (min-width: 1280px) {
+  .trigger {
+    padding: 0 10px;
+  }
   .label {
     display: grid;
   }
@@ -70,12 +75,6 @@
   }
   .trigger[aria-expanded='true'] {
     box-shadow: inset 0 0 0 1px var(--border-on-chrome);
-  }
-}
-@media (max-width: 639px) {
-  .trigger > svg:first-child {
-    width: 24px;
-    height: 24px;
   }
 }
 
@@ -102,7 +101,7 @@
   position: absolute;
   top: calc(100% + 12px);
   right: -40px;
-  z-index: 3; /* trên nút ‹ › của hàng chip (z-index 1) */
+  z-index: 3;
   width: 360px;
   max-width: calc(100vw - 32px);
   padding: 20px var(--space-300) var(--space-300);
@@ -128,8 +127,8 @@
   border-top: 1px solid var(--border-divider);
   transform: rotate(45deg);
 }
-/* Dưới 960px: rộng hết màn hình trừ lề 16px, vị trí dọc đo bằng JS (AccountMenu.tsx) */
-@media (max-width: 959px) {
+/* Dưới 1280px: rộng hết màn hình trừ lề 16px, vị trí dọc đo bằng JS (AccountMenu.tsx) */
+@media (max-width: 1279px) {
   .panel {
     position: fixed;
     left: 16px;

@@ -1,8 +1,8 @@
-/* Cùng màu với header: khung tím bao lấy phần nội dung nền sáng */
+/* Footer 4 cột, cùng màu chàm với header (docs/web/design-system.md §9.2) */
 .footer {
-  margin-top: var(--space-600);
+  margin-top: var(--space-400);
   background: var(--bg-chrome);
-  color: var(--fg-on-chrome-muted);
+  color: var(--fg-on-chrome);
 }
 .footer :focus-visible {
   outline-color: var(--focus-ring-on-chrome);
@@ -10,19 +10,84 @@
 .footer a {
   color: var(--fg-on-chrome);
 }
+.footer a:hover {
+  color: var(--fg-on-chrome);
+  text-decoration: underline;
+}
 .inner {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--space-400) var(--gutter);
+  padding: var(--space-500) var(--gutter) var(--space-300);
 }
-.brand {
-  margin: 0 0 var(--space-100);
-  color: var(--fg-on-chrome);
-  font-weight: 700;
+/* Dưới 1280: 2 cột, cột giới thiệu chiếm cả hàng */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-300) var(--space-200);
+  padding-bottom: var(--space-300);
 }
-.note {
-  margin: 0;
+.about {
+  grid-column: 1 / -1;
+}
+.logo {
+  --logo-text: 20px;
+  width: fit-content;
+}
+.logo:hover {
+  text-decoration: none;
+}
+.intro {
+  max-width: 34ch;
+  margin: var(--space-150) 0 0;
   color: var(--fg-on-chrome-muted);
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body-sm);
+  font-size: 14px;
+  line-height: 20px;
+}
+.title {
+  margin: 0 0 var(--space-150);
+  color: var(--fg-on-chrome);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.list {
+  display: grid;
+  gap: var(--space-100);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.icon {
+  flex-shrink: 0;
+  color: var(--fg-on-chrome-muted);
+}
+.legal {
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-on-chrome-subtle);
+  color: var(--fg-on-chrome-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+@media (min-width: 1280px) {
+  .inner {
+    padding: var(--space-800) var(--gutter) var(--space-400);
+  }
+  .grid {
+    grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+    gap: var(--space-400) var(--space-500);
+  }
+  .about {
+    grid-column: auto;
+  }
 }

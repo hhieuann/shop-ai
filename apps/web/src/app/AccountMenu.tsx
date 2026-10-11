@@ -26,14 +26,13 @@ import { signOut } from '../shared/auth/token';
 import { clearCartSession } from '../features/cart/lib/afterSignIn';
 import { clearCheckoutItems } from '../features/orders/lib/checkoutStorage';
 import { useAccount } from '../shared/auth/useSession';
+import { DESKTOP_QUERY } from '../shared/hooks/useMediaQuery';
 import styles from './AccountMenu.module.css';
 
 /** Trang bắt buộc đăng nhập: đăng xuất ở đây thì về trang chủ (design-system §9.17) */
 const SIGNED_IN_ONLY = ['/orders', '/checkout', '/admin'];
 const isSignedInOnly = (path: string) =>
   SIGNED_IN_ONLY.some((p) => path === p || path.startsWith(`${p}/`));
-
-const DESKTOP = '(min-width: 960px)';
 
 /**
  * Nút tài khoản trên header và bảng thả xuống (docs/web/design-system.md §9.17).
@@ -87,13 +86,13 @@ export function AccountMenu() {
     };
   }, [open, close]);
 
-  // Dưới 960px bảng rộng hết màn hình, nằm ngay dưới hàng nút: đo vị trí nút để đặt bảng và mũi nhọn
+  // Dưới 1280px bảng rộng hết màn hình, nằm ngay dưới hàng nút: đo vị trí nút để đặt bảng và mũi nhọn
   const [mobilePos, setMobilePos] = useState<{ top: number; arrowX: number } | null>(null);
   useLayoutEffect(() => {
     if (!open) return;
     const place = () => {
       const button = buttonRef.current;
-      if (!button || window.matchMedia(DESKTOP).matches) return setMobilePos(null);
+      if (!button || window.matchMedia(DESKTOP_QUERY).matches) return setMobilePos(null);
       const rect = button.getBoundingClientRect();
       setMobilePos({ top: rect.bottom + 12, arrowX: rect.left + rect.width / 2 });
     };

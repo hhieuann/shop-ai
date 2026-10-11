@@ -6,7 +6,7 @@ Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví
 
 Đây là bản tóm tắt. Bản đầy đủ (mọi token, component, trạng thái) ở [design-system.md](design-system.md); spec từng trang ở [`pages/`](pages/).
 
-> **Đang chuyển giao diện (11/10/2026):** màu chàm và font Inter đã có trong `tokens.css`; header, footer và trang chủ còn theo bố cục cũ. Tới khi sửa xong, `design-system.md` là chuẩn.
+> **Đang chuyển giao diện (11/10/2026):** màu chàm, font Inter, header 2 hàng và footer 4 cột đã có trong code; trang chủ còn theo bố cục cũ. Tới khi sửa xong, `design-system.md` là chuẩn.
 
 ## 1. Nguyên tắc
 

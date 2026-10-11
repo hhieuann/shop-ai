@@ -1,0 +1,35 @@
+.logo {
+  --logo-mark: 36px;
+  --logo-icon: 20px;
+  --logo-text: 22px;
+  --logo-leading: 28px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  color: var(--fg-on-chrome);
+}
+.logo:hover {
+  color: var(--fg-on-chrome);
+  text-decoration: none;
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: var(--logo-mark);
+  height: var(--logo-mark);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-logo);
+  color: var(--hero-ink);
+}
+.icon {
+  width: var(--logo-icon);
+  height: var(--logo-icon);
+}
+.wordmark {
+  font-size: var(--logo-text);
+  line-height: var(--logo-leading);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
