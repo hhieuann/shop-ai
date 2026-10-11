@@ -2,7 +2,7 @@
   padding: var(--space-300);
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
 }
 @media (max-width: 639px) {
   .summary {

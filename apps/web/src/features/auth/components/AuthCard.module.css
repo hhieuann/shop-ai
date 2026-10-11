@@ -12,7 +12,7 @@
   padding: var(--space-400);
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
 }
 .title {
   margin: 0;
@@ -73,7 +73,6 @@
 .primary:hover {
   background: var(--bg-primary-hover);
   border-color: var(--bg-primary-hover);
-  box-shadow: var(--glow-primary);
 }
 .primary[aria-busy='true'] {
   cursor: progress;

@@ -124,5 +124,5 @@ Banner khuyến mãi và dải banner nhỏ, chấm phân trang banner, flash sa
 
 ## 8. Việc còn lại
 - Thiết kế trang chủ khi đã đăng nhập (mục 7).
-- Code chưa đổi: `HomePage.tsx`, `ProductRail.tsx`, `ProductCard`, Header, Footer vẫn theo bản tím cũ. Sửa theo spec này sau khi `tokens.css` có token chàm (design-system §10).
+- Code chưa đổi bố cục: `HomePage.tsx`, `ProductRail.tsx`, `ProductCard`, Header, Footer vẫn theo bản cũ (màu đã chàm từ `tokens.css`). Sửa theo spec này.
 - Bộ dữ liệu demo chưa có ảnh sản phẩm: thẻ hiện icon loại hàng trên ô xám.

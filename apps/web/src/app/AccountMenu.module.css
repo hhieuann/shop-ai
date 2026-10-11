@@ -108,7 +108,7 @@
   padding: 20px var(--space-300) var(--space-300);
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-lg);
   color: var(--fg-default);
   font-size: 14px;
@@ -234,7 +234,6 @@
   background: var(--bg-primary-hover);
   border-color: var(--bg-primary-hover);
   color: var(--fg-on-primary);
-  box-shadow: var(--glow-primary);
 }
 .primary:active {
   background: var(--bg-primary-pressed);

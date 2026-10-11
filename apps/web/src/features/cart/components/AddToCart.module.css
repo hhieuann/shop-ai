@@ -25,7 +25,6 @@
 .primary:hover:not(:disabled) {
   border-color: var(--bg-primary-hover);
   background: var(--bg-primary-hover);
-  box-shadow: var(--glow-primary);
 }
 .primary:active {
   background: var(--bg-primary-pressed);

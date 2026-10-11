@@ -20,7 +20,7 @@
   height: 96px;
   padding: var(--space-100);
   border-radius: var(--radius-lg);
-  background: var(--bg-image-plate);
+  background: var(--bg-subtle);
   color: var(--border-input);
 }
 .plate img {

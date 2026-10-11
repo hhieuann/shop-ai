@@ -52,8 +52,8 @@ export function ProductDetailPage() {
                 placeItems: 'center',
                 aspectRatio: '1',
                 padding: '24px',
-                background: 'var(--bg-image-plate)',
-                borderRadius: 'var(--radius-xl)',
+                background: 'var(--bg-subtle)',
+                borderRadius: 'var(--radius-2xl)',
               }}
             >
               <img

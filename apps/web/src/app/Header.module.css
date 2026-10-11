@@ -132,7 +132,7 @@
 }
 .searchButton:hover:not(:disabled),
 .searchButton:active {
-  background: var(--bg-primary-tint-hover);
+  background: var(--bg-primary-tint-2);
 }
 
 .actions {

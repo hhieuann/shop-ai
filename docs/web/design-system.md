@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. **Code chưa đổi**: tới khi `tokens.css` và component được sửa, tài liệu này là chuẩn (giá trị cũ còn trong code là tím, Be Vietnam Pro). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. `tokens.css` và font đã đổi theo tài liệu này; header, menu danh mục, footer và trang chủ còn theo bố cục cũ, tới khi sửa xong thì tài liệu này là chuẩn. Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -507,9 +507,10 @@ Không có menu con nhiều tầng (không mở bảng con theo hãng, dòng má
 
 ## 10. Token sẽ thêm khi cần
 
-**Chờ đưa vào `tokens.css` (đổi giao diện 11/10/2026):**
+**Đã đưa vào `tokens.css` (đổi giao diện 11/10/2026):**
 - Thêm: `--bg-subtle`, `--bg-chrome-strong`, `--bg-primary-tint-2`, `--fg-heading`, `--fg-icon-soft`, `--fg-price`, `--hero-ink`, `--radius-btn`, `--shadow-card-hover`, `--shadow-glass`, `--radius-2xl`, `--shadow-sm`.
 - Đổi giá trị: mọi màu ở §2 (tím → chàm, nền và chữ theo bảng mới), bóng ở §4, `--font-sans` sang Inter, thang chữ ở §3.
-- Bỏ: `--bg-image-plate` (thay bằng `--bg-subtle`), `--glow-primary`, `--gradient-line`.
+- Bỏ: `--bg-image-plate` (thay bằng `--bg-subtle`), `--glow-primary` (nút chính chỉ tối đi khi hover), `--gradient-line`, `--bg-primary-tint-hover` (thay bằng `--bg-primary-tint-2`).
+- `--radius-xl` đổi 16 → 12px. Chỗ đang bo 16px giữ nguyên bằng `--radius-2xl`; thẻ sản phẩm, menu danh mục, hero, ô thông tin chuyển sang `--radius-xl` khi làm lại các component đó.
 
 Cần token mới khác thì ghi vào đây (tên, giá trị, khi nào dùng) trước, rồi thêm vào `tokens.css` trong cùng PR với chỗ dùng đầu tiên.

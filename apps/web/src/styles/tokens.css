@@ -1,72 +1,81 @@
 /*
- * Token giao diện của Black Magic (xem docs/web/design-system.md §2).
- * Bảng màu "Áo choàng phù thủy": nền sáng, header/footer tím đậm, tím rực làm màu hành động.
+ * Token giao diện của Black Magic (xem docs/web/design-system.md §2–4).
+ * Bảng màu chàm (chốt 11/10/2026): nền xám nhạt, header hàng 1 và footer chàm, chàm làm màu hành động.
  * Component chỉ dùng token ngữ nghĩa (--bg-*, --fg-*, --border-*), không dùng mã màu trực tiếp.
  */
 :root {
   color-scheme: light;
-  --bg-canvas: #f7f5fc;
+  --bg-canvas: #f5f5f5;
   --bg-surface: #ffffff;
-  --bg-surface-raised: #faf8fe;
-  --bg-surface-pressed: #efeafb;
-  --bg-chrome: #7e22ce;
+  --bg-subtle: #f5f5f5;
+  --bg-surface-raised: #fafafa;
+  --bg-surface-pressed: #eeeeee;
+  --bg-chrome: #4338ca;
+  --bg-chrome-strong: #3730a3;
   --bg-chrome-hover: rgba(255, 255, 255, 0.12);
-  --bg-image-plate: #f5f3fa;
-  --bg-primary: #9333ea;
-  --bg-primary-hover: #7e22ce;
-  --bg-primary-pressed: #6b21a8;
-  --bg-primary-tint: #f3e8ff;
-  --bg-primary-tint-hover: #e9d5ff;
+  --bg-primary: #4f46e5;
+  --bg-primary-hover: #4338ca;
+  --bg-primary-pressed: #3730a3;
+  --bg-primary-tint: #eef2ff;
+  --bg-primary-tint-2: #e0e7ff;
   --bg-accent-tint: #cffafe;
   --bg-deal: #f5b83d;
   --bg-success-tint: #dcfce7;
   --bg-danger-tint: #ffe4e6;
   --bg-warning-tint: #fef3c7;
-  --bg-transparent-hover: rgba(30, 21, 48, 0.04);
-  --bg-transparent-pressed: rgba(30, 21, 48, 0.08);
-  --scrim: rgba(30, 21, 48, 0.55);
+  --bg-transparent-hover: rgba(0, 0, 0, 0.04);
+  --bg-transparent-pressed: rgba(0, 0, 0, 0.08);
+  --scrim: rgba(0, 0, 0, 0.5);
 
-  --fg-default: #1e1530;
-  --fg-muted: #4a3f5c;
-  --fg-subdued: #6b6280;
-  --fg-placeholder: #756c88;
-  --fg-disabled: #a9a1b8;
+  --fg-default: #1a1a1a;
+  --fg-heading: #262626;
+  --fg-muted: #525252;
+  /* 4,74 trên nền trắng; trên #F5F5F5 chỉ 4,35 nên không dùng cho chữ trên nền xám */
+  --fg-subdued: #737373;
+  /* Icon trang trí, ảnh thay thế; không dùng cho chữ */
+  --fg-icon-soft: #a3a3a3;
+  --fg-placeholder: #737373;
+  --fg-disabled: #a3a3a3;
+  --fg-price: #1a1a1a;
   --fg-on-primary: #ffffff;
   --fg-on-chrome: #ffffff;
-  --fg-on-chrome-muted: #e9d5ff;
-  --fg-on-deal: #1e1530;
-  --fg-primary: #7e22ce;
-  --fg-primary-hover: #6b21a8;
+  --fg-on-chrome-muted: #c7d2fe;
+  --fg-on-deal: #1a1a1a;
+  --fg-primary: #4338ca;
+  --fg-primary-hover: #3730a3;
   --fg-accent: #0e7490;
   --fg-deal: #b45309;
   --fg-success: #15803d;
   --fg-danger: #be123c;
   --fg-warning: #b45309;
 
-  --border-divider: #e9e4f2;
-  --border-default: #d6cee6;
-  --border-input: #8c82a0;
-  --border-primary: #9333ea;
+  --border-divider: #e5e5e5;
+  --border-default: #d4d4d4;
+  --border-input: #8c8c8c;
+  --border-primary: #4f46e5;
   --border-on-chrome: rgba(255, 255, 255, 0.38);
   --border-on-chrome-subtle: rgba(255, 255, 255, 0.22);
-  --focus-ring: #9333ea;
+  --focus-ring: #4f46e5;
   --focus-ring-on-chrome: #ffffff;
 
-  --gradient-brand: linear-gradient(135deg, #3b0764 0%, #6b21a8 35%, #9333ea 70%, #22d3ee 100%);
-  --gradient-logo: linear-gradient(135deg, #f0abfc, #ffffff);
-  --glow-primary: 0 0 0 1px rgba(147, 51, 234, 0.3), 0 6px 16px rgba(147, 51, 234, 0.25);
+  --gradient-brand: linear-gradient(135deg, #1e1b4b 0%, #3730a3 35%, #4f46e5 70%, #22d3ee 100%);
+  --gradient-logo: linear-gradient(135deg, #c7d2fe, #ffffff);
+  --hero-ink: #1e1b4b;
 
-  --shadow-xs: 0 2px 3px rgba(30, 21, 48, 0.05);
-  --shadow-md: 0 2px 8px rgba(30, 21, 48, 0.1);
-  --shadow-lg: 0 4px 24px rgba(30, 21, 48, 0.12);
-  --shadow-up: 0 -2px 8px rgba(30, 21, 48, 0.12);
+  --shadow-xs: 0 2px 3px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-up: 0 -2px 8px rgba(0, 0, 0, 0.12);
 }
 
 :root {
-  --font-sans: 'Be Vietnam Pro', Inter, 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
 
-  /* Cỡ chữ / line-height đã nới cho dấu tiếng Việt */
+  /* Cỡ chữ / line-height (design-system §3) */
   --text-display-sm: 44px;
   --leading-display-sm: 56px;
   --text-headline-sm: 32px;
@@ -85,7 +94,9 @@
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 8px;
-  --radius-xl: 16px;
+  --radius-btn: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
   --radius-full: 9999px;
 
   --space-25: 2px;
