@@ -1,120 +1,156 @@
 import { Link } from 'react-router-dom';
-import { Briefcase, Code, Gamepad2, Palette, type LucideIcon } from 'lucide-react';
-import { StoryBlock } from '../../../shared/components/StoryBlock';
-import { Carousel, CarouselItem } from '../../../shared/components/Carousel';
-import { CategoryIcon } from '../../catalog/components/CategoryIcon';
-import { CATEGORIES, type ProductCategory } from '../../catalog/lib/productFilters';
+import {
+  Backpack,
+  ChevronRight,
+  CircuitBoard,
+  Cpu,
+  Gpu,
+  Laptop,
+  MemoryStick,
+  Mouse,
+  PlugZap,
+  Plus,
+  Sparkles,
+  Truck,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react';
+import { useAccount } from '../../../shared/auth/useSession';
+import { CategoryMenu } from '../../catalog/components/CategoryMenu';
+import { PopularProducts } from '../components/PopularProducts';
 import { ProductRail } from '../components/ProductRail';
 import styles from './HomePage.module.css';
 
-/** 4 nhóm khách trong project-plan.md; mỗi nhóm dẫn tới loại hàng họ hay mua nhất */
-const NEEDS: { title: string; detail: string; category: ProductCategory; icon: LucideIcon }[] = [
+/**
+ * Ba ô "Thường mua kèm" (trang-chu.md §3.4). Mô tả chỉ nêu thông số có trong bộ dữ liệu demo,
+ * không khẳng định "tương thích" (catalog BR-06).
+ */
+const PAIRS: { icons: LucideIcon[]; title: string; detail: string; to: string }[] = [
   {
-    title: 'Chơi game',
-    detail: 'Card đồ hoạ, màn hình tần số quét cao, bàn phím cơ',
-    category: 'gpu',
-    icon: Gamepad2,
+    icons: [Gpu, PlugZap],
+    title: 'Card đồ hoạ + Nguồn',
+    detail: 'RTX 4070 Super cần nguồn từ 750W',
+    to: '/products?category=psu',
   },
   {
-    title: 'Làm văn phòng',
-    detail: 'Laptop mỏng nhẹ, chuột, balo, hub USB-C',
-    category: 'laptop',
-    icon: Briefcase,
+    icons: [Cpu, CircuitBoard, MemoryStick],
+    title: 'CPU + Mainboard + RAM',
+    detail: 'Cùng socket AM5 hoặc LGA1700, cùng chuẩn DDR',
+    to: '/products?category=mainboard',
   },
   {
-    title: 'Học lập trình',
-    detail: 'Nâng RAM, SSD, thêm màn hình phụ',
-    category: 'ram',
-    icon: Code,
-  },
-  {
-    title: 'Thiết kế, dựng phim',
-    detail: 'Màn hình màu chuẩn, ổ cứng lớn, tản nhiệt',
-    category: 'monitor',
-    icon: Palette,
+    icons: [Laptop, Mouse, Backpack],
+    title: 'Laptop + Chuột + Balo',
+    detail: 'Bộ đi học, đi làm thường mua cùng',
+    to: '/products?category=mouse',
   },
 ];
 
+/** Trang chủ (docs/web/pages/trang-chu.md) */
 export function HomePage() {
+  const { status } = useAccount();
+  const signedIn = status === 'signedIn';
+
   return (
     <div className={styles.page}>
       <h1 className="sr-only">Black Magic: laptop và linh kiện PC</h1>
 
-      {/* Hàng 1: hero 7/12 + mua theo nhu cầu 5/12 */}
-      <div className={styles.row}>
-        <section className={styles.hero} aria-labelledby="hero-title">
-          <div className={styles.heroText}>
-            <h2 id="hero-title" className={styles.heroTitle}>
-              Mua card đồ hoạ, biết luôn nên lắp nguồn nào
-            </h2>
-            <p className={styles.heroBody}>
-              Black Magic gợi ý món đi kèm từ chính những đơn hàng trước. Chọn GPU sẽ thấy bộ nguồn
-              phù hợp, chọn laptop sẽ thấy chuột và balo hay được mua cùng.
-            </p>
-            <div className={styles.heroActions}>
-              <Link to="/products?category=gpu" className={styles.heroPrimary}>
-                Xem card đồ hoạ
-              </Link>
-              <Link to="/products" className={styles.heroSecondary}>
-                Xem tất cả sản phẩm
-              </Link>
-            </div>
-          </div>
-          <div className={styles.heroArt} aria-hidden="true">
-            <span className={styles.chip}>
-              <CategoryIcon category="gpu" size={56} />
-            </span>
-            <span className={styles.plus}>+</span>
-            <span className={styles.chip}>
-              <CategoryIcon category="psu" size={56} />
-            </span>
-          </div>
-        </section>
+      {/* Hàng đầu trang: menu danh mục | hero + 2 ô thông tin | 3 ô thường mua kèm */}
+      <div className={styles.top}>
+        <CategoryMenu className={styles.categories} />
 
-        <StoryBlock title="Mua theo nhu cầu" className={styles.side}>
-          <ul className={styles.needs}>
-            {NEEDS.map(({ title, detail, category, icon: Icon }) => (
-              <li key={title}>
-                <Link to={`/products?category=${category}`} className={styles.need}>
-                  <Icon
-                    size={24}
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                    className={styles.needIcon}
-                  />
-                  <span>
-                    <span className={styles.needTitle}>{title}</span>
-                    <span className={styles.needDetail}>{detail}</span>
-                  </span>
+        <div className={styles.center}>
+          <section className={styles.hero} aria-labelledby="hero-title">
+            <div className={styles.heroText}>
+              <span className={styles.eyebrow}>
+                <Sparkles size={14} aria-hidden="true" />
+                Gợi ý mua kèm
+              </span>
+              <h2 id="hero-title" className={styles.heroTitle}>
+                Mua card đồ hoạ, xem luôn món thường mua kèm
+              </h2>
+              <p className={styles.heroBody}>
+                Mỗi trang sản phẩm có dải &quot;Thường mua kèm&quot;, tính từ các đơn hàng trước.
+              </p>
+              <div className={styles.heroActions}>
+                <Link to="/products?category=gpu" className={styles.heroPrimary}>
+                  Xem card đồ hoạ
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </StoryBlock>
+                <Link to="/products" className={styles.heroSecondary}>
+                  Xem tất cả sản phẩm
+                </Link>
+              </div>
+            </div>
+            <div className={styles.heroArt} aria-hidden="true">
+              <span className={styles.artBox}>
+                <Gpu size={60} strokeWidth={1.75} />
+              </span>
+              <Plus size={28} className={styles.artPlus} />
+              <span className={styles.artBox}>
+                <PlugZap size={60} strokeWidth={1.75} />
+              </span>
+            </div>
+          </section>
+
+          <div className={`${styles.infoRow} ${signedIn ? styles.infoSingle : ''}`}>
+            <div className={styles.info}>
+              <span className={styles.infoIcon} aria-hidden="true">
+                <Truck size={24} />
+              </span>
+              <div>
+                <h3 className={styles.infoTitle}>Giao hàng miễn phí mọi đơn</h3>
+                <p className={styles.infoText}>Thanh toán khi nhận hàng (COD).</p>
+              </div>
+            </div>
+            {/* Đã đăng nhập thì ô này không còn hợp (trang-chu.md §7): ẩn, ô giao hàng rộng hết hàng */}
+            {!signedIn && (
+              <div className={styles.info}>
+                <span className={styles.infoIcon} aria-hidden="true">
+                  <UserRound size={24} />
+                </span>
+                <div>
+                  <h3 className={styles.infoTitle}>Chưa có tài khoản?</h3>
+                  <p className={styles.infoText}>
+                    Giỏ hàng lưu theo tài khoản và theo dõi được đơn.
+                  </p>
+                  <Link to="/register" state={{ from: '/' }} className={styles.infoLink}>
+                    Tạo tài khoản
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <ul className={styles.pairs} aria-label="Thường mua kèm">
+          {PAIRS.map(({ icons, title, detail, to }) => (
+            <li key={title}>
+              <Link to={to} className={styles.pair}>
+                <div className={styles.pairIcons} aria-hidden="true">
+                  {icons.map((Icon, i) => (
+                    <span key={i} className={styles.pairIconGroup}>
+                      {i > 0 && <Plus size={14} className={styles.pairPlus} />}
+                      <span className={styles.pairIcon}>
+                        <Icon size={22} strokeWidth={1.75} />
+                      </span>
+                    </span>
+                  ))}
+                </div>
+                <div>
+                  <h3 className={styles.pairTitle}>{title}</h3>
+                  <p className={styles.pairText}>{detail}</p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {/* Hàng 2: ô loại hàng (ô có viền và icon) */}
-      <StoryBlock title="Danh mục">
-        <Carousel label="Danh mục" centered>
-          {CATEGORIES.map((c) => (
-            <CarouselItem key={c.value}>
-              <Link to={`/products?category=${c.value}`} className={styles.tile}>
-                <span className={styles.tileCircle}>
-                  <CategoryIcon category={c.value} size={32} />
-                </span>
-                <span className={styles.tileLabel}>{c.label}</span>
-              </Link>
-            </CarouselItem>
-          ))}
-        </Carousel>
-      </StoryBlock>
-
-      {/* Chỗ cho widget "Dành cho bạn" của An (GET /api/v1/recs), đặt ngay dưới danh mục */}
-
+      <PopularProducts />
       <ProductRail title="Hàng mới về" filters={{}} seeAllTo="/products" />
       <ProductRail
         title="Card đồ hoạ"
-        subtitle="Nhớ xem gợi ý bộ nguồn đi kèm ở trang sản phẩm"
         filters={{ category: 'gpu' }}
         seeAllTo="/products?category=gpu"
       />

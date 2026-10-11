@@ -1,21 +1,32 @@
+/* Giá (docs/web/design-system.md §9.8): đen, đậm 700, không xuống dòng */
 .price {
-  color: var(--fg-default);
+  color: var(--fg-price);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .number {
-  font-size: var(--text-title-sm);
-  line-height: var(--leading-title-sm);
+  font-size: 15px;
+  line-height: 22px;
 }
 .sign {
   font-size: var(--text-body-md);
   margin-left: 1px;
 }
 .lg .number {
-  font-size: var(--text-headline-sm);
-  line-height: var(--leading-headline-sm);
+  font-size: 32px;
+  line-height: 44px;
 }
 .lg .sign {
   font-size: var(--text-body-lg);
+}
+@media (min-width: 1280px) {
+  .number {
+    font-size: 17px;
+    line-height: 24px;
+  }
+  .lg .number {
+    font-size: 32px;
+    line-height: 44px;
+  }
 }

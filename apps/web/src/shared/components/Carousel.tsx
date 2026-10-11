@@ -4,17 +4,16 @@ import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 import styles from './Carousel.module.css';
 
 /**
- * Dải cuộn ngang: cuộn bằng tay/trackpad, có nút trái/phải hiện khi rê chuột.
- * Nút chỉ hiện khi còn nội dung để cuộn theo hướng đó. Không tự chạy; không chấm phân trang.
+ * Dải sản phẩm (design-system §9.11): 7 thẻ từ 1600px, 6 thẻ từ 1280px, thẻ 220px cuộn ngang
+ * ở 768–1279px, lưới 2 cột 4 thẻ đầu dưới 768px.
+ * Nút mũi tên kính chỉ hiện từ 1280px và chỉ khi còn thẻ ở hướng đó. Không tự chạy.
  */
 interface CarouselProps {
   label: string;
-  /** Căn giữa các ô khi còn chỗ (dải ngắn như Danh mục). Hàng sản phẩm thì để căn trái. */
-  centered?: boolean;
   children: ReactNode;
 }
 
-export function Carousel({ label, centered = false, children }: CarouselProps) {
+export function Carousel({ label, children }: CarouselProps) {
   const { ref, canPrev, canNext, scrollByPage, update } = useHorizontalScroll<HTMLUListElement>();
 
   // Số ô thay đổi (ví dụ: khung chờ → sản phẩm thật) → tính lại nút
@@ -36,10 +35,10 @@ export function Carousel({ label, centered = false, children }: CarouselProps) {
           onClick={() => scrollByPage(-1)}
           aria-label={`${label}: xem trước`}
         >
-          <ChevronLeft size={24} aria-hidden="true" />
+          <ChevronLeft size={22} aria-hidden="true" />
         </button>
       )}
-      <ul ref={ref} className={`${styles.track} ${centered ? styles.centered : ''}`}>
+      <ul ref={ref} className={styles.track}>
         {children}
       </ul>
       {canNext && (
@@ -49,7 +48,7 @@ export function Carousel({ label, centered = false, children }: CarouselProps) {
           onClick={() => scrollByPage(1)}
           aria-label={`${label}: xem tiếp`}
         >
-          <ChevronRight size={24} aria-hidden="true" />
+          <ChevronRight size={22} aria-hidden="true" />
         </button>
       )}
     </div>

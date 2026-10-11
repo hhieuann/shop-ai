@@ -19,3 +19,9 @@
   background: var(--bg-danger-tint);
   color: var(--fg-danger);
 }
+.sm {
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
