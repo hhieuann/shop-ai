@@ -1,0 +1,151 @@
+/* Nút "Danh mục" và bảng / ngăn kéo menu danh mục (design-system §9.1, §9.18) */
+.root {
+  position: relative;
+  flex-shrink: 0;
+}
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-btn);
+  background: var(--bg-chrome-strong);
+  color: var(--fg-on-chrome);
+  font: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+.trigger:hover:not(:disabled),
+.trigger[aria-expanded='true'] {
+  background: var(--bg-chrome-strong);
+  color: var(--fg-on-chrome);
+  box-shadow: inset 0 0 0 1px var(--border-on-chrome);
+}
+.label {
+  display: none;
+  white-space: nowrap;
+}
+@media (min-width: 1280px) {
+  .trigger {
+    width: auto;
+    height: 44px;
+    padding: 10px var(--space-200);
+  }
+  .label {
+    display: inline;
+  }
+}
+
+/* ── Vùng tối ── */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--scrim);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-base) ease,
+    visibility 0s linear var(--dur-base);
+}
+.scrimOpen {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--dur-base) ease;
+}
+/* Ngăn kéo phủ cả header */
+.scrimTop {
+  z-index: 300;
+}
+
+/* ── Bảng thả xuống (≥1280) ── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  z-index: 3;
+  width: 300px;
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-xl);
+}
+
+/* ── Ngăn kéo (<1280) ── */
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 301;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  width: min(320px, 85vw);
+  padding: var(--space-100) var(--space-100) var(--space-200);
+  overflow-y: auto;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+  color: var(--fg-default);
+  animation: slide-in var(--dur-base) var(--ease-standard);
+}
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+.drawerHead {
+  display: flex;
+  justify-content: flex-end;
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--fg-muted);
+}
+.close:hover:not(:disabled) {
+  background: var(--bg-transparent-hover);
+}
+/* Link "Đơn hàng": cùng hình dạng với mục menu, ngăn với 13 loại hàng bằng đường kẻ */
+.orders {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  height: 44px;
+  margin-bottom: var(--space-100);
+  padding: var(--space-50) var(--space-100);
+  border-bottom: 1px solid var(--border-divider);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  color: var(--fg-heading);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.orders:hover {
+  background: var(--bg-primary-tint);
+  color: var(--fg-heading);
+  text-decoration: none;
+}
+.orders[aria-current='page'] {
+  color: var(--fg-primary);
+}
+.tile {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+}

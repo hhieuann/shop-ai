@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. `tokens.css` và font đã đổi theo tài liệu này; header, menu danh mục, footer và trang chủ còn theo bố cục cũ, tới khi sửa xong thì tài liệu này là chuẩn. Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. `tokens.css`, font, header, menu danh mục và footer đã đổi theo tài liệu này; trang chủ, thẻ sản phẩm, khối sản phẩm còn theo bố cục cũ, tới khi sửa xong thì tài liệu này là chuẩn. Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -209,7 +209,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 
 | Component | Vị trí | Trạng thái |
 |---|---|---|
-| Header, Footer, RootLayout | `app/` | ✅ (cần sửa theo §9.1, §9.2 mới: header 2 hàng, footer 4 cột) |
+| Header, Footer, RootLayout, `Logo`, `CategoryMenuButton` | `app/` | ✅ |
+| `CategoryMenu` | `features/catalog/components/CategoryMenu.tsx` | ✅ |
 | `Price` | `shared/components/Price.tsx` | ✅ |
 | `StoryBlock` | `shared/components/StoryBlock.tsx` | ✅ |
 | `Carousel`, `CarouselItem` | `shared/components/Carousel.tsx` | ✅ |
@@ -488,7 +489,7 @@ Nội dung **khi đã đăng nhập**:
 
 **Không có:** ảnh đại diện, trang hồ sơ, cài đặt tài khoản, phương thức thanh toán, danh sách yêu thích, hỗ trợ, quyền lợi "miễn phí vận chuyển" (mọi đơn đều miễn phí, ordering BR-06).
 
-### 9.18 Menu danh mục (`CategoryMenu`, 📝; trang chủ và nút "Danh mục")
+### 9.18 Menu danh mục (`CategoryMenu`, ✅; trang chủ và nút "Danh mục")
 Theo kiểu menu danh mục cột trái của trang tham khảo. Một danh sách 13 loại hàng (`CATEGORIES`, cùng thứ tự với `CategoryIcon`), dùng ở 3 chỗ:
 
 | Chỗ | Dạng |

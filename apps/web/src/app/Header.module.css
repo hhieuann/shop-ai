@@ -1,188 +1,153 @@
+/* Header hai hàng (docs/web/design-system.md §9.1). Mốc máy tính 1280px */
 .header {
-  /*
-   * Thước đo của header (thiết kế ở màn 1920px, làm tròn lưới 4/8px):
-   * hàng trên padding 20px 24px, mọi phần tử cao 48px → 88px; chữ 16/20; icon 28px.
-   * Hàng chip: chip cao 44px, chữ 16/20 đậm 600 → 76px. Đổi cỡ header chỉ cần sửa các biến này.
-   */
-  --header-pad-y: 20px;
-  --header-pad-x: 24px;
-  --header-control: 48px;
-  --header-chip: 44px;
-  --header-chip-pad-y: 16px;
+  /* Cỡ nút trên hàng 1; menu tài khoản dùng chung các biến này */
+  --header-control: 40px;
   position: sticky;
   top: 0;
   z-index: 210;
-  background: var(--bg-chrome);
-  color: var(--fg-on-chrome);
   font-size: 16px;
-  line-height: 20px;
+  line-height: 24px;
 }
-/*
- * Lề hai bên của header tăng theo độ rộng màn hình:
- * 24px → 32px (≥1200) → 48px (≥1600), để trên màn 1920px header không dính sát mép.
- */
-@media (min-width: 1200px) {
+@media (min-width: 1280px) {
   .header {
-    --header-pad-x: 32px;
+    --header-control: 44px;
   }
 }
-@media (min-width: 1600px) {
-  .header {
-    --header-pad-x: 48px;
-  }
-}
-/* Điện thoại: thu nhỏ để header không chiếm nửa màn hình, giữ cùng nhịp */
-@media (max-width: 639px) {
-  .header {
-    --header-pad-y: 12px;
-    --header-pad-x: 16px;
-    --header-control: 40px;
-    --header-chip: 36px;
-    --header-chip-pad-y: 12px;
-    font-size: 14px;
-    line-height: 18px;
-  }
-}
-/* Viền focus trắng: viền tím mặc định không thấy trên nền tím của header */
-.header :focus-visible {
-  outline-color: var(--focus-ring-on-chrome);
-}
-/* Đường kẻ 1px trắng mờ dưới hàng trên cùng, chạy hết chiều ngang màn hình */
+
+/* ── Hàng 1: nền chàm ── */
 .topBar {
   position: relative;
+  z-index: 2; /* bảng thả xuống của hàng 1 nằm trên hàng 2 */
+  background: var(--bg-chrome);
+  color: var(--fg-on-chrome);
 }
-.topBar::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--border-on-chrome-subtle);
+/* Viền focus trắng: viền chàm mặc định không thấy trên nền chàm */
+.topBar :focus-visible {
+  outline-color: var(--focus-ring-on-chrome);
 }
+/* Điện thoại: [menu] [logo giữa] [tài khoản, giỏ], ô tìm xuống hàng dưới */
 .top {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-150);
+  gap: var(--space-100);
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--header-pad-y) var(--header-pad-x);
+  padding: var(--space-100) var(--gutter) var(--space-150);
 }
-
 .logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-150);
-  height: var(--header-control);
-  color: var(--fg-on-chrome);
-  flex-shrink: 0;
+  --logo-mark: 30px;
+  --logo-icon: 18px;
+  --logo-text: 18px;
+  --logo-leading: 24px;
+  margin: 0 auto;
 }
-.logo:hover {
-  color: var(--fg-on-chrome);
-  text-decoration: none;
+/* Điện thoại: cụm giữa tan ra để nút menu đứng đầu hàng và ô tìm xuống hàng riêng */
+.middle {
+  display: contents;
 }
-.mark {
-  width: var(--header-control);
-  height: var(--header-control);
-  border-radius: var(--radius-lg);
-  background: var(--gradient-logo);
-}
-.wordmark {
-  font-size: 28px;
-  line-height: 36px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.middle > :first-child {
+  order: -1;
 }
 
-/* Ô tìm kiếm: ô nhập trắng + nút tím nhạt ghép liền (nút tím đậm trên header tím sẽ chìm) */
+/* Ô tìm kiếm dạng viên thuốc, nút tìm tròn đen bên trong */
 .search {
-  order: 3;
+  order: 10;
   display: flex;
   flex: 1 1 100%;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
+  height: 44px;
+  padding: 0 var(--space-50) 0 18px;
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-full);
+}
+.search:focus-within {
+  outline: 2px solid var(--focus-ring-on-chrome);
+  outline-offset: 2px;
 }
 .searchInput {
   flex: 1;
   min-width: 0;
-  height: var(--header-control);
-  padding: 0 var(--space-150);
-  background: var(--bg-surface);
-  color: var(--fg-default);
+  height: 100%;
+  padding: 0;
+  background: transparent;
   border: 0;
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  font-size: 16px; /* điện thoại: ≥16px để iOS không tự phóng to khi gõ */
-  line-height: 16px;
+  color: var(--fg-default);
+  font-size: 16px; /* ≥16px để iOS không tự phóng to khi gõ */
+  line-height: 20px;
 }
-
+.searchInput::placeholder {
+  color: var(--fg-placeholder);
+}
 .searchInput:focus-visible {
-  outline: 2px solid var(--focus-ring-on-chrome);
-  outline-offset: 2px;
+  outline: 0; /* viền nằm ở cả ô (.search:focus-within) */
 }
 .searchButton {
   display: grid;
+  flex-shrink: 0;
   place-items: center;
-  width: 56px;
-  height: var(--header-control);
+  width: 36px;
+  height: 36px;
+  min-height: 0;
   padding: 0;
-  background: var(--bg-primary-tint);
   border: 0;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  color: var(--fg-primary-hover);
+  border-radius: var(--radius-full);
+  background: var(--fg-default);
+  color: var(--fg-on-primary);
 }
 .searchButton:hover:not(:disabled),
 .searchButton:active {
-  background: var(--bg-primary-tint-2);
+  background: var(--bg-chrome-strong);
 }
 
+/* Nhóm nút bên phải */
 .actions {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--space-50);
-  margin-left: auto;
 }
 .action {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-100);
   height: var(--header-control);
-  padding: 0 var(--space-100);
-  border-radius: var(--radius-lg);
+  min-width: var(--header-control);
+  padding: 0;
+  border-radius: var(--radius-btn);
   color: var(--fg-on-chrome);
   font-weight: 500;
+  white-space: nowrap;
 }
 .action:hover {
   background: var(--bg-chrome-hover);
   color: var(--fg-on-chrome);
   text-decoration: none;
 }
-/* Trang hiện tại: gạch chân 2px trắng dưới nhãn (chữ tím trên nền tím sẽ không đọc được) */
+/* Điện thoại: Đơn hàng nằm trong ngăn kéo danh mục, không ở hàng 1 */
+.orders,
+.divider {
+  display: none;
+}
+/* Trang hiện tại: gạch chân 2px trắng dưới nhãn */
 .action[aria-current='page'] .actionLabel {
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
 }
-.actionLabel {
-  display: none;
-}
-/* Vạch dọc 1px ngăn Tài khoản với Giỏ hàng */
 .divider {
   width: 1px;
-  height: 32px;
-  margin: 0 var(--space-100);
+  height: 28px;
+  margin: 0 6px;
   background: var(--border-on-chrome);
 }
-/* Giỏ hàng: chỉ icon 32px, ô vuông bằng chiều cao header; trang hiện tại có vạch trắng dưới icon */
 .cart {
   position: relative;
-  justify-content: center;
-  width: var(--header-control);
-  padding: 0;
 }
-/*
- * Phần giỏ của icon lucide nằm lệch phải (tay cầm ở bên trái), nên vạch dời phải 2px
- * để thẳng giữa phần giỏ và hai bánh xe thay vì giữa ô 48px.
- */
+/* Giỏ đang xem: vạch trắng 2px dưới phần giỏ của icon (icon lệch phải nên vạch dời phải 2px) */
 .cart[aria-current='page']::after {
   content: '';
   position: absolute;
@@ -194,159 +159,98 @@
   background: var(--fg-on-chrome);
 }
 
-/* Hàng chip loại hàng: cuộn ngang, chip đang chọn nền trắng viền 2px (bù padding để không nhảy) */
-.categories {
-  position: relative;
-  max-width: var(--content-max);
-  margin: 0 auto;
-}
-.chipList {
-  display: flex;
-  gap: var(--space-100);
-  margin: 0;
-  padding: var(--header-chip-pad-y) var(--header-pad-x);
-  list-style: none;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-}
-/*
- * Mép mờ ở phía còn chip (chỉ bật khi cuộn được về phía đó). Trong suốt hẳn tới hết chỗ đặt
- * nút ‹ › (lề + 32px), rồi mờ dần 48px, để chữ của chip không ló ra cạnh nút.
- */
-.chipList {
-  --edge: calc(var(--header-pad-x) + 40px);
-}
-.fadeStart .chipList {
-  --fade-start-clear: var(--edge);
-  --fade-start: calc(var(--edge) + 48px);
-}
-.fadeEnd .chipList {
-  --fade-end-clear: var(--edge);
-  --fade-end: calc(var(--edge) + 48px);
-}
-.fadeStart .chipList,
-.fadeEnd .chipList {
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent var(--fade-start-clear, 0px),
-    #000 var(--fade-start, 0px),
-    #000 calc(100% - var(--fade-end, 0px)),
-    transparent calc(100% - var(--fade-end-clear, 0px))
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent var(--fade-start-clear, 0px),
-    #000 var(--fade-start, 0px),
-    #000 calc(100% - var(--fade-end, 0px)),
-    transparent calc(100% - var(--fade-end-clear, 0px))
-  );
-}
-.chipArrow {
-  position: absolute;
-  top: 50%;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  min-height: 0;
-  padding: 0;
-  transform: translateY(-50%);
-  border-radius: var(--radius-full);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  color: var(--fg-default);
-  box-shadow: var(--shadow-md);
-}
-.chipArrow:hover:not(:disabled) {
-  background: var(--bg-surface-pressed);
-  border-color: var(--border-primary);
-}
-.chipPrev {
-  left: calc(var(--header-pad-x) - 8px);
-}
-.chipNext {
-  right: calc(var(--header-pad-x) - 8px);
-}
-/* Màn hình cảm ứng: vuốt ngang là đủ, ẩn nút cho gọn */
-@media (hover: none) {
-  .chipArrow {
-    display: none;
-  }
-}
-.chipList::-webkit-scrollbar {
+/* ── Hàng 2: mua theo nhu cầu, chỉ ≥1280 ── */
+.needs {
   display: none;
+  position: relative;
+  z-index: 1;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
 }
-/*
- * Căn giữa khi còn chỗ. Không dùng justify-content:center: khi dải dài hơn khung, nó đẩy phần đầu
- * ra ngoài bên trái và không cuộn về được. margin auto ở phần tử đầu/cuối thì tự về 0 khi hết chỗ.
- */
-.chipList > li:first-child {
-  margin-left: auto;
+.needList {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-300);
+  max-width: var(--content-max);
+  height: 56px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  list-style: none;
 }
-.chipList > li:last-child {
-  margin-right: auto;
-}
-.chip {
-  display: inline-flex;
+.need {
+  display: flex;
   align-items: center;
   gap: var(--space-100);
-  min-height: var(--header-chip);
-  padding: 0 20px;
-  border: 1px solid var(--border-on-chrome);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--fg-on-chrome);
+  height: 42px;
+  padding: 10px var(--space-150);
+  border-radius: var(--radius-lg);
+  color: var(--fg-heading);
+  font-size: 16px;
+  line-height: 22px;
   font-weight: 600;
   white-space: nowrap;
+  transition: background-color var(--dur-fast) ease-out;
 }
-.chip:hover {
-  background: var(--bg-chrome-hover);
-  color: var(--fg-on-chrome);
+.need:hover {
+  background: var(--bg-primary-tint);
+  color: var(--fg-heading);
   text-decoration: none;
 }
-.chip[aria-current='page'] {
-  padding: 0 19px; /* viền 2px: bớt 1px mỗi bên để chip không nhảy */
-  border: 2px solid var(--fg-on-chrome);
-  background: var(--bg-surface);
-  color: var(--fg-primary-hover);
+.needIcon {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.need[aria-current='page'] {
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
 }
 
-@media (min-width: 960px) {
+/* ── Máy tính ≥1280 ── */
+@media (min-width: 1280px) {
   .top {
     flex-wrap: nowrap;
-    gap: var(--space-300);
+    gap: var(--space-150);
+    height: 76px;
+    padding: var(--space-200) var(--gutter);
+  }
+  .logo {
+    --logo-mark: 36px;
+    --logo-icon: 20px;
+    --logo-text: 22px;
+    --logo-leading: 28px;
+    margin: 0;
+  }
+  /* Nút Danh mục + ô tìm thành một cụm, căn giữa khoảng trống giữa logo và nhóm nút phải */
+  .middle {
+    display: flex;
+    flex: 0 1 872px;
+    align-items: center;
+    gap: var(--space-150);
+    min-width: 0;
+    margin-inline: auto;
   }
   .search {
     order: 0;
     flex: 1 1 auto;
+    max-width: 720px;
+    height: 48px;
+    padding: 0 6px 0 22px;
   }
-  .actionLabel {
-    display: inline;
-  }
-}
-
-/* Điện thoại: tên shop và icon nhỏ lại để logo, icon cùng một hàng; ô tìm kiếm xuống hàng dưới */
-@media (max-width: 639px) {
-  .wordmark {
-    font-size: 20px;
-    line-height: 28px;
-  }
-  .action svg,
-  .searchButton svg {
-    width: 24px;
-    height: 24px;
-  }
-  .searchButton {
-    width: 48px;
-  }
-  .cart svg {
-    width: 28px;
-    height: 28px;
+  .orders {
+    display: flex;
   }
   .divider {
-    height: 24px;
-    margin: 0 var(--space-50);
+    display: block;
+  }
+  .action {
+    padding: 0 10px;
+  }
+  .cart {
+    width: 48px;
+    padding: 0;
+  }
+  .needs {
+    display: block;
   }
 }
