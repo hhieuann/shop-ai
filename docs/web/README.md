@@ -1,6 +1,6 @@
 # Giao diện web: Black Magic
 
-Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. Mọi giá trị màu, chữ, khoảng cách nằm trong code ở [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu ở đây giải thích **dùng cái gì, ở đâu, trông ra sao**.
+Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Đang chuyển giao diện (11/10/2026):** bố cục theo một trang bán linh kiện máy tính trong nước, màu chủ đạo chàm; tài liệu đã đổi, code chưa đổi, nên tạm thời tài liệu là chuẩn. Mọi giá trị màu, chữ, khoảng cách nằm trong code ở [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu ở đây giải thích **dùng cái gì, ở đâu, trông ra sao**.
 
 ## Đọc theo thứ tự nào
 
@@ -18,7 +18,7 @@ Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. Mọi g
 |---|---|
 | [giao-dien.md](giao-dien.md) | Tóm tắt quy ước chung: nguyên tắc màu, chữ, khoảng cách, component có sẵn |
 | [design-system.md](design-system.md) | Đầy đủ: token, chữ, bố cục, trạng thái tương tác, trợ năng, **mọi component dùng chung** |
-| [pages/trang-chu.md](pages/trang-chu.md) | Trang chủ `/` |
+| [pages/trang-chu.md](pages/trang-chu.md) | Trang chủ `/` (bản chàm, chốt 11/10/2026) |
 | [pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md) | Danh sách và kết quả tìm kiếm `/products?q=&category=&sort=` |
 | [pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) | Chi tiết sản phẩm `/products/:productId` |
 | [pages/gio-hang.md](pages/gio-hang.md) | Giỏ hàng `/cart` |
