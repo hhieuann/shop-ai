@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. `tokens.css`, font, header, menu danh mục và footer đã đổi theo tài liệu này; trang chủ, thẻ sản phẩm, khối sản phẩm còn theo bố cục cũ, tới khi sửa xong thì tài liệu này là chuẩn. Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -373,7 +373,7 @@ Ký hiệu tiền: trang tham khảo viết `đ` liền sau số, chữ thườn
 
 Không có giá cũ, phần trăm giảm hay "tiết kiệm" (catalog BR-05). Phí vận chuyển hiển thị chữ "Miễn phí" (ordering BR-06), không phải "0₫".
 
-### 9.9 Thẻ sản phẩm (`ProductCard` ✅, cần sửa theo spec này)
+### 9.9 Thẻ sản phẩm (`ProductCard` ✅)
 Chốt 11/10/2026 theo **ảnh tham khảo của Hoàng** (bản mẫu 9), thay cho thẻ kiểu cũ. Dùng ở mọi lưới và dải sản phẩm. Một kiểu duy nhất.
 
 | Phần | Giá trị |
@@ -392,7 +392,7 @@ So với ảnh tham khảo: **tim và số lượt thích** thay bằng nhãn t�
 
 Thẻ **không có** nút "Thêm vào giỏ", giá gốc, nhãn "-%", ô "Mua kèm giá ưu đãi", ô quà tặng, nút lưu, so sánh, sao đánh giá (ngoai-pham-vi.md).
 
-### 9.10 Khối sản phẩm (`StoryBlock` ✅, cần sửa theo spec này)
+### 9.10 Khối sản phẩm (`StoryBlock` ✅)
 Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelledby>` nền trong suốt, không viền, không padding ngang; nằm thẳng trên nền trang, padding trên 24px (<1280: 20px), dưới 4px.
 - Hàng tiêu đề: `flex`, `align-items:center`, gap 12px.
   - `<h2>` **24/32/700** `--fg-default` (<1280: 20/28).
@@ -400,11 +400,12 @@ Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelled
   - Không có dòng phụ cạnh tiêu đề.
 - Hàng thẻ cách hàng tiêu đề **16px**.
 
-### 9.11 Dải sản phẩm (`Carousel` ✅, cần sửa theo spec này)
+### 9.11 Dải sản phẩm (`Carousel` ✅)
 - **≥1280:** hàng ngang `display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x mandatory`, ẩn thanh cuộn. Mỗi ô `flex: 0 0 calc((100% - 96px) / 7)` (**7 thẻ**) từ 1600px; `calc((100% - 80px) / 6)` (**6 thẻ**) từ 1280 tới 1599px.
 - **768–1279:** cùng hàng ngang, ô rộng 220px, vuốt hoặc kéo.
 - **<768:** lưới **2 cột**, gap 12px, không cuộn ngang, hiện **4 thẻ đầu**.
 - Nút mũi tên (≥1280, chỉ khi còn thẻ phía sau): tròn **42px**, đè lên mép phải hàng thẻ (lệch ra ngoài 20px), ngang giữa ô ảnh; nền trắng 75% + `backdrop-filter: blur(6px)`, viền 1px trắng 50%, `--shadow-glass`, icon `ChevronRight` / `ChevronLeft` 22 `--fg-heading`. Ẩn trên màn cảm ứng.
+- Số thẻ 6/7 tính theo **bề rộng của chính dải** (container query: từ 1100px là 6 thẻ, từ 1400px là 7 thẻ), không theo bề rộng màn hình, để dải đặt trong cột hẹp (giỏ hàng rỗng) vẫn dùng thẻ 220px cuộn ngang thay vì 7 thẻ quá nhỏ. Ở trang chủ hai cách tính cho cùng kết quả.
 - Không tự chạy, không có chấm phân trang.
 - `role="group"` + `aria-roledescription="carousel"` + `aria-label`; nút có nhãn "{tên khối}: xem tiếp / xem trước".
 

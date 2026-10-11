@@ -120,9 +120,9 @@ Banner khuyến mãi và dải banner nhỏ, chấm phân trang banner, flash sa
 
 ## 7. Khi đã đăng nhập (chưa thiết kế chi tiết)
 - Khối 1 đổi tiêu đề thành **"Dành cho bạn"**, dòng phụ "Dựa trên các món bạn đã xem" (widget của An).
-- Ô thông tin 2 "Chưa có tài khoản?" không còn hợp; cần chọn nội dung thay. Chưa chốt: làm khi thiết kế trang chủ lúc đã đăng nhập.
+- Ô thông tin 2 "Chưa có tài khoản?" không còn hợp. Tạm thời **ẩn**, ô "Giao hàng miễn phí mọi đơn" rộng hết hàng; nội dung thay chốt khi thiết kế trang chủ lúc đã đăng nhập.
 
 ## 8. Việc còn lại
 - Thiết kế trang chủ khi đã đăng nhập (mục 7).
-- Code chưa đổi bố cục: `HomePage.tsx`, `ProductRail.tsx`, `ProductCard` vẫn theo bản cũ (màu đã chàm từ `tokens.css`). Sửa theo spec này.
+- Widget "Đang được mua nhiều" (An): đặt vào `features/home/components/PopularProducts.tsx`, đã có chỗ ở đúng vị trí khối 1; hiện chưa render gì (chưa có API).
 - Bộ dữ liệu demo chưa có ảnh sản phẩm: thẻ hiện icon loại hàng trên ô xám.

@@ -10,16 +10,17 @@ import styles from './ProductRail.module.css';
 
 interface ProductRailProps {
   title: string;
-  subtitle?: string;
   filters: ProductFilters;
   /** Link "Xem tất cả" tới trang danh sách với cùng bộ lọc */
   seeAllTo: string;
 }
 
 const RAIL_SIZE = 12;
+/** Số khung chờ: đủ một hàng ở màn rộng nhất (7 thẻ) */
+const SKELETONS = 7;
 
-/** Một hàng sản phẩm cuộn ngang trên trang chủ, lấy trang đầu của GET /products */
-export function ProductRail({ title, subtitle, filters, seeAllTo }: ProductRailProps) {
+/** Một khối sản phẩm trên trang chủ (trang-chu.md §3.5), lấy 12 sản phẩm đầu của GET /products */
+export function ProductRail({ title, filters, seeAllTo }: ProductRailProps) {
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.products.preview({ ...filters, limit: RAIL_SIZE }),
     queryFn: () =>
@@ -27,28 +28,27 @@ export function ProductRail({ title, subtitle, filters, seeAllTo }: ProductRailP
   });
 
   return (
-    <StoryBlock title={title} subtitle={subtitle} action={{ label: 'Xem tất cả', to: seeAllTo }}>
+    <StoryBlock title={title} action={{ label: 'Xem tất cả', to: seeAllTo }}>
       {isError ? (
-        <p className={styles.message}>Chưa tải được sản phẩm. Tải lại trang để thử lần nữa.</p>
+        <p className={styles.message} role="alert">
+          Chưa tải được sản phẩm. Tải lại trang để thử lần nữa.
+        </p>
+      ) : !isLoading && data?.items.length === 0 ? (
+        <p className={styles.message}>Chưa có sản phẩm nào trong mục này.</p>
       ) : (
         <Carousel label={title}>
           {isLoading
-            ? Array.from({ length: 6 }, (_, i) => (
+            ? Array.from({ length: SKELETONS }, (_, i) => (
                 <CarouselItem key={i}>
-                  <div className={`${styles.slot} ${styles.skeleton}`} aria-hidden="true" />
+                  <div className={styles.skeleton} aria-hidden="true" />
                 </CarouselItem>
               ))
             : data?.items.map((product) => (
                 <CarouselItem key={product.productId}>
-                  <div className={styles.slot}>
-                    <ProductCard product={product} />
-                  </div>
+                  <ProductCard product={product} />
                 </CarouselItem>
               ))}
         </Carousel>
-      )}
-      {!isLoading && !isError && data?.items.length === 0 && (
-        <p className={styles.message}>Chưa có sản phẩm nào trong mục này.</p>
       )}
     </StoryBlock>
   );

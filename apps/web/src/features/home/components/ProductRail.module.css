@@ -1,15 +1,6 @@
-/* Bề rộng thẻ trong carousel: 192px; màn nhỏ min(42vw, 184px) */
-.slot {
-  width: min(42vw, 184px);
-  height: 100%;
-}
-@media (min-width: 768px) {
-  .slot {
-    width: 192px;
-  }
-}
+/* Khung chờ đúng cỡ thẻ (design-system §9.12) */
 .skeleton {
-  height: 300px;
+  height: 360px;
   border-radius: var(--radius-lg);
   background: linear-gradient(
     90deg,
@@ -31,6 +22,7 @@
 }
 .message {
   margin: 0;
-  padding: 0 var(--space-300) var(--space-300);
-  color: var(--fg-subdued);
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 20px;
 }
