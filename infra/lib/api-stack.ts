@@ -1,3 +1,4 @@
+import { Monitoring } from './monitoring.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import * as path from 'node:path';
@@ -229,6 +230,12 @@ export class ApiStack extends Stack {
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
 
+    // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
+    const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
+    new Monitoring(this, 'Monitoring', {
+      shopEnv,
+      ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
+    });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
   }
