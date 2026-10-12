@@ -2,7 +2,10 @@ import { Duration, Stack, Tags } from 'aws-cdk-lib';
 import type { IHttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import {
   Alarm,
+  AlarmStatusWidget,
   ComparisonOperator,
+  Dashboard,
+  GraphWidget,
   Metric,
   Stats,
   TreatMissingData,
@@ -24,6 +27,8 @@ export interface MonitoringProps {
   readonly httpApi: IHttpApi;
   /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API */
   readonly preSignUpFn: IFunction;
+  /** Lambda đứng sau API, theo tên module: vẽ lỗi và thời gian chạy của từng hàm trên dashboard */
+  readonly apiFunctions: Readonly<Record<string, IFunction>>;
   /**
    * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ secret ALARM_EMAIL).
    * Không ghi vào code vì repo public. Thiếu thì vẫn tạo topic, chỉ không có ai nhận.
@@ -86,6 +91,7 @@ export class Monitoring extends Construct {
     // dev 3 + staging 3 + prod 4 = 10. Sandbox không có alarm; diễn tập trên dev bằng set-alarm-state.
     if (shopEnv.name !== 'sbx') {
       const period = Duration.minutes(5);
+      const alarms: Alarm[] = [];
       const addAlarm = (
         id: string,
         name: string,
@@ -107,6 +113,7 @@ export class Monitoring extends Construct {
         // Báo khi có sự cố và báo khi đã ổn
         alarm.addAlarmAction(new SnsAction(this.alarmTopic));
         alarm.addOkAction(new SnsAction(this.alarmTopic));
+        alarms.push(alarm);
       };
 
       addAlarm(
@@ -150,6 +157,75 @@ export class Monitoring extends Construct {
           'lambda-throttle',
         );
       }
+
+      // Dashboard "Shop tổng quan": runbook mở trang này trước tiên
+      const { httpApi, preSignUpFn, apiFunctions } = props;
+      const fns = { ...apiFunctions, presignup: preSignUpFn };
+      const dashboard = new Dashboard(this, 'Dashboard', {
+        dashboardName: `${shopEnv.stackPrefix}-overview`,
+        defaultInterval: Duration.hours(3),
+      });
+      dashboard.addWidgets(
+        new AlarmStatusWidget({ title: 'Cảnh báo', alarms, width: 24, height: 3 }),
+      );
+      dashboard.addWidgets(
+        new GraphWidget({
+          title: 'API: request và lỗi (mỗi 5 phút)',
+          left: [httpApi.metricCount({ period, statistic: Stats.SUM, label: 'request' })],
+          right: [
+            httpApi.metricClientError({ period, statistic: Stats.SUM, label: '4xx' }),
+            httpApi.metricServerError({ period, statistic: Stats.SUM, label: '5xx' }),
+          ],
+          width: 12,
+        }),
+        new GraphWidget({
+          title: 'API: độ trễ (ms)',
+          left: [
+            httpApi.metricLatency({ period, statistic: Stats.p(50), label: 'p50' }),
+            httpApi.metricLatency({ period, statistic: Stats.p(95), label: 'p95' }),
+          ],
+          leftAnnotations: [{ value: 300, label: 'Mục tiêu p95' }],
+          width: 12,
+        }),
+      );
+      dashboard.addWidgets(
+        new GraphWidget({
+          title: 'Lambda: lỗi theo hàm',
+          left: Object.entries(fns).map(([label, fn]) =>
+            fn.metricErrors({ period, statistic: Stats.SUM, label }),
+          ),
+          width: 8,
+        }),
+        new GraphWidget({
+          title: 'Lambda: thời gian chạy p95 (ms)',
+          left: Object.entries(fns).map(([label, fn]) =>
+            fn.metricDuration({ period, statistic: Stats.p(95), label }),
+          ),
+          width: 8,
+        }),
+        new GraphWidget({
+          title: 'Lambda cả tài khoản: chạy cùng lúc (giới hạn 1.000)',
+          left: [
+            new Metric({
+              namespace: 'AWS/Lambda',
+              metricName: 'ConcurrentExecutions',
+              period: Duration.minutes(1),
+              statistic: Stats.MAXIMUM,
+              label: 'chạy cùng lúc',
+            }),
+          ],
+          right: [
+            new Metric({
+              namespace: 'AWS/Lambda',
+              metricName: 'Throttles',
+              period,
+              statistic: Stats.SUM,
+              label: 'throttle',
+            }),
+          ],
+          width: 8,
+        }),
+      );
     }
 
     Tags.of(this).add('module', 'monitoring');

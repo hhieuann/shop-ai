@@ -225,7 +225,7 @@ export class ApiStack extends Stack {
     });
 
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
-    this.addCart(shopEnv, removalPolicy, httpApi, products);
+    const cartFn = this.addCart(shopEnv, removalPolicy, httpApi, products);
 
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
@@ -236,6 +236,7 @@ export class ApiStack extends Stack {
       shopEnv,
       httpApi,
       preSignUpFn: auth.preSignUpFn,
+      apiFunctions: { catalog: catalogFn, cart: cartFn, account: accountFn, health: healthFn },
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
     });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
@@ -363,6 +364,7 @@ export class ApiStack extends Stack {
     });
 
     new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
+    return cartFn;
   }
 
   /** Lambda nhỏ không đọc dữ liệu (health, account): 128 MB, chỉ có quyền ghi log và X-Ray. */
