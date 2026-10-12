@@ -14,7 +14,7 @@
     "deploy:prod": "cdk deploy --all --require-approval never -c env=prod"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.270.0",
+    "aws-cdk-lib": "^2.273.0",
     "cdk-nag": "^3.0.2",
     "constructs": "^10.8.1"
   },
