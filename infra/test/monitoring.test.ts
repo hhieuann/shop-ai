@@ -1,6 +1,6 @@
 import { App, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { ShopEnvironment } from '../lib/config.js';
 import { Monitoring } from '../lib/monitoring.js';
 
@@ -57,5 +57,18 @@ describe('Monitoring', () => {
         ]),
       },
     });
+  });
+
+  it('alarmSubscription_logicalIdDoesNotContainEmail', () => {
+    // Act
+    const template = synth('test@example.com');
+
+    // Assert: GitHub chỉ che nguyên văn secret; tên tài nguyên ghép từ email (bỏ @ và .) sẽ lộ ra log CI
+    expect(JSON.stringify(template.toJSON())).not.toContain('testexamplecom');
+  });
+
+  it('monitoring_throws_whenAlarmEmailInvalid', () => {
+    // Act + Assert: secret gõ thiếu "@gmail.com" phải bị chặn lúc synth, không đợi CloudFormation rollback
+    expect(() => synth('hieuannguyen2k6')).toThrow('alarmEmail không hợp lệ');
   });
 });
