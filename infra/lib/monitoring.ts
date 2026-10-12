@@ -1,4 +1,15 @@
-import { Tags } from 'aws-cdk-lib';
+import { Duration, Tags } from 'aws-cdk-lib';
+import type { IHttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
+import {
+  Alarm,
+  ComparisonOperator,
+  Metric,
+  Stats,
+  TreatMissingData,
+  type IMetric,
+} from 'aws-cdk-lib/aws-cloudwatch';
+import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
+import type { IFunction } from 'aws-cdk-lib/aws-lambda';
 import { Subscription, SubscriptionProtocol, Topic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
@@ -8,6 +19,10 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export interface MonitoringProps {
   readonly shopEnv: ShopEnvironment;
+  /** HTTP API cần canh 5xx và độ trễ */
+  readonly httpApi: IHttpApi;
+  /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API */
+  readonly preSignUpFn: IFunction;
   /**
    * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ secret ALARM_EMAIL).
    * Không ghi vào code vì repo public. Thiếu thì vẫn tạo topic, chỉ không có ai nhận.
@@ -16,8 +31,8 @@ export interface MonitoringProps {
 }
 
 /**
- * Giám sát của một môi trường (engineering-plan.md mục giám sát): SNS topic nhận cảnh báo.
- * Bước sau thêm alarm (API 5xx, Lambda lỗi, throttle, độ trễ) và dashboard vào đây.
+ * Giám sát của một môi trường (engineering-plan.md mục giám sát): SNS topic nhận cảnh báo,
+ * alarm 5xx, độ trễ p95, lỗi pre sign-up, throttle (prod). Bước sau thêm dashboard vào đây.
  */
 export class Monitoring extends Construct {
   /** Topic mọi alarm gửi vào; ai đăng ký topic sẽ nhận email khi alarm chuyển ALARM hoặc OK. */
@@ -50,6 +65,74 @@ export class Monitoring extends Construct {
       });
     }
 
-    Tags.of(this).add('module', 'monitoring');
+    // Mỗi metric alarm tốn $0,10/tháng sau 10 metric miễn phí của cả tài khoản:
+    // dev 3 + staging 3 + prod 4 = 10. Sandbox không có alarm; diễn tập trên dev bằng set-alarm-state.
+    if (shopEnv.name !== 'sbx') {
+      const period = Duration.minutes(5);
+      const addAlarm = (
+        id: string,
+        name: string,
+        metric: IMetric,
+        threshold: number,
+        evaluationPeriods: number,
+        runbook: string,
+      ) => {
+        const alarm = new Alarm(this, id, {
+          alarmName: `${shopEnv.stackPrefix}-${name}`,
+          alarmDescription: `Xử lý theo docs/runbooks/${runbook}.md`,
+          metric,
+          threshold,
+          evaluationPeriods,
+          comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+          // Không có request thì coi là bình thường, không báo
+          treatMissingData: TreatMissingData.NOT_BREACHING,
+        });
+        // Báo khi có sự cố và báo khi đã ổn
+        alarm.addAlarmAction(new SnsAction(this.alarmTopic));
+        alarm.addOkAction(new SnsAction(this.alarmTopic));
+      };
+
+      addAlarm(
+        'ApiServerErrorsAlarm',
+        'api-5xx',
+        props.httpApi.metricServerError({ period, statistic: Stats.SUM }),
+        3,
+        1,
+        'api-5xx',
+      );
+      // 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu
+      addAlarm(
+        'ApiLatencyAlarm',
+        'api-latency-p95',
+        props.httpApi.metricLatency({ period, statistic: Stats.p(95) }),
+        1000,
+        3,
+        'api-latency',
+      );
+      addAlarm(
+        'PreSignUpErrorsAlarm',
+        'presignup-errors',
+        props.preSignUpFn.metricErrors({ period, statistic: Stats.SUM }),
+        1,
+        1,
+        'lambda-errors',
+      );
+      // Giới hạn Lambda chạy cùng lúc tính chung cả tài khoản (không dimension), nên chỉ canh ở prod
+      if (shopEnv.isProd) {
+        addAlarm(
+          'LambdaThrottlesAlarm',
+          'lambda-throttles',
+          new Metric({
+            namespace: 'AWS/Lambda',
+            metricName: 'Throttles',
+            period,
+            statistic: Stats.SUM,
+          }),
+          1,
+          1,
+          'lambda-throttle',
+        );
+      }
+    }
   }
 }
