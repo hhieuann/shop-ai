@@ -186,3 +186,21 @@ describe('Monitoring', () => {
     }
   });
 });
+
+it('alarmTopic_allowsCloudWatchAlarmsToPublish', () => {
+  // Act
+  const template = synth('test@example.com');
+
+  // Assert: thiếu dòng này CloudWatch báo "not authorized to perform SNS:Publish" (diễn tập 12/10)
+  template.hasResourceProperties('AWS::SNS::TopicPolicy', {
+    PolicyDocument: {
+      Statement: Match.arrayWith([
+        Match.objectLike({
+          Effect: 'Allow',
+          Principal: { Service: 'cloudwatch.amazonaws.com' },
+          Action: 'sns:Publish',
+        }),
+      ]),
+    },
+  });
+});
