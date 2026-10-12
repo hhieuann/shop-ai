@@ -38,6 +38,7 @@ import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
+import { Monitoring } from './monitoring.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
 const API_SRC = path.join(REPO_ROOT, 'services', 'api', 'src');
@@ -229,6 +230,12 @@ export class ApiStack extends Stack {
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
 
+    // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
+    const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
+    new Monitoring(this, 'Monitoring', {
+      shopEnv,
+      ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
+    });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
     new CfnOutput(this, 'ProductsTableName', { value: products.tableName });
   }
