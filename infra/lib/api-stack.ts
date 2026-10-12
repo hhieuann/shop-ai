@@ -234,6 +234,8 @@ export class ApiStack extends Stack {
     const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
     new Monitoring(this, 'Monitoring', {
       shopEnv,
+      httpApi,
+      preSignUpFn: auth.preSignUpFn,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
     });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
@@ -515,7 +517,7 @@ export class ApiStack extends Stack {
     const authorizer = new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
       userPoolClients: clients,
     });
-    return { userPool, webClient, authorizer };
+    return { userPool, webClient, authorizer, preSignUpFn };
   }
 
   /**
