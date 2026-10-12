@@ -45,7 +45,10 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - name: cdk deploy
-        run: pnpm --filter infra run "deploy:$TARGET" --outputs-file cdk-outputs.json
+        # Email nhận cảnh báo để ở secret, GitHub che thành *** trong log (log repo public ai cũng xem được)
+        env:
+          ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+        run: pnpm --filter infra run "deploy:$TARGET" --outputs-file cdk-outputs.json -c alarmEmail="$ALARM_EMAIL"
       - name: Lấy URL CloudFront từ output của stack web
         # Lần deploy đầu của một môi trường chưa có biến BASE_URL; đọc thẳng output WebUrl để smoke test vẫn chạy.
         # Biến BASE_URL của environment chỉ còn là dự phòng.

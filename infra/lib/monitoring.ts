@@ -7,7 +7,7 @@ import type { ShopEnvironment } from './config.js';
 export interface MonitoringProps {
   readonly shopEnv: ShopEnvironment;
   /**
-   * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ biến ALARM_EMAIL).
+   * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ secret ALARM_EMAIL).
    * Không ghi vào code vì repo public. Thiếu thì vẫn tạo topic, chỉ không có ai nhận.
    */
   readonly alarmEmail?: string;
@@ -26,6 +26,8 @@ export class Monitoring extends Construct {
     const { shopEnv, alarmEmail } = props;
 
     this.alarmTopic = new Topic(this, 'AlarmTopic', {
+      // Không mã hoá bằng KMS: nội dung cảnh báo không nhạy cảm, và khoá mặc định alias/aws/sns
+      // không cho CloudWatch gửi tin vào; khoá KMS riêng tốn khoảng $1/tháng mỗi môi trường.
       // Hiện ở dòng người gửi của email, để biết cảnh báo đến từ môi trường nào
       displayName: `shop-ai ${shopEnv.name}`,
       // Từ chối mọi lời gọi tới topic không qua HTTPS
