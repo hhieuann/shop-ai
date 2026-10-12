@@ -1,4 +1,4 @@
-import { Duration, Tags } from 'aws-cdk-lib';
+import { Duration, Stack, Tags } from 'aws-cdk-lib';
 import type { IHttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import {
   Alarm,
@@ -9,6 +9,7 @@ import {
   type IMetric,
 } from 'aws-cdk-lib/aws-cloudwatch';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
+import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import type { IFunction } from 'aws-cdk-lib/aws-lambda';
 import { Subscription, SubscriptionProtocol, Topic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
@@ -55,6 +56,22 @@ export class Monitoring extends Construct {
       // Từ chối mọi lời gọi tới topic không qua HTTPS
       enforceSSL: true,
     });
+
+    // enforceSSL tạo topic policy mới, thay mất policy mặc định cho phép trong tài khoản.
+    // Phải cho CloudWatch (dịch vụ AWS) gửi tin vào, chỉ từ alarm của chính tài khoản này.
+    const { account, region } = Stack.of(this);
+    this.alarmTopic.addToResourcePolicy(
+      new PolicyStatement({
+        sid: 'AllowCloudWatchAlarms',
+        principals: [new ServicePrincipal('cloudwatch.amazonaws.com')],
+        actions: ['sns:Publish'],
+        resources: [this.alarmTopic.topicArn],
+        conditions: {
+          StringEquals: { 'aws:SourceAccount': account },
+          ArnLike: { 'aws:SourceArn': `arn:aws:cloudwatch:${region}:${account}:alarm:*` },
+        },
+      }),
+    );
 
     // Người nhận phải bấm "Confirm subscription" trong email đầu tiên AWS gửi tới
     if (alarmEmail) {
