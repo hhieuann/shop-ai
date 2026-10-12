@@ -1,8 +1,10 @@
 import { Tags } from 'aws-cdk-lib';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { Subscription, SubscriptionProtocol, Topic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
+
+/** Đủ để bắt lỗi gõ thiếu như "ten" hay "ten@gmail"; không cần khớp đầy đủ chuẩn email. */
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export interface MonitoringProps {
   readonly shopEnv: ShopEnvironment;
@@ -25,9 +27,14 @@ export class Monitoring extends Construct {
     super(scope, id);
     const { shopEnv, alarmEmail } = props;
 
+    // Chặn lúc synth thay vì đợi CloudFormation báo lỗi rồi rollback. Không in email ra: log CI công khai
+    if (alarmEmail !== undefined && !EMAIL.test(alarmEmail)) {
+      throw new Error('alarmEmail không hợp lệ: kiểm lại secret ALARM_EMAIL hoặc -c alarmEmail');
+    }
+
+    // Không mã hoá bằng KMS: nội dung cảnh báo không nhạy cảm, và khoá mặc định alias/aws/sns
+    // không cho CloudWatch gửi tin vào; khoá KMS riêng tốn khoảng $1/tháng mỗi môi trường.
     this.alarmTopic = new Topic(this, 'AlarmTopic', {
-      // Không mã hoá bằng KMS: nội dung cảnh báo không nhạy cảm, và khoá mặc định alias/aws/sns
-      // không cho CloudWatch gửi tin vào; khoá KMS riêng tốn khoảng $1/tháng mỗi môi trường.
       // Hiện ở dòng người gửi của email, để biết cảnh báo đến từ môi trường nào
       displayName: `shop-ai ${shopEnv.name}`,
       // Từ chối mọi lời gọi tới topic không qua HTTPS
@@ -36,7 +43,11 @@ export class Monitoring extends Construct {
 
     // Người nhận phải bấm "Confirm subscription" trong email đầu tiên AWS gửi tới
     if (alarmEmail) {
-      this.alarmTopic.addSubscription(new EmailSubscription(alarmEmail));
+      new Subscription(this, 'AlarmEmailSubscription', {
+        topic: this.alarmTopic,
+        protocol: SubscriptionProtocol.EMAIL,
+        endpoint: alarmEmail,
+      });
     }
 
     Tags.of(this).add('module', 'monitoring');
