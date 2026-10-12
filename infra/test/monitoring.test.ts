@@ -11,23 +11,25 @@ const prod: ShopEnvironment = { name: 'prod', stackPrefix: 'shop-prd', isProd: t
 const sbx: ShopEnvironment = { name: 'sbx', stackPrefix: 'shop-sbx-an', isProd: false };
 
 /**
- * Dựng Monitoring trong một stack trống cùng HTTP API và một Lambda giả đứng thay pre sign-up:
+ * Dựng Monitoring trong một stack trống cùng HTTP API và vài Lambda giả (pre sign-up, catalog, cart):
  * test chỉ phần giám sát, không cần cả ApiStack.
  */
 function synth(alarmEmail?: string, shopEnv: ShopEnvironment = dev): Template {
   const app = new App();
   const stack = new Stack(app, 'TestStack', { env: { region: 'ap-southeast-1' } });
   const httpApi = new HttpApi(stack, 'Api');
-  const preSignUpFn = new LambdaFunction(stack, 'PreSignUp', {
-    runtime: Runtime.NODEJS_24_X,
-    handler: 'index.handler',
-    code: Code.fromInline('exports.handler = async (e) => e;'),
-    timeout: Duration.seconds(3),
-  });
+  const fakeFunction = (id: string) =>
+    new LambdaFunction(stack, id, {
+      runtime: Runtime.NODEJS_24_X,
+      handler: 'index.handler',
+      code: Code.fromInline('exports.handler = async (e) => e;'),
+      timeout: Duration.seconds(3),
+    });
   new Monitoring(stack, 'Monitoring', {
     shopEnv,
     httpApi,
-    preSignUpFn,
+    preSignUpFn: fakeFunction('PreSignUp'),
+    apiFunctions: { catalog: fakeFunction('Catalog'), cart: fakeFunction('Cart') },
     ...(alarmEmail ? { alarmEmail } : {}),
   });
   return Template.fromStack(stack);
@@ -201,5 +203,41 @@ describe('Monitoring', () => {
         ]),
       },
     });
+  });
+
+  // Dashboard: 3 dashboard đầu tiên của tài khoản miễn phí, nên mỗi môi trường dùng chung một cái
+
+  it('dashboard_isNamedPerEnvironment_whenDev', () => {
+    // Act
+    const template = synth('test@example.com', dev);
+
+    // Assert
+    template.resourceCountIs('AWS::CloudWatch::Dashboard', 1);
+    template.hasResourceProperties('AWS::CloudWatch::Dashboard', {
+      DashboardName: 'shop-dev-overview',
+    });
+  });
+
+  it('dashboard_isNotCreated_whenSandbox', () => {
+    // Act
+    const template = synth('test@example.com', sbx);
+
+    // Assert
+    template.resourceCountIs('AWS::CloudWatch::Dashboard', 0);
+  });
+
+  it('dashboard_showsAlarmsApiLambdasAndAccountConcurrency', () => {
+    // Act
+    const template = synth('test@example.com', prod);
+
+    // Assert: đọc nội dung dashboard (JSON ghép từ nhiều phần) thành một chuỗi để tìm
+    const body = JSON.stringify(
+      Object.values(template.findResources('AWS::CloudWatch::Dashboard'))[0],
+    );
+    expect(body).toContain('ApiServerErrorsAlarm'); // ô trạng thái alarm
+    expect(body).toContain('5xx');
+    expect(body).toContain('Latency');
+    expect(body).toContain('\\"label\\":\\"catalog\\"'); // mỗi Lambda một đường, có nhãn tên module
+    expect(body).toContain('ConcurrentExecutions'); // so với giới hạn 1.000 của tài khoản
   });
 });
