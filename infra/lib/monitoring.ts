@@ -134,5 +134,7 @@ export class Monitoring extends Construct {
         );
       }
     }
+
+    Tags.of(this).add('module', 'monitoring');
   }
 }
