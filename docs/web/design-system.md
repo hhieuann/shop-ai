@@ -249,8 +249,9 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
-| `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | 📝 (trang danh sách, §9.19) |
-| `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | 📝 (§9.23) |
+| `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
+| `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
+| `LiveAnnouncerProvider` + `useAnnounce` (vùng thông báo cho trình đọc màn hình, đặt một lần ở cấp trang) | `shared/components/LiveAnnouncer.tsx`, `shared/hooks/useAnnounce.ts` | ✅ (§9.23) |
 | `FilterPanel`, `FilterSheet` | `features/catalog/components/` | 📝 (trang danh sách, §9.20) |
 | `CursorPager` | `shared/components/CursorPager.tsx` | 📝 (trang danh sách, §9.21) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
@@ -538,7 +539,7 @@ Hình dạng danh sách:
 
 Không có menu con nhiều tầng (không mở bảng con theo hãng, dòng máy khi rê chuột; Black Magic chỉ lọc theo loại, catalog BR-02). Bảng thả xuống và ngăn kéo là **suy luận**, chưa đối chiếu với trang tham khảo.
 
-### 9.19 Thẻ sản phẩm trang danh sách (`ProductListCard`, 📝)
+### 9.19 Thẻ sản phẩm trang danh sách (`ProductListCard`, ✅)
 Chốt 13/10/2026 (bản mẫu trang danh sách, kiểu thẻ của trang tham khảo phụ). Chỉ dùng ở lưới trang `/products`. Thẻ nằm trên nền trắng của trang (§1), **không khung, không nền riêng**.
 
 | Phần | Giá trị |
@@ -620,7 +621,7 @@ Không hiện số trang tổng hay các nút 1 2 3 (cần tổng số từ API,
 ### 9.22 Đường dẫn (`Breadcrumb`, ✅)
 `<nav aria-label="Đường dẫn">` + `<ol>`, chữ 14/20 `--fg-muted`; giữa các mục là `ChevronRight` 16 `--fg-subdued` (`aria-hidden`), gap 4px; link `--fg-primary` 500, gạch chân khi rê chuột; mục cuối là trang hiện tại (`aria-current="page"`, không phải link). Padding `16px 0 12px` (<1280: `12px 0 8px`). Dùng ở trang danh sách ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)) và trang chi tiết (pages/chi-tiet-san-pham.md §3.1) khi làm lại.
 
-### 9.23 Nút thêm vào giỏ trên thẻ (`AddToCartButton`, 📝)
+### 9.23 Nút thêm vào giỏ trên thẻ (`AddToCartButton`, ✅)
 Nút gọn trong `ProductListCard`: thêm **đúng 1** sản phẩm qua `useCart().add` (khách chưa đăng nhập thì vào giỏ khách trên trình duyệt, cart BR-01; đã đăng nhập thì `POST /api/v1/cart/items`). Không chuyển trang, không mở giỏ. Trang chi tiết vẫn dùng `AddToCart` có bộ chọn số lượng.
 
 Hình dạng: nút phụ `md` rộng hết thẻ, cao 40px, bo 8px, viền `--border-default`, nền `--bg-surface-raised`, chữ 14/20/600 `--fg-default` (<1280: 13px), icon 18 + chữ, gap 6px (<1280: 4px). Hover: nền `--bg-primary-tint`, viền `--border-primary`, chữ `--fg-primary`. Màu nền đổi trong 150ms. `aria-label` "Thêm {tên sản phẩm} vào giỏ".
@@ -633,7 +634,7 @@ Hình dạng: nút phụ `md` rộng hết thẻ, cao 40px, bo 8px, viền `--bo
 | Lỗi (3 giây rồi về bình thường) | `CircleAlert` + nhãn ngắn: `QUANTITY_LIMIT` → "Đã đủ số lượng"; `CART_FULL` → "Giỏ đã đủ 50 món"; `PRODUCT_UNAVAILABLE` → "Ngừng bán"; lỗi khác → "Chưa thêm được" | nền và viền `--bg-warning-tint`, chữ `--fg-warning`; câu đầy đủ (hàm báo lỗi dùng chung với `AddToCart`, vd. "Chỉ thêm được tối đa N sản phẩm nữa…") đọc qua vùng `role="alert"` |
 | Hết hàng (`stock ≤ 0`) | "Hết hàng" | vô hiệu: chữ `--fg-disabled`, viền `--border-divider` |
 
-Lỗi hiện **trên chính nút**, không thêm dòng chữ dưới nút, để giá và nút của các thẻ cùng hàng không lệch nhau. Vùng `aria-live` và `role="alert"` đặt một lần ở cấp trang, không lặp trong từng thẻ.
+Lỗi hiện **trên chính nút**, không thêm dòng chữ dưới nút, để giá và nút của các thẻ cùng hàng không lệch nhau. Vùng `aria-live` và `role="alert"` đặt một lần ở cấp trang, không lặp trong từng thẻ. Cách làm: `LiveAnnouncerProvider` bọc trang, nút gọi `useAnnounce()`; không có provider thì nút vẫn chạy nhưng không đọc gì.
 
 ## 10. Token sẽ thêm khi cần
 
