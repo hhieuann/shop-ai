@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { filtersFromSearchParams, normalizeSearch, toProductsQuery } from './productFilters';
+import {
+  filtersFromSearchParams,
+  normalizeSearch,
+  pageFromSearchParams,
+  searchWithoutPaging,
+  toProductsQuery,
+  withFilter,
+  withPage,
+} from './productFilters';
 
 describe('normalizeSearch', () => {
   it('normalizeSearch_trimsSpaces_whenKeywordValid', () => {
@@ -102,5 +110,121 @@ describe('toProductsQuery', () => {
     const params = new URLSearchParams(query);
     expect(params.get('category')).toBe('gpu');
     expect(params.get('cursor')).toBe('01J9XKPQ0000000000000004');
+  });
+});
+
+describe('pageFromSearchParams', () => {
+  it('pageFromSearchParams_returnsPage1_whenNoCursor', () => {
+    // Arrange: có page nhưng không có cursor (sửa tay URL) thì vẫn là trang 1
+    const params = new URLSearchParams('category=gpu&page=3');
+
+    // Act
+    const result = pageFromSearchParams(params);
+
+    // Assert
+    expect(result).toEqual({ page: 1 });
+  });
+
+  it('pageFromSearchParams_readsCursorAndPage_whenBothValid', () => {
+    // Arrange
+    const params = new URLSearchParams('cursor=abc&page=3');
+
+    // Act
+    const result = pageFromSearchParams(params);
+
+    // Assert
+    expect(result).toEqual({ cursor: 'abc', page: 3 });
+  });
+
+  it.each([[''], ['page=1'], ['page=0'], ['page=-2'], ['page=2.5'], ['page=abc']])(
+    'pageFromSearchParams_returnsPage2_whenCursorButPageInvalid (%s)',
+    (page) => {
+      // Arrange
+      const params = new URLSearchParams(`cursor=abc&${page}`);
+
+      // Act
+      const result = pageFromSearchParams(params);
+
+      // Assert: có cursor thì chắc chắn không phải trang 1
+      expect(result).toEqual({ cursor: 'abc', page: 2 });
+    },
+  );
+});
+
+describe('withFilter', () => {
+  it('withFilter_setsValueAndDropsPaging_whenCategoryChanges', () => {
+    // Arrange
+    const params = new URLSearchParams('q=rtx&category=gpu&sort=price_asc&cursor=abc&page=3');
+
+    // Act
+    const result = withFilter(params, 'category', 'mouse');
+
+    // Assert: giữ q, sort; về trang 1
+    expect(result.toString()).toBe('q=rtx&category=mouse&sort=price_asc');
+  });
+
+  it.each([
+    ['category', undefined, 'q=rtx&sort=price_asc'],
+    ['category', '', 'q=rtx&sort=price_asc'],
+    ['sort', 'newest', 'q=rtx&category=gpu'],
+  ] as const)('withFilter_removesKey_whenValueEmptyOrDefault (%s=%s)', (key, value, expected) => {
+    // Arrange
+    const params = new URLSearchParams('q=rtx&category=gpu&sort=price_asc&cursor=abc&page=2');
+
+    // Act
+    const result = withFilter(params, key, value);
+
+    // Assert
+    expect(result.toString()).toBe(expected);
+  });
+});
+
+describe('withPage', () => {
+  it('withPage_setsCursorAndPage_whenGoingToPage2OrLater', () => {
+    // Arrange
+    const params = new URLSearchParams('category=gpu');
+
+    // Act
+    const result = withPage(params, 'next1', 2);
+
+    // Assert
+    expect(result.toString()).toBe('category=gpu&cursor=next1&page=2');
+  });
+
+  it('withPage_dropsCursorAndPage_whenBackToPage1', () => {
+    // Arrange
+    const params = new URLSearchParams('category=gpu&cursor=next1&page=2');
+
+    // Act
+    const result = withPage(params, undefined, 1);
+
+    // Assert
+    expect(result.toString()).toBe('category=gpu');
+  });
+});
+
+describe('searchWithoutPaging', () => {
+  it.each([
+    ['?category=gpu&cursor=abc&page=2', '?category=gpu'],
+    ['?cursor=abc&page=2', ''],
+    ['?category=gpu', '?category=gpu'],
+    ['', ''],
+  ])('searchWithoutPaging_dropsCursorAndPage (%s)', (search, expected) => {
+    // Act
+    const result = searchWithoutPaging(search);
+
+    // Assert
+    expect(result).toBe(expected);
+  });
+
+  it('searchWithoutPaging_keepsOriginalString_whenNoPagingParams', () => {
+    // Arrange: không dựng lại chuỗi, để từ khoá có dấu cách không bị đổi cách mã hoá
+    const search = '?q=rtx%204070';
+
+    // Act
+    const result = searchWithoutPaging(search);
+
+    // Assert
+    expect(result).toBe(search);
   });
 });
