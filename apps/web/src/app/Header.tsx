@@ -12,7 +12,11 @@ import {
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
-import { SEARCH_MAX_LENGTH, normalizeSearch } from '../features/catalog/lib/productFilters';
+import {
+  SEARCH_MAX_LENGTH,
+  normalizeSearch,
+  searchWithoutPaging,
+} from '../features/catalog/lib/productFilters';
 import { AccountMenu } from './AccountMenu';
 import { CategoryMenuButton } from './CategoryMenuButton';
 import { Logo } from './Logo';
@@ -93,7 +97,8 @@ export function Header() {
       <nav className={styles.needs} aria-label="Mua theo nhu cầu">
         <ul className={styles.needList}>
           {NEEDS.map(({ label, icon: Icon, search }) => {
-            const current = onProducts && location.search === search;
+            // Bỏ cursor, page khi so: đang ở trang 2 của "Chơi game" vẫn đánh dấu "Chơi game"
+            const current = onProducts && searchWithoutPaging(location.search) === search;
             return (
               <li key={label}>
                 {/* Link thường: NavLink coi mọi link /products là trang hiện tại vì bỏ qua query */}

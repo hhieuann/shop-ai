@@ -75,6 +75,15 @@ describe('Header', () => {
     );
   });
 
+  it('đang ở trang sau của một bộ lọc vẫn đánh dấu link của bộ lọc đó', () => {
+    renderAt('/products?category=gpu&cursor=abc&page=2');
+    const nav = screen.getByRole('navigation', { name: 'Mua theo nhu cầu' });
+    expect(within(nav).getByRole('link', { name: 'Chơi game' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
   it('tìm kiếm: bỏ khoảng trắng hai đầu rồi sang /products?q=…', async () => {
     const user = userEvent.setup();
     renderAt('/');

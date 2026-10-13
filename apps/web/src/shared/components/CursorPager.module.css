@@ -1,0 +1,51 @@
+/* Chuyển trang theo cursor (docs/web/design-system.md §9.21) */
+.pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-100);
+  margin-top: 28px;
+}
+/* Trước, Sau: hình nút phụ cỡ md */
+.link,
+.disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 var(--space-200);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) ease-out;
+}
+.link:hover {
+  background: var(--bg-surface-pressed);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+.disabled {
+  border-color: var(--border-divider);
+  color: var(--fg-disabled);
+  cursor: not-allowed;
+}
+.current {
+  padding: 0 var(--space-100);
+  color: var(--fg-default);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1280px) {
+  .pager {
+    margin-top: var(--space-500);
+  }
+}
