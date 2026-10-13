@@ -69,6 +69,13 @@
   --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
   --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --shadow-up: 0 -2px 8px rgba(0, 0, 0, 0.12);
+
+  /* Thanh cuộn (design-system §4): màu lấy từ màu đã có, không thêm màu mới */
+  --scrollbar-size: 10px;
+  --scrollbar-thumb: var(--border-default);
+  --scrollbar-thumb-area-hover: var(--fg-icon-soft);
+  --scrollbar-thumb-hover: var(--fg-subdued);
+  --scrollbar-track: transparent;
 }
 
 :root {

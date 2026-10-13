@@ -1,0 +1,42 @@
+/* Radio (docs/web/design-system.md §9.5): cùng cỡ, màu với Checkbox nhưng tròn */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  min-height: 36px;
+  cursor: pointer;
+}
+.disabled {
+  cursor: not-allowed;
+}
+.mark {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  transition:
+    background-color var(--dur-fast) ease-out,
+    border-color var(--dur-fast) ease-out,
+    box-shadow var(--dur-fast) ease-out;
+}
+.row:hover .input:not(:disabled) + .mark {
+  border-color: var(--border-primary);
+}
+.input:checked + .mark {
+  border-color: var(--bg-primary);
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 5px var(--bg-primary);
+}
+.input:focus-visible + .mark {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.input:disabled + .mark,
+.disabled .label {
+  opacity: 0.4;
+}
+.label {
+  min-width: 0;
+}

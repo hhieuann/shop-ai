@@ -103,6 +103,56 @@ hr {
   border: 0;
 }
 
+/*
+ * Thanh cuộn mảnh dùng chung (design-system §4): 10px, thumb bo tròn cách mép 2px (thấy 6px),
+ * không nút mũi tên. Vùng cuộn bên trong (cột lọc, bảng lọc, menu dài) thêm class .scroll-area.
+ * Dải cuộn ngang đang ẩn thanh cuộn (Carousel…) có selector riêng cụ thể hơn nên vẫn ẩn.
+ */
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-thumb {
+  min-height: 40px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+.scroll-area {
+  scrollbar-gutter: stable;
+}
+.scroll-area:hover::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-area-hover);
+}
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active,
+.scroll-area::-webkit-scrollbar-thumb:hover,
+.scroll-area::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-hover);
+}
+/*
+ * Trình duyệt không có ::-webkit-scrollbar (Firefox) dùng thuộc tính chuẩn. Không đặt chung cho
+ * Chrome: từ bản 121, phần tử có scrollbar-color/scrollbar-width thì Chrome bỏ qua ::-webkit-scrollbar.
+ */
+@supports not selector(::-webkit-scrollbar) {
+  html,
+  .scroll-area {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  .scroll-area:hover {
+    scrollbar-color: var(--scrollbar-thumb-area-hover) var(--scrollbar-track);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

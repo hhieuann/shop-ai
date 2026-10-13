@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
-import type { Cart, CartItem, Product } from '../../../shared/api/types';
+import type { Cart, CartItem, Product, ProductSummary } from '../../../shared/api/types';
 import { useSession } from '../../../shared/auth/useSession';
 import {
   addLine,
@@ -17,6 +17,12 @@ import {
 } from '../lib/guestCart';
 
 export type CartStatus = 'loading' | 'error' | 'ready';
+
+/**
+ * Những gì cần biết để thêm một sản phẩm vào giỏ. Product (trang chi tiết) và ProductSummary
+ * (thẻ ở danh sách) đều khớp, nên nút ở cả hai chỗ gọi chung `add`.
+ */
+export type CartAddable = Pick<ProductSummary, 'productId' | 'name' | 'price' | 'stock' | 'status'>;
 
 /** Lỗi của giỏ khách mang cùng mã với API, để nơi hiển thị lỗi chỉ cần xử lý ApiError */
 function toApiError(error: GuestCartError): ApiError {
@@ -118,9 +124,9 @@ export function useCart() {
 
   const refreshServer = () => queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
 
-  /** Thêm món (cộng dồn). Cần cả sản phẩm để giỏ khách kiểm giới hạn mà không phải gọi lại API */
+  /** Thêm món (cộng dồn). Cần giá, tồn kho, trạng thái để giỏ khách kiểm giới hạn mà không phải gọi lại API */
   const add = useMutation({
-    mutationFn: async ({ product, quantity }: { product: Product; quantity: number }) => {
+    mutationFn: async ({ product, quantity }: { product: CartAddable; quantity: number }) => {
       if (isGuest) return commit(addLine(loadGuestCart(), product.productId, quantity, product));
       const cart = await api.post<Cart>('/cart/items', { productId: product.productId, quantity });
       queryClient.setQueryData(queryKeys.cart.mine(), cart);
