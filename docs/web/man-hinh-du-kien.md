@@ -1,6 +1,6 @@
 # Màn hình dự kiến
 
-Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm)
+Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 13/10/2026 (trang danh sách mới)
 
 Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đơn hàng, đăng nhập nhiều bước, trạng thái rỗng, lỗi, 404, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
 
@@ -338,7 +338,7 @@ Do not introduce: thanh bên trái kiểu dashboard, biểu đồ doanh thu, th�
 
 Confidence: LOW
 
-Reuse: khối 16px, `Badge` (`StockBadge`, `neutral` cho "Đã ẩn"), `Price md`, `Button primary md`, `Button secondary md` "Xem thêm", select "Loại" của trang danh sách.
+Reuse: khối 16px, `Badge` (`StockBadge`, `neutral` cho "Đã ẩn"), `Price md`, `Button primary md`, `Button secondary md` "Xem thêm", select "Loại" kiểu ô nhập (design-system §9.4; trang danh sách khách đã đổi sang cột lọc, admin vẫn dùng select cho gọn).
 
 Bố cục và tương tác:
 - Hàng tiêu đề: `<h1>` "Sản phẩm" bên trái; bên phải select "Loại" (13 loại) + nút `primary md` "Thêm sản phẩm".
