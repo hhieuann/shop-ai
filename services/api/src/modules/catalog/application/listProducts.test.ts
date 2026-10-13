@@ -77,7 +77,7 @@ describe('listProducts', () => {
     // Act
     const result = await listProducts({ activeProducts }, { sort: 'price_asc', category: 'gpu' });
 
-    // Assert: khớp ProductSummary trong OpenAPI, không lộ searchText, mô tả hay specs
+    // Assert: khớp ProductSummary trong OpenAPI (có specs), không lộ searchText, mô tả, thời gian
     expect(result.items).toEqual([
       {
         productId: rtx.productId,
@@ -88,6 +88,7 @@ describe('listProducts', () => {
         stock: rtx.stock,
         status: 'ACTIVE',
         imageUrl: 'https://example.com/rtx.png',
+        specs: rtx.specs,
       },
     ]);
   });
@@ -101,6 +102,18 @@ describe('listProducts', () => {
 
     // Assert
     expect(result.items[0]).not.toHaveProperty('imageUrl');
+  });
+
+  it('listProducts_omitsSpecs_whenProductHasNoSpecs', async () => {
+    // Arrange
+    const plain = uniqueProduct({ category: 'accessory', specs: undefined });
+    const activeProducts = fakeActiveProducts([plain]);
+
+    // Act
+    const result = await listProducts({ activeProducts }, {});
+
+    // Assert
+    expect(result.items[0]).not.toHaveProperty('specs');
   });
 
   it('listProducts_returns20AndCursor_whenNoLimitGiven', async () => {

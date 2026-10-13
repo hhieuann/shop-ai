@@ -137,6 +137,9 @@ paths:
                     stock: 12
                     status: 'ACTIVE'
                     imageUrl: 'https://placehold.co/300x200?text=RTX+4070'
+                    specs:
+                      vram: '12GB GDDR6X'
+                      nguon_de_xuat: '750W'
                   - productId: '01J9XKPQ0000000000000002'
                     name: 'Chuột Logitech G502 X Plus Wireless'
                     category: 'mouse'
@@ -145,6 +148,9 @@ paths:
                     stock: 25
                     status: 'ACTIVE'
                     imageUrl: 'https://placehold.co/300x200?text=G502+X'
+                    specs:
+                      cam_bien: 'HERO 25K'
+                      ket_noi: 'Lightspeed'
                   - productId: '01J9XKPQ0000000000000003'
                     name: 'SSD Samsung 990 Pro 1TB NVMe M.2'
                     category: 'storage'
@@ -153,6 +159,9 @@ paths:
                     stock: 8
                     status: 'ACTIVE'
                     imageUrl: 'https://placehold.co/300x200?text=990+Pro'
+                    specs:
+                      chuan: 'M.2 NVMe PCIe 4.0'
+                      dung_luong: '1TB'
                   - productId: '01J9XKPQ0000000000000004'
                     name: 'RAM Corsair Vengeance DDR5 32GB 5600MHz'
                     category: 'ram'
@@ -161,6 +170,9 @@ paths:
                     stock: 0
                     status: 'ACTIVE'
                     imageUrl: 'https://placehold.co/300x200?text=DDR5+32GB'
+                    specs:
+                      loai: 'DDR5'
+                      dung_luong: '32GB (2x16GB)'
         '400':
           $ref: '#/components/responses/Problem'
         default:
@@ -615,6 +627,15 @@ components:
           type: string
           format: uri
           example: 'https://placehold.co/400x300?text=RTX+4070'
+        specs:
+          type: object
+          description: >-
+            Thông số kỹ thuật tuỳ theo category, khoá là mã tiếng Việt không dấu (catalog.md).
+            Danh sách dùng để hiện dòng tóm tắt trên thẻ; không có thì bỏ trường.
+          additionalProperties: true
+          example:
+            vram: '12GB GDDR6X'
+            nguon_de_xuat: '750W'
       example:
         productId: '01J9XKPQ0000000000000001'
         name: 'ASUS TUF Gaming GeForce RTX 4070'
@@ -624,6 +645,9 @@ components:
         stock: 12
         status: 'ACTIVE'
         imageUrl: 'https://placehold.co/400x300?text=RTX+4070'
+        specs:
+          vram: '12GB GDDR6X'
+          nguon_de_xuat: '750W'
 
     Product:
       allOf:
@@ -634,14 +658,6 @@ components:
             description:
               type: string
               example: 'Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.'
-            specs:
-              type: object
-              description: Thông số kỹ thuật tuỳ theo category
-              additionalProperties: true
-              example:
-                vram: '12GB GDDR6X'
-                tdp: '200W'
-                connector: 'PCIe 4.0 x16'
             createdAt:
               type: string
               format: date-time

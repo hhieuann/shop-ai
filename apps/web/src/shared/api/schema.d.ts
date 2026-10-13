@@ -237,7 +237,11 @@ export interface components {
      *       "price": 15900000,
      *       "stock": 12,
      *       "status": "ACTIVE",
-     *       "imageUrl": "https://placehold.co/400x300?text=RTX+4070"
+     *       "imageUrl": "https://placehold.co/400x300?text=RTX+4070",
+     *       "specs": {
+     *         "vram": "12GB GDDR6X",
+     *         "nguon_de_xuat": "750W"
+     *       }
      *     }
      */
     ProductSummary: {
@@ -264,21 +268,20 @@ export interface components {
        * @example https://placehold.co/400x300?text=RTX+4070
        */
       imageUrl?: string;
-    };
-    Product: components['schemas']['ProductSummary'] & {
-      /** @example Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình. */
-      description: string;
       /**
-       * @description Thông số kỹ thuật tuỳ theo category
+       * @description Thông số kỹ thuật tuỳ theo category, khoá là mã tiếng Việt không dấu (catalog.md). Danh sách dùng để hiện dòng tóm tắt trên thẻ; không có thì bỏ trường.
        * @example {
        *       "vram": "12GB GDDR6X",
-       *       "tdp": "200W",
-       *       "connector": "PCIe 4.0 x16"
+       *       "nguon_de_xuat": "750W"
        *     }
        */
       specs?: {
         [key: string]: unknown;
       };
+    };
+    Product: components['schemas']['ProductSummary'] & {
+      /** @example Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình. */
+      description: string;
       /**
        * Format: date-time
        * @example 2026-10-01T07:00:00Z
@@ -683,7 +686,11 @@ export interface operations {
            *           "price": 15900000,
            *           "stock": 12,
            *           "status": "ACTIVE",
-           *           "imageUrl": "https://placehold.co/300x200?text=RTX+4070"
+           *           "imageUrl": "https://placehold.co/300x200?text=RTX+4070",
+           *           "specs": {
+           *             "vram": "12GB GDDR6X",
+           *             "nguon_de_xuat": "750W"
+           *           }
            *         },
            *         {
            *           "productId": "01J9XKPQ0000000000000002",
@@ -693,7 +700,11 @@ export interface operations {
            *           "price": 1890000,
            *           "stock": 25,
            *           "status": "ACTIVE",
-           *           "imageUrl": "https://placehold.co/300x200?text=G502+X"
+           *           "imageUrl": "https://placehold.co/300x200?text=G502+X",
+           *           "specs": {
+           *             "cam_bien": "HERO 25K",
+           *             "ket_noi": "Lightspeed"
+           *           }
            *         },
            *         {
            *           "productId": "01J9XKPQ0000000000000003",
@@ -703,7 +714,11 @@ export interface operations {
            *           "price": 2450000,
            *           "stock": 8,
            *           "status": "ACTIVE",
-           *           "imageUrl": "https://placehold.co/300x200?text=990+Pro"
+           *           "imageUrl": "https://placehold.co/300x200?text=990+Pro",
+           *           "specs": {
+           *             "chuan": "M.2 NVMe PCIe 4.0",
+           *             "dung_luong": "1TB"
+           *           }
            *         },
            *         {
            *           "productId": "01J9XKPQ0000000000000004",
@@ -713,7 +728,11 @@ export interface operations {
            *           "price": 3200000,
            *           "stock": 0,
            *           "status": "ACTIVE",
-           *           "imageUrl": "https://placehold.co/300x200?text=DDR5+32GB"
+           *           "imageUrl": "https://placehold.co/300x200?text=DDR5+32GB",
+           *           "specs": {
+           *             "loai": "DDR5",
+           *             "dung_luong": "32GB (2x16GB)"
+           *           }
            *         }
            *       ]
            *     }

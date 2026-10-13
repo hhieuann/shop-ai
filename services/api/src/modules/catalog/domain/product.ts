@@ -49,6 +49,8 @@ export interface ProductSummary {
   readonly stock: number;
   readonly status: ProductStatus;
   readonly imageUrl?: string;
+  /** Để thẻ ở trang danh sách hiện dòng tóm tắt thông số (danh-sach-san-pham.md §1) */
+  readonly specs?: Readonly<Record<string, unknown>>;
 }
 
 /** BR-04: sản phẩm INACTIVE không hiển thị cho khách, kể cả ở trang chi tiết. */
@@ -61,10 +63,21 @@ export function isInStock(product: Pick<Product, 'stock'>): boolean {
   return product.stock > 0;
 }
 
-/** Chỉ lấy các trường của ProductSummary; trường nội bộ (vd. searchText) không lọt ra API. */
+/**
+ * Chỉ lấy các trường của ProductSummary; trường nội bộ (vd. searchText), mô tả, thời gian không lọt
+ * ra API. Trường tuỳ chọn (imageUrl, specs) không có thì bỏ hẳn khoá, không trả `undefined`.
+ */
 export function toSummary(product: Product): ProductSummary {
-  const { productId, name, category, brand, price, stock, status, imageUrl } = product;
-  return imageUrl === undefined
-    ? { productId, name, category, brand, price, stock, status }
-    : { productId, name, category, brand, price, stock, status, imageUrl };
+  const { productId, name, category, brand, price, stock, status, imageUrl, specs } = product;
+  return {
+    productId,
+    name,
+    category,
+    brand,
+    price,
+    stock,
+    status,
+    ...(imageUrl !== undefined && { imageUrl }),
+    ...(specs !== undefined && { specs }),
+  };
 }
