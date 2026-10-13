@@ -247,8 +247,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
 | `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
-| `Radio` | `shared/components/Radio.tsx` | 📝 (cột lọc, §9.5) |
-| `Breadcrumb` | `shared/components/Breadcrumb.tsx` | 📝 (trang danh sách, trang chi tiết, §9.22) |
+| `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
+| `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | 📝 (trang danh sách, §9.19) |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | 📝 (§9.23) |
 | `FilterPanel`, `FilterSheet` | `features/catalog/components/` | 📝 (trang danh sách, §9.20) |
@@ -354,7 +354,7 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 
 Form cụ thể ở [pages/dat-hang.md](pages/dat-hang.md) và [pages/dang-nhap.md](pages/dang-nhap.md).
 
-### 9.5 Checkbox (`Checkbox`, ✅; dùng ở giỏ hàng để tick món) và Radio (`Radio`, 📝; cột lọc)
+### 9.5 Checkbox (`Checkbox`, ✅; dùng ở giỏ hàng để tick món) và Radio (`Radio`, ✅; cột lọc)
 20×20px, bo 4px, nền `--bg-surface-raised`, viền 1px `--border-input`. Được chọn: nền và viền `--bg-primary`, dấu tick trắng (lucide `Check` 14px). Hover: viền `--border-primary`. Focus: viền focus. Không chọn được (món hết hàng, ngừng bán, vượt tồn kho): opacity .4, `not-allowed`, kèm lý do bằng `StockBadge` cạnh tên món. Nhãn cách 8px; vùng bấm tối thiểu 40×40. Chọn một phần (`indeterminate`, ô "Chọn tất cả" ở giỏ): nền và viền `--bg-primary`, gạch ngang trắng (lucide `Minus` 14px).
 
 **Radio** (chọn một trong nhóm, vd. "Loại hàng" ở cột lọc §9.20): cùng cỡ 20×20 và màu với Checkbox nhưng **tròn** (`--radius-full`), nền `--bg-surface-raised`, viền 1px `--border-input`. Được chọn: nền `--bg-surface`, viền `--bg-primary`, chấm chàm bằng `box-shadow: inset 0 0 0 5px var(--bg-primary)`. `<input type="radio">` thật nằm trong `<label>`, ẩn bằng `sr-only` (không `display:none`); focus bàn phím → viền focus quanh vòng tròn; mũi tên lên/xuống đổi lựa chọn như radio gốc. Nhãn cách 8px, cả dòng là vùng bấm (cao tối thiểu 36px).
@@ -617,7 +617,7 @@ Chốt 13/10/2026: API trả `nextCursor`, không trả tổng số (catalog BR-
 
 Không hiện số trang tổng hay các nút 1 2 3 (cần tổng số từ API, xem thiết kế 3).
 
-### 9.22 Đường dẫn (`Breadcrumb`, 📝)
+### 9.22 Đường dẫn (`Breadcrumb`, ✅)
 `<nav aria-label="Đường dẫn">` + `<ol>`, chữ 14/20 `--fg-muted`; giữa các mục là `ChevronRight` 16 `--fg-subdued` (`aria-hidden`), gap 4px; link `--fg-primary` 500, gạch chân khi rê chuột; mục cuối là trang hiện tại (`aria-current="page"`, không phải link). Padding `16px 0 12px` (<1280: `12px 0 8px`). Dùng ở trang danh sách ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)) và trang chi tiết (pages/chi-tiet-san-pham.md §3.1) khi làm lại.
 
 ### 9.23 Nút thêm vào giỏ trên thẻ (`AddToCartButton`, 📝)
@@ -643,6 +643,6 @@ Lỗi hiện **trên chính nút**, không thêm dòng chữ dưới nút, để
 - Bỏ: `--bg-image-plate` (thay bằng `--bg-subtle`), `--glow-primary` (nút chính chỉ tối đi khi hover), `--gradient-line`, `--bg-primary-tint-hover` (thay bằng `--bg-primary-tint-2`).
 - `--radius-xl` đổi 16 → 12px. Chỗ đang bo 16px giữ nguyên bằng `--radius-2xl`; thẻ sản phẩm, menu danh mục, hero, ô thông tin chuyển sang `--radius-xl` khi làm lại các component đó.
 
-**Thêm khi làm trang danh sách (chốt 13/10/2026, chưa có trong `tokens.css`):** `--scrollbar-size` 10px, `--scrollbar-thumb` `#D4D4D4`, `--scrollbar-thumb-area-hover` `#A3A3A3`, `--scrollbar-thumb-hover` `#737373`, `--scrollbar-track` `transparent` (§4 Thanh cuộn). Giá trị lấy từ màu đã có, không thêm màu mới.
+**Đã đưa vào `tokens.css` khi làm trang danh sách (chốt 13/10/2026):** `--scrollbar-size` 10px, `--scrollbar-thumb` `#D4D4D4`, `--scrollbar-thumb-area-hover` `#A3A3A3`, `--scrollbar-thumb-hover` `#737373`, `--scrollbar-track` `transparent` (§4 Thanh cuộn). Giá trị trỏ vào token màu đã có (`--border-default`, `--fg-icon-soft`, `--fg-subdued`), không thêm màu mới.
 
 Cần token mới khác thì ghi vào đây (tên, giá trị, khi nào dùng) trước, rồi thêm vào `tokens.css` trong cùng PR với chỗ dùng đầu tiên.
