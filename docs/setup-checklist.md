@@ -34,6 +34,6 @@ pnpm install
 docker compose up -d
 ```
 
-- Cài Docker Desktop (WSL2), Postman, AWS CLI v2
+- Cài Docker Desktop (WSL2), AWS CLI v2; Postman tuỳ chọn để thử API bằng tay
 - Đọc [git-flow.md](git-flow.md) và [hands-on-testing-guide.md](hands-on-testing-guide.md)
 - Bật MFA cho tài khoản GitHub

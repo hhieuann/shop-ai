@@ -234,7 +234,7 @@ shop-ai/
 ├─ data/                      Python: sinh dữ liệu · mô hình gợi ý · pipeline mỗi đêm · kiểm tra dữ liệu
 ├─ infra/                     CDK TypeScript: các stack + cấu hình theo môi trường
 ├─ contracts/openapi.yaml     nguồn sự thật của API
-├─ tests/e2e-api/             Postman collection chạy bằng Newman
+├─ tests/e2e-api/             E2E API bằng Vitest + fetch (ADR-0018)
 ├─ tests/e2e-ui/              Playwright (tuỳ chọn)
 ├─ tests/load/                k6
 ├─ docs/                      kế hoạch, git flow, testing, ADR, nghiệp vụ, runbook, workshop
@@ -252,7 +252,7 @@ shop-ai/
 | API contract | OpenAPI 3.1; openapi-typescript; Prism dựng mock cho web; zod kiểm input |
 | Lambda | Powertools for AWS Lambda: Logger, Tracer, Metrics, Idempotency, Parameters, Batch |
 | Hạ tầng | AWS CDK v2, cdk-nag |
-| Kiểm thử | Vitest, Testcontainers, pytest, Postman/Newman, Playwright, k6 |
+| Kiểm thử | Vitest (cả E2E API, ADR-0018), Testcontainers, pytest, Playwright, k6; Postman để thử tay |
 | Chạy tại máy | Docker Desktop (WSL2); `cdk watch --hotswap` vào tài khoản của chính mình |
 
 Chuẩn code và vòng làm việc hằng ngày: [CONTRIBUTING.md](../CONTRIBUTING.md).
@@ -268,7 +268,7 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 | Integration | Adapter với DynamoDB Local | Vitest + Testcontainers | Người viết adapter | Mỗi PR | Chặn merge |
 | Contract | Response khớp OpenAPI; fuzz API | Kiểm OpenAPI trong test; Schemathesis | An, Nhân | PR; mỗi đêm trên staging | Chặn release |
 | Smoke | Gọi API thật ngay sau deploy | Vitest hoặc k6 kịch bản nhỏ | An | Sau mỗi deploy | Lỗi ở prod thì rollback |
-| E2E API | Luồng đăng nhập → giỏ → đặt hàng và các case âm | Postman + Newman | Hoàng | Sau mỗi deploy dev và staging | Chặn release |
+| E2E API | Luồng đăng nhập → giỏ → đặt hàng và các case âm | Vitest + fetch (ADR-0018) | Hoàng | Sau mỗi deploy dev và staging | Chặn release |
 | E2E giao diện (tuỳ chọn) | 1–2 hành trình trên trình duyệt | Playwright | Hoàng | Sau deploy staging | Chặn release nếu có |
 | Hiệu năng | p95 và tỉ lệ lỗi ở 50/200/1.000 người ảo; so với bản EC2 | k6 | An | Hằng tuần từ tuần 4; đầy đủ ở tuần 6 | Cảnh báo khi vượt mục tiêu |
 | Bảo mật | SAST, thư viện có lỗ hổng, DAST, truy cập chéo (IDOR), rule WAF | CodeQL, Dependabot, pnpm audit, OWASP ZAP | Nhân | PR; ZAP mỗi đêm | High/Critical chặn release |
@@ -292,7 +292,7 @@ flowchart TB
   A["feature/* · fix/*"] --> B["pr.yml<br/>commit, lint, type, luật layer,<br/>unit, integration, quét bảo mật, cdk-nag"]
   B --> C{"CI xanh"}
   C --> D["merge commit vào develop"]
-  D --> E["deploy.yml → dev<br/>smoke + E2E Newman"]
+  D --> E["deploy.yml → dev<br/>smoke + E2E API"]
   E --> F["An tách release/vX.Y.Z"]
   F --> G["deploy.yml → staging<br/>smoke + E2E + cả nhóm test"]
   G --> H["PR release → main"]
@@ -318,7 +318,7 @@ dev, staging và prod chung tài khoản demo vì Free plan không có AWS Organ
 | File | Chạy khi | Làm gì |
 |---|---|---|
 | `pr.yml` | Mỗi PR vào `develop`, `main`, `release/*` | Tiêu đề PR, commitlint cho từng commit, định dạng, lint, type, luật layer, unit, integration, build, gitleaks, audit thư viện, test Python, `cdk synth` + cdk-nag, `cdk diff` vào phần Summary |
-| `deploy.yml` | Push `develop` (→ dev) hoặc `release/*` (→ staging) | Build, OIDC, `cdk deploy`, smoke, E2E Newman, Playwright nếu có |
+| `deploy.yml` | Push `develop` (→ dev) hoặc `release/*` (→ staging) | Build, OIDC, `cdk deploy`, smoke, E2E API (Vitest), Playwright nếu có |
 | `deploy-prod.yml` | Tag `v*` | Chờ duyệt environment production, `cdk deploy` prod (canary cho ordering), smoke, tạo GitHub Release |
 | `nightly.yml` | 2:00 mỗi đêm | OWASP ZAP và Schemathesis vào staging, audit thư viện, k6 kịch bản nhỏ |
 

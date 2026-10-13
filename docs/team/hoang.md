@@ -15,7 +15,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 | Thiết kế dữ liệu | Bảng `products`, `carts`, `orders`, `idempotency`: khoá và index đi từ các truy vấn cần có |
 | Hợp đồng API | Các endpoint trên trong `contracts/openapi.yaml`, viết trước code |
 | Giao diện web | Trang danh sách, chi tiết, giỏ, đặt hàng, lịch sử đơn, admin. An làm hai widget gợi ý và phần đăng nhập |
-| E2E | Postman collection, chạy bằng Newman sau mỗi lần deploy ([hands-on-testing-guide.md](../hands-on-testing-guide.md) mục 6) |
+| E2E | E2E API bằng Vitest + fetch, chạy sau mỗi lần deploy ([hands-on-testing-guide.md](../hands-on-testing-guide.md) mục 6, [ADR-0018](../adr/0018-e2e-api-bang-vitest.md)) |
 | Runbook | `dlq-orders`, `sqs-backlog`, `dynamodb-throttle` |
 
 ## Tuần này (đến hết 05/10)
@@ -37,7 +37,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 |---|---|---|
 | 1 · 29/09–05/10 | Danh sách tuần này | Web chạy trên mock; OpenAPI bản 0 và thiết kế bảng đã merge |
 | 2 · 06–12/10 | Module `catalog` theo khuôn module mẫu; script nạp khoảng 100 sản phẩm; trang danh sách và chi tiết | Xem được sản phẩm thật trên dev |
-| 3 · 13–19/10 | Module `cart` và trang giỏ; Postman collection bản 1 (đăng nhập, catalog, giỏ) chạy trong CI; cùng nhóm nghiệm thu `v0.1.0` trên staging | E2E xanh; `v0.1.0` phát hành |
+| 3 · 13–19/10 | Module `cart` và trang giỏ; E2E API bản 1 (đăng nhập, catalog, giỏ, ca lỗi) chạy trong CI; cùng nhóm nghiệm thu `v0.1.0` trên staging | E2E xanh; `v0.1.0` phát hành |
 | 4 · 20–26/10 | Module `ordering` với `Idempotency-Key`; worker `order-processor` qua SQS, email qua SES, báo admin qua SNS; trang lịch sử đơn | Đặt hàng trọn luồng trên dev, nhận được email |
 | 5 · 27/10–02/11 | Module `admin` và trang admin; integration test bằng Testcontainers cho các repository; thêm case âm vào E2E; viết runbook | Chốt tính năng cho `v0.2.0` |
 | 6 · 03–09/11 | Sửa lỗi; Lighthouse ≥ 90; mẫu email; hỗ trợ An chạy load test | `v1.0.0-rc.1` |
@@ -53,21 +53,21 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 | SQS và SNS | Lab [000077](https://000077.awsstudygroup.com/) | Tuần 3–4 |
 | Powertools for AWS Lambda (TypeScript): Logger, Idempotency, Batch | Tài liệu chính thức của Powertools | Tuần 4 |
 | React Router, TanStack Query | Tài liệu chính thức | Tuần 1–2 |
-| Vitest, Testcontainers, Postman và Newman | [hands-on-testing-guide.md](../hands-on-testing-guide.md) | Tuần 2–3 |
+| Vitest (cả E2E API), Testcontainers | [hands-on-testing-guide.md](../hands-on-testing-guide.md) | Tuần 2–3 |
 
 ## Workshop và blog
 
 - **Chương của bạn trong workshop nhóm:** Đơn hàng không mất khi quá tải: API Gateway → Lambda → SQS → SES
 - **Blog 1 (tuần 3):** Thiết kế bảng DynamoDB bắt đầu từ truy vấn: products, carts, orders
 - **Blog 2 (tuần 5):** Chống tạo đơn trùng bằng Idempotency-Key và Powertools Idempotency
-- **Blog 3 (tuần 7):** Test API bằng Postman và Newman trong GitHub Actions
+- **Blog 3 (tuần 7):** Vì sao bỏ Newman (16 High + 3 Critical khi `pnpm audit`) và cách viết E2E API bằng Vitest trong GitHub Actions ([ADR-0018](../adr/0018-e2e-api-bang-vitest.md))
 
 ## Làm tốt trông như thế nào
 
 - Luồng xem hàng → giỏ → đặt hàng → nhận email chạy thật trên staging trước 02/11
 - Không truy vấn nào dùng Scan
 - Bấm đặt hàng hai lần chỉ ra 1 đơn; worker nhận một message hai lần chỉ gửi 1 email
-- E2E Newman xanh ở mỗi lần deploy
+- E2E API xanh ở mỗi lần deploy
 - Coverage của `domain` và `application` từ 80% trở lên
 
 ## Những bẫy hay gặp
@@ -83,4 +83,4 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 
 - **Hướng nghề:** Fullstack developer làm serverless trên AWS. Kinh nghiệm thật với DynamoDB, Lambda, SQS và test tự động là điểm cộng lớn khi phỏng vấn fullstack hay backend.
 - **Chứng chỉ:** Cloud Practitioner → **Developer – Associate**.
-- **Dòng CV gợi ý:** "Xây dựng luồng bán hàng end-to-end (catalog, giỏ hàng, đặt hàng) trên AWS Lambda, DynamoDB, SQS và SES; xử lý đơn bất đồng bộ không mất đơn, không trùng đơn; viết unit test, integration test (Testcontainers) và E2E (Postman/Newman) chạy trong CI."
+- **Dòng CV gợi ý:** "Xây dựng luồng bán hàng end-to-end (catalog, giỏ hàng, đặt hàng) trên AWS Lambda, DynamoDB, SQS và SES; xử lý đơn bất đồng bộ không mất đơn, không trùng đơn; viết unit test, integration test (Testcontainers) và E2E API (Vitest) chạy trong CI sau mỗi lần deploy."
