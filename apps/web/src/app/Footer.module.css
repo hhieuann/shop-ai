@@ -4,6 +4,9 @@
   background: var(--bg-chrome);
   color: var(--fg-on-chrome);
 }
+.flush {
+  margin-top: 0;
+}
 .footer :focus-visible {
   outline-color: var(--focus-ring-on-chrome);
 }

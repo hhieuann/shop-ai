@@ -15,10 +15,13 @@ const ACCOUNT_LINKS = [
   { label: 'Đơn hàng', to: '/orders' },
 ];
 
-/** Footer 4 cột, cùng màu chàm với header (design-system §9.2) */
-export function Footer() {
+/**
+ * Footer 4 cột, cùng màu chàm với header (design-system §9.2).
+ * `flush`: không cách nội dung 32px (trang nền trắng như trang danh sách).
+ */
+export function Footer({ flush = false }: { flush?: boolean }) {
   return (
-    <footer className={styles.footer}>
+    <footer className={`${styles.footer} ${flush ? styles.flush : ''}`}>
       <div className={styles.inner}>
         <div className={styles.grid}>
           <div className={styles.about}>
