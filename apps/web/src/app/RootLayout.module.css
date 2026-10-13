@@ -11,3 +11,10 @@
   margin: 0 auto;
   padding: var(--space-200) var(--gutter) 0;
 }
+/* Trang nền trắng (route có handle.surface = 'plain'): nội dung tự lo khoảng cách với header */
+.plain {
+  background: var(--bg-surface);
+}
+.plain .main {
+  padding-top: 0;
+}

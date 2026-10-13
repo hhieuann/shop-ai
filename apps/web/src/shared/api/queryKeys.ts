@@ -2,7 +2,7 @@
 export const queryKeys = {
   products: {
     all: ['products'] as const,
-    /** Danh sách có phân trang "Xem thêm" (useInfiniteQuery) */
+    /** Một trang của trang danh sách: bộ lọc + cursor của trang đang xem */
     list: (params: Record<string, unknown>) => ['products', 'list', params] as const,
     /** Một trang đầu cho carousel trang chủ (useQuery thường; dữ liệu khác hình dạng nên khác key) */
     preview: (params: Record<string, unknown>) => ['products', 'preview', params] as const,

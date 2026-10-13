@@ -7,7 +7,7 @@ Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví
 Đây là bản tóm tắt. Bản đầy đủ (mọi token, component, trạng thái) ở [design-system.md](design-system.md); spec từng trang ở [`pages/`](pages/).
 
 > **Giao diện chàm (11/10/2026):** màu chàm, font Inter, header 2 hàng, footer 4 cột và trang chủ mới đã có trong code.
-> **Trang danh sách (chốt 13/10/2026, code chưa đổi):** nền trắng, cột lọc "Loại hàng" bên trái, thẻ có nút "Thêm vào giỏ", chuyển trang "Trước · Trang N · Sau", thanh cuộn mảnh cho cả web ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)).
+> **Trang danh sách (chốt 13/10/2026):** nền trắng, cột lọc "Loại hàng" bên trái, thẻ có nút "Thêm vào giỏ", chuyển trang "Trước · Trang N · Sau", thanh cuộn mảnh cho cả web ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)).
 
 ## 1. Nguyên tắc
 

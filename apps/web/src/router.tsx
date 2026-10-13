@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { RootLayout } from './app/RootLayout';
+import { RootLayout, type RouteHandle } from './app/RootLayout';
 import { NotFoundPage } from './shared/components/NotFoundPage';
 
 /**
@@ -23,6 +23,8 @@ export const router = createBrowserRouter([
       },
       {
         path: 'products',
+        // Nền trắng, footer sát nội dung (pages/danh-sach-san-pham.md §2)
+        handle: { surface: 'plain' } satisfies RouteHandle,
         lazy: async () => ({
           Component: (await import('./features/catalog/pages/ProductListPage')).ProductListPage,
         }),
