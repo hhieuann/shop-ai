@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../../shared/api/client';
-import { addErrorMessage } from './addErrorMessage';
+import { addErrorMessage, addErrorShortLabel } from './addErrorMessage';
 
 const conflict = (extra: Record<string, unknown>) => new ApiError(409, extra, 'Conflict');
 
@@ -38,5 +38,25 @@ describe('addErrorMessage', () => {
     },
   ])('$name', ({ error, text }) => {
     expect(addErrorMessage(error)).toBe(text);
+  });
+});
+
+describe('addErrorShortLabel', () => {
+  it.each([
+    {
+      name: 'QUANTITY_LIMIT',
+      error: conflict({ code: 'QUANTITY_LIMIT', maxAddable: 0 }),
+      text: 'Đã đủ số lượng',
+    },
+    { name: 'CART_FULL', error: conflict({ code: 'CART_FULL' }), text: 'Giỏ đã đủ 50 món' },
+    {
+      name: 'PRODUCT_UNAVAILABLE',
+      error: conflict({ code: 'PRODUCT_UNAVAILABLE' }),
+      text: 'Ngừng bán',
+    },
+    { name: 'mã khác', error: new ApiError(500, {}, 'Server Error'), text: 'Chưa thêm được' },
+    { name: 'không phải lỗi API', error: new TypeError('Failed to fetch'), text: 'Chưa thêm được' },
+  ])('$name', ({ error, text }) => {
+    expect(addErrorShortLabel(error)).toBe(text);
   });
 });
