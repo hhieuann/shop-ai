@@ -7,13 +7,13 @@ Cách nhóm viết và chạy test: Unit, Integration, E2E. Ai viết code cũng
 - Làm theo **tháp kiểm thử**: nhiều unit test (nhanh), ít integration test hơn, vài E2E test cho các luồng chính.
 - Viết test theo **AAA+**: Arrange → Act → Assert → Verify.
 - Integration test chạy với **DynamoDB thật** (DynamoDB Local) qua **Testcontainers**, không mock tầng dữ liệu.
-- E2E gọi **API thật** trên dev/staging bằng **Postman Collection**, chạy tự động bằng **Newman** trong CI.
+- E2E gọi **API thật** trên dev/staging bằng **Vitest + `fetch`** (cùng cách với smoke test), chạy tự động sau mỗi deploy ([ADR-0018](adr/0018-e2e-api-bang-vitest.md)).
 
 ## 2. Môi trường cần có
 
 - Node.js 24 và pnpm 12
 - Docker Desktop đang chạy (Testcontainers cần Docker)
-- Postman (chạy tay) và Newman (chạy trong CI hoặc dòng lệnh)
+- Postman (tuỳ chọn, để thử API bằng tay)
 - Python 3.13 và uv, nếu làm phần `data/`
 - VS Code hoặc WebStorm
 
@@ -30,10 +30,7 @@ services/api/
 │  └─ handler.test.ts                      unit: handler, mock use case
 └─ test/integration/
    └─ dynamoOrderRepository.int.test.ts    integration: DynamoDB Local qua Testcontainers
-tests/e2e-api/
-├─ postman/shop-e2e.postman_collection.json
-├─ postman/dev.postman_environment.json
-└─ postman/staging.postman_environment.json
+tests/e2e-api/                             E2E API: Vitest + fetch, *.e2e.ts (mục 6)
 tests/e2e-ui/                              tuỳ chọn: Playwright cho 1–2 luồng giao diện
 data/tests/                                pytest cho phần dữ liệu và gợi ý
 ```
@@ -200,76 +197,72 @@ it('save_throwsDuplicateOrder_whenIdempotencyKeyReused', async () => {
 
 Integration test không mock repository hay adapter. Nó kiểm cả happy path lẫn các lỗi hay gặp: trùng khoá, không tìm thấy, điều kiện ghi thất bại.
 
-## 6. E2E với Postman và Newman
+## 6. E2E API bằng Vitest
 
-### 6.1. Cấu trúc collection
+E2E gọi **API thật** qua CloudFront trên dev và staging, chạy tự động ngay sau smoke test mỗi lần deploy (`deploy.yml`). Viết bằng **Vitest + `fetch`**, cùng cách với smoke test, không cần thư viện nào thêm. Lý do không dùng Postman/Newman trong CI: [ADR-0018](adr/0018-e2e-api-bang-vitest.md). Postman vẫn dùng để thử API bằng tay, không commit collection.
 
-| Thư mục | Request | Kiểm |
+### 6.1. Bộ test
+
+```text
+tests/e2e-api/
+├─ package.json           tên package: e2e-api; script test:e2e = vitest run
+├─ vitest.config.ts       đọc biến môi trường; thiếu thì bỏ qua cả bộ
+├─ api.ts                 gọi API qua CloudFront, đăng nhập Cognito
+├─ auth.e2e.ts
+├─ catalog.e2e.ts
+├─ cart.e2e.ts
+├─ negative.e2e.ts
+└─ reports/               junit.xml, đã có trong .gitignore
+```
+
+| File | Gọi | Kiểm |
 |---|---|---|
-| `0 Auth` | Đăng nhập qua Cognito | 200, lưu `{{token}}` |
-| `1 Catalog` | Lấy danh sách sản phẩm | 200, lưu `{{productId}}` |
-| `2 Cart` | Thêm sản phẩm vào giỏ | 200, giỏ có đúng món vừa thêm |
-| `3 Order` | Đặt hàng; gửi lại cùng `Idempotency-Key` | 201, lần hai trả về cùng `orderId` |
-| `4 Negative` | Sai mật khẩu; thiếu token; xem đơn của người khác | 400 · 401 · 404 |
-| `9 Cleanup` | Không gọi API | Xoá biến để lần chạy sau sạch |
+| `auth.e2e.ts` | Đăng nhập Cognito, `GET /api/v1/me` | Có access token; `/me` trả 200 đúng email của người dùng E2E |
+| `catalog.e2e.ts` | `GET /api/v1/products` (lọc, tìm, trang sau), `GET /api/v1/products/{id}` | Đúng dạng; trang sau theo `nextCursor` không trùng trang trước; lọc `gpu` chỉ ra `gpu`; tìm `chuot` ra tên có "chuột"; chi tiết 200 |
+| `cart.e2e.ts` | `POST`, `PUT`, `DELETE` `/api/v1/cart/items…`, `GET /api/v1/cart` | Thêm 1 rồi thêm 1 thì cộng dồn 2; sửa về 1; xoá thì giỏ không còn món đó |
+| `negative.e2e.ts` | Các lệnh gọi sai | Thiếu token, token sai: 401 `problem+json`; số lượng 0, `category` lạ: 400; sản phẩm không có: 404; sai mật khẩu: Cognito từ chối |
+| `order.e2e.ts` (Sprint 2) | `POST /api/v1/orders` hai lần cùng `Idempotency-Key` | 201, lần hai trả cùng `orderId`; xem đơn của người khác: 404 |
 
-### 6.2. Biến
+### 6.2. Biến môi trường
 
 | Biến | Lấy từ đâu |
 |---|---|
-| `baseUrl` | File environment (`dev` hoặc `staging`) |
-| `region`, `cognitoClientId` | File environment |
-| `username`, `password` | **Không ghi vào file.** Chạy tay thì điền vào *Current value* trong Postman; chạy CI thì truyền từ GitHub secret |
-| `token`, `productId`, `orderId`, `idemKey` | Script tự đặt khi chạy |
+| `BASE_URL` | URL CloudFront của môi trường; `deploy.yml` tự đọc từ output `WebUrl` |
+| `COGNITO_CLIENT_ID` | Biến `E2E_COGNITO_CLIENT_ID` của environment trên GitHub (app client E2E) |
+| `E2E_USERNAME`, `E2E_PASSWORD` | Biến và secret của environment. **Không ghi vào file nào** |
+| `AWS_REGION` | Không đặt thì là `ap-southeast-1` |
+| `COGNITO_ENDPOINT` | Tuỳ chọn, chỉ để chạy thử với Cognito giả ở máy |
 
-### 6.3. Đăng nhập (request đầu tiên)
+- Thiếu `BASE_URL` hoặc một trong ba biến đăng nhập thì **bỏ qua cả bộ** (`describe.skipIf`) và in cảnh báo vàng trên GitHub Actions. Chạy ở máy hay ở PR không bị đỏ; environment chưa có người dùng E2E vẫn deploy được.
+- **Bẫy `BASE_URL`:** Vite tự đặt `process.env.BASE_URL = '/'` trong lúc chạy test. `vitest.config.ts` đọc biến này trước rồi chuyển cho test qua `E2E_BASE_URL`, giống `tests/smoke/vitest.config.ts`.
 
-```text
-POST https://cognito-idp.{{region}}.amazonaws.com/
-Content-Type: application/x-amz-json-1.1
-X-Amz-Target: AWSCognitoIdentityProviderService.InitiateAuth
+### 6.3. Đăng nhập Cognito không cần SDK
 
-{"AuthFlow":"USER_PASSWORD_AUTH","ClientId":"{{cognitoClientId}}",
- "AuthParameters":{"USERNAME":"{{username}}","PASSWORD":"{{password}}"}}
-```
-
-Tab **Tests**:
-
-```js
-pm.test('đăng nhập thành công', () => {
-  pm.response.to.have.status(200);
-  const token = pm.response.json().AuthenticationResult.AccessToken;
-  pm.expect(token).to.be.a('string');
-  pm.collectionVariables.set('token', token);
+```ts
+const res = await fetch(`https://cognito-idp.${region}.amazonaws.com/`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-amz-json-1.1',
+    'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
+  },
+  body: JSON.stringify({
+    AuthFlow: 'USER_PASSWORD_AUTH',
+    ClientId: clientId,
+    AuthParameters: { USERNAME: username, PASSWORD: password },
+  }),
 });
+const token = (await res.json()).AuthenticationResult.AccessToken;
 ```
 
 App client dùng cho E2E bật `USER_PASSWORD_AUTH` và **chỉ tồn tại ở dev và staging**. Web thật dùng luồng SRP.
 
-### 6.4. Script sinh dữ liệu và kiểm kết quả
+### 6.4. Ghi dữ liệu an toàn
 
-Tab **Pre-request** của request đặt hàng, để lần chạy nào cũng là đơn mới:
-
-```js
-pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));
-```
-
-Tab **Tests**:
-
-```js
-pm.test('201 và đơn ở trạng thái PENDING', () => {
-  pm.response.to.have.status(201);
-  const body = pm.response.json();
-  pm.expect(body.status).to.eql('PENDING');
-  pm.collectionVariables.set('orderId', body.orderId);
-});
-```
-
-Bước dọn dẹp ở cuối collection:
-
-```js
-['token', 'productId', 'orderId', 'idemKey'].forEach((k) => pm.collectionVariables.unset(k));
-```
+- Các file chạy **tuần tự** (`fileParallelism: false`) và **không thử lại** (`retry: 0`): bước giỏ ghi vào giỏ thật của người dùng E2E, thử lại có thể cộng dồn sai.
+- Trước khi thêm, xoá món đó nếu lần chạy trước còn sót; `afterAll` luôn xoá món đã thêm, để giỏ sạch cho lần sau.
+- Ca sai mật khẩu dùng **email ngẫu nhiên không tồn tại** (`randomUUID()`), không dùng người dùng E2E: sai nhiều lần thì Cognito tạm khoá đúng người dùng đó.
+- Không ghi cứng token hay chuỗi trông như khoá trong test; sinh lúc chạy bằng `randomUUID()`.
+- Viết theo AAA+ như mục 5, tên test `action_expected_condition`.
 
 ### 6.5. Tạo người dùng test (dev và staging, không bao giờ ở prod)
 
@@ -280,22 +273,19 @@ aws cognito-idp admin-set-user-password --user-pool-id <pool-id> \
   --username e2e-user@example.com --password '<mật khẩu mạnh>' --permanent
 ```
 
-Mật khẩu này lưu ở secret `E2E_PASSWORD` của environment `dev` và `staging` trên GitHub, không lưu ở đâu khác.
+Mật khẩu này lưu ở secret `E2E_PASSWORD` của environment `dev` và `staging` trên GitHub, không lưu ở đâu khác. Ghi `E2E_USERNAME` và `E2E_COGNITO_CLIENT_ID` (output `UserPoolE2eClientId` của stack api) vào biến của environment.
 
 ### 6.6. Chạy
 
-- **Bằng Postman:** Import collection và environment → chọn environment → **Runner** → chọn collection → **Run**. Bảng kết quả hiện số test đạt và trượt; có thể export JSON hoặc HTML.
-- **Bằng Newman** (giống hệt CI):
-
 ```bash
-pnpm --filter e2e-api exec newman run postman/shop-e2e.postman_collection.json \
-  -e postman/staging.postman_environment.json \
-  --env-var "baseUrl=$BASE_URL" \
-  --env-var "cognitoClientId=$COGNITO_CLIENT_ID" \
-  --env-var "username=$E2E_USERNAME" \
-  --env-var "password=$E2E_PASSWORD" \
-  -r cli,htmlextra --reporter-htmlextra-export reports/index.html
+# ở máy, gọi API dev (xin An thông tin người dùng E2E, không ghi vào file)
+BASE_URL=https://<cloudfront dev> COGNITO_CLIENT_ID=<id> E2E_USERNAME=<email> E2E_PASSWORD=<mật khẩu> \
+  pnpm --filter e2e-api test:e2e
 ```
+
+Trên CI, `deploy.yml` chạy `pnpm run test:e2e` sau smoke test, truyền đủ biến ở mục 6.2. Kết quả hiện trên log; khi có lỗi, `tests/e2e-api/reports/junit.xml` được tải lên thành artifact `e2e-reports-<môi trường>`.
+
+**Thử bằng tay với Postman** (tuỳ chọn): gọi Cognito như mục 6.3 để lấy token, rồi gửi request tới `{{baseUrl}}/api/v1/...` với header `Authorization: Bearer {{token}}`. Không lưu mật khẩu vào Postman workspace dùng chung, không commit collection.
 
 ## 7. Chạy test và xem báo cáo
 
@@ -305,7 +295,7 @@ pnpm --filter e2e-api exec newman run postman/shop-e2e.postman_collection.json \
 | Coverage của API | `pnpm --filter api exec vitest run --coverage` | `services/api/coverage/index.html` |
 | Xem test bằng giao diện | `pnpm --filter api exec vitest --ui` | Mở trong trình duyệt |
 | Test Python | `uv run pytest --cov --cov-report=html` (trong `data/`) | `data/htmlcov/index.html` |
-| E2E | `pnpm test:e2e` | `tests/e2e-api/reports/index.html` |
+| E2E | `pnpm test:e2e` (cần biến ở mục 6.2) | Terminal; `tests/e2e-api/reports/junit.xml` |
 
 ## 8. Checklist khi review test
 
@@ -333,13 +323,13 @@ pnpm --filter e2e-api exec newman run postman/shop-e2e.postman_collection.json \
 - [ ] Có happy path và các lỗi hay gặp: trùng khoá, không tìm thấy, điều kiện ghi thất bại
 - [ ] Dừng container trong `afterAll`
 
-**E2E (Postman)**
+**E2E**
 
-- [ ] Dùng biến `{{baseUrl}}`, `{{token}}`; không ghi cứng URL hay mật khẩu
-- [ ] Pre-request script sinh dữ liệu ngẫu nhiên để chạy lại được nhiều lần
-- [ ] Request nào cũng có test script kiểm status và body
-- [ ] Có case âm: sai mật khẩu, thiếu token, xem đơn của người khác, gửi lại cùng `Idempotency-Key`
-- [ ] Bước cuối dọn biến
+- [ ] URL, client ID, tài khoản lấy từ biến môi trường; không ghi cứng URL hay mật khẩu
+- [ ] Thiếu biến thì bỏ qua cả bộ, không báo đỏ
+- [ ] Mỗi lệnh gọi kiểm status và body
+- [ ] Bước ghi dữ liệu chạy tuần tự, không thử lại, có bước dọn ở cuối; chạy lại nhiều lần vẫn xanh
+- [ ] Có case âm: thiếu token, dữ liệu sai, không tìm thấy, sai mật khẩu (email ngẫu nhiên); khi có đặt hàng: gửi lại cùng `Idempotency-Key`, xem đơn của người khác
 
 **Dữ liệu và gợi ý (Python)**
 
@@ -352,7 +342,7 @@ pnpm --filter e2e-api exec newman run postman/shop-e2e.postman_collection.json \
 | Workflow | Khi nào | Chạy |
 |---|---|---|
 | `pr.yml` | Mỗi PR | Unit, integration (Testcontainers), lint, kiểm luật layer, quét bảo mật |
-| `deploy.yml` | Merge vào `develop` hoặc `release/*` | Smoke test và E2E Newman trên dev hoặc staging |
+| `deploy.yml` | Merge vào `develop` hoặc `release/*` | Smoke test và E2E API (Vitest) trên dev hoặc staging |
 | `deploy-prod.yml` | Có tag `v*` | Smoke test trên prod |
 | `nightly.yml` | 2:00 mỗi đêm | OWASP ZAP, Schemathesis, audit thư viện, k6 |
 

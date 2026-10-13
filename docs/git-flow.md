@@ -187,7 +187,7 @@ Cấu trúc: `<type>(<scope>): <mô tả ngắn>`
 | Viết hoặc sửa test | `test` | `test(ordering): thêm test đặt hàng trùng Idempotency-Key` |
 | Nâng phiên bản thư viện | `chore` | `chore(deps): nâng aws-cdk-lib lên 2.272.0` |
 | Build, Docker, cấu hình đóng gói | `build` | `build(docker): thêm MySQL cho bản đối chứng` |
-| CI/CD | `ci` | `ci(deploy): chạy Newman sau khi deploy staging` |
+| CI/CD | `ci` | `ci(deploy): chạy E2E API sau khi deploy staging` |
 | Việc lặt vặt không ảnh hưởng nghiệp vụ | `chore` | `chore(infra): đổi tên biến môi trường` |
 | Hoàn tác một commit | `revert` | `revert: revert "feat(cart): thêm API cập nhật số lượng"` |
 | Merge một nhánh vào nhánh chung | `merge` | `merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop` |

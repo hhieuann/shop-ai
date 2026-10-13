@@ -35,7 +35,7 @@ Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture
 | Gợi ý | Python 3.13 trên Lambda, chạy mỗi đêm bằng EventBridge Scheduler: luật mua kèm, gợi ý theo món tương tự |
 | Hạ tầng | AWS CDK v2, cdk-nag |
 | CI/CD | GitHub Actions + OIDC |
-| Kiểm thử | Vitest, Testcontainers, pytest, Postman/Newman, k6, OWASP ZAP, Schemathesis |
+| Kiểm thử | Vitest (cả E2E API), Testcontainers, pytest, k6, OWASP ZAP, Schemathesis |
 
 ## Cấu trúc repo
 
@@ -47,7 +47,7 @@ shop-ai/
 ├─ data/                      Python: sinh dữ liệu, mô hình gợi ý, pipeline mỗi đêm
 ├─ infra/                     AWS CDK
 ├─ contracts/openapi.yaml     Hợp đồng API
-├─ tests/                     e2e-api (Postman/Newman) · e2e-ui (Playwright) · load (k6)
+├─ tests/                     smoke · e2e-api (Vitest) · e2e-ui (Playwright) · load (k6)
 ├─ docs/                      Kế hoạch, ADR, nghiệp vụ, runbook, workshop
 └─ .github/                   Workflow, mẫu PR và issue, CODEOWNERS
 ```

@@ -19,4 +19,4 @@ BASE_URL=https://d2pq03areagblb.cloudfront.net pnpm --filter smoke test:smoke
 
 `BASE_URL` lấy từ biến cùng tên của environment trên GitHub (Settings → Environments). Chưa đặt thì smoke in cảnh báo và bỏ qua: lần deploy đầu của một môi trường chưa biết URL CloudFront; đặt biến ngay sau lần đó.
 
-E2E đầy đủ (đăng nhập → giỏ → đặt hàng) nằm ở `tests/e2e-api` (Hoàng, Postman + Newman).
+E2E đầy đủ (đăng nhập → giỏ → đặt hàng) nằm ở `tests/e2e-api` (Hoàng, Vitest + fetch, cùng cách với smoke test).
