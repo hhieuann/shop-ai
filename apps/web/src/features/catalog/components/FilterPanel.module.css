@@ -1,0 +1,35 @@
+/* Cột lọc trên máy tính (docs/web/design-system.md §9.20) */
+.panel {
+  position: sticky;
+  /* Header 2 hàng 132px + 16px */
+  top: 148px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 164px);
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-lg);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-150) var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+}
+.icon {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.title {
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}

@@ -1,20 +1,11 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type FocusEvent,
-  type KeyboardEvent,
-} from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type FocusEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, Package, X } from 'lucide-react';
 import { CategoryMenu } from '../features/catalog/components/CategoryMenu';
 import { DESKTOP_QUERY, useMediaQuery } from '../shared/hooks/useMediaQuery';
+import { trapTabKey } from '../shared/lib/focusTrap';
 import styles from './CategoryMenuButton.module.css';
-
-const FOCUSABLE = 'a[href], button:not([disabled])';
 
 /**
  * Nút "Danh mục" trên header (design-system §9.1, §9.18).
@@ -61,22 +52,6 @@ export function CategoryMenuButton() {
   const onBlur = (e: FocusEvent<HTMLDivElement>) => {
     const next = e.relatedTarget as Node | null;
     if (open && desktop && next && !rootRef.current?.contains(next)) setOpen(false);
-  };
-
-  // Ngăn kéo là hộp thoại modal: Tab chỉ đi vòng trong ngăn kéo
-  const trapFocus = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'Tab' || !panelRef.current) return;
-    const items = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (!first || !last) return;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
   };
 
   const onNavigate = () => close(false);
@@ -139,7 +114,8 @@ export function CategoryMenuButton() {
               aria-modal="true"
               aria-label="Danh mục"
               className={styles.drawer}
-              onKeyDown={trapFocus}
+              // Ngăn kéo là hộp thoại modal: Tab chỉ đi vòng trong ngăn kéo
+              onKeyDown={(e) => trapTabKey(e, panelRef.current)}
             >
               <div className={styles.drawerHead}>
                 <button
