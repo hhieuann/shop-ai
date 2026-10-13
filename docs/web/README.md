@@ -1,6 +1,6 @@
 # Giao diện web: Black Magic
 
-Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao diện chàm (11/10/2026):** bố cục theo một trang bán linh kiện máy tính trong nước, màu chủ đạo chàm; code đã đổi theo tài liệu. **Trang danh sách sản phẩm** chốt bản mới ngày 13/10/2026, code chưa đổi (tài liệu là chuẩn). Mọi giá trị màu, chữ, khoảng cách nằm trong code ở [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu ở đây giải thích **dùng cái gì, ở đâu, trông ra sao**.
+Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao diện chàm (11/10/2026):** bố cục theo một trang bán linh kiện máy tính trong nước, màu chủ đạo chàm; code đã đổi theo tài liệu. **Trang danh sách sản phẩm** chốt bản mới ngày 13/10/2026, code đã đổi theo. Mọi giá trị màu, chữ, khoảng cách nằm trong code ở [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu ở đây giải thích **dùng cái gì, ở đâu, trông ra sao**.
 
 ## Đọc theo thứ tự nào
 

@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code chưa đổi: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23 là phần mới).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -252,8 +252,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
 | `LiveAnnouncerProvider` + `useAnnounce` (vùng thông báo cho trình đọc màn hình, đặt một lần ở cấp trang) | `shared/components/LiveAnnouncer.tsx`, `shared/hooks/useAnnounce.ts` | ✅ (§9.23) |
-| `FilterPanel`, `FilterSheet` | `features/catalog/components/` | 📝 (trang danh sách, §9.20) |
-| `CursorPager` | `shared/components/CursorPager.tsx` | 📝 (trang danh sách, §9.21) |
+| `FilterPanel`, `FilterSheet` | `features/catalog/components/` (nhóm lọc dùng chung `CategoryFilter`) | ✅ (trang danh sách, §9.20) |
+| `CursorPager` | `shared/components/CursorPager.tsx` | ✅ (trang danh sách, §9.21) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
@@ -577,7 +577,7 @@ Dữ liệu: `ProductSummary` của `GET /api/v1/products`, có thêm `specs` (t
 
 Thẻ **không có** sao đánh giá, so sánh, nút lưu, ảnh nhỏ, nhãn quảng cáo, giá gốc (ngoai-pham-vi.md).
 
-### 9.20 Cột lọc (`FilterPanel`) và bảng lọc trên điện thoại (`FilterSheet`, 📝)
+### 9.20 Cột lọc (`FilterPanel`) và bảng lọc trên điện thoại (`FilterSheet`, ✅)
 Chốt 13/10/2026 theo cột lọc của trang tham khảo chính. Bản chốt chỉ có **một nhóm "Loại hàng"** (catalog BR-02); hình dạng nhóm dùng lại được khi thêm nhóm lọc ở thiết kế 3 (pages/danh-sach-san-pham.md §8).
 
 **`FilterPanel` (≥1280, cột trái 296px):**
@@ -603,9 +603,9 @@ Chốt 13/10/2026 theo cột lọc của trang tham khảo chính. Bản chốt 
 | Đáy | padding `12px 16px`, viền trên `--border-divider`, `--shadow-up`; lưới `auto 1fr`, gap 8px: "Bỏ chọn" (nút phụ `lg`) + "Áp dụng bộ lọc" (nút chính `lg`) |
 | Hành vi | lựa chọn trong bảng là **tạm**, chỉ ghi lên URL khi bấm "Áp dụng bộ lọc" (rồi đóng bảng); "Bỏ chọn" đưa lựa chọn tạm về "Tất cả loại"; "Đóng" và Esc bỏ lựa chọn tạm. Giữ focus trong bảng, khoá cuộn trang nền, đóng xong trả focus về nút "Lọc" |
 
-**Nút "Lọc" và chip sắp xếp (<1280, thanh kết quả):** cao 36px, padding `0 12px`, bo `--radius-full`, viền 1px `--border-default`, nền `--bg-surface`, chữ 13/20/500 `--fg-heading`. Chip đang chọn (`aria-pressed="true"`): như chip ở §6 (nền `--bg-primary-tint-2`, viền 2px `--border-primary`, chữ `--fg-primary`, bớt 1px padding). Nút "Lọc": icon `SlidersHorizontal` 18 + chữ "Lọc" + số bộ lọc đang chọn (ô tròn 18px nền `--bg-primary`, chữ trắng 11/18/700; ẩn khi không lọc), `aria-haspopup="dialog"`.
+**Nút "Lọc" và chip sắp xếp (<1280, thanh kết quả):** cao 36px, padding `0 8px` (nút "Lọc" `0 10px`), cách nhau 6px để 3 chip và nút "Lọc" vừa một hàng ở 390px, bo `--radius-full`, viền 1px `--border-default`, nền `--bg-surface`, chữ 13/20/500 `--fg-heading`. Chip đang chọn (`aria-pressed="true"`): như chip ở §6 (nền `--bg-primary-tint-2`, viền 2px `--border-primary`, chữ `--fg-primary`, bớt 1px padding). Nút "Lọc": icon `SlidersHorizontal` 18 + chữ "Lọc" + số bộ lọc đang chọn (ô tròn 18px nền `--bg-primary`, chữ trắng 11/18/700; ẩn khi không lọc), `aria-haspopup="dialog"`.
 
-### 9.21 Chuyển trang theo cursor (`CursorPager`, 📝)
+### 9.21 Chuyển trang theo cursor (`CursorPager`, ✅)
 Chốt 13/10/2026: API trả `nextCursor`, không trả tổng số (catalog BR-01), nên chuyển trang bằng **"Trước · Trang N · Sau"**, mỗi trang thay hẳn trang trước (trang không dài thêm như "Xem thêm").
 
 | Phần | Giá trị |

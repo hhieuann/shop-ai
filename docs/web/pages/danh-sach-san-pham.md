@@ -1,8 +1,8 @@
 # Danh sách và kết quả tìm kiếm `/products`
 
-Code: `features/catalog/pages/ProductListPage.tsx`, `features/catalog/lib/productFilters.ts`, `features/catalog/components/` (`ProductListCard`, `FilterPanel`, `FilterSheet`), `features/cart/components/AddToCartButton.tsx`. Nghiệp vụ: `docs/business/catalog.md` (BR-01, BR-02, BR-03, BR-04, BR-08), `docs/business/cart.md` (BR-01 … BR-04, cho nút thêm vào giỏ). Đọc kèm [design-system.md](../design-system.md) §4 (Thanh cuộn), §9.5, §9.8, §9.19–§9.23.
+Code: `features/catalog/pages/ProductListPage.tsx`, `features/catalog/lib/productFilters.ts`, `features/catalog/components/` (`ProductListCard`, `FilterPanel`, `FilterSheet`, `CategoryFilter`), `shared/components/CursorPager.tsx`, `features/cart/components/AddToCartButton.tsx`. Nghiệp vụ: `docs/business/catalog.md` (BR-01, BR-02, BR-03, BR-04, BR-08), `docs/business/cart.md` (BR-01 … BR-04, cho nút thêm vào giỏ). Đọc kèm [design-system.md](../design-system.md) §4 (Thanh cuộn), §9.5, §9.8, §9.19–§9.23.
 
-Bản chốt 13/10/2026 (thay bản 06/10). **Code chưa đổi**: trang hiện tại vẫn là bản cũ (select "Loại", nút "Xem thêm sản phẩm"). Một trang cho cả ba trường hợp: xem tất cả, xem theo loại hàng, xem kết quả tìm kiếm.
+Bản chốt 13/10/2026 (thay bản 06/10), code đã làm theo. Một trang cho cả ba trường hợp: xem tất cả, xem theo loại hàng, xem kết quả tìm kiếm.
 
 Bản chốt đúng nghiệp vụ và API hiện tại, chỉ thêm `specs` vào mỗi sản phẩm của danh sách (§1). Lọc nhiều nhóm và "Tìm thấy N sản phẩm" để Sprint 2 (§8).
 
