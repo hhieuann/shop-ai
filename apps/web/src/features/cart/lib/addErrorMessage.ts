@@ -21,3 +21,21 @@ export function addErrorMessage(error: unknown): string {
         : (error.detail ?? error.title);
   }
 }
+
+/**
+ * Nhãn ngắn hiện trên nút thêm vào giỏ của thẻ (design-system §9.23). Câu đầy đủ vẫn là
+ * addErrorMessage, đọc qua vùng thông báo.
+ */
+export function addErrorShortLabel(error: unknown): string {
+  if (!(error instanceof ApiError)) return 'Chưa thêm được';
+  switch (error.code) {
+    case 'QUANTITY_LIMIT':
+      return 'Đã đủ số lượng';
+    case 'CART_FULL':
+      return 'Giỏ đã đủ 50 món';
+    case 'PRODUCT_UNAVAILABLE':
+      return 'Ngừng bán';
+    default:
+      return 'Chưa thêm được';
+  }
+}
