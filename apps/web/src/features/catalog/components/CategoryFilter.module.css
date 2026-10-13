@@ -1,0 +1,49 @@
+/* Một nhóm lọc (docs/web/design-system.md §9.20) */
+.group:not(:last-child) {
+  border-bottom: 1px solid var(--border-divider);
+}
+/* Đầu nhóm: nút rộng hết, bấm để thu gọn hoặc mở */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-100);
+  width: 100%;
+  min-height: 36px;
+  padding: var(--space-100) var(--space-200);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg-heading);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  text-align: left;
+}
+.head:hover:not(:disabled) {
+  background: transparent;
+}
+.chevron {
+  flex-shrink: 0;
+  color: var(--fg-subdued);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.head[aria-expanded='false'] .chevron {
+  transform: rotate(-90deg);
+}
+.body {
+  padding: 0 var(--space-200) var(--space-100);
+}
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+/* Nhãn lựa chọn 14/20/500 */
+.fieldset label {
+  color: var(--fg-heading);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+}
