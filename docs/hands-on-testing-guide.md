@@ -217,10 +217,10 @@ tests/e2e-api/
 
 | File | Gọi | Kiểm |
 |---|---|---|
-| `auth.e2e.ts` | Đăng nhập Cognito, `GET /api/v1/me` | Có access token; `/me` trả 200 đúng email của người dùng E2E |
+| `auth.e2e.ts` | Đăng nhập Cognito, `GET /api/v1/me` | Có access token; `/me` trả 200 có `userId`, `groups` (access token không chứa email) |
 | `catalog.e2e.ts` | `GET /api/v1/products` (lọc, tìm, trang sau), `GET /api/v1/products/{id}` | Đúng dạng; trang sau theo `nextCursor` không trùng trang trước; lọc `gpu` chỉ ra `gpu`; tìm `chuot` ra tên có "chuột"; chi tiết 200 |
 | `cart.e2e.ts` | `POST`, `PUT`, `DELETE` `/api/v1/cart/items…`, `GET /api/v1/cart` | Thêm 1 rồi thêm 1 thì cộng dồn 2; sửa về 1; xoá thì giỏ không còn món đó |
-| `negative.e2e.ts` | Các lệnh gọi sai | Thiếu token, token sai: 401 `problem+json`; số lượng 0, `category` lạ: 400; sản phẩm không có: 404; sai mật khẩu: Cognito từ chối |
+| `negative.e2e.ts` | Các lệnh gọi sai | Thiếu token, token sai: 401 `{"message":"Unauthorized"}` (JWT authorizer chặn trước Lambda, không theo RFC 9457); số lượng 0, `category` lạ: 400 `problem+json`; sản phẩm không có: 404 `problem+json`; sai mật khẩu: Cognito trả `NotAuthorizedException` |
 | `order.e2e.ts` (Sprint 2) | `POST /api/v1/orders` hai lần cùng `Idempotency-Key` | 201, lần hai trả cùng `orderId`; xem đơn của người khác: 404 |
 
 ### 6.2. Biến môi trường
