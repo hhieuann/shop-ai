@@ -40,34 +40,21 @@
 
 ## 3. Đầu ra — bảng `recs`
 
-Tên bảng `recs` **đã chốt sẵn** trong ADR-0012 (danh sách 6 bảng: `products`,
-`carts`, `orders`, `idempotency`, `events`, `recs`), không phải đề xuất của tài
-liệu này. Theo ADR-0009, module `recommendation` là một Lambda riêng với bảng
-DynamoDB riêng, module khác không được import code của module này — muốn đọc
-`recs` phải qua cửa công khai (API) hoặc port.
+Tên bảng `recs` đã chốt sẵn trong ADR-0012. Thiết kế khoá chi tiết (schema, con trỏ
+ACTIVE chung cho cả bảng theo đề xuất của An, cách đọc, cách rollback, dọn version cũ)
+nằm ở `docs/business/dynamodb-design.md`, mục "Bảng `recs`" — không lặp lại ở đây để
+tránh hai nơi lệch nhau khi sửa sau này.
 
-**Khoá chính và GSI của `recs` chưa được thiết kế** — ADR-0012 ghi nguyên văn
-"bảng chi tiết sẽ chốt khi có nghiệp vụ", xác nhận đây thật sự chưa ai làm, không
-phải mình bỏ sót. Cột bên dưới là **đề xuất của mình**, cần Hoàng/An xác nhận
-trước khi coi là thiết kế chính thức. Có **version** và **con trỏ ACTIVE**, không
-ghi đè trực tiếp:
-
-| Cột | Ý nghĩa |
-|---|---|
-| `recType` | `FOR_YOU` \| `ALSO_BOUGHT` \| `BESTSELLER` |
-| `anchorId` | `userId` đã ẩn danh (nếu `FOR_YOU`) hoặc `itemId` (nếu `ALSO_BOUGHT`/`BESTSELLER` theo category) |
-| `rank` | Thứ hạng trong danh sách |
-| `itemId` | Sản phẩm được gợi ý |
-| `score` | Điểm (lift, cosine similarity, hoặc số lượt mua) |
-| `version` | Số phiên bản, tăng dần mỗi lần job chạy |
-| `isActive` | `true` cho đúng một version mỗi `(recType, anchorId)` tại một thời điểm |
-| `generatedAt` | Thời điểm tính |
+Tóm tắt cho mục đích nghiệp vụ: mỗi dòng gợi ý gắn với một `version`; một item con trỏ
+riêng (`pk=META`) cho biết version nào đang hiển thị cho khách. Chuyển version mới hay
+rollback chỉ cần sửa đúng 1 item con trỏ, áp dụng cho mọi người dùng cùng lúc.
 
 **Vòng đời một lần chạy job đêm:**
-1. Tính phiên bản mới (version N+1), ghi vào bảng với `isActive = false`.
-2. Tính `precision@10` và `coverage` của version N+1 trên tập test, so với baseline **và** so với version đang ACTIVE.
-3. Nếu version N+1 không kém hơn baseline → chuyển `isActive = true` cho N+1, chuyển `isActive = false` cho version đang active trước đó (giữ lại để rollback thủ công nếu cần).
-4. Nếu kém hơn baseline → **không kích hoạt**, giữ nguyên version đang chạy, ghi log/cảnh báo.
+
+1. Tính phiên bản mới (version N+1), ghi đủ các dòng gợi ý vào bảng (chưa đổi con trỏ).
+2. Tính `precision@10` và `coverage` của version N+1 trên tập test, so với baseline.
+3. Nếu version N+1 không kém hơn baseline → ghi đè con trỏ `META` sang N+1.
+4. Nếu kém hơn baseline → không đổi con trỏ, giữ nguyên version đang chạy, gia hạn `ttl` các dòng của version đang ACTIVE, ghi log/cảnh báo.
 5. Idempotent: chạy lại cùng một ngày với cùng dữ liệu đầu vào không được tạo thêm bản ghi trùng (dùng `version` hoặc khoá theo ngày để kiểm tra đã chạy chưa trước khi ghi).
 
 ## 4. Đánh giá
@@ -81,7 +68,6 @@ ghi đè trực tiếp:
 
 - [ ] Ngưỡng `support`/`confidence` ở mục 2.1 — không ADR nào ghi số cụ thể, cần thử trên dữ liệu thật.
 - [ ] Trọng số `VIEW`/`ADD_TO_CART`/`PURCHASE` ở mục 2.2 — tương tự, cần thử nghiệm.
-- [ ] Khoá chính và GSI thật của bảng `recs` — **xác nhận chưa ai thiết kế** (ADR-0012: "bảng chi tiết sẽ chốt khi có nghiệp vụ"). Vì `recommendation` là module của mình, nhiều khả năng mình là người đề xuất thiết kế này trước, theo đúng cách Hoàng đã làm cho `products`/`carts`/`orders` trong `dynamodb-design.md`.
 - [ ] N ngày cho baseline "bán chạy" (ADR-0016 không ghi số ngày cụ thể).
 - [ ] Route API để web đọc `recs` (`GET /api/v1/recs/...` hay tương tự) — chưa có trong `contracts/openapi.yaml` (đã kiểm tra bản mới nhất sau `git pull` ngày 09/10/2026).
 - [ ] Câu hỏi 4 trong `docs/business/dynamodb-design.md` (Hoàng hỏi trực tiếp) về cách `ordering` báo cho `events` khi đơn `CONFIRMED` — xem đề xuất trong `events.md` mục 1, ảnh hưởng gián tiếp tới `recommendation` vì đó là nguồn dữ liệu `PURCHASE` cho cả luật mua kèm lẫn item-based CF.

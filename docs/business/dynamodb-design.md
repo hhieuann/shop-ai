@@ -216,55 +216,67 @@ nên con số quy mô ở đây là suy đoán — cần kiểm tra lại.)*
 
 ## Bảng `recs` (module recommendation)
 
-Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, cần An/Hoàng góp ý.
+Người viết: Nhân · Ngày: 09/10/2026 · Sửa 14/10 theo đề xuất của An: con trỏ ACTIVE
+chung cho cả bảng thay vì mỗi anchor một con trỏ.
 
 ### Truy vấn cần có
 
 | # | Truy vấn | Tần suất |
 |---|---|---|
-| Q1 | API đọc top 10 gợi ý **đang ACTIVE** cho 1 `anchorId` (`userIdHash` hoặc `itemId`) | Cao |
+| Q1 | API đọc top 10 gợi ý **đang ACTIVE** cho 1 `anchorId` | Cao |
 | Q2 | Job đêm ghi 1 version mới (10 dòng cho mỗi anchor) | 1 lần/đêm, ghi nhiều dòng |
-| Q3 | Job đêm đọc version đang ACTIVE để so chỉ số trước khi quyết định chuyển cờ | 1 lần/đêm |
+| Q3 | Job đêm so chỉ số version mới với baseline, rồi quyết định có chuyển con trỏ không | 1 lần/đêm |
 
 ### Thiết kế khoá
 
-Mỗi anchor có **một item con trỏ** (lưu version nào đang ACTIVE) và **nhiều item
-dòng gợi ý** (mỗi version 10 dòng), cùng PK, phân biệt bằng SK:
+**Một con trỏ chung cho mỗi loại gợi ý** (không phải mỗi anchor một con trỏ):
 
 | Thuộc tính | Kiểu | Giá trị | Phục vụ |
 |---|---|---|---|
-| **PK** | String | `<recType>#<anchorId>`, ví dụ `FOR_YOU#u0a1b2c` hoặc `ALSO_BOUGHT#gpu-001` | |
-| **SK** | String | `ACTIVE` (item con trỏ) hoặc `<version>#<rank>` (item dòng gợi ý) | |
+| **pk** (con trỏ) | String | `META` | |
+| **sk** (con trỏ) | String | `ACTIVE#FOR_YOU` hoặc `ACTIVE#ALSO_BOUGHT` (hai job riêng, hai con trỏ riêng) | |
+| **pk** (dòng gợi ý) | String | `<recType>#<anchorId>`, ví dụ `FOR_YOU#u0a1b2c` | |
+| **sk** (dòng gợi ý) | String | `<version>#<rank>`, `rank` đệm 2 chữ số (`01`–`10`) để sắp đúng thứ tự chuỗi | |
 
-**Cách đọc (Q1):** 2 lần đọc — `GetItem(PK, SK="ACTIVE")` lấy `activeVersion`, rồi
-`Query(PK, SK begins_with "<activeVersion>#")` lấy đúng 10 dòng. Rõ ràng, không cần
-GSI, nhưng tốn 2 round-trip. *(Có thể gộp còn 1 lần đọc nếu chấp nhận ghi lặp dữ
-liệu — chưa quyết, cần bàn thêm nếu độ trễ API là vấn đề.)*
+**Cách đọc (Q1):** `GetItem(pk="META", sk="ACTIVE#<recType>")` lấy `activeVersion`
+(API cache giá trị này trong Lambda 60 giây, cùng cách `catalog.md` đang làm với
+danh sách sản phẩm — nên mỗi request gần như chỉ còn 1 Query), rồi
+`Query(pk="<recType>#<anchorId>", sk begins_with "<activeVersion>#")` lấy 10 dòng.
+
+**Anchor không có trong version mới** (user hoặc sản phẩm mới, cold-start): Query
+không ra dòng nào, API trả về baseline hàng bán chạy theo loại, đúng ADR-0016.
+
+**Bật hoặc rollback một version:** chỉ ghi đè **1 item** (con trỏ `META`), áp dụng
+cho mọi anchor cùng lúc — không còn rủi ro job đứt giữa chừng làm web trộn 2
+version.
 
 ### Schema thuộc tính
 
 ```
-# Item con trỏ (1 cái mỗi anchor)
-pk              String   PK   (<recType>#<anchorId>)
-sk              String   SK   ("ACTIVE")
+# Item con trỏ (2 cái, một cho mỗi recType)
+pk              String   PK   ("META")
+sk              String   SK   ("ACTIVE#FOR_YOU" hoặc "ACTIVE#ALSO_BOUGHT")
 activeVersion   Number
 updatedAt       String   (ISO 8601 UTC)
 
 # Item dòng gợi ý (10 cái mỗi version mỗi anchor)
 pk              String   PK   (<recType>#<anchorId>)
-sk              String   SK   (<version>#<rank>, ví dụ "7#1")
+sk              String   SK   (<version>#<rank>, rank đệm 2 chữ số, ví dụ "7#01")
 itemId          String
 score           Number
 source          String   (ASSOCIATION_RULE | ITEM_CF | BESTSELLER)
 generatedAt     String   (ISO 8601 UTC)
+ttl             Number   (Unix epoch giây; DynamoDB TTL bắt buộc kiểu Number, không dùng được generatedAt dạng chuỗi)
 ```
 
 ### Dọn version cũ
 
-Theo ADR-0016, version kém hơn baseline thì không kích hoạt nhưng vẫn giữ lại để
-rollback thủ công. **Đề xuất: giữ 3 version gần nhất mỗi anchor, version cũ hơn xoá
-bằng TTL** (ví dụ 7 ngày sau khi bị thay bởi version mới) — số 3 và số 7 ngày là số
-mình tự chọn, chưa có cơ sở, cần góp ý.
+- Mỗi dòng gợi ý ghi `ttl` = thời điểm ghi + 7 ngày. Version cũ tự bị DynamoDB xoá sau
+  khoảng 7 ngày, đủ để rollback về version trước trong vòng một tuần.
+- **Version đang ACTIVE không được hết hạn:** đêm nào job giữ nguyên con trỏ (version
+  mới không đạt baseline), job gia hạn `ttl` của các dòng thuộc version đang ACTIVE
+  thêm 7 ngày. Việc này chỉ xảy ra khi version mới bị loại.
+- Item con trỏ không có `ttl`.
 
 ---
 
