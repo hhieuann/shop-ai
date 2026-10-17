@@ -45,6 +45,27 @@ Kết quả lần đầu, 16/10/2026: seed 42, 600 người dùng, 104 sản ph�
 - **Dữ liệu là giả lập và đã cài sẵn quy luật mua kèm** (ví dụ GPU → PSU), nên kết quả chỉ chứng minh pipeline chạy đúng, chưa chứng minh mô hình tốt hơn ngoài đời.
 - Các ngưỡng trên là số tạm để chạy lần đầu, chưa chốt (recommendation.md mục 5).
 
+## Đánh giá offline "Dành cho bạn"
+
+```bash
+uv run data-eval-for-you --data generated   # item-based CF so với baseline bán chạy
+```
+
+Cách đo (chi tiết ở đầu `src/data/evaluate_for_you.py`): train là `interactions_train.csv`, test là `interactions_test.csv`. Đáp án của một người dùng là các sản phẩm người đó mua trong test mà chưa từng tương tác trong train. Chỉ chấm người dùng đã có lịch sử; người mới dùng baseline. Điểm tương tác lấy trọng số lớn nhất mỗi cặp (người dùng, sản phẩm): xem 1, thêm giỏ 3, mua 5. Lấy lớn nhất thay vì cộng dồn để spam lượt xem không đẩy điểm lên (threat model E2).
+
+Kết quả lần đầu, 17/10/2026: seed 42, 535 người dùng có lịch sử, chấm 92 người.
+
+| Cách gợi ý | precision@10 | hit rate@10 | coverage |
+|---|---|---|---|
+| Baseline: bán chạy 30 ngày | 0.0207 | 0.1957 | 0.1635 |
+| Item-based CF | 0.0435 | 0.3804 | 0.9423 |
+
+Đọc kết quả:
+
+- Item-based CF cao hơn baseline ở cả ba chỉ số với seed 42, 1, 7. Với seed 2026, precision@10 vẫn cao hơn (0.0540 so với 0.0490) nhưng hit rate thấp hơn một chút (0.4000 so với 0.4200), nên chưa thể nói CF luôn tốt hơn.
+- Chỉ 92 người được chấm, nên số dao động nhiều giữa các seed.
+- Trọng số 1, 3, 5 là số tạm, chưa chốt (recommendation.md mục 5). Cùng giới hạn như phần trên: dữ liệu giả lập, chỉ chứng minh pipeline chạy đúng.
+
 ## Bắt đầu
 
 ```bash
