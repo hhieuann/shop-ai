@@ -564,6 +564,42 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  # ─── Events ────────────────────────────────────────────────────────────────
+  /api/v1/events:
+    post:
+      operationId: recordEvent
+      summary: Ghi một lượt xem hoặc thêm giỏ, làm dữ liệu cho gợi ý
+      description: |
+        Chỉ nhận `VIEW` và `ADD_TO_CART`. `PURCHASE` không nhận từ client: chỉ module `ordering`
+        tạo khi đơn `CONFIRMED` (events.md mục 1). Server lấy `userId` từ token và tự đặt thời gian,
+        không nhận từ body (events.md mục 3, 5); `userId` được ẩn danh bằng HMAC trước khi lưu
+        (events.md mục 2). Bắt buộc đăng nhập: không ghi lượt xem của khách vãng lai để giảm spam
+        và đầu độc gợi ý (threat model E2, nhóm chốt ngày 17/10/2026).
+        Server không kiểm `productId` có trong danh mục (module `events` không đọc bảng `products`,
+        ADR-0009); pipeline gợi ý bỏ qua mã không có trong danh mục.
+      tags: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInput'
+      responses:
+        '202':
+          description: Đã nhận sự kiện, không có body
+        '400':
+          description: |
+            Body sai: thiếu trường, `eventType` khác `VIEW` và `ADD_TO_CART` (kể cả `PURCHASE`),
+            hoặc có trường lạ như `userId`, `timestamp`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
 components:
   securitySchemes:
     cognitoJwt:
@@ -1039,6 +1075,19 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    # ─── Events ─────────────────────────────────────────────────────────────
+    EventInput:
+      type: object
+      description: Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy.
+      required: [productId, eventType]
+      additionalProperties: false
+      properties:
+        productId:
+          type: string
+        eventType:
+          type: string
+          enum: [VIEW, ADD_TO_CART]
 
   responses:
     Unauthorized:

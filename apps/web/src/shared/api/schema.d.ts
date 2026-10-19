@@ -206,6 +206,32 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/events': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Ghi một lượt xem hoặc thêm giỏ, làm dữ liệu cho gợi ý
+     * @description Chỉ nhận `VIEW` và `ADD_TO_CART`. `PURCHASE` không nhận từ client: chỉ module `ordering`
+     *     tạo khi đơn `CONFIRMED` (events.md mục 1). Server lấy `userId` từ token và tự đặt thời gian,
+     *     không nhận từ body (events.md mục 3, 5); `userId` được ẩn danh bằng HMAC trước khi lưu
+     *     (events.md mục 2). Bắt buộc đăng nhập: không ghi lượt xem của khách vãng lai để giảm spam
+     *     và đầu độc gợi ý (threat model E2, nhóm chốt ngày 17/10/2026).
+     *     Server không kiểm `productId` có trong danh mục (module `events` không đọc bảng `products`,
+     *     ADR-0009); pipeline gợi ý bỏ qua mã không có trong danh mục.
+     */
+    post: operations['recordEvent'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -560,6 +586,12 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
+    };
+    /** @description Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy. */
+    EventInput: {
+      productId: string;
+      /** @enum {string} */
+      eventType: 'VIEW' | 'ADD_TO_CART';
     };
   };
   responses: {
@@ -1109,6 +1141,42 @@ export interface operations {
           'application/problem+json': components['schemas']['Problem'];
         };
       };
+      default: components['responses']['Problem'];
+    };
+  };
+  recordEvent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EventInput'];
+      };
+    };
+    responses: {
+      /** @description Đã nhận sự kiện, không có body */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /**
+       * @description Body sai: thiếu trường, `eventType` khác `VIEW` và `ADD_TO_CART` (kể cả `PURCHASE`),
+       *     hoặc có trường lạ như `userId`, `timestamp`
+       */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
       default: components['responses']['Problem'];
     };
   };
