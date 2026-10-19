@@ -16,18 +16,18 @@
     "@aws-lambda-powertools/idempotency": "^2.36.0",
     "@aws-lambda-powertools/logger": "^2.36.0",
     "@aws-lambda-powertools/tracer": "^2.36.0",
-    "@aws-sdk/client-cognito-identity-provider": "^3.1148.0",
-    "@aws-sdk/client-dynamodb": "^3.1148.0",
-    "@aws-sdk/lib-dynamodb": "^3.1148.0",
-    "zod": "^4.6.5"
+    "@aws-sdk/client-cognito-identity-provider": "^3.1152.0",
+    "@aws-sdk/client-dynamodb": "^3.1152.0",
+    "@aws-sdk/lib-dynamodb": "^3.1152.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.164",
-    "@types/node": "^24.19.0",
-    "@vitest/coverage-v8": "^5.0.0",
-    "testcontainers": "^12.2.0",
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "testcontainers": "^12.2.1",
     "tsx": "^4.23.14",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.5"
   }
 }
