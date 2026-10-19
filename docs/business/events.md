@@ -79,6 +79,6 @@ SNS/SQS thật hay không** — cần hỏi trước khi code.
 ## 6. Thật sự chưa biết hoặc chưa trả lời (đã kiểm tra nguồn, không phải đoán)
 
 - [ ] **Câu hỏi 4 trong `dynamodb-design.md` đang chờ mình trả lời:** `events` dùng chung hay bảng riêng? (Tên bảng `events` đã chốt sẵn trong ADR-0012 — câu hỏi ở đây là về IAM/kết nối với `ordering`, không phải về tên bảng.) Mục trên là đề xuất của mình, cần mang ra bàn với An/Hoàng, không tự quyết một mình vì ảnh hưởng tới IAM role của `ordering`.
-- [ ] Route API cụ thể cho `VIEW`/`ADD_TO_CART` (đường dẫn, format request/response) — **đã kiểm tra `contracts/openapi.yaml` ngày 09/10/2026 (bản mới nhất, sau khi `git pull`), chưa có**. Cần thêm vào contract, nhiều khả năng do mình đề xuất vì là chủ module `events`.
+- [x] Route API cho `VIEW`/`ADD_TO_CART`: nhóm chốt ngày 17/10/2026 là `POST /api/v1/events`, bắt buộc đăng nhập, body `{ productId, eventType }`, trả 202. Xem `recordEvent` trong `contracts/openapi.yaml`.
 - [ ] Khoá chính/GSI của bảng `events` trên DynamoDB — ADR-0012 ghi "bảng chi tiết sẽ chốt khi có nghiệp vụ", tức **xác nhận chưa ai thiết kế**, không phải mình bỏ sót.
 - [ ] Khoá HMAC: có xoay khoá định kỳ không? Không ADR nào nhắc tới — nếu có xoay khoá, cần kế hoạch xử lý dữ liệu cũ.
