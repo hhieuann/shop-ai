@@ -1,6 +1,6 @@
 # Thiết kế bảng DynamoDB
 
-Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tìm kiếm, giao dịch đặt hàng, huỷ đơn)
+Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tìm kiếm, giao dịch đặt hàng, huỷ đơn); 21/10/2026 (item bộ đếm `#OPEN`, bảng `order-idempotency` theo ADR-0017, tin `order-confirmed`)
 
 Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không làm ngược lại**.
 
@@ -298,16 +298,19 @@ ttl             Number   (Unix epoch giây; DynamoDB TTL bắt buộc kiểu Num
 
 ---
 
-## Bảng `idempotency` (module ordering)
+## Bảng `order-idempotency` (module ordering)
+
+Theo [ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md) mục 3: mỗi module cần idempotency có bảng riêng; `ordering` dùng `order-idempotency`, cùng schema với `cart-idempotency`. Cấu hình chung ở `services/api/src/shared/idempotency` (TTL 24 giờ, khoá gồm `userId` và header `Idempotency-Key`); module chỉ truyền tên bảng.
 
 | Thuộc tính | Kiểu | Giá trị |
 |---|---|---|
-| **PK** | String | `userId#idempotencyKey` |
-| `orderId` | String | ID đơn đã tạo |
-| `statusCode` | Number | HTTP status của lần tạo đầu |
-| `ttl` | Number | Epoch seconds, 24 giờ sau khi tạo |
+| **PK** `id` | String | Powertools tạo từ `userId` và `Idempotency-Key` |
+| `expiration` | Number | Epoch giây, 24 giờ sau lần ghi đầu; TTL của bảng đặt trên thuộc tính này |
+| `status`, `data`, `in_progress_expiration`, `validation` | | Powertools tự ghi: trạng thái xử lý, kết quả đã lưu (trả lại khi gọi lại cùng khoá), hạn của lần đang xử lý, mã băm nội dung request (khác nội dung → 422 `IDEMPOTENCY_KEY_REUSED`) |
 
-> Powertools Idempotency quản lý bảng này tự động.
+> Powertools Idempotency quản lý bảng này tự động; code không đọc, ghi trực tiếp. On-demand. Lambda `ordering` chỉ có quyền trên bảng này, không có quyền trên `cart-idempotency`.
+>
+> Worker `order-processor` cũng dùng Powertools Idempotency với khoá `orderId` cho bước gửi email và gửi tin `order-confirmed` (ordering.md, luồng SQS bước 2.2, 2.3). Bảng cho worker chốt khi code worker.
 
 ---
 
@@ -316,5 +319,5 @@ ttl             Number   (Unix epoch giây; DynamoDB TTL bắt buộc kiểu Num
 1. ~~**`carts`** — giới hạn 400KB~~ — đã giới hạn giỏ tối đa 50 dòng (khoảng 5 KB).
 2. **`orders` GSI `byOrderId`** — có cần không hay đủ khi admin luôn biết `userId`?
 3. **`products` GSI1-PK = `category#status`** — nếu thêm filter giá sau này thì cần thêm GSI hay dùng filter expression? (Với cache trong Lambda ở Q4, Q5, lọc giá cũng làm được trên mảng trong bộ nhớ.)
-4. ~~Bảng `events` (Nhân) — dùng chung hay bảng riêng?~~ **Đã trả lời 09/10:** bảng riêng (`events`, tên đã chốt sẵn ở ADR-0012). Về cách `ordering` báo cho `events` khi đơn `CONFIRMED`: đề xuất `order-processor` bắn thêm một bản tin SNS sau bước ghi `CONFIRMED` thành công (tận dụng topic SNS đang có sẵn để báo admin, thêm `events` làm subscriber thứ hai, hoặc tách topic riêng nếu An thấy hợp lý hơn). Lambda `events` subscribe topic này, ghi `PURCHASE` vào bảng `events`. **Chưa kiểm tra hướng này có khớp với cách Hoàng đã dựng SNS/SQS thật hay không** — cần xác nhận trước khi code. (Chi tiết: `docs/business/events.md`.)
-5. **Giao dịch đặt hàng** ghi vào `products` và `carts` — chọn hướng 1 hay 2 (xem mục "Giao dịch đặt hàng và huỷ đơn")?
+4. ~~Bảng `events` (Nhân) — dùng chung hay bảng riêng?~~ **Đã trả lời 09/10:** bảng riêng (`events`, tên đã chốt sẵn ở ADR-0012). Về cách `ordering` báo cho `events` khi đơn `CONFIRMED`: đề xuất `order-processor` bắn thêm một bản tin SNS sau bước ghi `CONFIRMED` thành công (tận dụng topic SNS đang có sẵn để báo admin, thêm `events` làm subscriber thứ hai, hoặc tách topic riêng nếu An thấy hợp lý hơn). Lambda `events` subscribe topic này, ghi `PURCHASE` vào bảng `events`. **Đã chốt 17/10 và 21/10/2026:** `order-processor` gửi tin vào SNS topic `order-confirmed` (An dựng); email admin và SQS của `events` (có DLQ) cùng nghe; `ordering` không ghi thẳng bảng `events`. Nội dung tin và cách chống gửi trùng: ordering.md, luồng SQS bước 2.3. (Chi tiết phía `events`: `docs/business/events.md`.)
+5. ~~**Giao dịch đặt hàng** ghi vào `products` và `carts` — chọn hướng 1 hay 2?~~ **Đã chốt 08/10 (ADR-0017): hướng 1**, xem mục "Giao dịch đặt hàng và huỷ đơn".
