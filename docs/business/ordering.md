@@ -2,7 +2,7 @@
 
 - Module: ordering
 - Vai trò: khách hàng đã đăng nhập; admin (huỷ đơn, chuyển trạng thái giao hàng)
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`)
 
 ## Luồng đặt hàng (checkout flow)
 
@@ -53,12 +53,18 @@ Là khách hàng, tôi muốn tick chọn các sản phẩm trong giỏ mà tôi
 - BR-07: **Giá phải khớp với giá khách đã thấy.** Frontend gửi kèm `expectedPrice` (giá đang hiển thị) cho từng món. Giá hiện tại khác `expectedPrice` → 409 `PRICE_CHANGED` kèm giá mới của các món đã đổi; không tạo đơn. Khách xem giá mới rồi bấm xác nhận lại.
 - BR-08: **Trừ tồn kho nguyên tử**: trừ `stock` của mọi món, ghi đơn và xoá món khỏi giỏ trong **một giao dịch**. Mỗi lệnh trừ kho có điều kiện `stock >= quantity`, nên hai khách cùng mua món cuối cùng thì chỉ một người thành công, người còn lại nhận 409 `OUT_OF_STOCK`. Giao dịch thất bại thì không có gì thay đổi.
 - BR-09: Sau khi tạo đơn thành công, **chỉ xoá các sản phẩm đã đặt** khỏi giỏ. Những sản phẩm không chọn vẫn còn nguyên.
+- BR-14: **Mỗi tài khoản có tối đa 3 đơn đang mở** (threat model O6: chống giữ kho bằng đơn COD không định nhận).
+  - "Đơn đang mở" là đơn ở `PENDING` hoặc `CONFIRMED`: đã trừ kho nhưng hàng chưa rời kho.
+  - Đặt đơn thứ 4 khi đang có 3 đơn mở → 409 `TOO_MANY_OPEN_ORDERS`; không tạo đơn, không trừ kho.
+  - Đơn chuyển `SHIPPED` hoặc `CANCELLED` thì không còn tính; khách đặt tiếp được.
+  - Kiểm trong **cùng giao dịch** ở BR-08 bằng bộ đếm `openOrders` của tài khoản (dynamodb-design.md, bảng `orders`), không đếm bằng Query trước rồi mới ghi: nhiều request song song phải không lọt qua cùng lúc.
+  - Không giới hạn số lượng mỗi món trong đơn (vẫn theo tồn kho và giới hạn 99 của giỏ). Giới hạn theo từng sản phẩm hot để sau MVP.
 
 ### Huỷ đơn
 
 - BR-10: Khách huỷ được đơn của mình khi trạng thái là `PENDING` hoặc `CONFIRMED`. Từ `SHIPPED` trở đi thì không huỷ được (409 `CANNOT_CANCEL`).
 - BR-11: Admin huỷ được đơn ở `PENDING`, `CONFIRMED` hoặc `SHIPPED` (hàng hoàn về kho). Không huỷ được đơn `DELIVERED` hay đơn đã `CANCELLED`.
-- BR-12: **Huỷ đơn thì hoàn tồn kho**: cộng lại `stock` cho mọi món trong đơn. Đổi trạng thái và cộng kho nằm trong một giao dịch, có điều kiện trạng thái hiện tại, nên bấm huỷ hai lần chỉ hoàn kho một lần.
+- BR-12: **Huỷ đơn thì hoàn tồn kho**: cộng lại `stock` cho mọi món trong đơn. Đổi trạng thái và cộng kho nằm trong một giao dịch, có điều kiện trạng thái hiện tại, nên bấm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn đang mở (`PENDING`, `CONFIRMED`) thì giảm `openOrders` trong cùng giao dịch (BR-14); huỷ đơn `SHIPPED` thì không, vì lúc chuyển `SHIPPED` đã giảm rồi.
 - BR-13: Huỷ đơn thì gửi email báo cho khách.
 
 ## Máy trạng thái đơn hàng
@@ -73,7 +79,7 @@ PENDING ──► CONFIRMED ──► SHIPPED ──► DELIVERED
 |---|---|---|
 | `PENDING` | Hệ thống | Ngay khi tạo đơn thành công |
 | `CONFIRMED` | Worker (SQS) | Worker nhận message và xác nhận đơn |
-| `SHIPPED` | Admin | Đã giao cho đơn vị vận chuyển |
+| `SHIPPED` | Admin | Đã giao cho đơn vị vận chuyển. Giảm `openOrders` trong cùng giao dịch đổi trạng thái (BR-14) |
 | `DELIVERED` | Admin | Khách đã nhận hàng |
 | `CANCELLED` | Khách (từ `PENDING`, `CONFIRMED`) hoặc admin (từ `PENDING`, `CONFIRMED`, `SHIPPED`) | Xem BR-10, BR-11 |
 
@@ -100,8 +106,19 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 2. Worker `order-processor` nhận message:
    1. Chuyển `PENDING → CONFIRMED` bằng **ghi có điều kiện** (`status = PENDING`). Đơn đã `CONFIRMED` hoặc `CANCELLED` thì bỏ qua bước này.
    2. Gửi email xác nhận qua SES, chống gửi trùng bằng Powertools Idempotency với khoá `orderId`.
-   3. Báo admin qua SNS.
-3. SQS có thể giao một message nhiều lần (at-least-once). Nhờ bước 2.1 có điều kiện và bước 2.2 có idempotency, chạy lại không đổi trạng thái sai và không gửi email hai lần.
+   3. Gửi tin vào SNS topic `order-confirmed` (An dựng; tên topic lấy từ biến môi trường). Email báo admin và SQS của module `events` (có DLQ) cùng nghe topic này; `ordering` không ghi thẳng bảng `events` (nhóm chốt 17/10 và 21/10/2026). Nội dung tin:
+
+      ```json
+      {
+        "orderId": "01K7...",
+        "userId": "<Cognito sub>",
+        "confirmedAt": "2026-10-21T08:45:00Z",
+        "items": [{ "productId": "gpu-001", "quantity": 2 }]
+      }
+      ```
+
+      Không có `shippingAddress`, họ tên, SĐT, giá (threat model O8). Bước này chạy cả khi bước 2.1 bỏ qua vì đơn đã `CONFIRMED`, để lần thử lại vẫn gửi được nếu lần trước SNS lỗi; chống gửi trùng bằng Powertools Idempotency khoá `orderId`, như bước 2.2. Đơn đã `CANCELLED` thì không gửi.
+3. SQS có thể giao một message nhiều lần (at-least-once). Nhờ bước 2.1 có điều kiện, bước 2.2 và 2.3 có idempotency, chạy lại không đổi trạng thái sai, không gửi email hay tin `order-confirmed` hai lần.
 4. Email lỗi **không** làm đơn quay lại `PENDING`: trạng thái đã đổi ở bước 2.1. Message được thử lại; quá 3 lần thì vào DLQ, alarm kêu, xử lý theo runbook `dlq-orders.md`.
 5. Khách huỷ đơn khi message chưa tới worker: bước 2.1 thấy đơn đã `CANCELLED` nên bỏ qua, không gửi email xác nhận.
 
@@ -110,6 +127,7 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 - Món hết hàng hoặc không đủ số lượng → 409 `OUT_OF_STOCK` kèm `invalidItems` (productId, số còn lại).
 - Món đã ngừng bán (`INACTIVE`) → 409 `OUT_OF_STOCK`, số còn lại là 0.
 - Giá đổi giữa lúc xem giỏ và lúc xác nhận → 409 `PRICE_CHANGED` (BR-07).
+- Đang có 3 đơn `PENDING`/`CONFIRMED` → 409 `TOO_MANY_OPEN_ORDERS` (BR-14).
 - Thiếu `Idempotency-Key` → 400.
 - Lần gửi trước với cùng `Idempotency-Key` chưa xong → 409 `ORDER_IN_PROGRESS`.
 - Cùng `Idempotency-Key`, nội dung khác → 422 `IDEMPOTENCY_KEY_REUSED`.
@@ -127,11 +145,16 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 - Given giá món A đổi từ 500.000 lên 600.000 sau khi khách mở trang checkout, When khách xác nhận với `expectedPrice: 500000`, Then trả 409 `PRICE_CHANGED` kèm giá mới 600.000 và không tạo đơn.
 - Given đặt hàng thành công, When đợi vài giây, Then đơn chuyển `CONFIRMED` và nhận được email xác nhận (kiểm tra hộp thư dev).
 - Given worker nhận cùng một message hai lần, Then chỉ gửi 1 email.
+- Given khách có 3 đơn `PENDING` hoặc `CONFIRMED`, When đặt đơn thứ 4, Then trả 409 `TOO_MANY_OPEN_ORDERS`, tồn kho và giỏ không đổi.
+- Given khách có 3 đơn đang mở, When huỷ 1 đơn rồi đặt lại, Then đặt được.
+- Given khách có 3 đơn đang mở, When admin chuyển 1 đơn sang `SHIPPED`, Then khách đặt được đơn mới.
+- Given khách có 2 đơn đang mở, When gửi 2 request tạo đơn cùng lúc (khác `Idempotency-Key`), Then đúng 1 đơn được tạo, request còn lại nhận 409 `TOO_MANY_OPEN_ORDERS`.
+- Given đơn được xác nhận, Then topic `order-confirmed` nhận đúng 1 tin có `orderId`, `userId`, `confirmedAt`, `items`, không có `shippingAddress`.
 - Given `GET /api/v1/orders`, Then chỉ trả đơn của người đang đăng nhập.
 - Given đơn của người khác, When `GET /api/v1/orders/{orderId}`, Then trả 404.
 
 ## Màn hình liên quan
 
-- `/checkout` — trang đặt hàng: địa chỉ giao hàng, tóm tắt đơn, dòng "Phí vận chuyển: Miễn phí", nút "Xác nhận đặt hàng". Nhận 409 `PRICE_CHANGED` thì hiện giá mới và yêu cầu xác nhận lại.
+- `/checkout` — trang đặt hàng: địa chỉ giao hàng, tóm tắt đơn, dòng "Phí vận chuyển: Miễn phí", nút "Xác nhận đặt hàng". Nhận 409 `PRICE_CHANGED` thì hiện giá mới và yêu cầu xác nhận lại. Nhận 409 `TOO_MANY_OPEN_ORDERS` thì hiện "Bạn đang có 3 đơn chưa giao. Huỷ bớt đơn hoặc chờ đơn được giao rồi đặt tiếp." kèm link "Xem đơn hàng" → `/orders`.
 - `/orders` — lịch sử đơn: danh sách đơn kèm trạng thái.
 - `/orders/:orderId` — chi tiết đơn; nút "Huỷ đơn" khi đơn còn `PENDING` hoặc `CONFIRMED`.
