@@ -35,10 +35,12 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import type { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 import { Monitoring } from './monitoring.js';
+import { TrainingData } from './training-data.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
 const API_SRC = path.join(REPO_ROOT, 'services', 'api', 'src');
@@ -81,6 +83,8 @@ export class ApiStack extends Stack {
   /** User pool và app client của web; stack web ghi id của chúng vào config.json. */
   public readonly userPool: UserPool;
   public readonly webClient: UserPoolClient;
+  /** Bucket dữ liệu huấn luyện đã ẩn danh của pipeline gợi ý mỗi đêm. */
+  public readonly trainingDataBucket: Bucket;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -229,6 +233,9 @@ export class ApiStack extends Stack {
 
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
+
+    // Dữ liệu huấn luyện cho pipeline gợi ý mỗi đêm (module recommendation)
+    this.trainingDataBucket = new TrainingData(this, 'TrainingData', { shopEnv }).bucket;
 
     // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
     const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
