@@ -146,6 +146,20 @@ createdAt       String   (ISO 8601 UTC)
 updatedAt       String   (ISO 8601 UTC)
 ```
 
+### Item bộ đếm đơn đang mở (ordering.md BR-14)
+
+Mỗi tài khoản có thêm **một item** trong bảng `orders`, cùng PK với đơn của người đó:
+
+```
+userId          String   PK
+orderId         String   SK, cố định "#OPEN"
+openOrders      Number   số đơn PENDING + CONFIRMED, 0..3
+```
+
+- `#` đứng trước mọi chữ số trong thứ tự chuỗi, còn ULID luôn bắt đầu bằng chữ số, nên Q2 (lịch sử đơn) dùng điều kiện khoá `userId = :u AND orderId >= "0"` để không lấy item bộ đếm.
+- Item này không có `status` nên không vào GSI `byStatus`. Nếu giữ GSI `byOrderId` thì mọi item bộ đếm cùng nằm dưới khoá `#OPEN` của GSI đó; truy vấn admin theo `orderId` thật không bị ảnh hưởng.
+- Không cần bảng mới, không cần đổi hạ tầng; role `ordering` vốn có quyền ghi bảng `orders`.
+
 ### Giao dịch đặt hàng và huỷ đơn (ordering.md BR-08, BR-12)
 
 **Đặt hàng:** một `TransactWriteItems` gồm:
@@ -155,11 +169,15 @@ updatedAt       String   (ISO 8601 UTC)
 | 1..n | `products` | `UpdateItem SET stock = stock - :qty` cho từng món | `stock >= :qty AND status = ACTIVE AND price = :expectedPrice` |
 | n+1 | `orders` | `PutItem` đơn mới `PENDING` | `attribute_not_exists(orderId)` |
 | n+2 | `carts` | `UpdateItem` bỏ các món đã đặt khỏi `items` | — |
+| n+3 | `orders` | `UpdateItem` item `#OPEN`: `SET openOrders = if_not_exists(openOrders, 0) + 1` | `attribute_not_exists(openOrders) OR openOrders < 3` (BR-14) |
 
 - Một điều kiện sai là cả giao dịch huỷ, không có gì thay đổi. Lỗi `TransactionCanceledException` cho biết món nào sai, để trả 409 `OUT_OF_STOCK` hoặc `PRICE_CHANGED` đúng món.
-- Giới hạn 100 thao tác mỗi giao dịch → một đơn tối đa 50 dòng (ordering.md BR-02) là an toàn.
+- Giới hạn 100 thao tác mỗi giao dịch → một đơn tối đa 50 dòng (ordering.md BR-02) cộng 3 thao tác là an toàn.
+- Điều kiện ở dòng n+3 sai → 409 `TOO_MANY_OPEN_ORDERS`.
 
-**Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần.
+**Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn `PENDING` hoặc `CONFIRMED` thêm `UpdateItem` item `#OPEN`: `SET openOrders = openOrders - 1` với điều kiện `openOrders > 0`.
+
+**Chuyển `SHIPPED`:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = SHIPPED` (điều kiện `status = CONFIRMED`) và `UpdateItem` item `#OPEN` giảm 1 như trên.
 
 > ✅ **Đã chốt 08/10 ([ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md)): hướng 1.** Role của `ordering` chỉ có `dynamodb:UpdateItem` trên `products` và `carts`, không `PutItem` hay `DeleteItem`; phần ghi nằm trong `modules/ordering/infra/` sau port. `cart` đọc `products` chỉ bằng `BatchGetItem`.
 
