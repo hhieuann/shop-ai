@@ -426,4 +426,16 @@ describe('ApiStack', () => {
       BillingMode: 'PAY_PER_REQUEST',
     });
   });
+
+  it('preSignUpFunction_has512MbAndFiveSecondTimeout', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: 128 MB, 3 giây làm lần khởi động lạnh bị cắt ở staging 21/10; Cognito chờ trigger tối đa 5 giây
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      MemorySize: 512,
+      Timeout: 5,
+      Environment: { Variables: Match.objectLike({ POWERTOOLS_SERVICE_NAME: 'account-signup' }) },
+    });
+  });
 });
