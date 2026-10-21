@@ -1,17 +1,25 @@
 """Test cho data.generator.synthetic — viết theo AAA (Arrange, Act, Assert)."""
 import csv
+import io
 import json
+import re
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
+from data.console import use_utf8_output
 from data.generator.synthetic import (
+    DEFAULT_PRODUCTS,
     Item,
+    cli,
     load_real_catalog,
     main,
     remap_personas_and_rules,
     resolve_category,
 )
+
+ISO_UTC = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
 
 def read_csv(path: Path) -> list[dict]:
@@ -60,8 +68,8 @@ def test_khong_ro_ri_thoi_gian_giua_train_va_test(tmp_path):
     test = read_csv(out / "interactions_test.csv")
 
     # Act
-    max_train_ts = max(int(r["TIMESTAMP"]) for r in train)
-    min_test_ts = min(int(r["TIMESTAMP"]) for r in test)
+    max_train_ts = max(datetime.fromisoformat(r["TIMESTAMP"]) for r in train)
+    min_test_ts = min(datetime.fromisoformat(r["TIMESTAMP"]) for r in test)
 
     # Assert
     assert max_train_ts < min_test_ts
@@ -87,7 +95,7 @@ def test_don_huy_khong_sinh_su_kien_purchase(tmp_path):
         1 for row in order_items if orders_by_id[row["ORDER_ID"]]["STATUS"] == "confirmed"
     )
     assert len(purchase_events) >= 0  # sanity
-    n_purchase = sum(1 for e in purchase_events if e["EVENT_TYPE"] == "purchase")
+    n_purchase = sum(1 for e in purchase_events if e["EVENT_TYPE"] == "PURCHASE")
     assert n_purchase == confirmed_item_rows
 
 
@@ -196,3 +204,125 @@ def test_load_real_catalog_loai_bo_dong_khong_hop_le(tmp_path):
     # Assert: chỉ còn đúng 1 sản phẩm hợp lệ (P1)
     assert sum(len(items) for items in catalog.values()) == 1
     assert catalog["gpu"][0].item_id == "P1"
+
+# --------------------------------------------------------------------------
+# Khớp với web và API: mã sản phẩm, tên sự kiện, định dạng thời gian
+# --------------------------------------------------------------------------
+def test_mac_dinh_dung_danh_muc_that_nen_ma_san_pham_khop_web(tmp_path):
+    # Arrange
+    out = tmp_path / "run"
+    raw = json.loads(DEFAULT_PRODUCTS.read_text(encoding="utf-8-sig"))
+    real_ids = {p["productId"] for p in raw["products"]}
+
+    # Act: không truyền --products
+    main(["--out", str(out), "--seed", "42", "--users", "60"])
+    product_ids = {r["ITEM_ID"] for r in read_csv(out / "products.csv")}
+    event_ids = {r["ITEM_ID"] for r in read_csv(out / "interactions_train.csv")}
+
+    # Assert: mọi mã sản phẩm, kể cả trong sự kiện, đều có trên web
+    assert product_ids <= real_ids
+    assert event_ids <= real_ids
+
+
+def test_builtin_dung_danh_muc_tu_che(tmp_path):
+    # Arrange
+    out = tmp_path / "run"
+
+    # Act
+    main(["--out", str(out), "--seed", "42", "--users", "20", "--builtin"])
+
+    # Assert
+    assert "gpu-001" in {r["ITEM_ID"] for r in read_csv(out / "products.csv")}
+
+
+def test_bao_loi_ro_rang_khi_khong_thay_file_danh_muc(tmp_path):
+    # Act / Assert
+    with pytest.raises(SystemExit):
+        main(["--out", str(tmp_path / "run"), "--products", str(tmp_path / "khong-co.json")])
+
+
+def test_ten_su_kien_viet_hoa_khop_api(tmp_path):
+    # Arrange
+    out = tmp_path / "run"
+    main(["--out", str(out), "--seed", "42", "--users", "80"])
+
+    # Act
+    rows = read_csv(out / "interactions_train.csv") + read_csv(out / "interactions_test.csv")
+    types = {r["EVENT_TYPE"] for r in rows}
+
+    # Assert: đúng enum eventType của API cộng PURCHASE từ ordering, không còn loại nào khác
+    assert types == {"VIEW", "ADD_TO_CART", "PURCHASE"}
+
+
+def test_moi_cot_thoi_gian_cung_dinh_dang_iso_utc(tmp_path):
+    # Arrange
+    out = tmp_path / "run"
+    main(["--out", str(out), "--seed", "42", "--users", "80"])
+
+    # Act
+    values = [r["TIMESTAMP"] for name in ("orders.csv", "cart_items.csv",
+                                          "interactions_train.csv", "interactions_test.csv")
+              for r in read_csv(out / name)]
+
+    # Assert
+    assert values
+    assert all(ISO_UTC.match(v) for v in values), "cần dạng 2026-01-01T08:00:00.000Z"
+
+
+# --------------------------------------------------------------------------
+# Người mới: không có lịch sử trong train, dùng để thử gợi ý cho người mới
+# --------------------------------------------------------------------------
+def test_nguoi_moi_khong_co_su_kien_nao_trong_train(tmp_path):
+    # Arrange
+    out = tmp_path / "run"
+    main(["--out", str(out), "--seed", "42", "--users", "200"])
+    new_users = {r["USER_ID"] for r in read_csv(out / "users.csv") if r["IS_NEW"] == "1"}
+    assert new_users, "cần có người mới để test này có ý nghĩa"
+
+    # Act
+    train_users = {r["USER_ID"] for r in read_csv(out / "interactions_train.csv")}
+    test_users = {r["USER_ID"] for r in read_csv(out / "interactions_test.csv")}
+
+    # Assert
+    assert not new_users & train_users
+    assert new_users <= test_users
+
+
+def test_tat_nguoi_moi_bang_new_user_frac_0(tmp_path):
+    # Arrange
+    out = tmp_path / "run"
+
+    # Act
+    main(["--out", str(out), "--seed", "42", "--users", "50", "--new-user-frac", "0"])
+
+    # Assert
+    assert all(r["IS_NEW"] == "0" for r in read_csv(out / "users.csv"))
+
+
+# --------------------------------------------------------------------------
+# Chạy lệnh trên Windows: thoát mã 0, in tiếng Việt không lỗi
+# --------------------------------------------------------------------------
+def test_cli_khong_tra_gia_tri_de_thoat_ma_0(tmp_path, monkeypatch):
+    # Arrange
+    monkeypatch.setattr("sys.argv", ["data", "--out", str(tmp_path / "run"), "--users", "20"])
+
+    # Act
+    result = cli()
+
+    # Assert: script của uv thoát với mã khác 0 nếu hàm trả về một giá trị khác None
+    assert result is None
+
+
+def test_in_tieng_viet_khi_console_dung_cp1252(monkeypatch):
+    # Arrange: giả lập console Windows dùng cp1252
+    raw = io.BytesIO()
+    fake = io.TextIOWrapper(raw, encoding="cp1252")
+    monkeypatch.setattr("sys.stdout", fake)
+
+    # Act
+    use_utf8_output()
+    print("Đã ghi file", file=fake)
+    fake.flush()
+
+    # Assert
+    assert raw.getvalue().decode("utf-8").strip() == "Đã ghi file"

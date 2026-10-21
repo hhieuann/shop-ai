@@ -1,15 +1,27 @@
 """
-Sinh dữ liệu giả lập cho shop-ai (sản phẩm, người dùng, đơn hàng, giỏ hàng, sự kiện). Bản v3.
+Sinh dữ liệu giả lập cho shop-ai (sản phẩm, người dùng, đơn hàng, giỏ hàng, sự kiện). Bản v4.
 
 Chỉ dùng thư viện chuẩn của Python (không cần pip install gì).
 
-Chạy với danh mục sản phẩm tự chế (mặc định, dùng khi chưa có file thật), từ thư mục data/:
+Mặc định dùng danh mục sản phẩm THẬT của shop (services/api/seed/catalog/products.json),
+để mã sản phẩm trong dữ liệu khớp với web và bảng `recs`. Từ thư mục data/:
     uv run data --out generated --seed 42
 
-Chạy với danh mục sản phẩm THẬT của shop (ví dụ ../services/api/seed/catalog/products.json):
-    uv run data --out generated --seed 42 --products ../services/api/seed/catalog/products.json
+Chỉ định file danh mục khác:
+    uv run data --out generated --seed 42 --products duong/dan/products.json
 
-QUAN TRỌNG — vì sao có --products:
+Danh mục tự chế (mã dạng gpu-001, KHÔNG khớp web; chỉ để thử khi không có file thật):
+    uv run data --out generated --seed 42 --builtin
+
+Khớp với API và bảng `events` (events.md mục 3, dynamodb-design.md):
+  - EVENT_TYPE viết hoa: VIEW, ADD_TO_CART, PURCHASE. API không ghi việc bỏ khỏi giỏ nên
+    dữ liệu cũng không có loại đó.
+  - Mọi cột thời gian là ISO 8601 UTC, dạng 2026-01-01T08:00:00.000Z.
+
+Người dùng mới (--new-user-frac, mặc định 10%): chỉ hoạt động sau mốc cắt train/test,
+nên không có lịch sử nào trong train. Dùng để thử gợi ý cho người mới (baseline, ADR-0016).
+
+QUAN TRỌNG — vì sao đọc danh mục từ file:
   Danh mục sản phẩm (tên category) do admin quyết định và có thể đổi theo thời gian
   (admin có thể thêm category mới sau này). Vì vậy script KHÔNG gõ cứng một danh sách
   category cố định khi dùng --products: nó đọc category trực tiếp từ file. Việc "học"
@@ -22,16 +34,15 @@ QUAN TRỌNG — vì sao có --products:
   tên chuẩn lẫn alias thì bị bỏ qua khỏi persona/luật mua kèm (có in cảnh báo), nhưng
   vẫn được dùng làm nguồn cho giỏ hàng "nhiễu" (noise) và cho baseline học sau này.
 
-Quy luật được cài vào dữ liệu khi KHÔNG dùng --products (dữ liệu tự chế, xem bên dưới
-để biết chi tiết — không đổi so với bản v2). Khi DÙNG --products, các quy luật tương tự
-vẫn được áp dụng nhưng chỉ cho các category thật sự có ánh xạ tới danh mục đã nạp.
+Với danh mục thật, quy luật mua kèm chỉ áp dụng cho các category có ánh xạ tới danh mục
+đã nạp. Với --builtin, mọi quy luật đều áp dụng.
 
 Đầu ra (thư mục --out): products.csv, users.csv, orders.csv, order_items.csv,
-cart_items.csv, interactions_train.csv, interactions_test.csv — không đổi so với v2.
+cart_items.csv, interactions_train.csv, interactions_test.csv.
 
 Quy tắc khi dùng đầu ra:
   - Luật mua kèm và baseline chỉ được đếm đơn có STATUS = confirmed.
-  - Không đưa users.csv (có PERSONA), cột IS_NOISE, FROM_CART vào dữ liệu train của AI.
+  - Không đưa users.csv (có PERSONA, IS_NEW), cột IS_NOISE, FROM_CART vào dữ liệu train của AI.
   - USER_ID ở đây là mã giả. Khi đưa vào pipeline thật, ẩn danh bằng HMAC ở bước riêng.
 """
 from __future__ import annotations
@@ -46,9 +57,18 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from data.console import use_utf8_output
+
+# data/src/data/generator/synthetic.py -> lên 4 cấp là thư mục gốc repo
+DEFAULT_PRODUCTS = Path(__file__).resolve().parents[4] / "services" / "api" / "seed" / "catalog" / "products.json"
+
+# Tên sự kiện khớp enum eventType của API (contracts/openapi.yaml) và events.md mục 1
+VIEW, ADD_TO_CART, PURCHASE = "VIEW", "ADD_TO_CART", "PURCHASE"
+
 # --------------------------------------------------------------------------
 # Cấu hình quy luật
 # --------------------------------------------------------------------------
+NEW_USER_FRAC = 0.10
 NOISE_RATE = 0.30
 CANCEL_RATE = 0.04
 STRAY_ADD_RATE = 0.15
@@ -360,17 +380,33 @@ def build_basket(rng, catalog, persona: Persona, companion_rules):
     return list(chosen.values()), is_noise
 
 
-def make_users(rng, n_users: int, personas):
+def iso(ts: datetime) -> str:
+    """ISO 8601 UTC, đến mili giây, đuôi Z (giống createdAt trong products.json)."""
+    return ts.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def make_users(rng, n_users: int, personas, new_user_frac: float):
+    """Trả về (user_id, persona, is_new). Người mới chỉ hoạt động sau mốc cắt."""
     shares = [p.share for p in personas]
-    return [(f"u{i + 1:04d}", rng.choices(personas, shares)[0]) for i in range(n_users)]
+    users = []
+    for i in range(n_users):
+        persona = rng.choices(personas, shares)[0]
+        users.append((f"u{i + 1:04d}", persona, rng.random() < new_user_frac))
+    return users
 
 
-def make_orders(rng, catalog, users, start, end, companion_rules):
-    span = (end - start).total_seconds()
+# Sự kiện của một đơn nằm trước giờ đặt tối đa khoảng 2 giờ (xem make_order_events,
+# make_cart_behaviour); người mới bắt đầu sau mốc cắt 1 ngày để không lọt vào train.
+NEW_USER_MARGIN = timedelta(days=1)
+
+
+def make_orders(rng, catalog, users, start, end, companion_rules, cutoff):
     orders = []
-    for user_id, persona in users:
+    for user_id, persona, is_new in users:
+        lo = cutoff + NEW_USER_MARGIN if is_new else start
+        span = (end - lo).total_seconds()
         n_orders = 1 + min(7, int(rng.expovariate(1 / 1.2)))
-        times = sorted(start + timedelta(seconds=rng.random() * span) for _ in range(n_orders))
+        times = sorted(lo + timedelta(seconds=rng.random() * span) for _ in range(n_orders))
         for ts in times:
             items, is_noise = build_basket(rng, catalog, persona, companion_rules)
             status = "cancelled" if rng.random() < CANCEL_RATE else "confirmed"
@@ -407,10 +443,9 @@ def make_cart_behaviour(rng, catalog, orders, personas, end):
             if it:
                 seen.add(it.item_id)
                 add_ts = o.ts - timedelta(seconds=rng.randint(600, 3000))
-                events.append((add_ts - timedelta(seconds=rng.randint(30, 300)), o.user_id, it.item_id, "view"))
-                events.append((add_ts, o.user_id, it.item_id, "add_to_cart"))
-                events.append((add_ts + timedelta(seconds=rng.randint(60, 600)),
-                               o.user_id, it.item_id, "remove_from_cart"))
+                events.append((add_ts - timedelta(seconds=rng.randint(30, 300)), o.user_id, it.item_id, VIEW))
+                events.append((add_ts, o.user_id, it.item_id, ADD_TO_CART))
+                # Sau đó khách bỏ món này khỏi giỏ; API không ghi việc bỏ khỏi giỏ nên không có sự kiện
                 counts["stray_add_removed"] += 1
 
         if rng.random() < PARK_RATE:
@@ -418,8 +453,8 @@ def make_cart_behaviour(rng, catalog, orders, personas, end):
             if it:
                 seen.add(it.item_id)
                 add_ts = o.ts - timedelta(seconds=rng.randint(30, 600))
-                events.append((add_ts - timedelta(seconds=rng.randint(600, 5400)), o.user_id, it.item_id, "view"))
-                events.append((add_ts, o.user_id, it.item_id, "add_to_cart"))
+                events.append((add_ts - timedelta(seconds=rng.randint(600, 5400)), o.user_id, it.item_id, VIEW))
+                events.append((add_ts, o.user_id, it.item_id, ADD_TO_CART))
                 counts["parked"] += 1
                 cart[(o.user_id, it.item_id)] = (it, add_ts)
                 if rng.random() < PARK_BOUGHT_LATER:
@@ -438,20 +473,17 @@ def make_order_events(rng, catalog, orders, personas):
         persona = personas[o.persona]
         if o.from_cart:
             for it in o.items:
-                events.append((o.ts, o.user_id, it.item_id, "purchase"))
+                events.append((o.ts, o.user_id, it.item_id, PURCHASE))
             continue
         for it in o.items:
-            events.append((o.ts - timedelta(seconds=rng.randint(600, 5400)), o.user_id, it.item_id, "view"))
-            events.append((o.ts - timedelta(seconds=rng.randint(30, 300)), o.user_id, it.item_id, "add_to_cart"))
+            events.append((o.ts - timedelta(seconds=rng.randint(600, 5400)), o.user_id, it.item_id, VIEW))
+            events.append((o.ts - timedelta(seconds=rng.randint(30, 300)), o.user_id, it.item_id, ADD_TO_CART))
             if o.status == "confirmed":
-                events.append((o.ts, o.user_id, it.item_id, "purchase"))
-            else:
-                events.append((o.ts + timedelta(seconds=rng.randint(120, 1200)),
-                               o.user_id, it.item_id, "remove_from_cart"))
+                events.append((o.ts, o.user_id, it.item_id, PURCHASE))
         for _ in range(rng.randint(0, 4)):
             cat = rng.choices(list(persona.primary), list(persona.primary.values()))[0]
             it = pick_item(rng, catalog, cat, persona.tier_w)
-            events.append((o.ts - timedelta(seconds=rng.randint(600, 5400)), o.user_id, it.item_id, "view"))
+            events.append((o.ts - timedelta(seconds=rng.randint(600, 5400)), o.user_id, it.item_id, VIEW))
     return events
 
 
@@ -471,9 +503,12 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--start", default="2025-10-01")
     ap.add_argument("--end", default="2026-09-30")
     ap.add_argument("--train-frac", type=float, default=0.8)
-    ap.add_argument("--products", default=None,
-                     help="Đường dẫn products.json thật (vd services/api/seed/catalog/products.json). "
-                          "Bỏ trống thì dùng danh mục tự chế có sẵn.")
+    ap.add_argument("--products", default=str(DEFAULT_PRODUCTS),
+                    help="Đường dẫn products.json (mặc định: services/api/seed/catalog/products.json của repo)")
+    ap.add_argument("--builtin", action="store_true",
+                    help="Dùng danh mục tự chế thay cho file thật (mã sản phẩm không khớp web)")
+    ap.add_argument("--new-user-frac", type=float, default=NEW_USER_FRAC,
+                    help="Tỉ lệ người dùng mới, chỉ hoạt động sau mốc cắt (không có lịch sử train)")
     args = ap.parse_args(argv)
 
     rng = random.Random(args.seed)
@@ -482,17 +517,22 @@ def main(argv: list[str] | None = None) -> dict:
     end = datetime.fromisoformat(args.end).replace(tzinfo=utc) + timedelta(days=1)
     cutoff = start + (end - start) * args.train_frac
 
-    if args.products:
-        catalog = load_real_catalog(rng, Path(args.products))
-        personas, companion_rules = remap_personas_and_rules(catalog)
-    else:
+    if args.builtin:
         catalog = make_builtin_catalog(rng)
         personas, companion_rules = PERSONAS, COMPANION_RULES
+    else:
+        products_path = Path(args.products)
+        if not products_path.is_file():
+            sys.exit(f"Lỗi: không thấy {products_path}. Chỉ định --products hoặc dùng --builtin.")
+        catalog = load_real_catalog(rng, products_path)
+        personas, companion_rules = remap_personas_and_rules(catalog)
 
     personas_by_name = {p.name: p for p in personas}
-    users = make_users(rng, args.users, personas)
+    # Không còn chỗ sau mốc cắt thì không tạo người mới
+    new_user_frac = args.new_user_frac if cutoff + NEW_USER_MARGIN < end else 0.0
+    users = make_users(rng, args.users, personas, new_user_frac)
 
-    base_orders = make_orders(rng, catalog, users, start, end, companion_rules)
+    base_orders = make_orders(rng, catalog, users, start, end, companion_rules, cutoff)
     extra_orders, cart_events, cart_final, cart_counts = make_cart_behaviour(
         rng, catalog, base_orders, personas_by_name, end)
 
@@ -509,19 +549,20 @@ def main(argv: list[str] | None = None) -> dict:
     all_items = [it for items in catalog.values() for it in items]
     write_csv(out / "products.csv", ["ITEM_ID", "CATEGORY", "TIER", "NAME", "PRICE_VND"],
               [(i.item_id, i.category, i.tier, i.name, i.price) for i in all_items])
-    write_csv(out / "users.csv", ["USER_ID", "PERSONA"], [(u, p.name) for u, p in users])
+    write_csv(out / "users.csv", ["USER_ID", "PERSONA", "IS_NEW"],
+              [(u, p.name, int(is_new)) for u, p, is_new in users])
     write_csv(out / "orders.csv",
-              ["ORDER_ID", "USER_ID", "TS_ISO", "STATUS", "SPLIT", "N_ITEMS", "IS_NOISE", "FROM_CART"],
-              [(o.order_id, o.user_id, o.ts.isoformat(), o.status, "train" if o.ts < cutoff else "test",
+              ["ORDER_ID", "USER_ID", "TIMESTAMP", "STATUS", "SPLIT", "N_ITEMS", "IS_NOISE", "FROM_CART"],
+              [(o.order_id, o.user_id, iso(o.ts), o.status, "train" if o.ts < cutoff else "test",
                 len(o.items), int(o.is_noise), int(o.from_cart)) for o in orders])
     write_csv(out / "order_items.csv", ["ORDER_ID", "ITEM_ID", "UNIT_PRICE_VND"],
               [(o.order_id, it.item_id, it.price) for o in orders for it in o.items])
-    write_csv(out / "cart_items.csv", ["USER_ID", "ITEM_ID", "ADDED_AT_ISO"],
-              [(u, it.item_id, ts.isoformat()) for (u, _), (it, ts) in sorted(cart_final.items())])
+    write_csv(out / "cart_items.csv", ["USER_ID", "ITEM_ID", "TIMESTAMP"],
+              [(u, it.item_id, iso(ts)) for (u, _), (it, ts) in sorted(cart_final.items())])
 
     hdr = ["USER_ID", "ITEM_ID", "TIMESTAMP", "EVENT_TYPE"]
-    train = [(u, i, int(t.timestamp()), e) for t, u, i, e in events if t < cutoff]
-    test = [(u, i, int(t.timestamp()), e) for t, u, i, e in events if t >= cutoff]
+    train = [(u, i, iso(t), e) for t, u, i, e in events if t < cutoff]
+    test = [(u, i, iso(t), e) for t, u, i, e in events if t >= cutoff]
     write_csv(out / "interactions_train.csv", hdr, train)
     write_csv(out / "interactions_test.csv", hdr, test)
 
@@ -535,10 +576,11 @@ def main(argv: list[str] | None = None) -> dict:
         return [round(hit / len(with_a), 3), len(with_a)]
 
     stats = {
-        "mode": "real --products" if args.products else "builtin catalog",
+        "mode": "builtin catalog" if args.builtin else f"products: {args.products}",
         "seed": args.seed,
-        "cutoff": cutoff.isoformat(),
+        "cutoff": iso(cutoff),
         "users": len(users),
+        "new_users": sum(is_new for _, _, is_new in users),
         "products": len(all_items),
         "categories": sorted(catalog.keys()),
         "companion_rules_active": companion_rules,
@@ -554,5 +596,11 @@ def main(argv: list[str] | None = None) -> dict:
     return stats
 
 
-if __name__ == "__main__":
+def cli() -> None:
+    """Điểm vào của lệnh `uv run data`: không trả giá trị để thoát với mã 0."""
+    use_utf8_output()
     main()
+
+
+if __name__ == "__main__":
+    cli()
