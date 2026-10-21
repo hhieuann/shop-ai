@@ -4,6 +4,7 @@ import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
 import type { Product } from '../../../shared/api/types';
 import { AddToCart } from '../../cart/components/AddToCart';
+import { SpecTable } from '../components/SpecTable';
 import { formatVnd } from '../../../shared/lib/format';
 
 export function ProductDetailPage() {
@@ -111,6 +112,8 @@ export function ProductDetailPage() {
           <AddToCart product={data} />
         </div>
       </div>
+
+      <SpecTable specs={data.specs} />
 
       {/* Widget gợi ý — An làm */}
       {/* <RecommendationWidget productId={data.productId} /> */}
