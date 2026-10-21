@@ -18,8 +18,8 @@ import math
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 
-# Trọng số tạm, chưa chốt (recommendation.md mục 5). remove_from_cart không tính.
-DEFAULT_WEIGHTS: dict[str, float] = {"view": 1.0, "add_to_cart": 3.0, "purchase": 5.0}
+# Trọng số tạm, chưa chốt (recommendation.md mục 5). Tên sự kiện khớp API (events.md mục 1).
+DEFAULT_WEIGHTS: dict[str, float] = {"VIEW": 1.0, "ADD_TO_CART": 3.0, "PURCHASE": 5.0}
 
 UserItems = dict[str, dict[str, float]]
 Similarity = dict[str, dict[str, float]]

@@ -35,6 +35,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from data.baseline.bestseller import bestsellers, top_k_excluding
+from data.console import use_utf8_output
 from data.model.association import mine_rules, top_k
 
 
@@ -65,7 +66,7 @@ def load_confirmed_orders(data_dir: Path) -> list[OrderRow]:
     return [
         OrderRow(
             row["ORDER_ID"],
-            datetime.fromisoformat(row["TS_ISO"]),
+            datetime.fromisoformat(row["TIMESTAMP"]),
             row["SPLIT"],
             frozenset(items_by_order.get(row["ORDER_ID"], set())),
         )
@@ -183,6 +184,7 @@ def main(argv: list[str] | None = None) -> dict:
 
 def cli() -> None:
     """Điểm vào của lệnh `uv run data-eval`: không trả giá trị để thoát với mã 0."""
+    use_utf8_output()
     main()
 
 

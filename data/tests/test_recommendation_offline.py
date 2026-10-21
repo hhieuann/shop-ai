@@ -150,8 +150,8 @@ def test_danh_gia_cung_du_lieu_cho_cung_ket_qua(tmp_path):
 def test_danh_gia_bao_loi_khi_thieu_du_lieu_test(tmp_path):
     # Arrange: chỉ có đơn train
     (tmp_path / "orders.csv").write_text(
-        "ORDER_ID,USER_ID,TS_ISO,STATUS,SPLIT,N_ITEMS,IS_NOISE,FROM_CART\n"
-        "o1,u1,2026-01-01T00:00:00+00:00,confirmed,train,2,0,0\n",
+        "ORDER_ID,USER_ID,TIMESTAMP,STATUS,SPLIT,N_ITEMS,IS_NOISE,FROM_CART\n"
+        "o1,u1,2026-01-01T00:00:00.000Z,confirmed,train,2,0,0\n",
         encoding="utf-8",
     )
     (tmp_path / "order_items.csv").write_text(
