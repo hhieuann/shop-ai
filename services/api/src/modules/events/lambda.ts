@@ -1,7 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { ulid } from 'ulid';
 import { requiredEnv } from '../../shared/config.js';
 import { captureClient, withTracing } from '../../shared/tracer.js';
 import { recordEvent, type RecordEventDeps } from './application/recordEvent.js';
@@ -27,7 +27,8 @@ const deps: RecordEventDeps = {
   events: new DynamoEventRepository(db, requiredEnv('EVENTS_TABLE')),
   hasher: new HmacUserIdHasher(loadHmacKey),
   now: () => new Date().toISOString(),
-  newId: () => randomUUID(),
+  // ULID theo chuẩn code (CONTRIBUTING.md): duy nhất và tăng dần theo thời gian
+  newId: () => ulid(),
 };
 
 export const handler = withTracing(

@@ -210,7 +210,7 @@ GSI1 cho Q3 (`productId` + `timestamp`) chưa tạo; thêm khi làm phát hiện
 userIdHash   String   PK   (HMAC-SHA256 hex của Cognito sub, không phải userId thật)
 eventKey     String   SK   (<timestamp>#<eventId>)
 timestamp    String   ISO 8601 UTC, do server đặt
-eventId      String   UUID ngẫu nhiên
+eventId      String   ULID (CONTRIBUTING.md, chuẩn code)
 productId    String   cùng tên với API (contracts/openapi.yaml)
 eventType    String   VIEW | ADD_TO_CART | PURCHASE
 ttl          Number   giây kể từ 1970, DynamoDB TTL xoá sau 90 ngày
