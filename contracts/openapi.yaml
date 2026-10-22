@@ -600,6 +600,101 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  # ─── Recommendation ────────────────────────────────────────────────────────
+  /api/v1/recs/also-bought:
+    get:
+      operationId: getAlsoBought
+      summary: Thường mua kèm một sản phẩm
+      description: |
+        Đọc bảng `recs` phiên bản đang bật (`ALSO_BOUGHT#<productId>`, dynamodb-design.md).
+        Sản phẩm chưa có dòng nào (mới, ít người mua) thì trả hàng bán chạy cùng loại, `source = BESTSELLER`
+        (ADR-0016). Không cần đăng nhập. Server bỏ hàng hết (`stock = 0`), hàng `INACTIVE`,
+        chính `productId` và các mã trong `exclude`.
+      security: []
+      tags: [recommendation]
+      parameters:
+        - $ref: '#/components/parameters/RecsProductId'
+        - $ref: '#/components/parameters/RecsExclude'
+        - $ref: '#/components/parameters/RecsLimit'
+      responses:
+        '200':
+          description: Danh sách gợi ý, có thể rỗng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecsResult'
+        '400':
+          description: Thiếu `productId`, `limit` ngoài 1–10 hoặc `exclude` quá 20 mã
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/recs/for-you:
+    get:
+      operationId: getForYou
+      summary: Dành cho bạn
+      description: |
+        Gợi ý theo lịch sử của người đang đăng nhập (`FOR_YOU#<userIdHash>`; server băm `userId`
+        lấy từ token bằng HMAC như module `events`, events.md mục 2). Người chưa có lịch sử thì trả hàng
+        bán chạy, `source = BESTSELLER`. Lọc như `also-bought`.
+      tags: [recommendation]
+      parameters:
+        - $ref: '#/components/parameters/RecsExclude'
+        - $ref: '#/components/parameters/RecsLimit'
+      responses:
+        '200':
+          description: Danh sách gợi ý, có thể rỗng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecsResult'
+        '400':
+          description: '`limit` ngoài 1–10 hoặc `exclude` quá 20 mã'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/recs/bestsellers:
+    get:
+      operationId: getBestsellers
+      summary: Đang được mua nhiều (cho khách chưa đăng nhập)
+      description: |
+        Hàng bán chạy, lọc theo loại nếu có `category` (recommendation.md mục 2.3). Không cần đăng nhập.
+        Lọc như `also-bought`.
+      security: []
+      tags: [recommendation]
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProductCategory'
+        - $ref: '#/components/parameters/RecsExclude'
+        - $ref: '#/components/parameters/RecsLimit'
+      responses:
+        '200':
+          description: Danh sách hàng bán chạy, có thể rỗng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecsResult'
+        '400':
+          description: '`category` sai, `limit` ngoài 1–10 hoặc `exclude` quá 20 mã'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
 components:
   securitySchemes:
     cognitoJwt:
@@ -1088,6 +1183,69 @@ components:
         eventType:
           type: string
           enum: [VIEW, ADD_TO_CART]
+    # ─── Recommendation ─────────────────────────────────────────────────────
+    RecsSource:
+      type: string
+      description: |
+        Nguồn của danh sách, để web chọn tiêu đề widget:
+        `PERSONALIZED` (Dành cho bạn), `ALSO_BOUGHT` (Thường mua kèm),
+        `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016).
+      enum: [PERSONALIZED, ALSO_BOUGHT, BESTSELLER]
+
+    RecsResult:
+      type: object
+      required: [source, items]
+      properties:
+        source:
+          $ref: '#/components/schemas/RecsSource'
+        items:
+          type: array
+          description: Đã sắp theo thứ hạng gợi ý, tối đa `limit` món; có thể rỗng
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+      example:
+        source: ALSO_BOUGHT
+        items:
+          - productId: '01J9XKPQ0000000000000001'
+            name: 'ASUS TUF Gaming GeForce RTX 4070'
+            category: 'gpu'
+            brand: 'ASUS'
+            price: 15900000
+            stock: 12
+            status: 'ACTIVE'
+
+  parameters:
+    RecsProductId:
+      name: productId
+      in: query
+      required: true
+      description: Sản phẩm đang xem (trang chi tiết) hoặc món vừa thêm gần nhất (trang giỏ)
+      schema:
+        type: string
+    RecsExclude:
+      name: exclude
+      in: query
+      required: false
+      description: |
+        Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
+        (giỏ khách nằm trên trình duyệt nên server không biết).
+      style: form
+      explode: false
+      schema:
+        type: array
+        maxItems: 20
+        items:
+          type: string
+    RecsLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10
+        default: 6
 
   responses:
     Unauthorized:
