@@ -231,6 +231,9 @@ export class ApiStack extends Stack {
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
     const cartFn = this.addCart(shopEnv, removalPolicy, httpApi, products);
 
+    // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
+    const eventsFn = this.addEvents(shopEnv, removalPolicy, httpApi);
+
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
 
@@ -243,7 +246,13 @@ export class ApiStack extends Stack {
       shopEnv,
       httpApi,
       preSignUpFn: auth.preSignUpFn,
-      apiFunctions: { catalog: catalogFn, cart: cartFn, account: accountFn, health: healthFn },
+      apiFunctions: {
+        catalog: catalogFn,
+        cart: cartFn,
+        events: eventsFn,
+        account: accountFn,
+        health: healthFn,
+      },
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
     });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
@@ -372,6 +381,90 @@ export class ApiStack extends Stack {
 
     new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
     return cartFn;
+  }
+
+  /**
+   * Module events: bảng events (khoá userIdHash + eventKey, TTL 90 ngày theo cột `ttl`) và Lambda events.
+   * Quyền tối thiểu: chỉ PutItem trên bảng events; chỉ đọc đúng tham số khoá HMAC
+   * `/shop/<env>/events/hmac-key` (SecureString An tạo bằng CLI, không nằm trong template, threat model E6).
+   * Route gắn JWT authorizer của Cognito (nhóm chốt 17/10/2026).
+   */
+  private addEvents(shopEnv: ShopEnvironment, removalPolicy: RemovalPolicy, httpApi: HttpApi) {
+    const events = new Table(this, 'EventsTable', {
+      partitionKey: { name: 'userIdHash', type: AttributeType.STRING },
+      sortKey: { name: 'eventKey', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
+      deletionProtection: shopEnv.isProd,
+      removalPolicy,
+    });
+    Validations.of(events).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-DDB3',
+      reason:
+        'Theo ADR-0012 chỉ orders và products bật point-in-time recovery; sự kiện chỉ giữ 90 ngày để huấn luyện gợi ý.',
+    });
+    const hmacKeyParameter = `/shop/${shopEnv.name}/events/hmac-key`;
+
+    const eventsFn = new NodejsFunction(this, 'EventsFunction', {
+      entry: path.join(API_SRC, 'modules', 'events', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.seconds(5),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'EventsLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        EVENTS_TABLE: events.tableName,
+        HMAC_KEY_PARAMETER: hmacKeyParameter,
+        POWERTOOLS_SERVICE_NAME: 'events',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    eventsFn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:PutItem'], resources: [events.tableArn] }),
+    );
+    // SecureString mã hoá bằng khoá AWS quản lý aws/ssm: key policy đã cho dùng qua SSM, không cần kms:Decrypt
+    eventsFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: hmacKeyParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    Tags.of(events).add('module', 'events');
+    Tags.of(eventsFn).add('module', 'events');
+    Validations.of(eventsFn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    httpApi.addRoutes({
+      path: '/api/v1/events',
+      methods: [HttpMethod.POST],
+      integration: new HttpLambdaIntegration('EventsIntegration', eventsFn),
+      authorizer: this.authorizer,
+    });
+
+    new CfnOutput(this, 'EventsTableName', { value: events.tableName });
+    return eventsFn;
   }
 
   /** Lambda nhỏ không đọc dữ liệu (health, account): 128 MB, chỉ có quyền ghi log và X-Ray. */

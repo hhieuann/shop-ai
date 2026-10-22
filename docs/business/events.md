@@ -6,9 +6,8 @@
 > mỗi module một Lambda, một bảng DynamoDB riêng, **cấm import code module khác**,
 > chỉ nói chuyện qua port hoặc sự kiện SQS.
 >
-> **Route `/events` chưa tồn tại trong `contracts/openapi.yaml` tại thời điểm viết
-> tài liệu này** — đã kiểm tra trực tiếp, không phải suy đoán. Cần thêm vào contract
-> trước khi có code thật.
+> Cập nhật 22/10/2026: route `POST /api/v1/events` đã có trong contract (#174), code module
+> ở `services/api/src/modules/events` (#200), hạ tầng ở `infra/lib/api-stack.ts` (`addEvents`).
 
 ## 1. Loại sự kiện
 
@@ -23,23 +22,14 @@
 API phải từ chối. Lý do: nếu cho phép, ai cũng tạo được sự kiện mua giả để đẩy sản
 phẩm lên gợi ý (xem threat model, mục đầu độc dữ liệu).
 
-**`PURCHASE` được tạo thế nào — đây là câu hỏi mở, chưa có đáp án, đang hỏi thẳng mình.**
-`docs/business/ordering.md` (Hoàng) mô tả luồng bất đồng bộ hiện tại: API tạo đơn
-`PENDING` → đẩy message `{orderId, userId, correlationId}` vào SQS → worker
-`order-processor` chuyển `PENDING → CONFIRMED` (ghi có điều kiện), gửi email qua SES,
-báo admin qua SNS. **Luồng này hiện không hề gọi tới module `events`.**
-
-`docs/business/dynamodb-design.md` có mục "Câu hỏi cần An và Nhân góp ý", câu 4 ghi
-nguyên văn: *"Bảng `events` (Nhân) — dùng chung hay bảng riêng? Ảnh hưởng tới IAM role
-của module ordering."* — câu này hỏi trực tiếp mình, **chưa trả lời**.
-
-**Đề xuất (của mình, chưa chốt, cần mang ra hỏi An/Hoàng):** `order-processor` sau khi
-ghi `CONFIRMED` thành công thì bắn thêm một bản tin — tận dụng đúng cơ chế SNS đang có
-sẵn (worker đã gửi SNS báo admin ở cùng bước), thêm `events` làm một subscriber thứ hai
-của cùng topic hoặc một topic riêng. Lý do chọn hướng này thay vì gọi hàm trực tiếp:
-đúng tinh thần ADR-0009 (module không import lẫn nhau), và tái dùng hạ tầng nhắn tin đã
-có thay vì thêm cơ chế mới. **Chưa kiểm tra hướng này có khớp với cách Hoàng đã dựng
-SNS/SQS thật hay không** — cần hỏi trước khi code.
+**`PURCHASE` được tạo thế nào (nhóm chốt 17/10 và 21/10/2026):** worker `order-processor`
+của `ordering`, sau khi chuyển đơn sang `CONFIRMED`, gửi tin vào SNS topic `order-confirmed`
+(An dựng). Hàng đợi SQS của `events` (có DLQ) nghe topic này; consumer của `events` ghi mỗi
+món trong đơn thành một sự kiện `PURCHASE`. `ordering` không ghi thẳng bảng `events`, đúng
+ADR-0009. Nội dung tin: `{ orderId, userId, confirmedAt, items: [{ productId, quantity }] }`,
+không có `shippingAddress` (ordering.md, luồng SQS bước 2.3). Consumer dùng `confirmedAt`
+làm thời điểm sự kiện, băm `userId` như mục 2, và lưu thêm `orderId`, `quantity` để pipeline
+gom món theo đơn cho luật mua kèm. Consumer làm sau khi An dựng topic và hàng đợi.
 
 ## 2. Ẩn danh `userId`
 
@@ -78,7 +68,7 @@ SNS/SQS thật hay không** — cần hỏi trước khi code.
 
 ## 6. Thật sự chưa biết hoặc chưa trả lời (đã kiểm tra nguồn, không phải đoán)
 
-- [ ] **Câu hỏi 4 trong `dynamodb-design.md` đang chờ mình trả lời:** `events` dùng chung hay bảng riêng? (Tên bảng `events` đã chốt sẵn trong ADR-0012 — câu hỏi ở đây là về IAM/kết nối với `ordering`, không phải về tên bảng.) Mục trên là đề xuất của mình, cần mang ra bàn với An/Hoàng, không tự quyết một mình vì ảnh hưởng tới IAM role của `ordering`.
+- [x] Câu hỏi 4 trong `dynamodb-design.md`: bảng `events` riêng; `ordering` báo qua SNS topic `order-confirmed` (chốt 17/10 và 21/10/2026, mục 1).
 - [x] Route API cho `VIEW`/`ADD_TO_CART`: nhóm chốt ngày 17/10/2026 là `POST /api/v1/events`, bắt buộc đăng nhập, body `{ productId, eventType }`, trả 202. Xem `recordEvent` trong `contracts/openapi.yaml`.
-- [ ] Khoá chính/GSI của bảng `events` trên DynamoDB — ADR-0012 ghi "bảng chi tiết sẽ chốt khi có nghiệp vụ", tức **xác nhận chưa ai thiết kế**, không phải mình bỏ sót.
+- [x] Khoá của bảng `events`: `userIdHash` + `eventKey`, TTL 90 ngày (dynamodb-design.md, #200). GSI theo `productId` làm ở tuần 5.
 - [ ] Khoá HMAC: có xoay khoá định kỳ không? Không ADR nào nhắc tới — nếu có xoay khoá, cần kế hoạch xử lý dữ liệu cũ.
