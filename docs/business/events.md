@@ -41,6 +41,9 @@ gom món theo đơn cho luật mua kèm. Consumer làm sau khi An dựng topic v
   thấy `userIdHash`, còn `ordering` vẫn thấy `userId` thật.
 - Trước khi ghi, tính `HMAC(key, userId)` và lưu giá trị băm này làm `userIdHash`.
 - Khoá HMAC lưu ở SSM Parameter Store (SecureString), không hardcode trong code.
+- Cách băm (HMAC-SHA256, khoá dạng chuỗi UTF-8, đầu ra hex chữ thường 64 ký tự) nằm ở một chỗ:
+  `services/api/src/shared/userIdHash.ts`. Module `recommendation` dùng cùng hàm đó để tra
+  `FOR_YOU#<userIdHash>`, nên hai bên luôn ra cùng giá trị.
 - Hệ quả: nếu cần tra một user cụ thể (ví dụ phục vụ yêu cầu xoá dữ liệu), phải tính
   lại HMAC từ `userId` thật + khoá, chứ không tra ngược được từ `userIdHash`.
 
