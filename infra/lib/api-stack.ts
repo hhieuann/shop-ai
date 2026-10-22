@@ -40,6 +40,7 @@ import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 import { Monitoring } from './monitoring.js';
+import { OrderConfirmed } from './order-confirmed.js';
 import { TrainingData } from './training-data.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
@@ -239,6 +240,11 @@ export class ApiStack extends Stack {
 
     // Dữ liệu huấn luyện cho pipeline gợi ý mỗi đêm (module recommendation)
     this.trainingDataBucket = new TrainingData(this, 'TrainingData', { shopEnv }).bucket;
+
+    // Tin đơn đã xác nhận (ordering.md bước 2.3): ordering gửi, events nhận qua hàng đợi có DLQ
+    const orderConfirmed = new OrderConfirmed(this, 'OrderConfirmed');
+    new CfnOutput(this, 'OrderConfirmedTopicArn', { value: orderConfirmed.topic.topicArn });
+    new CfnOutput(this, 'EventsPurchaseQueueUrl', { value: orderConfirmed.eventsQueue.queueUrl });
 
     // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
     const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
