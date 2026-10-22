@@ -467,21 +467,22 @@ export class ApiStack extends Stack {
     return eventsFn;
   }
 
-  /** Lambda nhỏ không đọc dữ liệu (health, account): 128 MB, chỉ có quyền ghi log và X-Ray. */
+  /** Lambda nhỏ không đọc dữ liệu (health, account): mặc định 128 MB, 3 giây; chỉ có quyền ghi log và X-Ray. */
   private noDataFunction(
     name: string,
     module: string,
     removalPolicy: RemovalPolicy,
     entryFile = 'lambda.ts',
     serviceName = module,
+    sizing: { readonly memorySize?: number; readonly timeout?: Duration } = {},
   ) {
     const fn = new NodejsFunction(this, `${name}Function`, {
       entry: path.join(API_SRC, 'modules', module, entryFile),
       depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
       runtime: Runtime.NODEJS_24_X,
       architecture: Architecture.ARM_64,
-      memorySize: 128,
-      timeout: Duration.seconds(3),
+      memorySize: sizing.memorySize ?? 128,
+      timeout: sizing.timeout ?? Duration.seconds(3),
       tracing: Tracing.ACTIVE,
       logGroup: new LogGroup(this, `${name}Logs`, {
         retention: RetentionDays.TWO_WEEKS,
@@ -540,6 +541,8 @@ export class ApiStack extends Stack {
       removalPolicy,
       'preSignUpLambda.ts',
       'account-signup',
+      // Cognito chờ trigger tối đa 5 giây; 128 MB quá ít CPU, khởi động lạnh có lần quá 3 giây (staging 21/10)
+      { memorySize: 512, timeout: Duration.seconds(5) },
     );
     // Không dùng userPool.userPoolArn: user pool đã trỏ tới Lambda này, trỏ ngược lại sẽ thành vòng
     preSignUpFn.addToRolePolicy(
