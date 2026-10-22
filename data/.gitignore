@@ -1,0 +1,2 @@
+# Dữ liệu giả lập sinh ra bằng `uv run data --out generated`: không commit
+generated/

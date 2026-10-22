@@ -1,0 +1,33 @@
+{
+  "name": "api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run src",
+    "test:int": "vitest run test/integration",
+    "test:watch": "vitest",
+    "seed:products": "tsx scripts/seed-products.ts"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/idempotency": "^2.36.0",
+    "@aws-lambda-powertools/logger": "^2.36.0",
+    "@aws-lambda-powertools/tracer": "^2.36.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1148.0",
+    "@aws-sdk/client-dynamodb": "^3.1148.0",
+    "@aws-sdk/lib-dynamodb": "^3.1148.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
+    "@types/node": "^24.19.0",
+    "@vitest/coverage-v8": "^5.0.0",
+    "testcontainers": "^12.2.0",
+    "tsx": "^4.23.14",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

@@ -9,8 +9,8 @@ Trang này là bản tóm tắt để làm hằng ngày.
 
 ## Làm một việc từ đầu đến cuối
 
-1. Nhận issue trên bảng dự án, kéo sang **In progress**.
-2. Tách nhánh từ `develop` mới nhất:
+1. Tạo issue hoặc nhận issue có sẵn trên bảng dự án, kéo sang **In progress**. Nhớ số issue, vd. #12.
+2. Tách nhánh từ `develop` mới nhất, tên có đúng số issue (không phải số PR). Cách nhanh nhất: trong issue bấm **Development → Create a branch**, đặt tên `feature/12-cart-api`. Hoặc chạy:
    ```bash
    git checkout develop && git pull origin develop
    git checkout -b feature/12-cart-api
@@ -21,13 +21,13 @@ Trang này là bản tóm tắt để làm hằng ngày.
 6. Mở PR vào `develop`:
    - Tiêu đề: `merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop`
    - Mô tả theo mẫu, có `Closes #12`
-7. Sửa theo review bằng commit `fixreview(...)`. Khi CI xanh và có 1 người duyệt thì bấm **Create a merge commit**.
+7. Khi CI xanh thì tự bấm **Create a merge commit**, không cần chờ duyệt. Có ai comment thì sửa bằng commit `fixreview(...)` rồi mới merge.
 
 ## Quy tắc ngắn
 
 - Không push thẳng vào `main`, `develop`, `release/*`. Không force push lên nhánh dùng chung.
-- PR dưới khoảng 400 dòng thay đổi. Review trong 24 giờ. Không tự duyệt PR của mình.
-- `CODEOWNERS` tự gán người review theo module.
+- PR dưới khoảng 400 dòng thay đổi để người khác đọc kịp. PR vào `develop` không cần duyệt; PR vào `release/*` và `main` cần 1 người khác duyệt.
+- `CODEOWNERS` tự mời người phụ trách module vào xem PR.
 - Chỉ An tạo nhánh `release/*` và tag `v*` (docs/git-flow.md mục 4.4).
 
 ## Chuẩn code
@@ -49,7 +49,7 @@ Trang này là bản tóm tắt để làm hằng ngày.
 
 ## Definition of Done
 
-- Merge qua PR, 1 người khác duyệt, CI xanh
+- Merge qua PR, CI xanh
 - Có test theo docs/hands-on-testing-guide.md; response khớp OpenAPI
 - Lên dev tự động; người khác nghiệm thu theo tiêu chí
 - Có log và metric cần thiết; không thêm lỗ hổng High hoặc Critical

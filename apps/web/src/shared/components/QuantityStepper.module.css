@@ -1,0 +1,26 @@
+.stepper {
+  display: inline-flex;
+  height: 40px;
+}
+.button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+.button:last-child {
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+.value {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  border-top: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

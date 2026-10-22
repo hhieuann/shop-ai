@@ -1,0 +1,1814 @@
+{
+  "_note": "Dữ liệu demo cho dự án shop-ai: tên và hãng là sản phẩm có bán trên thị trường, giá và tồn kho là số tham khảo làm tròn, không phải giá bán thật. Không có ảnh để tránh dùng ảnh có bản quyền.",
+  "products": [
+    {
+      "productId": "01KYXGSD804J5SF7VFV34GBR11",
+      "name": "Laptop ASUS TUF Gaming A15 FA507NV (Ryzen 7 7735HS, RTX 4060)",
+      "category": "laptop",
+      "brand": "ASUS",
+      "price": 24990000,
+      "stock": 8,
+      "status": "ACTIVE",
+      "description": "Laptop gaming 15.6 inch 144Hz, hợp chơi game và học đồ hoạ.",
+      "specs": {
+        "cpu": "Ryzen 7 7735HS",
+        "gpu": "RTX 4060 8GB",
+        "ram": "16GB DDR5",
+        "ssd": "512GB",
+        "man_hinh": "15.6\" FHD 144Hz"
+      },
+      "createdAt": "2026-08-01T02:00:00.000Z",
+      "updatedAt": "2026-08-01T02:00:00.000Z"
+    },
+    {
+      "productId": "01KZ1FTBC0XZM5Y5E9PDY7WMVX",
+      "name": "Laptop Acer Nitro V 15 ANV15-51 (i5-13420H, RTX 4050)",
+      "category": "laptop",
+      "brand": "Acer",
+      "price": 20490000,
+      "stock": 12,
+      "status": "ACTIVE",
+      "description": "Laptop gaming phổ thông cho sinh viên.",
+      "specs": {
+        "cpu": "Core i5-13420H",
+        "gpu": "RTX 4050 6GB",
+        "ram": "16GB DDR5",
+        "ssd": "512GB",
+        "man_hinh": "15.6\" FHD 144Hz"
+      },
+      "createdAt": "2026-08-02T15:00:00.000Z",
+      "updatedAt": "2026-08-02T15:00:00.000Z"
+    },
+    {
+      "productId": "01KZ5EV9G08AMVQA048RKYAYPY",
+      "name": "Laptop Lenovo Legion 5 15IRX9 (i7-14650HX, RTX 4060)",
+      "category": "laptop",
+      "brand": "Lenovo",
+      "price": 36990000,
+      "stock": 4,
+      "status": "ACTIVE",
+      "description": "Laptop gaming hiệu năng cao, tản nhiệt tốt.",
+      "specs": {
+        "cpu": "Core i7-14650HX",
+        "gpu": "RTX 4060 8GB",
+        "ram": "16GB DDR5",
+        "ssd": "1TB",
+        "man_hinh": "15.6\" 2.5K 165Hz"
+      },
+      "createdAt": "2026-08-04T04:00:00.000Z",
+      "updatedAt": "2026-08-04T04:00:00.000Z"
+    },
+    {
+      "productId": "01KZ9DW7M0AWR79CNDVYGR48H3",
+      "name": "Laptop Dell Inspiron 14 5440 (i5-1334U)",
+      "category": "laptop",
+      "brand": "Dell",
+      "price": 17990000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Laptop văn phòng 14 inch mỏng nhẹ, pin lâu.",
+      "specs": {
+        "cpu": "Core i5-1334U",
+        "ram": "16GB DDR5",
+        "ssd": "512GB",
+        "man_hinh": "14\" FHD+",
+        "trong_luong": "1.5kg"
+      },
+      "createdAt": "2026-08-05T17:00:00.000Z",
+      "updatedAt": "2026-08-05T17:00:00.000Z"
+    },
+    {
+      "productId": "01KZDCX5R08P79YY6ZCEFQ20KN",
+      "name": "Laptop HP Pavilion 15-eg3000 (i5-1335U)",
+      "category": "laptop",
+      "brand": "HP",
+      "price": 16490000,
+      "stock": 10,
+      "status": "ACTIVE",
+      "description": "Laptop văn phòng, học tập, bàn phím có số.",
+      "specs": {
+        "cpu": "Core i5-1335U",
+        "ram": "16GB",
+        "ssd": "512GB",
+        "man_hinh": "15.6\" FHD"
+      },
+      "createdAt": "2026-08-07T06:00:00.000Z",
+      "updatedAt": "2026-08-07T06:00:00.000Z"
+    },
+    {
+      "productId": "01KZHBY3W0N4GNW76FCMQHZV0S",
+      "name": "Laptop ASUS Vivobook 15 OLED A1505VA (i5-13500H)",
+      "category": "laptop",
+      "brand": "ASUS",
+      "price": 18990000,
+      "stock": 9,
+      "status": "ACTIVE",
+      "description": "Màn OLED màu đẹp, hợp sinh viên và người làm nội dung.",
+      "specs": {
+        "cpu": "Core i5-13500H",
+        "ram": "16GB",
+        "ssd": "512GB",
+        "man_hinh": "15.6\" OLED FHD"
+      },
+      "createdAt": "2026-08-08T19:00:00.000Z",
+      "updatedAt": "2026-08-08T19:00:00.000Z"
+    },
+    {
+      "productId": "01KZNAZ2003F1XB7FGQBHVBP0Y",
+      "name": "MacBook Air 13 M3 8GB 256GB",
+      "category": "laptop",
+      "brand": "Apple",
+      "price": 26990000,
+      "stock": 0,
+      "status": "ACTIVE",
+      "description": "Mỏng nhẹ, pin cả ngày cho dân văn phòng và lập trình.",
+      "specs": {
+        "chip": "Apple M3",
+        "ram": "8GB",
+        "ssd": "256GB",
+        "man_hinh": "13.6\" Liquid Retina",
+        "trong_luong": "1.24kg"
+      },
+      "createdAt": "2026-08-10T08:00:00.000Z",
+      "updatedAt": "2026-08-10T08:00:00.000Z"
+    },
+    {
+      "productId": "01KZSA00407KFJ5HMX2W0EQVF3",
+      "name": "Laptop MSI Modern 14 C12MO (i5-1235U)",
+      "category": "laptop",
+      "brand": "MSI",
+      "price": 12990000,
+      "stock": 6,
+      "status": "INACTIVE",
+      "description": "Laptop giá tốt cho học sinh, sinh viên.",
+      "specs": {
+        "cpu": "Core i5-1235U",
+        "ram": "8GB",
+        "ssd": "512GB",
+        "man_hinh": "14\" FHD"
+      },
+      "createdAt": "2026-08-11T21:00:00.000Z",
+      "updatedAt": "2026-08-11T21:00:00.000Z"
+    },
+    {
+      "productId": "01KZX90Y80YH0333W0DD3VSJHD",
+      "name": "Bộ vi xử lý Intel Core i5-14400F",
+      "category": "cpu",
+      "brand": "Intel",
+      "price": 4290000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "10 nhân 16 luồng, lựa chọn phổ biến cho PC gaming tầm trung.",
+      "specs": {
+        "socket": "LGA1700",
+        "nhan_luong": "10/16",
+        "xung_toi_da": "4.7GHz",
+        "tdp": "65W"
+      },
+      "createdAt": "2026-08-13T10:00:00.000Z",
+      "updatedAt": "2026-08-13T10:00:00.000Z"
+    },
+    {
+      "productId": "01M0181WC0T531V2WYWPSW5PBQ",
+      "name": "Bộ vi xử lý Intel Core i7-14700K",
+      "category": "cpu",
+      "brand": "Intel",
+      "price": 9690000,
+      "stock": 10,
+      "status": "ACTIVE",
+      "description": "20 nhân, mạnh cho chơi game và dựng phim.",
+      "specs": {
+        "socket": "LGA1700",
+        "nhan_luong": "20/28",
+        "xung_toi_da": "5.6GHz",
+        "tdp": "125W"
+      },
+      "createdAt": "2026-08-14T23:00:00.000Z",
+      "updatedAt": "2026-08-14T23:00:00.000Z"
+    },
+    {
+      "productId": "01M0572TG0VZXVTZHKNQ6CR39C",
+      "name": "Bộ vi xử lý Intel Core i3-12100F",
+      "category": "cpu",
+      "brand": "Intel",
+      "price": 1990000,
+      "stock": 30,
+      "status": "ACTIVE",
+      "description": "4 nhân 8 luồng, cấu hình học tập văn phòng giá rẻ.",
+      "specs": {
+        "socket": "LGA1700",
+        "nhan_luong": "4/8",
+        "xung_toi_da": "4.3GHz",
+        "tdp": "58W"
+      },
+      "createdAt": "2026-08-16T12:00:00.000Z",
+      "updatedAt": "2026-08-16T12:00:00.000Z"
+    },
+    {
+      "productId": "01M0963RM0WPAZPETZ2CA882Q4",
+      "name": "Bộ vi xử lý Intel Core Ultra 5 245K",
+      "category": "cpu",
+      "brand": "Intel",
+      "price": 7490000,
+      "stock": 7,
+      "status": "ACTIVE",
+      "description": "Kiến trúc Arrow Lake, tiết kiệm điện.",
+      "specs": {
+        "socket": "LGA1851",
+        "nhan_luong": "14/14",
+        "xung_toi_da": "5.2GHz",
+        "tdp": "125W"
+      },
+      "createdAt": "2026-08-18T01:00:00.000Z",
+      "updatedAt": "2026-08-18T01:00:00.000Z"
+    },
+    {
+      "productId": "01M0D54PR0M597EHNNG06M5YN3",
+      "name": "Bộ vi xử lý AMD Ryzen 5 7600",
+      "category": "cpu",
+      "brand": "AMD",
+      "price": 4890000,
+      "stock": 18,
+      "status": "ACTIVE",
+      "description": "6 nhân 12 luồng, nền tảng AM5 dễ nâng cấp.",
+      "specs": {
+        "socket": "AM5",
+        "nhan_luong": "6/12",
+        "xung_toi_da": "5.1GHz",
+        "tdp": "65W"
+      },
+      "createdAt": "2026-08-19T14:00:00.000Z",
+      "updatedAt": "2026-08-19T14:00:00.000Z"
+    },
+    {
+      "productId": "01M0H45MW06A4N4NTK893DC3B2",
+      "name": "Bộ vi xử lý AMD Ryzen 7 7800X3D",
+      "category": "cpu",
+      "brand": "AMD",
+      "price": 10990000,
+      "stock": 0,
+      "status": "ACTIVE",
+      "description": "CPU chơi game hàng đầu nhờ 3D V-Cache.",
+      "specs": {
+        "socket": "AM5",
+        "nhan_luong": "8/16",
+        "xung_toi_da": "5.0GHz",
+        "tdp": "120W"
+      },
+      "createdAt": "2026-08-21T03:00:00.000Z",
+      "updatedAt": "2026-08-21T03:00:00.000Z"
+    },
+    {
+      "productId": "01M0N36K00AX2TSSS630C5853X",
+      "name": "Bộ vi xử lý AMD Ryzen 9 7950X",
+      "category": "cpu",
+      "brand": "AMD",
+      "price": 13990000,
+      "stock": 5,
+      "status": "ACTIVE",
+      "description": "16 nhân cho dựng hình 3D và render video.",
+      "specs": {
+        "socket": "AM5",
+        "nhan_luong": "16/32",
+        "xung_toi_da": "5.7GHz",
+        "tdp": "170W"
+      },
+      "createdAt": "2026-08-22T16:00:00.000Z",
+      "updatedAt": "2026-08-22T16:00:00.000Z"
+    },
+    {
+      "productId": "01M0S27H40KKG176Z3XY84CWES",
+      "name": "Bộ vi xử lý AMD Ryzen 5 5600",
+      "category": "cpu",
+      "brand": "AMD",
+      "price": 2690000,
+      "stock": 22,
+      "status": "ACTIVE",
+      "description": "6 nhân nền tảng AM4, nâng cấp máy cũ giá tốt.",
+      "specs": {
+        "socket": "AM4",
+        "nhan_luong": "6/12",
+        "xung_toi_da": "4.4GHz",
+        "tdp": "65W"
+      },
+      "createdAt": "2026-08-24T05:00:00.000Z",
+      "updatedAt": "2026-08-24T05:00:00.000Z"
+    },
+    {
+      "productId": "01M0X18F808HZBMKFVR050B5R6",
+      "name": "Card màn hình ASUS TUF Gaming GeForce RTX 4070 Super 12GB",
+      "category": "gpu",
+      "brand": "ASUS",
+      "price": 17990000,
+      "stock": 6,
+      "status": "ACTIVE",
+      "description": "Chơi game 1440p mượt, hỗ trợ DLSS 3.",
+      "specs": {
+        "vram": "12GB GDDR6X",
+        "nguon_de_xuat": "750W",
+        "cong_cap": "1x 16-pin",
+        "kich_thuoc": "301mm"
+      },
+      "createdAt": "2026-08-25T18:00:00.000Z",
+      "updatedAt": "2026-08-25T18:00:00.000Z"
+    },
+    {
+      "productId": "01M1109DC0MD6M1GX6QXV3KRTS",
+      "name": "Card màn hình MSI GeForce RTX 4060 Ventus 2X 8GB",
+      "category": "gpu",
+      "brand": "MSI",
+      "price": 7990000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Card phổ thông chơi game 1080p, tiết kiệm điện.",
+      "specs": {
+        "vram": "8GB GDDR6",
+        "nguon_de_xuat": "550W",
+        "cong_cap": "1x 8-pin"
+      },
+      "createdAt": "2026-08-27T07:00:00.000Z",
+      "updatedAt": "2026-08-27T07:00:00.000Z"
+    },
+    {
+      "productId": "01M14ZABG0GS6597BPKY0S6Y9F",
+      "name": "Card màn hình Gigabyte GeForce RTX 4060 Ti Eagle 8GB",
+      "category": "gpu",
+      "brand": "Gigabyte",
+      "price": 10490000,
+      "stock": 11,
+      "status": "ACTIVE",
+      "description": "1080p thiết lập cao, dựng video nhẹ.",
+      "specs": {
+        "vram": "8GB GDDR6",
+        "nguon_de_xuat": "550W",
+        "cong_cap": "1x 8-pin"
+      },
+      "createdAt": "2026-08-28T20:00:00.000Z",
+      "updatedAt": "2026-08-28T20:00:00.000Z"
+    },
+    {
+      "productId": "01M18YB9M0VM21MQGTPQF1XEE8",
+      "name": "Card màn hình ASUS ROG Strix GeForce RTX 4080 Super 16GB",
+      "category": "gpu",
+      "brand": "ASUS",
+      "price": 32990000,
+      "stock": 3,
+      "status": "ACTIVE",
+      "description": "Card cao cấp cho chơi game 4K và dựng hình 3D.",
+      "specs": {
+        "vram": "16GB GDDR6X",
+        "nguon_de_xuat": "850W",
+        "cong_cap": "1x 16-pin",
+        "kich_thuoc": "357mm"
+      },
+      "createdAt": "2026-08-30T09:00:00.000Z",
+      "updatedAt": "2026-08-30T09:00:00.000Z"
+    },
+    {
+      "productId": "01M1CXC7R0YBJNQ3B292245B6M",
+      "name": "Card màn hình Sapphire Pulse Radeon RX 7800 XT 16GB",
+      "category": "gpu",
+      "brand": "Sapphire",
+      "price": 13490000,
+      "stock": 8,
+      "status": "ACTIVE",
+      "description": "16GB VRAM, hiệu năng/giá tốt ở 1440p.",
+      "specs": {
+        "vram": "16GB GDDR6",
+        "nguon_de_xuat": "700W",
+        "cong_cap": "2x 8-pin"
+      },
+      "createdAt": "2026-08-31T22:00:00.000Z",
+      "updatedAt": "2026-08-31T22:00:00.000Z"
+    },
+    {
+      "productId": "01M1GWD5W0NYQBGHEBF6DRKC6A",
+      "name": "Card màn hình PowerColor Fighter Radeon RX 7600 8GB",
+      "category": "gpu",
+      "brand": "PowerColor",
+      "price": 6290000,
+      "stock": 14,
+      "status": "ACTIVE",
+      "description": "Card AMD giá rẻ cho game esports.",
+      "specs": {
+        "vram": "8GB GDDR6",
+        "nguon_de_xuat": "550W",
+        "cong_cap": "1x 8-pin"
+      },
+      "createdAt": "2026-09-02T11:00:00.000Z",
+      "updatedAt": "2026-09-02T11:00:00.000Z"
+    },
+    {
+      "productId": "01M1MVE400BF7WB8TAJJ6E4EDY",
+      "name": "Card màn hình Zotac Gaming GeForce RTX 3060 Twin Edge 12GB",
+      "category": "gpu",
+      "brand": "Zotac",
+      "price": 6990000,
+      "stock": 0,
+      "status": "ACTIVE",
+      "description": "12GB VRAM, vẫn hợp chạy AI và dựng hình nhẹ.",
+      "specs": {
+        "vram": "12GB GDDR6",
+        "nguon_de_xuat": "550W",
+        "cong_cap": "1x 8-pin"
+      },
+      "createdAt": "2026-09-04T00:00:00.000Z",
+      "updatedAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "productId": "01M1RTF24017RHK35Q3XXZMJNM",
+      "name": "Card màn hình MSI GeForce RTX 3050 Ventus 2X 6GB",
+      "category": "gpu",
+      "brand": "MSI",
+      "price": 4490000,
+      "stock": 5,
+      "status": "INACTIVE",
+      "description": "Card cơ bản cho máy văn phòng chơi game nhẹ.",
+      "specs": {
+        "vram": "6GB GDDR6",
+        "nguon_de_xuat": "300W",
+        "cong_cap": "Không cần"
+      },
+      "createdAt": "2026-09-05T13:00:00.000Z",
+      "updatedAt": "2026-09-05T13:00:00.000Z"
+    },
+    {
+      "productId": "01M1WSG080QG6E0GXT37MW7V1D",
+      "name": "RAM Kingston Fury Beast 16GB (2x8GB) DDR4 3200MHz",
+      "category": "ram",
+      "brand": "Kingston",
+      "price": 1190000,
+      "stock": 40,
+      "status": "ACTIVE",
+      "description": "Kit RAM DDR4 phổ biến cho máy AM4 và Intel đời 12–14.",
+      "specs": {
+        "loai": "DDR4",
+        "dung_luong": "16GB (2x8GB)",
+        "bus": "3200MHz"
+      },
+      "createdAt": "2026-09-07T02:00:00.000Z",
+      "updatedAt": "2026-09-07T02:00:00.000Z"
+    },
+    {
+      "productId": "01M20RGYC0MNAK1ZECFKDMP0JT",
+      "name": "RAM Corsair Vengeance LPX 32GB (2x16GB) DDR4 3600MHz",
+      "category": "ram",
+      "brand": "Corsair",
+      "price": 2290000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "32GB cho lập trình, chạy máy ảo và Docker.",
+      "specs": {
+        "loai": "DDR4",
+        "dung_luong": "32GB (2x16GB)",
+        "bus": "3600MHz"
+      },
+      "createdAt": "2026-09-08T15:00:00.000Z",
+      "updatedAt": "2026-09-08T15:00:00.000Z"
+    },
+    {
+      "productId": "01M24QHWG07483TQH4C3TY2A0W",
+      "name": "RAM G.Skill Trident Z5 RGB 32GB (2x16GB) DDR5 6000MHz",
+      "category": "ram",
+      "brand": "G.Skill",
+      "price": 3490000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "DDR5 tốc độ cao có đèn RGB cho PC gaming.",
+      "specs": {
+        "loai": "DDR5",
+        "dung_luong": "32GB (2x16GB)",
+        "bus": "6000MHz",
+        "rgb": "Có"
+      },
+      "createdAt": "2026-09-10T04:00:00.000Z",
+      "updatedAt": "2026-09-10T04:00:00.000Z"
+    },
+    {
+      "productId": "01M28PJTM0RVFFEB2YWVXQK4RB",
+      "name": "RAM Kingston Fury Beast 32GB (2x16GB) DDR5 5600MHz",
+      "category": "ram",
+      "brand": "Kingston",
+      "price": 2890000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Kit DDR5 cho nền tảng AM5 và Intel đời mới.",
+      "specs": {
+        "loai": "DDR5",
+        "dung_luong": "32GB (2x16GB)",
+        "bus": "5600MHz"
+      },
+      "createdAt": "2026-09-11T17:00:00.000Z",
+      "updatedAt": "2026-09-11T17:00:00.000Z"
+    },
+    {
+      "productId": "01M2CNKRR0YJRSQPDP7KVJQ3T8",
+      "name": "RAM Corsair Vengeance 64GB (2x32GB) DDR5 5600MHz",
+      "category": "ram",
+      "brand": "Corsair",
+      "price": 5490000,
+      "stock": 6,
+      "status": "ACTIVE",
+      "description": "64GB cho dựng phim 4K và làm 3D.",
+      "specs": {
+        "loai": "DDR5",
+        "dung_luong": "64GB (2x32GB)",
+        "bus": "5600MHz"
+      },
+      "createdAt": "2026-09-13T06:00:00.000Z",
+      "updatedAt": "2026-09-13T06:00:00.000Z"
+    },
+    {
+      "productId": "01M2GMMPW0EFSN9GH47279VPSV",
+      "name": "RAM TeamGroup T-Force Delta RGB 16GB (2x8GB) DDR5 6000MHz",
+      "category": "ram",
+      "brand": "TeamGroup",
+      "price": 1890000,
+      "stock": 2,
+      "status": "ACTIVE",
+      "description": "DDR5 có RGB giá dễ chịu.",
+      "specs": {
+        "loai": "DDR5",
+        "dung_luong": "16GB (2x8GB)",
+        "bus": "6000MHz",
+        "rgb": "Có"
+      },
+      "createdAt": "2026-09-14T19:00:00.000Z",
+      "updatedAt": "2026-09-14T19:00:00.000Z"
+    },
+    {
+      "productId": "01M2MKNN00TEKTMAMPEB36EE4A",
+      "name": "RAM Laptop Samsung 16GB DDR5 4800MHz SO-DIMM",
+      "category": "ram",
+      "brand": "Samsung",
+      "price": 1290000,
+      "stock": 30,
+      "status": "ACTIVE",
+      "description": "Nâng cấp RAM cho laptop đời mới.",
+      "specs": {
+        "loai": "DDR5 SO-DIMM",
+        "dung_luong": "16GB",
+        "bus": "4800MHz"
+      },
+      "createdAt": "2026-09-16T08:00:00.000Z",
+      "updatedAt": "2026-09-16T08:00:00.000Z"
+    },
+    {
+      "productId": "01M2RJPK40A22QBYXNHZPS4DMZ",
+      "name": "RAM Laptop Kingston 8GB DDR4 3200MHz SO-DIMM",
+      "category": "ram",
+      "brand": "Kingston",
+      "price": 590000,
+      "stock": 35,
+      "status": "ACTIVE",
+      "description": "Nâng cấp RAM laptop cũ giá rẻ.",
+      "specs": {
+        "loai": "DDR4 SO-DIMM",
+        "dung_luong": "8GB",
+        "bus": "3200MHz"
+      },
+      "createdAt": "2026-09-17T21:00:00.000Z",
+      "updatedAt": "2026-09-17T21:00:00.000Z"
+    },
+    {
+      "productId": "01M2WHQH80B6JK25P1DK6R5T2E",
+      "name": "Ổ cứng SSD Samsung 990 Pro 1TB NVMe PCIe 4.0",
+      "category": "storage",
+      "brand": "Samsung",
+      "price": 2790000,
+      "stock": 18,
+      "status": "ACTIVE",
+      "description": "Đọc 7450MB/s, cho máy gaming và dựng video.",
+      "specs": {
+        "chuan": "M.2 NVMe PCIe 4.0",
+        "dung_luong": "1TB",
+        "doc": "7450MB/s",
+        "ghi": "6900MB/s"
+      },
+      "createdAt": "2026-09-19T10:00:00.000Z",
+      "updatedAt": "2026-09-19T10:00:00.000Z"
+    },
+    {
+      "productId": "01M30GRFC0AP42KF6Q6SBQW4CF",
+      "name": "Ổ cứng SSD Kingston NV2 500GB NVMe",
+      "category": "storage",
+      "brand": "Kingston",
+      "price": 890000,
+      "stock": 40,
+      "status": "ACTIVE",
+      "description": "SSD giá rẻ nâng cấp máy cũ, khởi động nhanh.",
+      "specs": {
+        "chuan": "M.2 NVMe PCIe 4.0",
+        "dung_luong": "500GB",
+        "doc": "3500MB/s"
+      },
+      "createdAt": "2026-09-20T23:00:00.000Z",
+      "updatedAt": "2026-09-20T23:00:00.000Z"
+    },
+    {
+      "productId": "01M34FSDG0PNJR6JV6T0EPHF0W",
+      "name": "Ổ cứng SSD WD Black SN850X 2TB NVMe",
+      "category": "storage",
+      "brand": "Western Digital",
+      "price": 4590000,
+      "stock": 9,
+      "status": "ACTIVE",
+      "description": "2TB tốc độ cao cho thư viện game lớn.",
+      "specs": {
+        "chuan": "M.2 NVMe PCIe 4.0",
+        "dung_luong": "2TB",
+        "doc": "7300MB/s"
+      },
+      "createdAt": "2026-09-22T12:00:00.000Z",
+      "updatedAt": "2026-09-22T12:00:00.000Z"
+    },
+    {
+      "productId": "01M38ETBM0WJ54VK1G1VH113CE",
+      "name": "Ổ cứng SSD Crucial P3 Plus 1TB NVMe",
+      "category": "storage",
+      "brand": "Crucial",
+      "price": 1590000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "SSD 1TB phổ thông, giá tốt.",
+      "specs": {
+        "chuan": "M.2 NVMe PCIe 4.0",
+        "dung_luong": "1TB",
+        "doc": "5000MB/s"
+      },
+      "createdAt": "2026-09-24T01:00:00.000Z",
+      "updatedAt": "2026-09-24T01:00:00.000Z"
+    },
+    {
+      "productId": "01M3CDV9R0SXFDTT0SCBAD31YN",
+      "name": "Ổ cứng SSD Samsung 870 EVO 500GB SATA 2.5 inch",
+      "category": "storage",
+      "brand": "Samsung",
+      "price": 1190000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "SSD SATA cho laptop và PC đời cũ không có khe M.2.",
+      "specs": {
+        "chuan": "SATA 2.5\"",
+        "dung_luong": "500GB",
+        "doc": "560MB/s"
+      },
+      "createdAt": "2026-09-25T14:00:00.000Z",
+      "updatedAt": "2026-09-25T14:00:00.000Z"
+    },
+    {
+      "productId": "01M3GCW7W0MGC377NNF5SDGFVF",
+      "name": "Ổ cứng HDD Seagate BarraCuda 2TB 7200rpm",
+      "category": "storage",
+      "brand": "Seagate",
+      "price": 1490000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Lưu trữ dung lượng lớn cho ảnh, video.",
+      "specs": {
+        "chuan": "SATA 3.5\"",
+        "dung_luong": "2TB",
+        "toc_do": "7200rpm"
+      },
+      "createdAt": "2026-09-27T03:00:00.000Z",
+      "updatedAt": "2026-09-27T03:00:00.000Z"
+    },
+    {
+      "productId": "01M3MBX60007TEY2B5KRT89B7A",
+      "name": "Ổ cứng HDD WD Blue 4TB 5400rpm",
+      "category": "storage",
+      "brand": "Western Digital",
+      "price": 2390000,
+      "stock": 0,
+      "status": "ACTIVE",
+      "description": "4TB lưu trữ dữ liệu, sao lưu dự án.",
+      "specs": {
+        "chuan": "SATA 3.5\"",
+        "dung_luong": "4TB",
+        "toc_do": "5400rpm"
+      },
+      "createdAt": "2026-09-28T16:00:00.000Z",
+      "updatedAt": "2026-09-28T16:00:00.000Z"
+    },
+    {
+      "productId": "01KYXV3040HAMZQH2KP7RMCZ9H",
+      "name": "Ổ cứng di động SSD Samsung T7 1TB USB-C",
+      "category": "storage",
+      "brand": "Samsung",
+      "price": 2490000,
+      "stock": 12,
+      "status": "ACTIVE",
+      "description": "SSD di động nhỏ gọn cho người làm nội dung.",
+      "specs": {
+        "ket_noi": "USB 3.2 Gen 2 Type-C",
+        "dung_luong": "1TB",
+        "doc": "1050MB/s"
+      },
+      "createdAt": "2026-08-01T05:00:00.000Z",
+      "updatedAt": "2026-08-01T05:00:00.000Z"
+    },
+    {
+      "productId": "01KZ1T3Y80V01B3Q6BH6DMX9AD",
+      "name": "Bo mạch chủ ASUS PRIME B760M-A WIFI D4",
+      "category": "mainboard",
+      "brand": "ASUS",
+      "price": 3290000,
+      "stock": 14,
+      "status": "ACTIVE",
+      "description": "Mainboard mATX cho Intel đời 12–14, có WiFi, dùng RAM DDR4.",
+      "specs": {
+        "socket": "LGA1700",
+        "chipset": "B760",
+        "ram": "DDR4",
+        "kich_thuoc": "mATX",
+        "wifi": "Có"
+      },
+      "createdAt": "2026-08-02T18:00:00.000Z",
+      "updatedAt": "2026-08-02T18:00:00.000Z"
+    },
+    {
+      "productId": "01KZ5S4WC0K0Q1TM4N0A667W9N",
+      "name": "Bo mạch chủ MSI PRO B760M-P DDR4",
+      "category": "mainboard",
+      "brand": "MSI",
+      "price": 2490000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Mainboard giá tốt cho Core i3, i5.",
+      "specs": {
+        "socket": "LGA1700",
+        "chipset": "B760",
+        "ram": "DDR4",
+        "kich_thuoc": "mATX"
+      },
+      "createdAt": "2026-08-04T07:00:00.000Z",
+      "updatedAt": "2026-08-04T07:00:00.000Z"
+    },
+    {
+      "productId": "01KZ9R5TG0XKDSPSXE2H2A50QT",
+      "name": "Bo mạch chủ Gigabyte Z790 AORUS ELITE AX",
+      "category": "mainboard",
+      "brand": "Gigabyte",
+      "price": 6990000,
+      "stock": 5,
+      "status": "ACTIVE",
+      "description": "Mainboard cao cấp cho Core i7, i9 dòng K, DDR5.",
+      "specs": {
+        "socket": "LGA1700",
+        "chipset": "Z790",
+        "ram": "DDR5",
+        "kich_thuoc": "ATX",
+        "wifi": "Có"
+      },
+      "createdAt": "2026-08-05T20:00:00.000Z",
+      "updatedAt": "2026-08-05T20:00:00.000Z"
+    },
+    {
+      "productId": "01KZDQ6RM0A9QEJY24TDHZ0Z4F",
+      "name": "Bo mạch chủ ASUS TUF GAMING B650-PLUS WIFI",
+      "category": "mainboard",
+      "brand": "ASUS",
+      "price": 5290000,
+      "stock": 9,
+      "status": "ACTIVE",
+      "description": "Mainboard AM5 bền bỉ cho Ryzen 7000.",
+      "specs": {
+        "socket": "AM5",
+        "chipset": "B650",
+        "ram": "DDR5",
+        "kich_thuoc": "ATX",
+        "wifi": "Có"
+      },
+      "createdAt": "2026-08-07T09:00:00.000Z",
+      "updatedAt": "2026-08-07T09:00:00.000Z"
+    },
+    {
+      "productId": "01KZHP7PR0CV2V2PQF36CDHSZC",
+      "name": "Bo mạch chủ MSI B650M GAMING PLUS WIFI",
+      "category": "mainboard",
+      "brand": "MSI",
+      "price": 4190000,
+      "stock": 12,
+      "status": "ACTIVE",
+      "description": "mATX AM5 giá hợp lý, có WiFi 6E.",
+      "specs": {
+        "socket": "AM5",
+        "chipset": "B650",
+        "ram": "DDR5",
+        "kich_thuoc": "mATX",
+        "wifi": "Có"
+      },
+      "createdAt": "2026-08-08T22:00:00.000Z",
+      "updatedAt": "2026-08-08T22:00:00.000Z"
+    },
+    {
+      "productId": "01KZNN8MW0TE28E2SKYDQG18TX",
+      "name": "Bo mạch chủ ASRock B550M Pro4",
+      "category": "mainboard",
+      "brand": "ASRock",
+      "price": 2290000,
+      "stock": 1,
+      "status": "ACTIVE",
+      "description": "Mainboard AM4 cho Ryzen 5000.",
+      "specs": {
+        "socket": "AM4",
+        "chipset": "B550",
+        "ram": "DDR4",
+        "kich_thuoc": "mATX"
+      },
+      "createdAt": "2026-08-10T11:00:00.000Z",
+      "updatedAt": "2026-08-10T11:00:00.000Z"
+    },
+    {
+      "productId": "01KZSM9K00M6EQX9FDBKXRFG97",
+      "name": "Bo mạch chủ Gigabyte H610M S2H DDR4",
+      "category": "mainboard",
+      "brand": "Gigabyte",
+      "price": 1690000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "Mainboard cơ bản cho máy văn phòng Intel.",
+      "specs": {
+        "socket": "LGA1700",
+        "chipset": "H610",
+        "ram": "DDR4",
+        "kich_thuoc": "mATX"
+      },
+      "createdAt": "2026-08-12T00:00:00.000Z",
+      "updatedAt": "2026-08-12T00:00:00.000Z"
+    },
+    {
+      "productId": "01KZXKAH40C4PD7XEK8YXASACA",
+      "name": "Bo mạch chủ ASUS ROG STRIX Z890-A GAMING WIFI",
+      "category": "mainboard",
+      "brand": "ASUS",
+      "price": 10490000,
+      "stock": 3,
+      "status": "ACTIVE",
+      "description": "Mainboard cho Intel Core Ultra 200S.",
+      "specs": {
+        "socket": "LGA1851",
+        "chipset": "Z890",
+        "ram": "DDR5",
+        "kich_thuoc": "ATX",
+        "wifi": "Có"
+      },
+      "createdAt": "2026-08-13T13:00:00.000Z",
+      "updatedAt": "2026-08-13T13:00:00.000Z"
+    },
+    {
+      "productId": "01M01JBF806PSNQ2BYBVNHNA69",
+      "name": "Nguồn máy tính Corsair RM750e 750W 80 Plus Gold",
+      "category": "psu",
+      "brand": "Corsair",
+      "price": 2590000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Nguồn full modular, đủ cho RTX 4070 Super.",
+      "specs": {
+        "cong_suat": "750W",
+        "chuan": "80 Plus Gold",
+        "modular": "Full"
+      },
+      "createdAt": "2026-08-15T02:00:00.000Z",
+      "updatedAt": "2026-08-15T02:00:00.000Z"
+    },
+    {
+      "productId": "01M05HCDC077PH6YJ73D623GPC",
+      "name": "Nguồn máy tính MSI MAG A650BN 650W 80 Plus Bronze",
+      "category": "psu",
+      "brand": "MSI",
+      "price": 1290000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "Nguồn phổ thông cho cấu hình RTX 4060.",
+      "specs": {
+        "cong_suat": "650W",
+        "chuan": "80 Plus Bronze",
+        "modular": "Không"
+      },
+      "createdAt": "2026-08-16T15:00:00.000Z",
+      "updatedAt": "2026-08-16T15:00:00.000Z"
+    },
+    {
+      "productId": "01M09GDBG04HWZPXHXS7BYVJ9W",
+      "name": "Nguồn máy tính Cooler Master MWE Gold 850 V2",
+      "category": "psu",
+      "brand": "Cooler Master",
+      "price": 2690000,
+      "stock": 10,
+      "status": "ACTIVE",
+      "description": "850W cho card cao cấp và CPU nhiều nhân.",
+      "specs": {
+        "cong_suat": "850W",
+        "chuan": "80 Plus Gold",
+        "modular": "Full"
+      },
+      "createdAt": "2026-08-18T04:00:00.000Z",
+      "updatedAt": "2026-08-18T04:00:00.000Z"
+    },
+    {
+      "productId": "01M0DFE9M06P0JWG4RYE4FBQ29",
+      "name": "Nguồn máy tính Seasonic Focus GX-1000 1000W",
+      "category": "psu",
+      "brand": "Seasonic",
+      "price": 4290000,
+      "stock": 4,
+      "status": "ACTIVE",
+      "description": "1000W bền bỉ, bảo hành dài, cho RTX 4080.",
+      "specs": {
+        "cong_suat": "1000W",
+        "chuan": "80 Plus Gold",
+        "modular": "Full"
+      },
+      "createdAt": "2026-08-19T17:00:00.000Z",
+      "updatedAt": "2026-08-19T17:00:00.000Z"
+    },
+    {
+      "productId": "01M0HEF7R01D6ZWTWMS5WRZKGP",
+      "name": "Nguồn máy tính Deepcool PK550D 550W 80 Plus Bronze",
+      "category": "psu",
+      "brand": "Deepcool",
+      "price": 990000,
+      "stock": 30,
+      "status": "ACTIVE",
+      "description": "Nguồn giá rẻ cho máy văn phòng, học tập.",
+      "specs": {
+        "cong_suat": "550W",
+        "chuan": "80 Plus Bronze",
+        "modular": "Không"
+      },
+      "createdAt": "2026-08-21T06:00:00.000Z",
+      "updatedAt": "2026-08-21T06:00:00.000Z"
+    },
+    {
+      "productId": "01M0NDG5W0400XH8W0M3DTHVVV",
+      "name": "Nguồn máy tính ASUS ROG Strix 850W Gold Aura",
+      "category": "psu",
+      "brand": "ASUS",
+      "price": 3890000,
+      "stock": 6,
+      "status": "ACTIVE",
+      "description": "Nguồn cao cấp có cổng 16-pin cho card RTX 40.",
+      "specs": {
+        "cong_suat": "850W",
+        "chuan": "80 Plus Gold",
+        "modular": "Full",
+        "cong_16pin": "Có"
+      },
+      "createdAt": "2026-08-22T19:00:00.000Z",
+      "updatedAt": "2026-08-22T19:00:00.000Z"
+    },
+    {
+      "productId": "01M0SCH400JDHQ2Y9FPTJNB4RP",
+      "name": "Nguồn máy tính Thermaltake Smart 600W 80 Plus White",
+      "category": "psu",
+      "brand": "Thermaltake",
+      "price": 890000,
+      "stock": 3,
+      "status": "ACTIVE",
+      "description": "Nguồn cơ bản cho PC không card rời.",
+      "specs": {
+        "cong_suat": "600W",
+        "chuan": "80 Plus White",
+        "modular": "Không"
+      },
+      "createdAt": "2026-08-24T08:00:00.000Z",
+      "updatedAt": "2026-08-24T08:00:00.000Z"
+    },
+    {
+      "productId": "01M0XBJ240EQTHZXEGEBCEH7RJ",
+      "name": "Nguồn máy tính Corsair CX650 650W 80 Plus Bronze",
+      "category": "psu",
+      "brand": "Corsair",
+      "price": 1490000,
+      "stock": 18,
+      "status": "ACTIVE",
+      "description": "650W đủ cho đa số cấu hình gaming tầm trung.",
+      "specs": {
+        "cong_suat": "650W",
+        "chuan": "80 Plus Bronze",
+        "modular": "Không"
+      },
+      "createdAt": "2026-08-25T21:00:00.000Z",
+      "updatedAt": "2026-08-25T21:00:00.000Z"
+    },
+    {
+      "productId": "01M11AK0808SD2T6PRHBBYV7SK",
+      "name": "Tản nhiệt khí Deepcool AK400",
+      "category": "cooling",
+      "brand": "Deepcool",
+      "price": 690000,
+      "stock": 30,
+      "status": "ACTIVE",
+      "description": "Tản khí tháp đơn, đủ mát cho Core i5 và Ryzen 5.",
+      "specs": {
+        "loai": "Tản khí",
+        "tdp_toi_da": "220W",
+        "socket": "LGA1700, AM5, AM4"
+      },
+      "createdAt": "2026-08-27T10:00:00.000Z",
+      "updatedAt": "2026-08-27T10:00:00.000Z"
+    },
+    {
+      "productId": "01M159KYC078JFJ76HGAW6R8J1",
+      "name": "Tản nhiệt khí Thermalright Peerless Assassin 120 SE",
+      "category": "cooling",
+      "brand": "Thermalright",
+      "price": 890000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Tháp đôi hiệu năng cao, giá tốt.",
+      "specs": {
+        "loai": "Tản khí",
+        "tdp_toi_da": "260W",
+        "socket": "LGA1700, AM5, AM4"
+      },
+      "createdAt": "2026-08-28T23:00:00.000Z",
+      "updatedAt": "2026-08-28T23:00:00.000Z"
+    },
+    {
+      "productId": "01M198MWG03Z0ZHV72CQ7G24PA",
+      "name": "Tản nhiệt nước AIO NZXT Kraken 240",
+      "category": "cooling",
+      "brand": "NZXT",
+      "price": 2790000,
+      "stock": 8,
+      "status": "ACTIVE",
+      "description": "AIO 240mm cho Core i7, Ryzen 7.",
+      "specs": {
+        "loai": "Tản nước AIO",
+        "radiator": "240mm",
+        "socket": "LGA1700, AM5"
+      },
+      "createdAt": "2026-08-30T12:00:00.000Z",
+      "updatedAt": "2026-08-30T12:00:00.000Z"
+    },
+    {
+      "productId": "01M1D7NTM09C65YT9KZZPTPNRW",
+      "name": "Tản nhiệt nước AIO Corsair iCUE H150i Elite 360",
+      "category": "cooling",
+      "brand": "Corsair",
+      "price": 4990000,
+      "stock": 4,
+      "status": "ACTIVE",
+      "description": "AIO 360mm cho CPU cao cấp ép xung.",
+      "specs": {
+        "loai": "Tản nước AIO",
+        "radiator": "360mm",
+        "socket": "LGA1700, AM5"
+      },
+      "createdAt": "2026-09-01T01:00:00.000Z",
+      "updatedAt": "2026-09-01T01:00:00.000Z"
+    },
+    {
+      "productId": "01M1H6PRR0DNAR67P0X91Q9SCM",
+      "name": "Tản nhiệt khí Noctua NH-D15 chromax.black",
+      "category": "cooling",
+      "brand": "Noctua",
+      "price": 2990000,
+      "stock": 2,
+      "status": "ACTIVE",
+      "description": "Tản khí đầu bảng, chạy rất êm.",
+      "specs": {
+        "loai": "Tản khí",
+        "tdp_toi_da": "250W",
+        "socket": "LGA1700, AM5, AM4"
+      },
+      "createdAt": "2026-09-02T14:00:00.000Z",
+      "updatedAt": "2026-09-02T14:00:00.000Z"
+    },
+    {
+      "productId": "01M1N5QPW0E2JYNXVKJ4WWPWFP",
+      "name": "Quạt case Arctic P12 PWM PST (bộ 5 cái)",
+      "category": "cooling",
+      "brand": "Arctic",
+      "price": 690000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "Quạt 120mm êm, nối tiếp nhau bằng một dây.",
+      "specs": {
+        "loai": "Quạt case",
+        "kich_thuoc": "120mm",
+        "so_luong": "5"
+      },
+      "createdAt": "2026-09-04T03:00:00.000Z",
+      "updatedAt": "2026-09-04T03:00:00.000Z"
+    },
+    {
+      "productId": "01M1S4RN0022VE5VS0WD2BWCXJ",
+      "name": "Keo tản nhiệt Arctic MX-6 4g",
+      "category": "cooling",
+      "brand": "Arctic",
+      "price": 190000,
+      "stock": 60,
+      "status": "ACTIVE",
+      "description": "Keo tản nhiệt hiệu năng cao, dễ bôi.",
+      "specs": {
+        "loai": "Keo tản nhiệt",
+        "khoi_luong": "4g"
+      },
+      "createdAt": "2026-09-05T16:00:00.000Z",
+      "updatedAt": "2026-09-05T16:00:00.000Z"
+    },
+    {
+      "productId": "01M1X3SK40MXNPGME61B3XTT7N",
+      "name": "Tản nhiệt khí Cooler Master Hyper 212 Spectrum V3",
+      "category": "cooling",
+      "brand": "Cooler Master",
+      "price": 590000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Tản khí phổ thông có LED.",
+      "specs": {
+        "loai": "Tản khí",
+        "tdp_toi_da": "180W",
+        "socket": "LGA1700, AM5, AM4"
+      },
+      "createdAt": "2026-09-07T05:00:00.000Z",
+      "updatedAt": "2026-09-07T05:00:00.000Z"
+    },
+    {
+      "productId": "01M212TH807349RSRKH8GRMEP1",
+      "name": "Bàn phím cơ Keychron K8 Pro (Gateron Brown)",
+      "category": "keyboard",
+      "brand": "Keychron",
+      "price": 2490000,
+      "stock": 12,
+      "status": "ACTIVE",
+      "description": "Bàn phím cơ không dây TKL, hợp Mac và Windows, cho lập trình viên.",
+      "specs": {
+        "layout": "TKL",
+        "switch": "Gateron Brown",
+        "ket_noi": "Bluetooth, USB-C",
+        "hot_swap": "Có"
+      },
+      "createdAt": "2026-09-08T18:00:00.000Z",
+      "updatedAt": "2026-09-08T18:00:00.000Z"
+    },
+    {
+      "productId": "01M251VFC0FRSB5WC1HF2CA8FE",
+      "name": "Bàn phím cơ AKKO 3098B Multi-modes",
+      "category": "keyboard",
+      "brand": "AKKO",
+      "price": 1690000,
+      "stock": 18,
+      "status": "ACTIVE",
+      "description": "Bàn phím 98 phím, 3 chế độ kết nối.",
+      "specs": {
+        "layout": "98 phím",
+        "switch": "AKKO CS Jelly Pink",
+        "ket_noi": "Bluetooth, 2.4GHz, USB-C"
+      },
+      "createdAt": "2026-09-10T07:00:00.000Z",
+      "updatedAt": "2026-09-10T07:00:00.000Z"
+    },
+    {
+      "productId": "01M290WDG0HQDH92N97H3JHH0J",
+      "name": "Bàn phím cơ Logitech G Pro X TKL Lightspeed",
+      "category": "keyboard",
+      "brand": "Logitech",
+      "price": 4290000,
+      "stock": 6,
+      "status": "ACTIVE",
+      "description": "Bàn phím gaming không dây cho thi đấu esports.",
+      "specs": {
+        "layout": "TKL",
+        "switch": "GX Brown",
+        "ket_noi": "Lightspeed 2.4GHz, Bluetooth"
+      },
+      "createdAt": "2026-09-11T20:00:00.000Z",
+      "updatedAt": "2026-09-11T20:00:00.000Z"
+    },
+    {
+      "productId": "01M2CZXBM0571GGFVFGGBBKWKY",
+      "name": "Bàn phím cơ Razer BlackWidow V4 X",
+      "category": "keyboard",
+      "brand": "Razer",
+      "price": 3290000,
+      "stock": 8,
+      "status": "ACTIVE",
+      "description": "Bàn phím gaming full-size có phím macro.",
+      "specs": {
+        "layout": "Full-size",
+        "switch": "Razer Green",
+        "ket_noi": "USB"
+      },
+      "createdAt": "2026-09-13T09:00:00.000Z",
+      "updatedAt": "2026-09-13T09:00:00.000Z"
+    },
+    {
+      "productId": "01M2GYY9R0R6NP1XM2BN4BS3ZA",
+      "name": "Bàn phím cơ E-DRA EK387 Pro",
+      "category": "keyboard",
+      "brand": "E-DRA",
+      "price": 590000,
+      "stock": 35,
+      "status": "ACTIVE",
+      "description": "Bàn phím cơ giá rẻ cho học sinh, sinh viên.",
+      "specs": {
+        "layout": "TKL",
+        "switch": "Huano Blue",
+        "ket_noi": "USB"
+      },
+      "createdAt": "2026-09-14T22:00:00.000Z",
+      "updatedAt": "2026-09-14T22:00:00.000Z"
+    },
+    {
+      "productId": "01M2MXZ7W0BMHE0ZW94EHBEZF2",
+      "name": "Bàn phím không dây Logitech MX Keys S",
+      "category": "keyboard",
+      "brand": "Logitech",
+      "price": 2690000,
+      "stock": 10,
+      "status": "ACTIVE",
+      "description": "Bàn phím văn phòng gõ êm, sạc USB-C.",
+      "specs": {
+        "layout": "Full-size",
+        "loai": "Phím màng low-profile",
+        "ket_noi": "Bluetooth, Logi Bolt"
+      },
+      "createdAt": "2026-09-16T11:00:00.000Z",
+      "updatedAt": "2026-09-16T11:00:00.000Z"
+    },
+    {
+      "productId": "01M2RX0600CN71QF0PR90F4BH9",
+      "name": "Bàn phím cơ DareU EK87 V2",
+      "category": "keyboard",
+      "brand": "DareU",
+      "price": 490000,
+      "stock": 1,
+      "status": "ACTIVE",
+      "description": "Bàn phím cơ TKL phổ thông có LED.",
+      "specs": {
+        "layout": "TKL",
+        "switch": "DareU Blue",
+        "ket_noi": "USB"
+      },
+      "createdAt": "2026-09-18T00:00:00.000Z",
+      "updatedAt": "2026-09-18T00:00:00.000Z"
+    },
+    {
+      "productId": "01M2WW1440GMZ27NG3103KV8CD",
+      "name": "Bàn phím cơ Corsair K70 RGB PRO",
+      "category": "keyboard",
+      "brand": "Corsair",
+      "price": 3790000,
+      "stock": 4,
+      "status": "ACTIVE",
+      "description": "Khung nhôm, switch Cherry MX cho game thủ.",
+      "specs": {
+        "layout": "Full-size",
+        "switch": "Cherry MX Red",
+        "ket_noi": "USB"
+      },
+      "createdAt": "2026-09-19T13:00:00.000Z",
+      "updatedAt": "2026-09-19T13:00:00.000Z"
+    },
+    {
+      "productId": "01M30V2280BQMKA1W630JAPWE5",
+      "name": "Chuột gaming Logitech G502 X Plus không dây",
+      "category": "mouse",
+      "brand": "Logitech",
+      "price": 3290000,
+      "stock": 10,
+      "status": "ACTIVE",
+      "description": "Chuột gaming không dây nhiều nút, có LED.",
+      "specs": {
+        "cam_bien": "HERO 25K",
+        "dpi": "25600",
+        "ket_noi": "Lightspeed",
+        "trong_luong": "106g"
+      },
+      "createdAt": "2026-09-21T02:00:00.000Z",
+      "updatedAt": "2026-09-21T02:00:00.000Z"
+    },
+    {
+      "productId": "01M34T30C0CM4GMJXCJ8MDASRJ",
+      "name": "Chuột gaming Logitech G102 Lightsync",
+      "category": "mouse",
+      "brand": "Logitech",
+      "price": 390000,
+      "stock": 50,
+      "status": "ACTIVE",
+      "description": "Chuột gaming quốc dân giá rẻ.",
+      "specs": {
+        "cam_bien": "Optical",
+        "dpi": "8000",
+        "ket_noi": "USB",
+        "trong_luong": "85g"
+      },
+      "createdAt": "2026-09-22T15:00:00.000Z",
+      "updatedAt": "2026-09-22T15:00:00.000Z"
+    },
+    {
+      "productId": "01M38S3YG0W6BKTQX75CVACQSM",
+      "name": "Chuột không dây Logitech MX Master 3S",
+      "category": "mouse",
+      "brand": "Logitech",
+      "price": 2290000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Chuột văn phòng công thái học, cuộn siêu nhanh.",
+      "specs": {
+        "dpi": "8000",
+        "ket_noi": "Bluetooth, Logi Bolt",
+        "pin": "70 ngày"
+      },
+      "createdAt": "2026-09-24T04:00:00.000Z",
+      "updatedAt": "2026-09-24T04:00:00.000Z"
+    },
+    {
+      "productId": "01M3CR4WM0WPNZNJYN21WDCHGZ",
+      "name": "Chuột gaming Razer DeathAdder V3",
+      "category": "mouse",
+      "brand": "Razer",
+      "price": 1690000,
+      "stock": 12,
+      "status": "ACTIVE",
+      "description": "Chuột siêu nhẹ cho FPS.",
+      "specs": {
+        "cam_bien": "Focus Pro 30K",
+        "dpi": "30000",
+        "ket_noi": "USB",
+        "trong_luong": "59g"
+      },
+      "createdAt": "2026-09-25T17:00:00.000Z",
+      "updatedAt": "2026-09-25T17:00:00.000Z"
+    },
+    {
+      "productId": "01M3GQ5TR0DH1Z32GWGG764J9X",
+      "name": "Chuột không dây Logitech M331 Silent Plus",
+      "category": "mouse",
+      "brand": "Logitech",
+      "price": 350000,
+      "stock": 40,
+      "status": "ACTIVE",
+      "description": "Chuột văn phòng bấm không tiếng ồn.",
+      "specs": {
+        "dpi": "1000",
+        "ket_noi": "2.4GHz",
+        "pin": "24 tháng"
+      },
+      "createdAt": "2026-09-27T06:00:00.000Z",
+      "updatedAt": "2026-09-27T06:00:00.000Z"
+    },
+    {
+      "productId": "01M3MP6RW0MF6C34GP6CR9GE2W",
+      "name": "Chuột gaming Razer Viper V3 Pro không dây",
+      "category": "mouse",
+      "brand": "Razer",
+      "price": 4190000,
+      "stock": 0,
+      "status": "ACTIVE",
+      "description": "Chuột thi đấu esports cao cấp, siêu nhẹ.",
+      "specs": {
+        "cam_bien": "Focus Pro 35K",
+        "dpi": "35000",
+        "ket_noi": "HyperSpeed",
+        "trong_luong": "54g"
+      },
+      "createdAt": "2026-09-28T19:00:00.000Z",
+      "updatedAt": "2026-09-28T19:00:00.000Z"
+    },
+    {
+      "productId": "01KYY5CK008AG6HZYMDYCJ0RG3",
+      "name": "Chuột gaming SteelSeries Rival 3",
+      "category": "mouse",
+      "brand": "SteelSeries",
+      "price": 690000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Chuột gaming bền, cảm biến chính xác.",
+      "specs": {
+        "cam_bien": "TrueMove Core",
+        "dpi": "8500",
+        "ket_noi": "USB"
+      },
+      "createdAt": "2026-08-01T08:00:00.000Z",
+      "updatedAt": "2026-08-01T08:00:00.000Z"
+    },
+    {
+      "productId": "01KZ24DH404NV7Z14YQYCARFZH",
+      "name": "Chuột không dây Microsoft Bluetooth Mouse",
+      "category": "mouse",
+      "brand": "Microsoft",
+      "price": 390000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "Chuột nhỏ gọn mang theo laptop.",
+      "specs": {
+        "ket_noi": "Bluetooth",
+        "pin": "12 tháng"
+      },
+      "createdAt": "2026-08-02T21:00:00.000Z",
+      "updatedAt": "2026-08-02T21:00:00.000Z"
+    },
+    {
+      "productId": "01KZ63EF805Q5GJTDY869BBSPV",
+      "name": "Màn hình LG UltraGear 27GR75Q-B 27 inch 2K 165Hz",
+      "category": "monitor",
+      "brand": "LG",
+      "price": 6490000,
+      "stock": 9,
+      "status": "ACTIVE",
+      "description": "Màn gaming IPS 2K tần số quét cao.",
+      "specs": {
+        "kich_thuoc": "27\"",
+        "do_phan_giai": "2560x1440",
+        "tan_so": "165Hz",
+        "tam_nen": "IPS"
+      },
+      "createdAt": "2026-08-04T10:00:00.000Z",
+      "updatedAt": "2026-08-04T10:00:00.000Z"
+    },
+    {
+      "productId": "01KZA2FDC0D7Z3Q12TWA2CN9V5",
+      "name": "Màn hình ASUS TUF Gaming VG249Q3A 24 inch 180Hz",
+      "category": "monitor",
+      "brand": "ASUS",
+      "price": 3290000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Màn gaming 24 inch 180Hz giá tốt.",
+      "specs": {
+        "kich_thuoc": "23.8\"",
+        "do_phan_giai": "1920x1080",
+        "tan_so": "180Hz",
+        "tam_nen": "IPS"
+      },
+      "createdAt": "2026-08-05T23:00:00.000Z",
+      "updatedAt": "2026-08-05T23:00:00.000Z"
+    },
+    {
+      "productId": "01KZE1GBG00P4K5XQ5VSV1BRXC",
+      "name": "Màn hình Dell UltraSharp U2724D 27 inch 2K",
+      "category": "monitor",
+      "brand": "Dell",
+      "price": 9490000,
+      "stock": 6,
+      "status": "ACTIVE",
+      "description": "Màn màu chuẩn cho thiết kế, có USB-C.",
+      "specs": {
+        "kich_thuoc": "27\"",
+        "do_phan_giai": "2560x1440",
+        "tan_so": "120Hz",
+        "tam_nen": "IPS",
+        "mau": "100% sRGB"
+      },
+      "createdAt": "2026-08-07T12:00:00.000Z",
+      "updatedAt": "2026-08-07T12:00:00.000Z"
+    },
+    {
+      "productId": "01KZJ0H9M0A24ZY0DMVTEZYF8Y",
+      "name": "Màn hình Samsung Odyssey G5 32 inch 2K 165Hz cong",
+      "category": "monitor",
+      "brand": "Samsung",
+      "price": 7290000,
+      "stock": 5,
+      "status": "ACTIVE",
+      "description": "Màn cong 1000R cho trải nghiệm game nhập vai.",
+      "specs": {
+        "kich_thuoc": "32\"",
+        "do_phan_giai": "2560x1440",
+        "tan_so": "165Hz",
+        "tam_nen": "VA cong"
+      },
+      "createdAt": "2026-08-09T01:00:00.000Z",
+      "updatedAt": "2026-08-09T01:00:00.000Z"
+    },
+    {
+      "productId": "01KZNZJ7R0A5FYFZHSJKC3YJFF",
+      "name": "Màn hình LG 27UP850N-W 27 inch 4K",
+      "category": "monitor",
+      "brand": "LG",
+      "price": 9990000,
+      "stock": 4,
+      "status": "ACTIVE",
+      "description": "Màn 4K HDR cho dựng video và lập trình.",
+      "specs": {
+        "kich_thuoc": "27\"",
+        "do_phan_giai": "3840x2160",
+        "tan_so": "60Hz",
+        "tam_nen": "IPS"
+      },
+      "createdAt": "2026-08-10T14:00:00.000Z",
+      "updatedAt": "2026-08-10T14:00:00.000Z"
+    },
+    {
+      "productId": "01KZSYK5W0RF7RQBFFST6W0FME",
+      "name": "Màn hình Xiaomi Monitor A24i 24 inch",
+      "category": "monitor",
+      "brand": "Xiaomi",
+      "price": 2190000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "Màn văn phòng 24 inch, viền mỏng, có thể làm màn phụ.",
+      "specs": {
+        "kich_thuoc": "23.8\"",
+        "do_phan_giai": "1920x1080",
+        "tan_so": "100Hz",
+        "tam_nen": "IPS"
+      },
+      "createdAt": "2026-08-12T03:00:00.000Z",
+      "updatedAt": "2026-08-12T03:00:00.000Z"
+    },
+    {
+      "productId": "01KZXXM4002NS4C63ET15T3HWK",
+      "name": "Màn hình ViewSonic VA2432-H 24 inch",
+      "category": "monitor",
+      "brand": "ViewSonic",
+      "price": 1990000,
+      "stock": 3,
+      "status": "ACTIVE",
+      "description": "Màn cơ bản cho văn phòng, học tập.",
+      "specs": {
+        "kich_thuoc": "23.8\"",
+        "do_phan_giai": "1920x1080",
+        "tan_so": "100Hz",
+        "tam_nen": "IPS"
+      },
+      "createdAt": "2026-08-13T16:00:00.000Z",
+      "updatedAt": "2026-08-13T16:00:00.000Z"
+    },
+    {
+      "productId": "01M01WN24050PZ683MP26PJKCX",
+      "name": "Màn hình di động ASUS ZenScreen MB16ACV 15.6 inch",
+      "category": "monitor",
+      "brand": "ASUS",
+      "price": 4290000,
+      "stock": 7,
+      "status": "ACTIVE",
+      "description": "Màn phụ di động cắm USB-C cho laptop.",
+      "specs": {
+        "kich_thuoc": "15.6\"",
+        "do_phan_giai": "1920x1080",
+        "ket_noi": "USB-C",
+        "trong_luong": "0.83kg"
+      },
+      "createdAt": "2026-08-15T05:00:00.000Z",
+      "updatedAt": "2026-08-15T05:00:00.000Z"
+    },
+    {
+      "productId": "01M05VP08047Q5JW4QKGDK0QRF",
+      "name": "Tai nghe gaming HyperX Cloud III",
+      "category": "headset",
+      "brand": "HyperX",
+      "price": 2190000,
+      "stock": 14,
+      "status": "ACTIVE",
+      "description": "Tai nghe gaming đeo êm, mic rõ.",
+      "specs": {
+        "ket_noi": "3.5mm, USB",
+        "mic": "Rời",
+        "trong_luong": "310g"
+      },
+      "createdAt": "2026-08-16T18:00:00.000Z",
+      "updatedAt": "2026-08-16T18:00:00.000Z"
+    },
+    {
+      "productId": "01M09TPYC0J70KCS73Z2TBFS98",
+      "name": "Tai nghe gaming Logitech G Pro X 2 Lightspeed",
+      "category": "headset",
+      "brand": "Logitech",
+      "price": 5990000,
+      "stock": 4,
+      "status": "ACTIVE",
+      "description": "Tai nghe không dây thi đấu chuyên nghiệp.",
+      "specs": {
+        "ket_noi": "Lightspeed, Bluetooth, 3.5mm",
+        "pin": "50 giờ"
+      },
+      "createdAt": "2026-08-18T07:00:00.000Z",
+      "updatedAt": "2026-08-18T07:00:00.000Z"
+    },
+    {
+      "productId": "01M0DSQWG0CYHVE52MAEPHFDVD",
+      "name": "Tai nghe gaming Razer BlackShark V2 X",
+      "category": "headset",
+      "brand": "Razer",
+      "price": 990000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Tai nghe gaming nhẹ, giá tốt.",
+      "specs": {
+        "ket_noi": "3.5mm",
+        "trong_luong": "240g"
+      },
+      "createdAt": "2026-08-19T20:00:00.000Z",
+      "updatedAt": "2026-08-19T20:00:00.000Z"
+    },
+    {
+      "productId": "01M0HRRTM0DRBQK09E67Q2NJV3",
+      "name": "Tai nghe không dây Sony WH-1000XM5",
+      "category": "headset",
+      "brand": "Sony",
+      "price": 7490000,
+      "stock": 6,
+      "status": "ACTIVE",
+      "description": "Chống ồn chủ động hàng đầu cho làm việc tập trung.",
+      "specs": {
+        "ket_noi": "Bluetooth 5.2",
+        "chong_on": "Có",
+        "pin": "30 giờ"
+      },
+      "createdAt": "2026-08-21T09:00:00.000Z",
+      "updatedAt": "2026-08-21T09:00:00.000Z"
+    },
+    {
+      "productId": "01M0NQSRR0EC8VGG2YW9EX1RXD",
+      "name": "Tai nghe gaming SteelSeries Arctis Nova 1",
+      "category": "headset",
+      "brand": "SteelSeries",
+      "price": 1290000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Tai nghe gaming đa nền tảng.",
+      "specs": {
+        "ket_noi": "3.5mm",
+        "mic": "Thu gọn được"
+      },
+      "createdAt": "2026-08-22T22:00:00.000Z",
+      "updatedAt": "2026-08-22T22:00:00.000Z"
+    },
+    {
+      "productId": "01M0SPTPW0G8838Y78RTYF7083",
+      "name": "Tai nghe gaming Corsair HS80 RGB Wireless",
+      "category": "headset",
+      "brand": "Corsair",
+      "price": 3290000,
+      "stock": 0,
+      "status": "ACTIVE",
+      "description": "Tai nghe không dây có Dolby Atmos.",
+      "specs": {
+        "ket_noi": "Slipstream, USB",
+        "pin": "20 giờ"
+      },
+      "createdAt": "2026-08-24T11:00:00.000Z",
+      "updatedAt": "2026-08-24T11:00:00.000Z"
+    },
+    {
+      "productId": "01M0XNVN00KTH0MRAGC0KF6ZHG",
+      "name": "Tai nghe Jabra Evolve2 30 USB-C",
+      "category": "headset",
+      "brand": "Jabra",
+      "price": 1890000,
+      "stock": 10,
+      "status": "ACTIVE",
+      "description": "Tai nghe họp trực tuyến cho dân văn phòng.",
+      "specs": {
+        "ket_noi": "USB-C",
+        "mic": "Khử ồn"
+      },
+      "createdAt": "2026-08-26T00:00:00.000Z",
+      "updatedAt": "2026-08-26T00:00:00.000Z"
+    },
+    {
+      "productId": "01M11MWK40Y5XHK0NNHGHCTRG1",
+      "name": "Tai nghe gaming Rapoo VH160",
+      "category": "headset",
+      "brand": "Rapoo",
+      "price": 490000,
+      "stock": 30,
+      "status": "ACTIVE",
+      "description": "Tai nghe gaming giá rẻ có LED.",
+      "specs": {
+        "ket_noi": "USB",
+        "mic": "Có"
+      },
+      "createdAt": "2026-08-27T13:00:00.000Z",
+      "updatedAt": "2026-08-27T13:00:00.000Z"
+    },
+    {
+      "productId": "01M15KXH80RJZPHAPA50Y1M37H",
+      "name": "Balo laptop Targus 15.6 inch Classic",
+      "category": "accessory",
+      "brand": "Targus",
+      "price": 690000,
+      "stock": 25,
+      "status": "ACTIVE",
+      "description": "Balo chống sốc cho laptop 15.6 inch.",
+      "specs": {
+        "loai": "Balo",
+        "kich_thuoc": "15.6\""
+      },
+      "createdAt": "2026-08-29T02:00:00.000Z",
+      "updatedAt": "2026-08-29T02:00:00.000Z"
+    },
+    {
+      "productId": "01M19JYFC0Z0T5VHM8ECB6C3C0",
+      "name": "Túi chống sốc laptop Tomtoc A13 14 inch",
+      "category": "accessory",
+      "brand": "Tomtoc",
+      "price": 590000,
+      "stock": 30,
+      "status": "ACTIVE",
+      "description": "Túi mỏng nhẹ, góc chống va đập.",
+      "specs": {
+        "loai": "Túi chống sốc",
+        "kich_thuoc": "14\""
+      },
+      "createdAt": "2026-08-30T15:00:00.000Z",
+      "updatedAt": "2026-08-30T15:00:00.000Z"
+    },
+    {
+      "productId": "01M1DHZDG0GKGEYEMV1XHAANNN",
+      "name": "Hub USB-C Ugreen 6 trong 1 (HDMI 4K, USB 3.0, SD)",
+      "category": "accessory",
+      "brand": "Ugreen",
+      "price": 590000,
+      "stock": 40,
+      "status": "ACTIVE",
+      "description": "Mở rộng cổng cho laptop mỏng nhẹ.",
+      "specs": {
+        "loai": "Hub USB-C",
+        "cong": "HDMI 4K, 2x USB-A, SD, microSD, PD 100W"
+      },
+      "createdAt": "2026-09-01T04:00:00.000Z",
+      "updatedAt": "2026-09-01T04:00:00.000Z"
+    },
+    {
+      "productId": "01M1HH0BM0CFGEEF7TD59BYNQH",
+      "name": "Hub USB-C Anker PowerExpand 8 trong 1",
+      "category": "accessory",
+      "brand": "Anker",
+      "price": 1290000,
+      "stock": 15,
+      "status": "ACTIVE",
+      "description": "Hub 8 cổng có LAN, sạc 100W.",
+      "specs": {
+        "loai": "Hub USB-C",
+        "cong": "HDMI 4K, LAN, 2x USB-A, USB-C, SD, PD 100W"
+      },
+      "createdAt": "2026-09-02T17:00:00.000Z",
+      "updatedAt": "2026-09-02T17:00:00.000Z"
+    },
+    {
+      "productId": "01M1NG19R0H2HTPFB2X2ET2NYD",
+      "name": "Cáp HDMI 2.1 Ugreen 2m 8K",
+      "category": "accessory",
+      "brand": "Ugreen",
+      "price": 290000,
+      "stock": 50,
+      "status": "ACTIVE",
+      "description": "Cáp HDMI 2.1 cho màn 4K 120Hz và 8K.",
+      "specs": {
+        "loai": "Cáp",
+        "chuan": "HDMI 2.1",
+        "chieu_dai": "2m"
+      },
+      "createdAt": "2026-09-04T06:00:00.000Z",
+      "updatedAt": "2026-09-04T06:00:00.000Z"
+    },
+    {
+      "productId": "01M1SF27W0M62T7F9YY2D4Q6BD",
+      "name": "Cáp DisplayPort 1.4 Vention 2m",
+      "category": "accessory",
+      "brand": "Vention",
+      "price": 250000,
+      "stock": 45,
+      "status": "ACTIVE",
+      "description": "Cáp DP cho màn gaming tần số quét cao.",
+      "specs": {
+        "loai": "Cáp",
+        "chuan": "DisplayPort 1.4",
+        "chieu_dai": "2m"
+      },
+      "createdAt": "2026-09-05T19:00:00.000Z",
+      "updatedAt": "2026-09-05T19:00:00.000Z"
+    },
+    {
+      "productId": "01M1XE3600WAAHQMHERPYRRD0P",
+      "name": "Đế tản nhiệt laptop Cooler Master NotePal X3",
+      "category": "accessory",
+      "brand": "Cooler Master",
+      "price": 590000,
+      "stock": 20,
+      "status": "ACTIVE",
+      "description": "Đế tản nhiệt có quạt lớn 200mm cho laptop gaming.",
+      "specs": {
+        "loai": "Đế tản nhiệt",
+        "kich_thuoc_toi_da": "17\"",
+        "quat": "200mm"
+      },
+      "createdAt": "2026-09-07T08:00:00.000Z",
+      "updatedAt": "2026-09-07T08:00:00.000Z"
+    },
+    {
+      "productId": "01M21D4440ZVJX0NJEC9007JB5",
+      "name": "Lót chuột SteelSeries QcK Heavy XXL",
+      "category": "accessory",
+      "brand": "SteelSeries",
+      "price": 890000,
+      "stock": 2,
+      "status": "ACTIVE",
+      "description": "Lót chuột cỡ lớn cho cả bàn phím và chuột.",
+      "specs": {
+        "loai": "Lót chuột",
+        "kich_thuoc": "900x400mm"
+      },
+      "createdAt": "2026-09-08T21:00:00.000Z",
+      "updatedAt": "2026-09-08T21:00:00.000Z"
+    }
+  ]
+}

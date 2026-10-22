@@ -27,7 +27,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -41,10 +41,19 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - name: cdk deploy shop-prd (canary cho ordering)
-        run: pnpm --filter infra run deploy:prod
-      - name: Smoke test
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
+          ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+        run: pnpm --filter infra run deploy:prod --outputs-file cdk-outputs.json -c alarmEmail="$ALARM_EMAIL"
+      - name: Lấy URL CloudFront từ output của stack web
+        # Lần deploy đầu của một môi trường chưa có biến BASE_URL; đọc thẳng output WebUrl để smoke test vẫn chạy.
+        # Biến BASE_URL của environment chỉ còn là dự phòng.
+        env:
+          FALLBACK_BASE_URL: ${{ vars.BASE_URL }}
+        run: |
+          url=$(node -p "const o = require('./infra/cdk-outputs.json'); Object.entries(o).find(([k]) => k.endsWith('-web'))?.[1].WebUrl ?? ''")
+          echo "BASE_URL=${url:-$FALLBACK_BASE_URL}" >> "$GITHUB_ENV"
+          echo "Smoke test chạy với ${url:-$FALLBACK_BASE_URL}"
+      - name: Smoke test
         run: pnpm run test:smoke
 
   github-release:

@@ -1,0 +1,108 @@
+/* Dải sản phẩm (docs/web/design-system.md §9.11) */
+.carousel {
+  position: relative;
+  min-width: 0;
+  container-type: inline-size; /* để tính vị trí nút theo bề rộng thẻ (cqw) */
+}
+/*
+ * Dưới 768px: lưới 2 cột, 4 thẻ đầu. Padding dưới + margin âm để bóng của thẻ khi rê chuột
+ * không bị overflow cắt mất.
+ */
+.track {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-150);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  min-width: 0;
+}
+.item:nth-child(n + 5) {
+  display: none;
+}
+@media (min-width: 768px) {
+  .track {
+    display: flex;
+    margin-bottom: -20px;
+    padding-bottom: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+  .item,
+  .item:nth-child(n + 5) {
+    display: block;
+    flex: 0 0 220px;
+    scroll-snap-align: start;
+  }
+}
+/*
+ * Từ 1280px: 6 thẻ, 7 thẻ khi dải rộng (màn từ 1600px). Tính theo bề rộng của chính dải
+ * (container query) để dải đặt trong cột hẹp (giỏ hàng rỗng) vẫn dùng thẻ 220px cuộn ngang.
+ * Nút mũi tên đặt ngang giữa ô ảnh vuông: top = bề rộng thẻ / 2 - 21px.
+ */
+@media (min-width: 1280px) {
+  .track {
+    gap: var(--space-200);
+  }
+  .arrow {
+    top: calc(220px / 2 - 21px);
+  }
+  @container (min-width: 1100px) {
+    .item,
+    .item:nth-child(n + 5) {
+      flex-basis: calc((100% - 5 * 16px) / 6);
+    }
+    .arrow {
+      top: calc((100cqw - 5 * 16px) / 6 / 2 - 21px);
+    }
+  }
+  @container (min-width: 1400px) {
+    .item,
+    .item:nth-child(n + 5) {
+      flex-basis: calc((100% - 6 * 16px) / 7);
+    }
+    .arrow {
+      top: calc((100cqw - 6 * 16px) / 7 / 2 - 21px);
+    }
+  }
+}
+
+/* Nút kính tròn 42px, đè lên mép hàng thẻ (lệch ra ngoài 20px), ngang giữa ô ảnh vuông */
+.arrow {
+  display: none;
+}
+@media (min-width: 1280px) and (hover: hover) {
+  .arrow {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--bg-surface) 50%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--bg-surface) 75%, transparent);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow: var(--shadow-glass);
+    color: var(--fg-heading);
+  }
+  .arrow:hover:not(:disabled) {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+  }
+  .prev {
+    left: -20px;
+  }
+  .next {
+    right: -20px;
+  }
+}

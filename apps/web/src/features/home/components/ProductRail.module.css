@@ -1,0 +1,28 @@
+/* Khung chờ đúng cỡ thẻ (design-system §9.12) */
+.skeleton {
+  height: 360px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-pressed) 0%,
+    var(--bg-surface-pressed) 30%,
+    var(--bg-canvas) 50%,
+    var(--bg-surface-pressed) 70%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+.message {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 20px;
+}

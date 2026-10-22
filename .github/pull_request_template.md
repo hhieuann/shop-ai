@@ -1,5 +1,5 @@
-<!-- Tiêu đề PR theo Conventional Commits, ví dụ: feat(cart): giới hạn 5 sản phẩm mỗi loại.
-     Squash merge lấy tiêu đề PR làm commit message, nên CI sẽ kiểm tra tiêu đề. -->
+<!-- Tiêu đề PR theo docs/git-flow.md mục 5, ví dụ: merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop.
+     Tiêu đề PR trở thành commit merge, nên CI kiểm tra tiêu đề. -->
 
 ## Làm gì
 

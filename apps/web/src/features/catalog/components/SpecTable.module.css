@@ -1,0 +1,42 @@
+/* Bảng thông số trang chi tiết (chi-tiet-san-pham.md mục 3.5) */
+.section {
+  margin-top: var(--space-400);
+}
+.heading {
+  margin: 0 0 var(--space-150);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.table th,
+.table td {
+  padding: var(--space-150) var(--space-200);
+  text-align: left;
+  vertical-align: top;
+}
+.table th {
+  width: 40%;
+  font-weight: 500;
+  color: var(--fg-subdued);
+}
+.table td {
+  color: var(--fg-default);
+}
+/* Hàng lẻ có nền, bo ở ô đầu và ô cuối */
+.table tr:nth-child(odd) th,
+.table tr:nth-child(odd) td {
+  background: var(--bg-surface-raised);
+}
+.table tr:nth-child(odd) th {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+.table tr:nth-child(odd) td {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}

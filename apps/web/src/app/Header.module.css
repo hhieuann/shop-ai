@@ -1,0 +1,256 @@
+/* Header hai hàng (docs/web/design-system.md §9.1). Mốc máy tính 1280px */
+.header {
+  /* Cỡ nút trên hàng 1; menu tài khoản dùng chung các biến này */
+  --header-control: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 210;
+  font-size: 16px;
+  line-height: 24px;
+}
+@media (min-width: 1280px) {
+  .header {
+    --header-control: 44px;
+  }
+}
+
+/* ── Hàng 1: nền chàm ── */
+.topBar {
+  position: relative;
+  z-index: 2; /* bảng thả xuống của hàng 1 nằm trên hàng 2 */
+  background: var(--bg-chrome);
+  color: var(--fg-on-chrome);
+}
+/* Viền focus trắng: viền chàm mặc định không thấy trên nền chàm */
+.topBar :focus-visible {
+  outline-color: var(--focus-ring-on-chrome);
+}
+/* Điện thoại: [menu] [logo giữa] [tài khoản, giỏ], ô tìm xuống hàng dưới */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-100);
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-100) var(--gutter) var(--space-150);
+}
+.logo {
+  --logo-mark: 30px;
+  --logo-icon: 18px;
+  --logo-text: 18px;
+  --logo-leading: 24px;
+  margin: 0 auto;
+}
+/* Điện thoại: cụm giữa tan ra để nút menu đứng đầu hàng và ô tìm xuống hàng riêng */
+.middle {
+  display: contents;
+}
+.middle > :first-child {
+  order: -1;
+}
+
+/* Ô tìm kiếm dạng viên thuốc, nút tìm tròn đen bên trong */
+.search {
+  order: 10;
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 var(--space-50) 0 18px;
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-full);
+}
+.search:focus-within {
+  outline: 2px solid var(--focus-ring-on-chrome);
+  outline-offset: 2px;
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--fg-default);
+  font-size: 16px; /* ≥16px để iOS không tự phóng to khi gõ */
+  line-height: 20px;
+}
+.searchInput::placeholder {
+  color: var(--fg-placeholder);
+}
+.searchInput:focus-visible {
+  outline: 0; /* viền nằm ở cả ô (.search:focus-within) */
+}
+.searchButton {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--fg-default);
+  color: var(--fg-on-primary);
+}
+.searchButton:hover:not(:disabled),
+.searchButton:active {
+  background: var(--bg-chrome-strong);
+}
+
+/* Nhóm nút bên phải */
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-50);
+}
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+  height: var(--header-control);
+  min-width: var(--header-control);
+  padding: 0;
+  border-radius: var(--radius-btn);
+  color: var(--fg-on-chrome);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.action:hover {
+  background: var(--bg-chrome-hover);
+  color: var(--fg-on-chrome);
+  text-decoration: none;
+}
+/* Điện thoại: Đơn hàng nằm trong ngăn kéo danh mục, không ở hàng 1 */
+.orders,
+.divider {
+  display: none;
+}
+/* Trang hiện tại: gạch chân 2px trắng dưới nhãn */
+.action[aria-current='page'] .actionLabel {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+.divider {
+  width: 1px;
+  height: 28px;
+  margin: 0 6px;
+  background: var(--border-on-chrome);
+}
+.cart {
+  position: relative;
+}
+/* Giỏ đang xem: vạch trắng 2px dưới phần giỏ của icon (icon lệch phải nên vạch dời phải 2px) */
+.cart[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 6px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--fg-on-chrome);
+}
+
+/* ── Hàng 2: mua theo nhu cầu, chỉ ≥1280 ── */
+.needs {
+  display: none;
+  position: relative;
+  z-index: 1;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+.needList {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-300);
+  max-width: var(--content-max);
+  height: 56px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  list-style: none;
+}
+.need {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  height: 42px;
+  padding: 10px var(--space-150);
+  border-radius: var(--radius-lg);
+  color: var(--fg-heading);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) ease-out;
+}
+.need:hover {
+  background: var(--bg-primary-tint);
+  color: var(--fg-heading);
+  text-decoration: none;
+}
+.needIcon {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.need[aria-current='page'] {
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+}
+
+/* ── Máy tính ≥1280 ── */
+@media (min-width: 1280px) {
+  .top {
+    flex-wrap: nowrap;
+    gap: var(--space-150);
+    height: 76px;
+    padding: var(--space-200) var(--gutter);
+  }
+  .logo {
+    --logo-mark: 36px;
+    --logo-icon: 20px;
+    --logo-text: 22px;
+    --logo-leading: 28px;
+    margin: 0;
+  }
+  /* Nút Danh mục + ô tìm thành một cụm, căn giữa khoảng trống giữa logo và nhóm nút phải */
+  .middle {
+    display: flex;
+    flex: 0 1 872px;
+    align-items: center;
+    gap: var(--space-150);
+    min-width: 0;
+    margin-inline: auto;
+  }
+  .search {
+    order: 0;
+    flex: 1 1 auto;
+    max-width: 720px;
+    height: 48px;
+    padding: 0 6px 0 22px;
+  }
+  .orders {
+    display: flex;
+  }
+  .divider {
+    display: block;
+  }
+  .action {
+    padding: 0 10px;
+  }
+  .cart {
+    width: 48px;
+    padding: 0;
+  }
+  .needs {
+    display: block;
+  }
+}

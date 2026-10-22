@@ -21,7 +21,7 @@ Chi tiết và phần không làm: [docs/project-plan.md](docs/project-plan.md).
 
 ## Kiến trúc
 
-Web React tĩnh trên S3 + CloudFront có WAF. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý được tính theo lô (baseline hoặc Amazon Personalize) rồi ghi vào DynamoDB. Toàn bộ hạ tầng viết bằng AWS CDK.
+Web React tĩnh trên S3 + CloudFront có WAF. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý do mô hình nhóm tự xây (luật mua kèm, gợi ý theo món tương tự) tính mỗi đêm trên Lambda rồi ghi vào DynamoDB. Toàn bộ hạ tầng viết bằng AWS CDK.
 
 Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture/`. Lý do cho từng lựa chọn nằm trong [docs/adr/](docs/adr/).
 
@@ -32,10 +32,10 @@ Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture
 | Web | React, Vite, TypeScript, TanStack Query |
 | API | AWS Lambda (Node.js 24, arm64), HTTP API, Powertools for AWS Lambda |
 | Dữ liệu | DynamoDB; S3 cho dữ liệu train |
-| Gợi ý | Python 3.13: baseline luật mua kèm; Amazon Personalize (tuỳ chọn) |
+| Gợi ý | Python 3.13 trên Lambda, chạy mỗi đêm bằng EventBridge Scheduler: luật mua kèm, gợi ý theo món tương tự |
 | Hạ tầng | AWS CDK v2, cdk-nag |
 | CI/CD | GitHub Actions + OIDC |
-| Kiểm thử | Vitest, Testcontainers, pytest, Postman/Newman, k6, OWASP ZAP, Schemathesis |
+| Kiểm thử | Vitest (cả E2E API), Testcontainers, pytest, k6, OWASP ZAP, Schemathesis |
 
 ## Cấu trúc repo
 
@@ -44,10 +44,10 @@ shop-ai/
 ├─ apps/web/                  React + Vite
 ├─ services/api/              Lambda API, chia module theo ADR-009
 ├─ services/workers/          Lambda chạy nền (SQS, lịch hẹn giờ)
-├─ data/                      Python: sinh dữ liệu, baseline, Personalize
+├─ data/                      Python: sinh dữ liệu, mô hình gợi ý, pipeline mỗi đêm
 ├─ infra/                     AWS CDK
 ├─ contracts/openapi.yaml     Hợp đồng API
-├─ tests/                     e2e-api (Postman/Newman) · e2e-ui (Playwright) · load (k6)
+├─ tests/                     smoke · e2e-api (Vitest) · e2e-ui (Playwright) · load (k6)
 ├─ docs/                      Kế hoạch, ADR, nghiệp vụ, runbook, workshop
 └─ .github/                   Workflow, mẫu PR và issue, CODEOWNERS
 ```
@@ -108,11 +108,13 @@ Chi tiết: [infra/README.md](infra/README.md).
 
 ## Nhóm
 
-| Thành viên | Vai trò |
-|---|---|
-| An | Trưởng nhóm · nền tảng, DevOps, bảo mật hạ tầng |
-| Hoàng | Nghiệp vụ bán hàng · API và giao diện |
-| Nhân | Dữ liệu, gợi ý · bảo mật dữ liệu và AI |
+| Thành viên | GitHub | Vai trò |
+|---|---|---|
+| An | [@hhieuann](https://github.com/hhieuann) | Trưởng nhóm · nền tảng, DevOps, bảo mật hạ tầng |
+| Hoàng | [@simonhoang611](https://github.com/simonhoang611) | Fullstack · nghiệp vụ bán hàng |
+| Nhân | [@Netanii](https://github.com/Netanii) | Dữ liệu, gợi ý · bảo mật dữ liệu và AI |
+
+Việc cần làm và lộ trình của từng người: [docs/team/](docs/team/).
 
 ## Bảo mật
 

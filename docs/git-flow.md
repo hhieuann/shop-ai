@@ -51,11 +51,11 @@ gitGraph
 | `hotfix/vX.Y.Z` | `main` | `main`, rồi `develop` | prod sau khi duyệt | Sửa gấp lỗi trên prod |
 | `review/<chủ-đề>/r<vòng>` | nhánh cần review | không merge | không | Người review ghi nhận xét thẳng vào code |
 
-Tên nhánh viết thường, nối bằng dấu gạch ngang, có số issue: `feature/12-cart-api`, `fix/31-price-rounding`, `release/v0.1.0`, `hotfix/v0.1.1`, `review/cart-api/r1`.
+Tên nhánh viết thường, nối bằng dấu gạch ngang, có số issue: `feature/12-cart-api`, `fix/31-price-rounding`, `release/v0.1.0`, `hotfix/v0.1.1`, `review/cart-api/r1`. Số trong tên nhánh là **số của issue**, không phải số PR.
 
 ## 3. Quy tắc bắt buộc
 
-- **Không push thẳng** vào `main`, `develop`, `release/*`. Mọi thay đổi đi qua PR và cần 1 người khác duyệt. GitHub đã chặn sẵn.
+- **Không push thẳng** vào `main`, `develop`, `release/*`. Mọi thay đổi đi qua PR và CI phải xanh. PR vào `develop` thì người viết tự merge, không cần ai duyệt; PR vào `release/*` và `main` cần 1 người khác duyệt. GitHub đã chặn sẵn.
 - **Luôn kéo `develop` mới nhất trước khi tách nhánh**, để bớt conflict.
 - **Không force push** lên nhánh dùng chung. Trên nhánh của riêng mình, nếu buộc phải ghi đè sau khi rebase thì dùng `git push --force-with-lease` (xem mục 7).
 - **Merge bằng merge commit** ("Create a merge commit" trên GitHub). Lịch sử giữ đủ từng commit và thấy rõ nhánh nào gộp vào đâu.
@@ -66,6 +66,10 @@ Tên nhánh viết thường, nối bằng dấu gạch ngang, có số issue: `
 ## 4. Quy trình theo từng tình huống
 
 ### 4.1. Làm một tính năng
+
+1. **Tạo issue trước** (New issue, chọn mẫu). GitHub cấp số, vd. **#12**. Số này dùng để đặt tên nhánh.
+2. **Tạo nhánh ngay trong issue** để khỏi gõ nhầm số: cột phải của issue → **Development** → **Create a branch** → sửa tên thành `feature/12-cart-api` → **Create branch**, rồi chạy `git fetch origin` và `git checkout feature/12-cart-api`. Hoặc tạo bằng lệnh như dưới.
+3. Code, commit, push:
 
 ```bash
 git checkout develop
@@ -81,8 +85,10 @@ git push -u origin feature/12-cart-api
 Mở PR vào `develop` trên GitHub:
 
 - Tiêu đề: `merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop`
-- Mô tả theo mẫu, có dòng `Closes #12`
-- Chờ CI xanh và 1 người duyệt, rồi bấm **Create a merge commit**
+- Mô tả theo mẫu, có dòng `Closes #12`, đúng số issue trong tên nhánh. CI chặn nếu tên nhánh không có dạng `feature/<số>-<tên>` hay `fix/<số>-<tên>`, hoặc thiếu `Closes #<cùng số>`
+- Số PR luôn khác số issue vì GitHub đếm chung issue và PR, vd. issue #12 có thể thành PR #13 hoặc #20 tuỳ lúc đó người khác đã tạo bao nhiêu issue, PR. Không đổi tên nhánh theo số PR
+- Nhánh đã merge là xong việc. Việc tiếp theo thì tạo issue mới, nhánh mới; không mở PR mới từ nhánh cũ
+- Chờ CI xanh rồi tự bấm **Create a merge commit**. Không cần chờ ai duyệt; người được GitHub tự mời xem (theo `.github/CODEOWNERS`) đọc và comment nếu thấy vấn đề
 
 ### 4.2. Cập nhật nhánh của mình khi develop đã đi tiếp
 
@@ -108,11 +114,14 @@ Không rebase nhánh có người khác cùng commit.
 
 ### 4.3. Review và sửa theo review
 
-- Review diễn ra trong PR: comment từng dòng, hoặc **Request changes**.
+- PR vào `develop` không bắt buộc duyệt, nhưng người được mời vẫn nên đọc trong ngày. PR vào `release/*` và `main` phải có 1 người khác duyệt.
+- Review diễn ra trong PR: comment từng dòng, hoặc **Request changes**. PR đã merge mà còn góp ý thì người viết sửa bằng PR tiếp theo.
 - Người viết sửa bằng commit mới trên cùng nhánh, loại `fixreview`, ví dụ `fixreview(cart): đổi tên biến và thêm kiểm tra số lượng âm`. Không amend hay squash commit đã push.
 - Khi leader hoặc mentor muốn ghi nhận xét thẳng vào code: tạo nhánh `review/cart-api/r1` từ nhánh cần review, thêm comment vào code, commit loại `review`, ví dụ `review(cart): thiếu kiểm tra null và cấu trúc thư mục chưa đúng`. Người viết đọc nhánh đó rồi sửa trên nhánh feature của mình. Vòng review sau là `r2`, `r3`.
 
 ### 4.4. Phát hành (An làm, cuối mỗi sprint)
+
+Mỗi đợt có checklist chi tiết ở `docs/releases/<phiên bản>.md`, ví dụ [v0.1.0](releases/v0.1.0.md).
 
 ```bash
 # 1. Tách nhánh release từ develop
@@ -123,8 +132,8 @@ git push -u origin release/v0.1.0
 ```
 
 2. Nhánh release tự deploy lên **staging**. Cả nhóm test theo tiêu chí nghiệm thu, chạy E2E.
-3. Lỗi tìm thấy khi test: tách `fix/<số-issue>-<tên>` **từ `release/v0.1.0`**, mở PR vào `release/v0.1.0`. Không thêm tính năng mới vào nhánh release.
-4. Test xong: mở PR `release/v0.1.0` → `main`, tiêu đề `release: merge release/v0.1.0 into main`, merge bằng merge commit.
+3. Lỗi tìm thấy khi test: tách `fix/<số-issue>-<tên>` **từ `release/v0.1.0`**, mở PR vào `release/v0.1.0`, cần 1 người khác duyệt. Không thêm tính năng mới vào nhánh release.
+4. Test xong: mở PR `release/v0.1.0` → `main`, tiêu đề `release: merge release/v0.1.0 into main`. Hoàng hoặc Nhân duyệt, rồi merge bằng merge commit.
 5. Gắn tag trên `main` và đẩy lên:
 
 ```bash
@@ -150,7 +159,7 @@ git commit -m "fix(ordering): không tạo đơn khi giỏ hàng rỗng"
 git push -u origin hotfix/v0.1.1
 ```
 
-1. PR `hotfix/v0.1.1` → `main`, tiêu đề `chore: merge hotfix/v0.1.1 into main`, merge.
+1. PR `hotfix/v0.1.1` → `main`, tiêu đề `chore: merge hotfix/v0.1.1 into main`. Một người khác duyệt rồi merge.
 2. An gắn tag `v0.1.1` trên `main` như bước 5 ở trên.
 3. PR `hotfix/v0.1.1` → `develop`, tiêu đề `merge(hotfix/v0.1.1): đưa bản sửa gấp về develop`. Nếu đang có nhánh `release/*` thì merge vào nhánh đó luôn.
 
@@ -178,7 +187,7 @@ Cấu trúc: `<type>(<scope>): <mô tả ngắn>`
 | Viết hoặc sửa test | `test` | `test(ordering): thêm test đặt hàng trùng Idempotency-Key` |
 | Nâng phiên bản thư viện | `chore` | `chore(deps): nâng aws-cdk-lib lên 2.272.0` |
 | Build, Docker, cấu hình đóng gói | `build` | `build(docker): thêm MySQL cho bản đối chứng` |
-| CI/CD | `ci` | `ci(deploy): chạy Newman sau khi deploy staging` |
+| CI/CD | `ci` | `ci(deploy): chạy E2E API sau khi deploy staging` |
 | Việc lặt vặt không ảnh hưởng nghiệp vụ | `chore` | `chore(infra): đổi tên biến môi trường` |
 | Hoàn tác một commit | `revert` | `revert: revert "feat(cart): thêm API cập nhật số lượng"` |
 | Merge một nhánh vào nhánh chung | `merge` | `merge(feature/12-cart-api): tích hợp API giỏ hàng vào develop` |

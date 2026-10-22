@@ -4,81 +4,82 @@ Hạ tầng viết bằng AWS CDK v2 (TypeScript). An phụ trách.
 
 ## Stack và môi trường
 
-| Môi trường | Tài khoản | Tên stack | Deploy bằng |
+| Môi trường | Tài khoản | Tiền tố stack | Deploy bằng |
 |---|---|---|---|
-| sandbox | Tài khoản của từng người | `shop-sbx-<tên>` | `cdk deploy` hoặc `cdk watch --hotswap` từ máy |
+| sandbox | Tài khoản của từng người | `shop-sbx-<tên>` | Lệnh `cdk deploy` từ máy |
 | dev | Tài khoản demo | `shop-dev` | `deploy.yml` khi merge vào `develop` |
 | staging | Tài khoản demo | `shop-stg` | `deploy.yml` khi push `release/*` |
 | prod | Tài khoản demo | `shop-prd` | `deploy-prod.yml` khi có tag `v*` |
 
-Mọi tài nguyên gắn tag `project=shop-ai`, `env`, `owner`, `module` ở cấp CDK app. Region: `ap-southeast-1`.
+Mỗi môi trường có các stack mang tiền tố trên, hiện có `<tiền tố>-api` (vd. `shop-dev-api`): bảng DynamoDB, Lambda theo module, HTTP API. Stack này còn có custom resource `SeedProducts` nạp 104 sản phẩm demo (`services/api/seed/catalog/products.json`) vào bảng `products` ở mỗi lần deploy mà file đó đổi: sandbox, dev, staging ghi đè theo `productId`; prod chỉ thêm sản phẩm chưa có (`PutItem` có điều kiện), không ghi đè tồn kho và giá đang chạy. Mọi tài nguyên gắn tag `project=shop-ai`, `env`; tài nguyên của module gắn thêm `module`. Region: `ap-southeast-1`.
 
-## Script mà workflow cần trong `infra/package.json`
+## Cấu trúc
 
-| Script | Làm gì |
+```text
+infra/
+├─ bin/shop.ts        đọc -c env, tạo stack, bật cdk-nag
+├─ lib/config.ts      tên môi trường → tiền tố stack
+├─ lib/api-stack.ts   bảng products, Lambda catalog, HTTP API
+└─ test/              unit test bằng aws-cdk-lib/assertions
+```
+
+## Lệnh thường dùng
+
+Chạy ở thư mục gốc repo, sau khi `aws login`. Lệnh nào cũng phải có `-c env=...`; thiếu thì CDK dừng ngay để không deploy nhầm môi trường.
+
+App có 2 stack: `<prefix>-api` (bảng, Lambda, HTTP API) và `<prefix>-web` (S3 + CloudFront, `/api/*` chuyển sang HTTP API). Stack web đóng gói `apps/web/dist`, nên phải build web trước: `pnpm --filter web build`. Thiếu bản build thì synth dừng và báo lệnh cần chạy.
+
+| Việc | Lệnh |
 |---|---|
-| `synth` | `cdk synth` cho mọi môi trường; cdk-nag chạy trong bước này |
-| `diff:staging` | `cdk diff` so với staging |
-| `deploy:dev` · `deploy:staging` · `deploy:prod` | `cdk deploy --all --require-approval never -c env=<môi trường>` |
+| Build web (trước synth, diff, deploy) | `pnpm --filter web build` |
+| Synth và kiểm cdk-nag, giống CI | `pnpm --filter infra run synth` |
+| Unit test cho stack | `pnpm --filter infra run test` |
+| Xem thay đổi trước khi deploy sandbox | `pnpm --filter infra exec cdk diff --all -c env=sbx -c owner=<tên>` |
+| Deploy sandbox của mình | `pnpm --filter infra exec cdk deploy --all -c env=sbx -c owner=<tên>` |
+| Xoá sandbox | `pnpm --filter infra exec cdk destroy --all -c env=sbx -c owner=<tên>` |
 
-Tên package phải là `infra` để lệnh `pnpm --filter infra` chạy được.
+Script `deploy:dev`, `deploy:staging`, `deploy:prod`, `diff:staging` dành cho workflow, không chạy từ máy. CDK CLI được ghim phiên bản trong `infra/package.json`; luôn gọi qua `pnpm --filter infra exec cdk`, không dùng `npx aws-cdk@latest`.
+
+cdk-nag chạy ở mỗi lần synth và chặn khi còn lỗi. Lỗi nào có lý do chính đáng thì ghi nhận ngay cạnh tài nguyên bằng `Validations.of(construct).acknowledge({ id, reason })`, không tắt cả luật. Danh sách lỗi đã ghi nhận nằm trong `cdk.out/validation-report.json`.
 
 ## Làm một lần cho mỗi tài khoản
 
 ```bash
-pnpm exec cdk bootstrap aws://<ACCOUNT_ID>/ap-southeast-1
+pnpm --filter infra exec cdk bootstrap aws://<ACCOUNT_ID>/ap-southeast-1 aws://<ACCOUNT_ID>/us-east-1 --termination-protection
 ```
 
-Rồi tạo AWS Budgets $5, $10, $20 và bật cost allocation tag `project` trong Billing.
+`us-east-1` cần cho WAF gắn vào CloudFront. Rồi tạo AWS Budgets $5, $10, $20, và sau lần deploy đầu tiên thì bật cost allocation tag `project` trong Billing.
 
 ## Kết nối GitHub Actions với AWS bằng OIDC (tài khoản demo)
 
-1. IAM → Identity providers → Add provider → OpenID Connect
-   - Provider URL: `https://token.actions.githubusercontent.com`
-   - Audience: `sts.amazonaws.com`
-2. Tạo 4 role: `gh-deploy-dev`, `gh-deploy-staging`, `gh-deploy-prod`, `gh-diff-readonly`.
+OIDC provider và 4 role nằm trong [bootstrap/github-oidc.yaml](bootstrap/github-oidc.yaml). Muốn đổi trust policy thì sửa file này qua PR; Nhân review trước khi bật deploy.
 
-Trust policy của `gh-deploy-staging` (các role deploy khác chỉ đổi tên environment ở dòng `sub`):
+| Role | Ai assume được | Được làm gì |
+|---|---|---|
+| `gh-deploy-dev` | Job có `environment: dev` của repo này | Assume các role CDK bootstrap ở ap-southeast-1 và us-east-1 |
+| `gh-deploy-staging` | Job có `environment: staging` | Như trên |
+| `gh-deploy-prod` | Job có `environment: production` | Như trên |
+| `gh-diff-readonly` | Job chạy trên `pull_request` | Chỉ assume role lookup của CDK, chỉ đọc |
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:hhieuann/shop-ai:environment:staging"
-        }
-      }
-    }
-  ]
-}
+Trust policy so khớp trường `sub` trong token theo định dạng có mã số bất biến, mặc định cho repo tạo sau 15/07/2026: `repo:hhieuann@194261813/shop-ai@1398388653:environment:dev`. Xem tiền tố của repo bằng `gh api repos/hhieuann/shop-ai/actions/oidc/customization/sub --jq .sub_claim_prefix`.
+
+Deploy lần đầu hoặc sau khi sửa template, chạy ở thư mục gốc repo sau khi `aws login`:
+
+```bash
+aws cloudformation deploy --stack-name shop-github-oidc --template-file infra/bootstrap/github-oidc.yaml --capabilities CAPABILITY_NAMED_IAM --region ap-southeast-1 --tags project=shop-ai
 ```
 
-Quyền của role deploy: chỉ được assume các role CDK bootstrap tạo ra.
+Bật chống xoá cho stack, chỉ cần một lần:
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/cdk-hnb659fds-*-<ACCOUNT_ID>-ap-southeast-1"
-    }
-  ]
-}
+```bash
+aws cloudformation update-termination-protection --enable-termination-protection --stack-name shop-github-oidc --region ap-southeast-1
 ```
 
-`gh-diff-readonly` tin `repo:hhieuann/shop-ai:pull_request` và chỉ được assume role `cdk-hnb659fds-lookup-role-<ACCOUNT_ID>-ap-southeast-1`.
+Xem ARN của các role để đặt biến trên GitHub:
 
-Nhân review các trust policy trước khi bật deploy.
+```bash
+aws cloudformation describe-stacks --stack-name shop-github-oidc --region ap-southeast-1 --query "Stacks[0].Outputs" --output table
+```
 
 ## Biến và secret trên GitHub
 
@@ -89,7 +90,7 @@ Nhân review các trust policy trước khi bật deploy.
 | Repo variable | `AWS_DIFF_ROLE_ARN` | ARN của `gh-diff-readonly` |
 | Repo variable | `STAGING_URL` | URL CloudFront của staging, cho `nightly.yml` |
 | Environment `dev`, `staging`, `production` | `AWS_DEPLOY_ROLE_ARN` | ARN role deploy của môi trường đó |
-| Environment `dev`, `staging`, `production` | `BASE_URL` | URL CloudFront của môi trường đó |
+| Environment `dev`, `staging`, `production` | `BASE_URL` | Tuỳ chọn, dự phòng. Workflow tự lấy URL CloudFront từ output `WebUrl` của stack web sau khi deploy |
 | Environment `dev`, `staging` | `E2E_COGNITO_CLIENT_ID`, `E2E_USERNAME` | App client và người dùng dành cho E2E |
 | Environment `dev`, `staging` | secret `E2E_PASSWORD` | Mật khẩu người dùng E2E |
 
@@ -98,4 +99,18 @@ Nhân review các trust policy trước khi bật deploy.
 - Không sửa tài nguyên trên console ở dev, staging, prod. Muốn đổi thì sửa code CDK và mở PR.
 - Lambda không đặt trong VPC, không tạo NAT gateway (ADR-0005).
 - Bảng dữ liệu ở prod để `RemovalPolicy.RETAIN`; ở sandbox, dev, staging để `DESTROY`.
-- Dọn dẹp cuối dự án: `cdk destroy` từng stack; xoá Personalize theo thứ tự campaign, solution, event tracker, dataset, dataset group; lên lịch xoá KMS key; hôm sau kiểm tra Billing.
+- Dọn dẹp cuối dự án: `cdk destroy` từng stack; lên lịch xoá KMS key; hôm sau kiểm tra Billing.
+
+## Lỗi đã gặp
+
+### Đổi tên biến trong đường dẫn route: `ConflictException`
+
+Đổi `GET /api/v1/products/{id}` thành `{productId}` trên một HTTP API đã deploy thì `cdk deploy` báo `has a conflicting variable on the same hierarchical level` rồi rollback. Tên biến nằm trong ID của route, nên CloudFormation coi đó là route mới: nó tạo route mới trước, xoá route cũ sau cùng. API Gateway không cho 2 route khác tên biến ở cùng một cấp, nên bước tạo thất bại.
+
+- Ở sandbox: chạy `cdk destroy` rồi deploy lại.
+- Ở dev, staging, prod: deploy 2 lần, lần đầu bỏ route cũ, lần sau thêm route mới.
+- Đổi đường dẫn cũng là đổi hợp đồng API: sửa `contracts/openapi.yaml` trước và báo cả nhóm.
+
+### Workflow deploy báo `Not authorized to perform sts:AssumeRoleWithWebIdentity`
+
+Trường `sub` trong token GitHub không khớp trust policy. Repo tạo sau 15/07/2026 dùng định dạng có mã số bất biến (`repo:hhieuann@194261813/shop-ai@1398388653:...`), trong khi trust policy cũ chờ `repo:hhieuann/shop-ai:...`. Xem `sub` thật trong CloudTrail: sự kiện `AssumeRoleWithWebIdentity`, trường `userIdentity.userName`. Sửa `infra/bootstrap/github-oidc.yaml` rồi deploy lại stack `shop-github-oidc`.

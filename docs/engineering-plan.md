@@ -37,7 +37,7 @@ Tài liệu đi kèm:
 - **`main` luôn deploy được.** Thứ gì lên prod cũng đã được test trên staging.
 - **Build một lần, deploy nhiều nơi:** cùng commit thì cùng gói code.
 - **Bảo mật và chi phí là cổng chặn trong pipeline**, không phải việc để cuối.
-- **PR nhỏ, review trong 24 giờ, không ai tự duyệt PR của mình.**
+- **PR nhỏ, CI xanh mới merge.** PR vào `develop` không cần duyệt để cả nhóm test chung nhanh; `release/*` và `main` cần 1 người khác duyệt.
 - **Đo bằng số:** các mục tiêu dưới đây và 4 chỉ số DORA ở mục 10.
 
 ## 3. Mục tiêu phi chức năng (bản đầu)
@@ -81,31 +81,33 @@ R làm · A chịu trách nhiệm cuối (mỗi dòng một người) · C đư�
 | Kiến trúc, layer, ADR | A R | C | C |
 | CDK, môi trường, pipeline CI/CD | A R | I | C |
 | Catalog, giỏ hàng, đơn hàng, admin | C | A R | C |
-| Pipeline dữ liệu, baseline, Personalize | C | I | A R |
+| Dữ liệu, mô hình gợi ý tự xây, pipeline mỗi đêm | C | I | A R |
 | API và widget gợi ý trên web | A R | C | C |
 | Threat model, test bảo mật, bảo vệ dữ liệu | R | C | A R |
 | Chiến lược test, cổng chất lượng | A R | R | R |
 | Tách release, gắn tag, deploy prod | A R | C | C |
 | Chi phí và budget | A R | I | C |
-| Báo cáo FCAJ, workshop từng phần | A R | R | R |
+| Báo cáo FCAJ, workshop nhóm (mỗi người một phần) | A R | R | R |
 
 ### Việc khởi tạo trong Sprint 0
 
-- **An:** mời thành viên, hoàn tất [setup-checklist.md](setup-checklist.md); CDK bootstrap ở 4 tài khoản (region ap-southeast-1); role OIDC cho GitHub Actions; Budgets $5/$10/$20 ở cả 4 tài khoản; module mẫu `catalog`.
+- **An:** mời thành viên, hoàn tất [setup-checklist.md](setup-checklist.md); CDK bootstrap ở tài khoản của mình (vừa là tài khoản demo vừa là sandbox, region ap-southeast-1) và hướng dẫn Hoàng, Nhân bootstrap tài khoản của họ; role OIDC cho GitHub Actions; Budgets $5/$10/$20 ở cả 3 tài khoản; module mẫu `catalog`.
 - **Hoàng:** cài môi trường (Node 24, pnpm, Docker Desktop, AWS CLI, Postman); viết OpenAPI bản 0 cho catalog và cart; khung React chạy trên mock Prism.
-- **Nhân:** threat model bản 0 và phân loại dữ liệu; script sinh dữ liệu v1; thử mở Personalize trên console.
+- **Nhân:** threat model bản 0 và phân loại dữ liệu; script sinh dữ liệu v1; chốt cách tính gợi ý (ADR-0016).
 - **Cả nhóm:** đọc git-flow.md và hands-on-testing-guide.md; buổi 60 phút đi qua module mẫu; gửi nghiệp vụ trước 05/10.
 
 ## 5. Kiến trúc và layer
 
-### Quyết định: Hexagonal rút gọn trong từng module (ADR-009)
+### Quyết định: modular monolith, bên trong mỗi module là Hexagonal rút gọn (ADR-0009)
 
-Backend chia thành các module theo nghiệp vụ: `catalog`, `cart`, `ordering`, `recommendation`, `events`, `admin`. Bên trong mỗi module:
+Cả hệ thống là một **modular monolith**: một repo, một pipeline, deploy cùng lúc và chung số phiên bản, nhưng chia thành các module theo nghiệp vụ: `catalog`, `cart`, `ordering`, `recommendation`, `events`, `admin`. Mỗi module có Lambda, bảng DynamoDB và quyền IAM riêng, và không import code của module khác. Vì sao không chọn microservices, và Hexagonal khác 3 layer ở đâu: xem [ADR-0009](adr/0009-layer-hexagonal-rut-gon.md).
+
+Bên trong mỗi module:
 
 - **handler** nhận request, kiểm input, gọi use case
 - **application** chứa use case, chỉ gọi **port** (interface)
 - **domain** chứa luật nghiệp vụ thuần, không I/O, không AWS SDK
-- **infra** chứa **adapter** cho DynamoDB, SQS, Personalize, hiện thực các port
+- **infra** chứa **adapter** cho DynamoDB, SQS, hiện thực các port
 
 Mỗi module deploy thành **một Lambda** có router nhỏ bên trong; mỗi worker chạy nền là một Lambda riêng.
 
@@ -118,13 +120,13 @@ flowchart LR
   U --> P1(["port RecsSource"])
   U --> P2(["port CatalogReader"])
   A1["RecsTableSource<br/>DynamoDB bảng Recs"] -.hiện thực.-> P1
-  A2["PersonalizeLiveSource<br/>chỉ lúc demo"] -.hiện thực.-> P1
+  A2["PopularFallbackSource<br/>hàng bán chạy cho người mới"] -.hiện thực.-> P1
   A3["DynamoCatalogReader<br/>DynamoDB bảng Products"] -.hiện thực.-> P2
   F{{"flag recs/source<br/>Parameter Store"}} -.chọn.-> A1
   F -.chọn.-> A2
 ```
 
-Lõi module không biết DynamoDB hay Personalize là gì, nó chỉ gọi port. Bật Personalize real-time lúc demo chỉ là đổi flag để chọn adapter khác, không sửa use case và không sửa test của lõi.
+Lõi module không biết dữ liệu nằm ở bảng nào, nó chỉ gọi port. Mô hình có vấn đề thì chuyển sang hàng bán chạy chỉ bằng cách đổi flag để chọn adapter khác, không sửa use case và không sửa test của lõi.
 
 Sơ đồ trên là cấu trúc code. **Sơ đồ kiến trúc AWS trong báo cáo FCAJ nhóm phải tự vẽ** bằng draw.io với icon AWS; sơ đồ do AI vẽ bị 0 điểm.
 
@@ -201,7 +203,8 @@ services/api/src/shared/  logger, tracer, lỗi chuẩn, http helpers, config, i
 | `products` | catalog | PK `productId`; GSI theo `category` | Chi tiết; liệt kê theo loại, phân trang |
 | `carts` | cart | PK `userId` | Đọc và ghi giỏ của chính mình |
 | `orders` | ordering | PK `userId`, SK `orderId` (ULID); GSI theo `status` + thời gian | Lịch sử đơn; admin lọc theo trạng thái |
-| `idempotency` | ordering | PK khoá, TTL 24 giờ | Chống tạo đơn trùng |
+| `cart-idempotency` | cart | PK `id`, TTL 24 giờ (Powertools) | Chống gộp giỏ hai lần (ADR-0017) |
+| `order-idempotency` | ordering | PK `id`, TTL 24 giờ (Powertools) | Chống tạo đơn trùng (ADR-0017) |
 | `events` | events | PK mã người dùng đã ẩn danh, SK thời gian; TTL 90 ngày | Job đêm gom sự kiện đi train |
 | `recs` | recommendation | PK `USER#…` hoặc `ITEM#…`, SK phiên bản | Đọc gợi ý của phiên bản đang bật |
 
@@ -228,10 +231,10 @@ shop-ai/
 ├─ services/api/src/modules/  catalog · cart · ordering · recommendation · events · admin
 ├─ services/api/src/shared/   logger, tracer, lỗi chuẩn, http, config, idempotency
 ├─ services/workers/          order-processor (SQS) · cost-breaker (Scheduler)
-├─ data/                      Python: sinh dữ liệu · baseline · personalize · kiểm tra dữ liệu
+├─ data/                      Python: sinh dữ liệu · mô hình gợi ý · pipeline mỗi đêm · kiểm tra dữ liệu
 ├─ infra/                     CDK TypeScript: các stack + cấu hình theo môi trường
 ├─ contracts/openapi.yaml     nguồn sự thật của API
-├─ tests/e2e-api/             Postman collection chạy bằng Newman
+├─ tests/e2e-api/             E2E API bằng Vitest + fetch (ADR-0018)
 ├─ tests/e2e-ui/              Playwright (tuỳ chọn)
 ├─ tests/load/                k6
 ├─ docs/                      kế hoạch, git flow, testing, ADR, nghiệp vụ, runbook, workshop
@@ -249,7 +252,7 @@ shop-ai/
 | API contract | OpenAPI 3.1; openapi-typescript; Prism dựng mock cho web; zod kiểm input |
 | Lambda | Powertools for AWS Lambda: Logger, Tracer, Metrics, Idempotency, Parameters, Batch |
 | Hạ tầng | AWS CDK v2, cdk-nag |
-| Kiểm thử | Vitest, Testcontainers, pytest, Postman/Newman, Playwright, k6 |
+| Kiểm thử | Vitest (cả E2E API, ADR-0018), Testcontainers, pytest, Playwright, k6; Postman để thử tay |
 | Chạy tại máy | Docker Desktop (WSL2); `cdk watch --hotswap` vào tài khoản của chính mình |
 
 Chuẩn code và vòng làm việc hằng ngày: [CONTRIBUTING.md](../CONTRIBUTING.md).
@@ -265,7 +268,7 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 | Integration | Adapter với DynamoDB Local | Vitest + Testcontainers | Người viết adapter | Mỗi PR | Chặn merge |
 | Contract | Response khớp OpenAPI; fuzz API | Kiểm OpenAPI trong test; Schemathesis | An, Nhân | PR; mỗi đêm trên staging | Chặn release |
 | Smoke | Gọi API thật ngay sau deploy | Vitest hoặc k6 kịch bản nhỏ | An | Sau mỗi deploy | Lỗi ở prod thì rollback |
-| E2E API | Luồng đăng nhập → giỏ → đặt hàng và các case âm | Postman + Newman | Hoàng | Sau mỗi deploy dev và staging | Chặn release |
+| E2E API | Luồng đăng nhập → giỏ → đặt hàng và các case âm | Vitest + fetch (ADR-0018) | Hoàng | Sau mỗi deploy dev và staging | Chặn release |
 | E2E giao diện (tuỳ chọn) | 1–2 hành trình trên trình duyệt | Playwright | Hoàng | Sau deploy staging | Chặn release nếu có |
 | Hiệu năng | p95 và tỉ lệ lỗi ở 50/200/1.000 người ảo; so với bản EC2 | k6 | An | Hằng tuần từ tuần 4; đầy đủ ở tuần 6 | Cảnh báo khi vượt mục tiêu |
 | Bảo mật | SAST, thư viện có lỗ hổng, DAST, truy cập chéo (IDOR), rule WAF | CodeQL, Dependabot, pnpm audit, OWASP ZAP | Nhân | PR; ZAP mỗi đêm | High/Critical chặn release |
@@ -276,7 +279,7 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 
 | Chặng | Phải đạt |
 |---|---|
-| Merge PR | Tĩnh, unit, integration xanh; tiêu đề và commit đúng chuẩn; 1 người duyệt |
+| Merge PR | Tĩnh, unit, integration xanh; tiêu đề và commit đúng chuẩn; PR vào `release/*` và `main` thêm 1 người duyệt |
 | Lên dev | Deploy xanh, smoke xanh, E2E xanh |
 | Tách release | Mọi story trong sprint đã Done trên dev |
 | Merge release vào main | UAT xong trên staging, E2E xanh, không High/Critical đang mở, runbook cập nhật |
@@ -287,9 +290,9 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 ```mermaid
 flowchart TB
   A["feature/* · fix/*"] --> B["pr.yml<br/>commit, lint, type, luật layer,<br/>unit, integration, quét bảo mật, cdk-nag"]
-  B --> C{"CI xanh +<br/>1 người duyệt"}
+  B --> C{"CI xanh"}
   C --> D["merge commit vào develop"]
-  D --> E["deploy.yml → dev<br/>smoke + E2E Newman"]
+  D --> E["deploy.yml → dev<br/>smoke + E2E API"]
   E --> F["An tách release/vX.Y.Z"]
   F --> G["deploy.yml → staging<br/>smoke + E2E + cả nhóm test"]
   G --> H["PR release → main"]
@@ -308,14 +311,14 @@ flowchart TB
 | staging | Tài khoản demo | `shop-stg` | Push lên `release/*` | Tự động | Seed giả, reset được |
 | prod | Tài khoản demo | `shop-prd` | Tag `v*` do An đẩy | 1 người khác An | Dữ liệu demo, bật PITR |
 
-dev, staging và prod chung tài khoản demo vì Free plan không có AWS Organizations (ADR-013). Ba môi trường tách hẳn bằng tên stack: bảng, bucket, user pool, distribution CloudFront riêng. Mỗi tài khoản được đúng 3 gói CloudFront Free, vừa đủ cho ba distribution này.
+dev, staging và prod chung tài khoản demo vì Free plan không có AWS Organizations (ADR-013). Tài khoản demo là tài khoản của An, cũng là sandbox của An. Ba môi trường tách hẳn bằng tên stack: bảng, bucket, user pool, distribution CloudFront riêng. Mỗi tài khoản được đúng 3 gói CloudFront Free, vừa đủ cho ba distribution này; sandbox của An không dùng gói Free.
 
 ### Workflow
 
 | File | Chạy khi | Làm gì |
 |---|---|---|
 | `pr.yml` | Mỗi PR vào `develop`, `main`, `release/*` | Tiêu đề PR, commitlint cho từng commit, định dạng, lint, type, luật layer, unit, integration, build, gitleaks, audit thư viện, test Python, `cdk synth` + cdk-nag, `cdk diff` vào phần Summary |
-| `deploy.yml` | Push `develop` (→ dev) hoặc `release/*` (→ staging) | Build, OIDC, `cdk deploy`, smoke, E2E Newman, Playwright nếu có |
+| `deploy.yml` | Push `develop` (→ dev) hoặc `release/*` (→ staging) | Build, OIDC, `cdk deploy`, smoke, E2E API (Vitest), Playwright nếu có |
 | `deploy-prod.yml` | Tag `v*` | Chờ duyệt environment production, `cdk deploy` prod (canary cho ordering), smoke, tạo GitHub Release |
 | `nightly.yml` | 2:00 mỗi đêm | OWASP ZAP và Schemathesis vào staging, audit thư viện, k6 kịch bản nhỏ |
 
@@ -358,9 +361,8 @@ Mọi workflow deploy chỉ chạy khi biến `DEPLOY_ENABLED=true`. An bật bi
 **Ngày demo**
 
 - Hôm trước: không deploy gì nữa
-- 1 giờ trước: tạo campaign Personalize nếu dùng, chạy thử cả luồng, kiểm tra alarm
+- 1 giờ trước: chạy thử cả luồng, kiểm tra alarm và bảng `recs` đang có phiên bản mới nhất
 - Luôn có video demo dự phòng
-- Demo xong: xoá campaign ngay
 
 ## 10. Vận hành
 
@@ -383,7 +385,7 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 | DynamoDB bị throttle | Email | `runbooks/dynamodb-throttle.md` |
 | Canary ordering báo lỗi | CodeDeploy tự rollback | `runbooks/canary-rollback.md` |
 | Chi phí vượt $5, $10, $20 | Email từ Budgets | `runbooks/cost-spike.md` |
-| Campaign Personalize sống quá 3 giờ | Lambda cầu dao tự xoá, email | `runbooks/personalize-breaker.md` |
+| Pipeline gợi ý đêm qua lỗi hoặc không chạy | Email; web vẫn đọc phiên bản cũ | `runbooks/recs-pipeline.md` |
 
 ### Sự cố
 
@@ -404,8 +406,8 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 ### Chi phí và DORA
 
 - Tag `project`, `env`, `owner`, `module` cho mọi tài nguyên, gắn ở cấp CDK app
-- Budgets $5/$10/$20 ở cả 4 tài khoản; xem Cost Explorer 5 phút mỗi thứ Hai
-- Cầu dao tự động cho campaign Personalize và EC2 đối chứng
+- Budgets $5/$10/$20 ở cả 3 tài khoản; xem Cost Explorer 5 phút mỗi thứ Hai
+- Cầu dao tự động tắt EC2 đối chứng
 - Chỉ số chi phí trên 1.000 đơn, đưa vào báo cáo
 
 | Chỉ số DORA | Mục tiêu |
@@ -431,12 +433,12 @@ Lấy số từ lịch sử GitHub Actions và trình bày ở mỗi buổi demo
 
 ## 11. Đóng dự án
 
-- **Báo cáo FCAJ:** Proposal 8 mục; mỗi người một trang workshop có mục Clean up ([workshop/](workshop/)); 3 blog mỗi người; worklog đủ 12 tuần
+- **Báo cáo FCAJ:** Proposal 8 mục; một workshop chung của nhóm, mỗi người viết chương phần mình, có mục Clean up ([workshop/](workshop/)); 3 blog mỗi người; worklog đủ 12 tuần
 - **Sơ đồ kiến trúc AWS:** nhóm tự vẽ, đặt ở `docs/architecture/`
 - **Repo:** README cài đặt được trong 30 phút; ADR đầy đủ; runbook cho mọi alarm
 - **Số liệu cho báo cáo:** kết quả k6, chỉ số gợi ý so với baseline, chi phí thật theo tag, DORA, thời gian khôi phục
 - **Demo:** tập ít nhất 2 lần trên prod; video dự phòng
-- **Dọn dẹp:** `cdk destroy` từng stack; xoá Personalize theo đúng thứ tự (campaign, solution, event tracker, dataset, dataset group); lên lịch xoá KMS key; kiểm tra Billing hôm sau
+- **Dọn dẹp:** `cdk destroy` từng stack; lên lịch xoá KMS key; kiểm tra Billing hôm sau
 - **Retro cuối dự án:** đưa vào mục Self-Assessment của báo cáo
 
 ## 12. Lịch sprint và phát hành
@@ -455,7 +457,7 @@ Lấy số từ lịch sử GitHub Actions và trình bày ở mỗi buổi demo
 | Rủi ro | Khả năng | Ảnh hưởng | Phòng ngừa | Dấu hiệu | Chủ |
 |---|---|---|---|---|---|
 | Nghiệp vụ đến muộn | Vừa | Cao | Làm phần không phụ thuộc trước; hạn chốt 05/10 | Qua 05/10 chưa có nghiệp vụ | An |
-| Mentor không duyệt Paid plan cho Personalize | Vừa | Vừa | Baseline là đường chính; Personalize chỉ là adapter thêm | Chưa có trả lời sau tuần 2 | Nhân |
+| Mô hình tự xây không tốt hơn hàng bán chạy | Vừa | Vừa | Đo trên tập test chia theo thời gian; không bật phiên bản kém hơn baseline; nói rõ dữ liệu là giả lập | precision@10 không vượt baseline | Nhân |
 | Web và API ghép muộn | Vừa | Cao | OpenAPI trước, mock bằng Prism từ tuần 1 | Contract test đỏ kéo dài | An |
 | Một người bận thi hoặc việc riêng | Vừa | Vừa | Review chéo, tài liệu, không ai giữ kiến thức một mình | Việc đứng yên quá 2 ngày | An |
 | Chi phí vượt dự kiến | Thấp | Vừa | Budgets, cầu dao, tag, xem chi phí hằng tuần | Email budget $5 | An |

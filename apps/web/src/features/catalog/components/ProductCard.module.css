@@ -1,0 +1,111 @@
+/* Thẻ sản phẩm (docs/web/design-system.md §9.9) */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-base) ease-out,
+    box-shadow var(--dur-base) ease-out;
+}
+.card:hover {
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-card-hover);
+}
+/* Cả thẻ bấm được, nhưng chỉ tiêu đề là link thật (trình đọc màn hình đọc gọn) */
+.card:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.link {
+  display: block;
+  overflow: hidden;
+  color: inherit;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+.link:focus-visible {
+  outline: none;
+}
+.link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Ô ảnh vuông chạm sát mép thẻ */
+.plate {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+.image,
+.noImage {
+  transition: transform var(--dur-medium) var(--ease-standard);
+}
+.card:hover .image,
+.card:hover .noImage {
+  transform: scale(1.05);
+}
+.image {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* nền trắng của ảnh hoà vào ô xám */
+}
+.noImage {
+  display: grid;
+  color: var(--fg-icon-soft);
+}
+.unavailable .plate {
+  opacity: 0.6;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-100);
+  padding: 10px 10px var(--space-150);
+  border-top: 1px solid var(--border-divider);
+}
+.title {
+  min-width: 0;
+  color: var(--fg-default);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+/* Dưới 1280px: giá rồi nhãn xếp dọc */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-50);
+  margin-top: auto;
+}
+@media (min-width: 1280px) {
+  .body {
+    padding: var(--space-150) 14px 14px;
+  }
+  .title {
+    font-size: 13px;
+    line-height: 20px;
+  }
+  .footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-100);
+  }
+}

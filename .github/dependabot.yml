@@ -15,6 +15,11 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Dự án 8 tuần: không nâng bản lớn (vd. React 18 -> 19) trừ khi có lý do, khi đó nâng tay trong PR riêng.
+    # Lỗ hổng vẫn hiện ở tab Security (Dependabot alerts) và pnpm audit trong CI vẫn chặn mức High/Critical.
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
@@ -31,9 +36,20 @@ updates:
       actions:
         patterns: ['*']
 
-  # Thêm khi đã có data/pyproject.toml:
-  # - package-ecosystem: uv
-  #   directory: /data
-  #   target-branch: develop
-  #   schedule:
-  #     interval: weekly
+  - package-ecosystem: uv
+    directory: /data
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: Asia/Ho_Chi_Minh
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']

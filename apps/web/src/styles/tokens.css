@@ -1,0 +1,147 @@
+/*
+ * Token giao diện của Black Magic (xem docs/web/design-system.md §2–4).
+ * Bảng màu chàm (chốt 11/10/2026): nền xám nhạt, header hàng 1 và footer chàm, chàm làm màu hành động.
+ * Component chỉ dùng token ngữ nghĩa (--bg-*, --fg-*, --border-*), không dùng mã màu trực tiếp.
+ */
+:root {
+  color-scheme: light;
+  --bg-canvas: #f5f5f5;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f5f5f5;
+  --bg-surface-raised: #fafafa;
+  --bg-surface-pressed: #eeeeee;
+  --bg-chrome: #4338ca;
+  --bg-chrome-strong: #3730a3;
+  --bg-chrome-hover: rgba(255, 255, 255, 0.12);
+  --bg-primary: #4f46e5;
+  --bg-primary-hover: #4338ca;
+  --bg-primary-pressed: #3730a3;
+  --bg-primary-tint: #eef2ff;
+  --bg-primary-tint-2: #e0e7ff;
+  --bg-accent-tint: #cffafe;
+  --bg-deal: #f5b83d;
+  --bg-success-tint: #dcfce7;
+  --bg-danger-tint: #ffe4e6;
+  --bg-warning-tint: #fef3c7;
+  --bg-transparent-hover: rgba(0, 0, 0, 0.04);
+  --bg-transparent-pressed: rgba(0, 0, 0, 0.08);
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  --fg-default: #1a1a1a;
+  --fg-heading: #262626;
+  --fg-muted: #525252;
+  /* 4,74 trên nền trắng; trên #F5F5F5 chỉ 4,35 nên không dùng cho chữ trên nền xám */
+  --fg-subdued: #737373;
+  /* Icon trang trí, ảnh thay thế; không dùng cho chữ */
+  --fg-icon-soft: #a3a3a3;
+  --fg-placeholder: #737373;
+  --fg-disabled: #a3a3a3;
+  --fg-price: #1a1a1a;
+  --fg-on-primary: #ffffff;
+  --fg-on-chrome: #ffffff;
+  --fg-on-chrome-muted: #c7d2fe;
+  --fg-on-deal: #1a1a1a;
+  --fg-primary: #4338ca;
+  --fg-primary-hover: #3730a3;
+  --fg-accent: #0e7490;
+  --fg-deal: #b45309;
+  --fg-success: #15803d;
+  --fg-danger: #be123c;
+  --fg-warning: #b45309;
+
+  --border-divider: #e5e5e5;
+  --border-default: #d4d4d4;
+  --border-input: #8c8c8c;
+  --border-primary: #4f46e5;
+  --border-on-chrome: rgba(255, 255, 255, 0.38);
+  --border-on-chrome-subtle: rgba(255, 255, 255, 0.22);
+  --focus-ring: #4f46e5;
+  --focus-ring-on-chrome: #ffffff;
+
+  --gradient-brand: linear-gradient(135deg, #1e1b4b 0%, #3730a3 35%, #4f46e5 70%, #22d3ee 100%);
+  --gradient-logo: linear-gradient(135deg, #c7d2fe, #ffffff);
+  --hero-ink: #1e1b4b;
+
+  --shadow-xs: 0 2px 3px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-up: 0 -2px 8px rgba(0, 0, 0, 0.12);
+
+  /* Thanh cuộn (design-system §4): màu lấy từ màu đã có, không thêm màu mới */
+  --scrollbar-size: 10px;
+  --scrollbar-thumb: var(--border-default);
+  --scrollbar-thumb-area-hover: var(--fg-icon-soft);
+  --scrollbar-thumb-hover: var(--fg-subdued);
+  --scrollbar-track: transparent;
+}
+
+:root {
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+
+  /* Cỡ chữ / line-height (design-system §3) */
+  --text-display-sm: 44px;
+  --leading-display-sm: 56px;
+  --text-headline-sm: 32px;
+  --leading-headline-sm: 44px;
+  --text-title-md: 24px;
+  --leading-title-md: 32px;
+  --text-title-sm: 20px;
+  --leading-title-sm: 28px;
+  --text-body-lg: 16px;
+  --leading-body-lg: 24px;
+  --text-body-md: 14px;
+  --leading-body-md: 20px;
+  --text-body-sm: 12px;
+  --leading-body-sm: 18px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-btn: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  --space-25: 2px;
+  --space-50: 4px;
+  --space-100: 8px;
+  --space-150: 12px;
+  --space-200: 16px;
+  --space-300: 24px;
+  --space-400: 32px;
+  --space-500: 40px;
+  --space-600: 48px;
+  --space-800: 64px;
+
+  --ease-standard: cubic-bezier(0, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-medium: 300ms;
+
+  /*
+   * Bề rộng tối đa của nội dung. 1600px thì trên màn 1920px thừa ~220px mỗi bên, nên dùng 1920px:
+   * màn 1920px chỉ còn lề 64px, màn 2K/4K vẫn được căn giữa.
+   */
+  --content-max: 1920px;
+  --gutter: 16px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 24px;
+  }
+}
+@media (min-width: 960px) {
+  :root {
+    --gutter: 40px;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --gutter: 64px;
+  }
+}

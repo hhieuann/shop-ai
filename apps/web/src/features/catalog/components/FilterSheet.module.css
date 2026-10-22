@@ -1,0 +1,85 @@
+/* Bảng lọc phủ toàn màn hình trên điện thoại (docs/web/design-system.md §9.20) */
+.sheet {
+  position: fixed;
+  inset: 0;
+  /* Trên header (210) */
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+}
+.icon {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+/* Nút "Đóng" kiểu ghost */
+.close {
+  min-height: 40px;
+  padding: 0 var(--space-100);
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg-primary);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+}
+.close:hover:not(:disabled) {
+  background: var(--bg-transparent-hover);
+}
+.close:active {
+  background: var(--bg-transparent-pressed);
+}
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-top: var(--space-50);
+}
+.foot {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-100);
+  padding: var(--space-150) var(--space-200);
+  border-top: 1px solid var(--border-divider);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-up);
+}
+/* Nút cỡ lg (48px): "Bỏ chọn" nút phụ, "Áp dụng bộ lọc" nút chính */
+.reset,
+.apply {
+  min-height: 48px;
+  padding: var(--space-100) var(--space-300);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.apply {
+  border-color: var(--bg-primary);
+  background: var(--bg-primary);
+  color: var(--fg-on-primary);
+}
+.apply:hover:not(:disabled) {
+  border-color: var(--bg-primary-hover);
+  background: var(--bg-primary-hover);
+}
+.apply:active {
+  border-color: var(--bg-primary-pressed);
+  background: var(--bg-primary-pressed);
+}

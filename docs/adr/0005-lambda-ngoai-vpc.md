@@ -6,7 +6,7 @@
 
 ## Bối cảnh
 
-Lambda đặt trong VPC mà cần gọi dịch vụ AWS thì phải có NAT gateway (~$1–1,5/ngày) hoặc VPC endpoint. Dự án chỉ dùng DynamoDB, SQS, SES, Personalize, đều gọi được qua endpoint công khai bằng quyền IAM.
+Lambda đặt trong VPC mà cần gọi dịch vụ AWS thì phải có NAT gateway (~$1–1,5/ngày) hoặc VPC endpoint. Dự án chỉ dùng DynamoDB, SQS, SNS, SES, đều gọi được qua endpoint công khai bằng quyền IAM.
 
 ## Quyết định
 

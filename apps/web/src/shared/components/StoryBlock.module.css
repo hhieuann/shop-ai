@@ -1,0 +1,41 @@
+/* Khối sản phẩm không khung (docs/web/design-system.md §9.10) */
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+  min-width: 0;
+  padding: 20px 0 var(--space-50);
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+}
+.title {
+  min-width: 0;
+  color: var(--fg-default);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+}
+.action {
+  margin-left: auto;
+  color: var(--fg-primary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@media (min-width: 1280px) {
+  .block {
+    padding-top: var(--space-300);
+  }
+  .title {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .action {
+    font-size: 16px;
+    line-height: 22px;
+  }
+}

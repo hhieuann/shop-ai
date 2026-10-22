@@ -1,0 +1,59 @@
+/* Menu danh mục (docs/web/design-system.md §9.18) */
+.menu {
+  color: var(--fg-heading);
+}
+.framed {
+  padding: var(--space-100);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  height: 36px;
+  padding: var(--space-50) var(--space-100);
+  border-radius: var(--radius-lg);
+  color: var(--fg-heading);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  transition: background-color var(--dur-fast) ease-out;
+}
+.item:hover {
+  background: var(--bg-primary-tint);
+  color: var(--fg-heading);
+  text-decoration: none;
+}
+.item[aria-current='page'] {
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+.tile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+}
+.label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chevron {
+  flex-shrink: 0;
+  color: var(--fg-icon-soft);
+}

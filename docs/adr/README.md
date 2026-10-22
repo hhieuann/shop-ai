@@ -4,18 +4,21 @@ Mỗi quyết định kiến trúc quan trọng được ghi thành một file: 
 
 | ADR | Quyết định | Trạng thái |
 |---|---|---|
-| [0004](0004-goi-y-batch-truoc.md) | Gợi ý chạy batch trước; bảng `recs`; Personalize cắm vào sau | Chấp nhận |
+| [0004](0004-goi-y-batch-truoc.md) | Gợi ý chạy batch mỗi đêm; bảng `recs` | Chấp nhận; phần Personalize thay bởi 0016 |
 | [0005](0005-lambda-ngoai-vpc.md) | Lambda không đặt trong VPC, không NAT gateway | Chấp nhận |
 | [0006](0006-mot-cloudfront-waf.md) | Một CloudFront cho web và `/api/*`, WAF gói Free | Chấp nhận |
 | [0007](0007-http-api-jwt-cognito.md) | HTTP API + JWT authorizer của Cognito | Chấp nhận |
 | [0008](0008-github-actions-oidc.md) | GitHub Actions + OIDC, không có access key | Chấp nhận |
-| [0009](0009-layer-hexagonal-rut-gon.md) | Hexagonal rút gọn, mỗi module một Lambda | Chấp nhận |
+| [0009](0009-layer-hexagonal-rut-gon.md) | Modular monolith, mỗi module một Lambda; bên trong mỗi module là Hexagonal rút gọn | Chấp nhận |
 | [0010](0010-git-flow.md) | Git flow có nhánh release cho mỗi lần phát hành, merge commit, tag thủ công | Chấp nhận |
 | [0011](0011-monorepo-openapi.md) | Monorepo pnpm; OpenAPI là nguồn sự thật của API | Chấp nhận |
 | [0012](0012-dynamodb-moi-module-mot-bang.md) | DynamoDB mỗi module một bảng | Chấp nhận |
 | [0013](0013-moi-truong-chung-tai-khoan.md) | dev, staging, prod chung tài khoản demo, tách bằng stack | Chấp nhận |
 | [0014](0014-canary-ordering.md) | Deploy Lambda ordering kiểu canary bằng CodeDeploy | Đề xuất |
 | [0015](0015-repo-public.md) | Repo public | Chấp nhận |
+| [0016](0016-tu-xay-mo-hinh-goi-y.md) | Tự xây mô hình gợi ý trên Lambda + DynamoDB, không dùng Personalize | Chấp nhận |
+| [0017](0017-ngoai-le-bang-cheo-module-va-idempotency.md) | Ngoại lệ có ghi lại: `cart` đọc `products`, `ordering` ghi `products` và `carts` trong một giao dịch; bảng idempotency riêng từng module | Chấp nhận |
+| [0018](0018-e2e-api-bang-vitest.md) | E2E API bằng Vitest + `fetch` như smoke test, không dùng Newman trong CI (lỗ hổng High/Critical trong thư viện con) | Chấp nhận |
 
 ## Mẫu cho ADR mới
 
