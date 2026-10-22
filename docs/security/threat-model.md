@@ -1,6 +1,6 @@
 # Threat model bản 0 (STRIDE)
 
-Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
+Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10 và 22/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
 
 Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới ADR-0017,
 `docs/business/` (account, cart, ordering, events, recommendation),
@@ -8,6 +8,7 @@ Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới
 
 Cập nhật 21/10/2026: các quyết định nhóm chốt ngày 17/10, contract `POST /api/v1/events` (#174),
 bucket dữ liệu huấn luyện (#179) và kết quả review trust policy OIDC (#180, dòng C6).
+Cập nhật 22/10/2026: O6, O8, B6 theo ordering.md (#192, #194).
 
 Cột **Trạng thái**:
 
@@ -79,7 +80,7 @@ Trình duyệt ──────────> CloudFront ──> HTTP API ─�
 | B3 | Lambda với DynamoDB | Quyền IAM của từng module chỉ chạm đúng bảng của mình |
 | B4 | Internet vào thẳng API Gateway | Request không đi qua WAF (ADR-0006) |
 | B5 | API với SQS và worker | Ai được gửi message, worker tin nội dung message tới đâu |
-| B6 | `ordering` với `events` | Ai được ghi `PURCHASE`. Chốt 17/10: `ordering` gửi tin lên SNS topic `order-confirmed` (`orderId`, `userId`, `itemIds`, không có `shippingAddress`), topic đẩy vào hàng đợi SQS của `events` có DLQ; chỉ `events` ghi bảng `events` |
+| B6 | `ordering` với `events` | Ai được ghi `PURCHASE`. Chốt 17/10: `ordering` gửi tin lên SNS topic `order-confirmed` (`orderId`, `userId`, `confirmedAt`, `items: [{ productId, quantity }]`, không có `shippingAddress`; ordering.md bước 2.3), topic đẩy vào hàng đợi SQS của `events` có DLQ; chỉ `events` ghi bảng `events`, và băm `userId` bằng HMAC trước khi lưu (E5) |
 
 ## 4. Mối đe doạ theo STRIDE
 
@@ -110,9 +111,9 @@ Module `ordering` chưa có code (`services/api/src/modules/` hiện có `accoun
 | O3 | E | Khách tự chuyển đơn sang `SHIPPED`, `DELIVERED` | Cao | Chỉ nhóm `admin` được chuyển; kiểm ở backend, không dựa vào việc giao diện ẩn nút | Theo thiết kế |
 | O4 | T | Gửi lại request làm tạo đơn hai lần | Vừa | `Idempotency-Key`, bảng `order-idempotency` riêng (ADR-0017, BR-04) | Theo thiết kế |
 | O5 | T | Hai người cùng mua món cuối, bán vượt tồn kho | Vừa | Một `TransactWriteItems` có điều kiện `stock >= quantity` (BR-08) | Theo thiết kế |
-| O6 | D | **Giữ kho ác ý:** tạo nhiều đơn COD không định nhận, tồn kho bị trừ, khách thật thấy hết hàng | Vừa | Giới hạn số đơn `PENDING`, `CONFIRMED` mỗi tài khoản; throttle riêng cho `POST /api/v1/orders`; admin huỷ đơn để hoàn kho (BR-11, BR-12) | Đề xuất · Hoàng phụ trách |
+| O6 | D | **Giữ kho ác ý:** tạo nhiều đơn COD không định nhận, tồn kho bị trừ, khách thật thấy hết hàng | Vừa | Mỗi tài khoản tối đa 3 đơn `PENDING`, `CONFIRMED`, kiểm bằng bộ đếm `openOrders` trong cùng giao dịch tạo đơn; đơn thứ 4 trả 409 `TOO_MANY_OPEN_ORDERS` (ordering.md BR-14). Admin huỷ đơn để hoàn kho (BR-11, BR-12); throttle riêng cho `POST /api/v1/orders` chưa có | Theo thiết kế (ordering.md BR-14) |
 | O7 | E | Role `ordering` có `UpdateItem` trên `products` nên sửa được cả giá, không chỉ tồn kho | Vừa | Thử điều kiện `dynamodb:Attributes` chỉ cho `stock` (ADR-0017 đã ghi sẽ thử) | Theo thiết kế · Hoàng phụ trách |
-| O8 | I | `shippingAddress` lọt vào log, message SQS hoặc tin SNS báo admin | Vừa | Message SQS chỉ gồm `{orderId, userId, correlationId}` (ordering.md); tin SNS cũng chỉ gửi `orderId`; không log body request | Theo thiết kế (SQS) · Đề xuất (SNS, log) |
+| O8 | I | `shippingAddress` lọt vào log, message SQS hoặc tin SNS báo admin | Vừa | Message SQS chỉ gồm `{orderId, userId, correlationId}` (ordering.md); tin SNS `order-confirmed` gồm `{ orderId, userId, confirmedAt, items: [{ productId, quantity }] }`, không có `shippingAddress`, họ tên, SĐT, giá (ordering.md bước 2.3); không log body request | Theo thiết kế (SQS, SNS) · Đề xuất (log) |
 | O9 | T | Message SQS giả hoặc bị sửa | Thấp | Chỉ role API có `sqs:SendMessage`; worker đọc lại đơn từ DynamoDB, không tin nội dung message ngoài `orderId` | Đề xuất |
 | O10 | R | Khách chối đã đặt đơn | Thấp | Đơn lưu `userId` từ JWT, `createdAt`, `correlationId`; email xác nhận | Theo thiết kế |
 
@@ -148,7 +149,7 @@ Route `POST /api/v1/events` đã có trong `contracts/openapi.yaml` (#174): bắ
 Mỗi dòng **Đề xuất** sẽ thành một issue riêng, ghi rõ mức và cách sửa, sau khi nhóm đồng ý:
 
 - [ ] L4: response headers policy (CSP và các header bảo mật) cho CloudFront (An, tuần 5)
-- [ ] O6: giới hạn số đơn đang mở mỗi tài khoản (Hoàng)
+- [x] O6: giới hạn 3 đơn đang mở mỗi tài khoản, đã vào ordering.md BR-14 (#192); còn test khi có code (Hoàng)
 - [ ] O7: điều kiện `dynamodb:Attributes` cho role `ordering` (Hoàng)
 - [ ] O8, O9: không đưa `shippingAddress` vào tin SNS và log; worker không tin nội dung message
 - [ ] C1: chọn cách xử lý việc gọi thẳng `execute-api` (An, tuần 5)
