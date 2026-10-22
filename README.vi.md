@@ -4,7 +4,7 @@
 
 Shop linh kiện và thiết bị điện tử chạy serverless trên AWS, có gợi ý "thường mua kèm" và "dành cho bạn" bằng mô hình nhóm tự xây. Dự án nhóm trong kỳ thực tập First Cloud AI Journey (FCAJ), 2026.
 
-[![PR checks](https://github.com/hhieuann/shop-ai/actions/workflows/pr.yml/badge.svg)](https://github.com/hhieuann/shop-ai/actions/workflows/pr.yml)
+[![Deploy dev](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml/badge.svg?branch=develop)](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml?query=branch%3Adevelop)
 
 **Bản demo (v0.1.0):** https://d1e2x1capwqhry.cloudfront.net. Đây là shop demo: không có đơn hàng, thanh toán hay giao hàng thật.
 

@@ -4,7 +4,7 @@
 
 A serverless e-commerce shop for PC components and electronics on AWS, with "frequently bought together" and "for you" recommendations from a model the team built itself. Team project for the First Cloud AI Journey (FCAJ) internship, 2026.
 
-[![PR checks](https://github.com/hhieuann/shop-ai/actions/workflows/pr.yml/badge.svg)](https://github.com/hhieuann/shop-ai/actions/workflows/pr.yml)
+[![Deploy dev](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml/badge.svg?branch=develop)](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml?query=branch%3Adevelop)
 
 **Live demo (v0.1.0):** https://d1e2x1capwqhry.cloudfront.net. This is a demo shop: no real orders, payments or deliveries.
 
