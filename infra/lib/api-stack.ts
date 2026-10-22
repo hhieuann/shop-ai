@@ -41,6 +41,7 @@ import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 import { Monitoring } from './monitoring.js';
 import { OrderConfirmed } from './order-confirmed.js';
+import { RecsTable } from './recs-table.js';
 import { TrainingData } from './training-data.js';
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
@@ -86,6 +87,8 @@ export class ApiStack extends Stack {
   public readonly webClient: UserPoolClient;
   /** Bucket dữ liệu huấn luyện đã ẩn danh của pipeline gợi ý mỗi đêm. */
   public readonly trainingDataBucket: Bucket;
+  /** Bảng gợi ý; pipeline mỗi đêm của Nhân cấp quyền ghi, API gợi ý của An chỉ đọc. */
+  public readonly recsTable: Table;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -240,6 +243,8 @@ export class ApiStack extends Stack {
 
     // Dữ liệu huấn luyện cho pipeline gợi ý mỗi đêm (module recommendation)
     this.trainingDataBucket = new TrainingData(this, 'TrainingData', { shopEnv }).bucket;
+    this.recsTable = new RecsTable(this, 'Recs', { shopEnv }).table;
+    new CfnOutput(this, 'RecsTableName', { value: this.recsTable.tableName });
 
     // Tin đơn đã xác nhận (ordering.md bước 2.3): ordering gửi, events nhận qua hàng đợi có DLQ
     const orderConfirmed = new OrderConfirmed(this, 'OrderConfirmed');
