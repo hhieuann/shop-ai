@@ -1,68 +1,77 @@
 # shop-ai
 
-Shop linh kiện và thiết bị điện tử chạy serverless trên AWS, có gợi ý mua kèm bằng AI. Dự án nhóm trong kỳ thực tập First Cloud AI Journey (FCAJ), 2026.
+**English** | [Tiếng Việt](README.vi.md)
+
+A serverless e-commerce shop for PC components and electronics on AWS, with "frequently bought together" and "for you" recommendations from a model the team built itself. Team project for the First Cloud AI Journey (FCAJ) internship, 2026.
 
 [![PR checks](https://github.com/hhieuann/shop-ai/actions/workflows/pr.yml/badge.svg)](https://github.com/hhieuann/shop-ai/actions/workflows/pr.yml)
 
-## Bài toán
+**Live demo (v0.1.0):** https://d1e2x1capwqhry.cloudfront.net. This is a demo shop: no real orders, payments or deliveries.
 
-Shop nhỏ bán linh kiện máy tính không đủ người tư vấn "mua món này thì cần thêm gì". Mua GPU thường phải nâng cấp nguồn; mua laptop thường cần chuột và túi. Dự án xây một web bán hàng có gợi ý mua kèm học từ hành vi mua sắm, chạy trên AWS với chi phí gần bằng 0 khi ít khách.
+## The problem
 
-## Phạm vi MVP
+Small PC component shops do not have enough staff to answer "if I buy this, what else do I need?". A new GPU often needs a bigger power supply; a laptop usually needs a mouse and a bag. This project builds a web shop that recommends add-ons learned from shopping behaviour, running on AWS at close to zero cost while traffic is low.
 
-- Xem, lọc, tìm sản phẩm; giỏ hàng; đặt hàng (COD hoặc thanh toán giả lập)
-- Đăng ký, đăng nhập; vai trò khách hàng và admin
-- Gợi ý "Dành cho bạn" và "Thường mua kèm"
-- Xử lý đơn bất đồng bộ, email xác nhận
-- Admin: thêm sản phẩm, xem đơn
-- Giám sát, cảnh báo, CI/CD, hạ tầng bằng code
+## Project status
 
-Chi tiết và phần không làm: [docs/project-plan.md](docs/project-plan.md).
+| Version | Date | Contents |
+|---|---|---|
+| **v0.1.0** (released) | 22 Oct 2026 | Browse, filter and search products; sign up and sign in; guest cart and account cart, merged on sign-in; monitoring with alarms, dashboard and runbooks. Accepted by the team on staging, then deployed to production. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
+| v0.2.0 (in progress) | planned 2 Nov 2026 | Ordering with asynchronous processing and email confirmation; behaviour events; nightly recommendation pipeline and the recommendation widgets |
+| Later | Nov 2026 | Admin pages, WAF and security headers, load and security testing |
 
-## Kiến trúc
+## What this project demonstrates
 
-Web React tĩnh trên S3 + CloudFront có WAF. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý do mô hình nhóm tự xây (luật mua kèm, gợi ý theo món tương tự) tính mỗi đêm trên Lambda rồi ghi vào DynamoDB. Toàn bộ hạ tầng viết bằng AWS CDK.
+- **Infrastructure as code:** every AWS resource is defined in AWS CDK (TypeScript) and checked by cdk-nag on every pull request.
+- **CI/CD without long-lived keys:** GitHub Actions deploys through OIDC roles, with no AWS access keys stored anywhere. Four environments (sandbox, dev, staging, prod); production needs approval from another team member, and every deploy runs smoke tests and API end-to-end tests.
+- **Operations:** CloudWatch alarms that email the team, a dashboard per environment, written runbooks, and alarm drills. A real staging alarm (a Lambda timeout on cold start) was traced through the logs and fixed before release.
+- **Security by design:** a written threat model, least-privilege IAM per module, anonymised behaviour data (HMAC), secret scanning, dependency auditing and CodeQL in CI.
+- **Team process:** Git flow with protected branches, conventional commits, code owners, Architecture Decision Records for every major choice, and a release checklist with acceptance testing.
 
-Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture/`. Lý do cho từng lựa chọn nằm trong [docs/adr/](docs/adr/).
+## Architecture
 
-## Công nghệ
+A static React web app on S3 + CloudFront. The API is an HTTP API with Lambda (TypeScript) and DynamoDB, with sign-in through Amazon Cognito. Orders go through SQS and confirmation emails through SES. Recommendations come from models the team built (association rules and item-based collaborative filtering), computed nightly and written to DynamoDB. WAF in front of CloudFront is planned for November.
 
-| Lớp | Công nghệ |
+The AWS architecture diagram, drawn by the team, will be placed in `docs/architecture/`. The reasons for each choice are in [docs/adr/](docs/adr/).
+
+## Tech stack
+
+| Layer | Technology |
 |---|---|
 | Web | React, Vite, TypeScript, TanStack Query |
-| API | AWS Lambda (Node.js 24, arm64), HTTP API, Powertools for AWS Lambda |
-| Dữ liệu | DynamoDB; S3 cho dữ liệu train |
-| Gợi ý | Python 3.13 trên Lambda, chạy mỗi đêm bằng EventBridge Scheduler: luật mua kèm, gợi ý theo món tương tự |
-| Hạ tầng | AWS CDK v2, cdk-nag |
+| API | AWS Lambda (Node.js 24, arm64), API Gateway HTTP API, Powertools for AWS Lambda |
+| Data | DynamoDB; S3 for training data |
+| Recommendations | Python 3.13: association rules, item-based collaborative filtering; nightly run on Lambda with EventBridge Scheduler (in progress) |
+| Infrastructure | AWS CDK v2, cdk-nag |
 | CI/CD | GitHub Actions + OIDC |
-| Kiểm thử | Vitest (cả E2E API), Testcontainers, pytest, k6, OWASP ZAP, Schemathesis |
+| Testing | Vitest (including API E2E), Testcontainers, pytest, k6, OWASP ZAP, Schemathesis |
 
-## Cấu trúc repo
+## Repository layout
 
 ```
 shop-ai/
 ├─ apps/web/                  React + Vite
-├─ services/api/              Lambda API, chia module theo ADR-009
-├─ services/workers/          Lambda chạy nền (SQS, lịch hẹn giờ)
-├─ data/                      Python: sinh dữ liệu, mô hình gợi ý, pipeline mỗi đêm
+├─ services/api/              Lambda API, one module per business area (ADR-0009)
+├─ services/workers/          Background Lambdas (SQS, schedules)
+├─ data/                      Python: data generator, recommendation models, nightly pipeline
 ├─ infra/                     AWS CDK
-├─ contracts/openapi.yaml     Hợp đồng API
+├─ contracts/openapi.yaml     API contract
 ├─ tests/                     smoke · e2e-api (Vitest) · e2e-ui (Playwright) · load (k6)
-├─ docs/                      Kế hoạch, ADR, nghiệp vụ, runbook, workshop
-└─ .github/                   Workflow, mẫu PR và issue, CODEOWNERS
+├─ docs/                      Plans, ADRs, business rules, runbooks, workshop
+└─ .github/                   Workflows, PR and issue templates, CODEOWNERS
 ```
 
-## Bắt đầu
+## Getting started
 
-### Cài công cụ
+### Tools
 
-- Node.js 24 (xem `.nvmrc`)
+- Node.js 24 (see `.nvmrc`)
 - pnpm 12: `npm install -g pnpm@12`
-- Docker Desktop (Windows chạy trên WSL2)
-- AWS CLI v2; CDK chạy qua `pnpm exec cdk`, không cần cài riêng
-- uv, nếu làm phần `data/`
+- Docker Desktop (on Windows, with WSL2)
+- AWS CLI v2; CDK runs through `pnpm exec cdk`, no separate install needed
+- uv, for the `data/` folder
 
-### Lần đầu
+### First run
 
 ```bash
 git clone https://github.com/hhieuann/shop-ai.git
@@ -72,54 +81,57 @@ pnpm install
 docker compose up -d
 ```
 
-`pnpm install` cài luôn git hook: định dạng code khi commit và kiểm tra commit message.
+`pnpm install` also installs the git hooks: code is formatted on commit and commit messages are checked.
 
-### Lệnh thường dùng
+### Common commands
 
-| Lệnh | Việc |
+| Command | What it does |
 |---|---|
-| `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm build` | Chạy trên mọi package |
-| `pnpm format` | Định dạng toàn repo |
-| `pnpm deps:check` | Kiểm tra luật layer (ADR-009) |
-| `docker compose up -d` | DynamoDB Local ở cổng 8000 |
-| `docker compose --profile baseline up -d` | Thêm MySQL cho bản đối chứng |
+| `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm build` | Run on every package |
+| `pnpm format` | Format the whole repo |
+| `pnpm deps:check` | Check the layer rules (ADR-0009) |
+| `docker compose up -d` | DynamoDB Local on port 8000 |
+| `docker compose --profile baseline up -d` | Add MySQL for the comparison baseline |
 
-## Môi trường
+## Environments
 
-| Môi trường | Deploy khi | Ghi chú |
+| Environment | Deployed when | Notes |
 |---|---|---|
-| sandbox | Chạy `cdk deploy` từ máy | Tài khoản AWS của từng người |
-| dev | Merge vào `develop` | Tự động |
-| staging | Push lên `release/*` | Tự động; cả nhóm test trước khi phát hành |
-| prod | An đẩy tag `vX.Y.Z` | Cần 1 người khác duyệt |
+| sandbox | `cdk deploy` from a laptop | Each member's own AWS account |
+| dev | Merge into `develop` | Automatic |
+| staging | Push to `release/*` | Automatic; the team tests here before a release |
+| prod | A `vX.Y.Z` tag is pushed | Needs approval from another member |
 
-Chi tiết: [infra/README.md](infra/README.md).
+Details: [infra/README.md](infra/README.md).
 
-## Tài liệu
+## Documentation
 
-- [Git flow](docs/git-flow.md): nhánh, commit, PR, phát hành, hotfix, conflict
-- [Hướng dẫn kiểm thử thực hành](docs/hands-on-testing-guide.md): unit, integration, E2E
-- [Kế hoạch kỹ thuật](docs/engineering-plan.md): quy trình, layer, build, CI/CD, vận hành
-- [Góp ý kế hoạch 30/09](docs/review-2026-09-30.md): các chỗ đã sửa trong kế hoạch ban đầu, link lab theo vai
-- [Kế hoạch dự án](docs/project-plan.md): bài toán, persona, phạm vi
-- [ADR](docs/adr/) · [Nghiệp vụ](docs/business/) · [Runbook](docs/runbooks/) · [Workshop FCAJ](docs/workshop/)
-- [Việc thiết lập repo](docs/setup-checklist.md)
-- [Cách đóng góp](CONTRIBUTING.md)
+Most documents are written in Vietnamese, the team's working language.
 
-## Nhóm
+- [Git flow](docs/git-flow.md): branches, commits, PRs, releases, hotfixes, conflicts
+- [Hands-on testing guide](docs/hands-on-testing-guide.md): unit, integration, E2E
+- [Engineering plan](docs/engineering-plan.md): process, layers, build, CI/CD, operations
+- [Project plan](docs/project-plan.md): problem, personas, scope
+- [Threat model](docs/security/threat-model.md)
+- [v0.1.0 release checklist](docs/releases/v0.1.0.md): acceptance tests and results
+- [ADRs](docs/adr/) · [Business rules](docs/business/) · [Runbooks](docs/runbooks/) · [FCAJ workshop](docs/workshop/)
+- [Repository setup](docs/setup-checklist.md)
+- [Contributing](CONTRIBUTING.md)
 
-| Thành viên | GitHub | Vai trò |
+## Team
+
+| Member | GitHub | Role |
 |---|---|---|
-| An | [@hhieuann](https://github.com/hhieuann) | Trưởng nhóm · nền tảng, DevOps, bảo mật hạ tầng |
-| Hoàng | [@simonhoang611](https://github.com/simonhoang611) | Fullstack · nghiệp vụ bán hàng |
-| Nhân | [@Netanii](https://github.com/Netanii) | Dữ liệu, gợi ý · bảo mật dữ liệu và AI |
+| An | [@hhieuann](https://github.com/hhieuann) | Team lead · platform, DevOps, infrastructure security |
+| Hoàng | [@simonhoang611](https://github.com/simonhoang611) | Full-stack · shopping features |
+| Nhân | [@Netanii](https://github.com/Netanii) | Data and recommendations · data and AI security |
 
-Việc cần làm và lộ trình của từng người: [docs/team/](docs/team/).
+Each member's tasks and roadmap: [docs/team/](docs/team/).
 
-## Bảo mật
+## Security
 
-Phát hiện lỗ hổng: đọc [SECURITY.md](SECURITY.md). Đừng mở issue công khai.
+Found a vulnerability? Read [SECURITY.md](SECURITY.md). Please do not open a public issue.
 
-## Giấy phép
+## License
 
-MIT. Xem [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
