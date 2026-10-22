@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { HmacUserIdHasher } from './hmacUserIdHasher.js';
+import { HmacUserIdHasher, ssmKeyLoader } from './userIdHash.js';
+import type { SSMClient } from '@aws-sdk/client-ssm';
 
 // Khoá sinh trong test, không phải khoá thật; viết cứng chuỗi trông như khoá dễ làm gitleaks báo nhầm
 const KEY = ['test', 'only', 'key'].join('-');
@@ -45,5 +46,34 @@ describe('HmacUserIdHasher', () => {
 
     // Assert: lỗi không bị giữ lại; đọc được rồi thì không gọi SSM nữa
     expect(loadKey).toHaveBeenCalledTimes(2);
+  });
+
+  it('hash_matchesDocumentedFormat_hexLowercase64Chars', async () => {
+    // Arrange: module recommendation băm lại sub để tra FOR_YOU#<userIdHash>, phải ra cùng định dạng
+    const hasher = new HmacUserIdHasher(() => Promise.resolve(KEY));
+
+    // Act
+    const value = await hasher.hash('user-sub-1');
+
+    // Assert
+    expect(value).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('ssmKeyLoader_readsSecureStringWithDecryption_andFailsWhenEmpty', async () => {
+    // Arrange
+    const send = vi
+      .fn()
+      .mockResolvedValueOnce({ Parameter: { Value: KEY } })
+      .mockResolvedValueOnce({ Parameter: {} });
+    const ssm = { send } as unknown as SSMClient;
+    const load = ssmKeyLoader(ssm, '/shop/dev/events/hmac-key');
+
+    // Act + Assert
+    await expect(load()).resolves.toBe(KEY);
+    expect(send.mock.calls[0]?.[0].input).toEqual({
+      Name: '/shop/dev/events/hmac-key',
+      WithDecryption: true,
+    });
+    await expect(load()).rejects.toThrow('/shop/dev/events/hmac-key');
   });
 });
