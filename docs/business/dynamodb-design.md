@@ -184,7 +184,7 @@ openOrders      Number   số đơn PENDING + CONFIRMED, 0..3
 ---
 ## Bảng `events` (module events)
 
-Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, cần An/Hoàng góp ý.
+Người viết: Nhân · Ngày: 09/10/2026 · Sửa 22/10/2026: khoá và thuộc tính theo code `modules/events`; GSI1 để sau.
 
 ### Truy vấn cần có
 
@@ -198,19 +198,22 @@ Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, 
 
 | Thuộc tính | Kiểu | Giá trị | Phục vụ |
 |---|---|---|---|
-| **PK** | String | `userIdHash` | Q1 — PutItem |
-| **SK** | String | `<timestamp ISO 8601>#<eventId>` | Sắp theo thời gian tự nhiên |
-| **GSI1-PK** | String | `itemId` | Q3 — Query trên GSI1 |
-| **GSI1-SK** | String | `timestamp` | Q3 — mới nhất trước |
+| **PK** | String | `userIdHash` | Q1 — PutItem có điều kiện `attribute_not_exists(eventKey)`, không ghi đè |
+| **SK** `eventKey` | String | `<timestamp ISO 8601>#<eventId>` | Sự kiện của một người sắp theo thời gian |
+| **TTL** | Number | `ttl` = thời điểm sự kiện + 90 ngày, giây kể từ 1970 | Tự xoá dữ liệu cũ, khớp luật xoá 90 ngày của bucket dữ liệu (góp ý ở #179) |
+
+GSI1 cho Q3 (`productId` + `timestamp`) chưa tạo; thêm khi làm phát hiện đầu độc gợi ý ở tuần 5.
 
 ### Schema thuộc tính
 
 ```
-userIdHash   String   PK   (HMAC, không phải userId thật)
-timestamp    String   SK component (ISO 8601 UTC, do server đặt)
-eventId      String   SK component (ULID)
-itemId       String
-eventType    String   (VIEW | ADD_TO_CART | PURCHASE)
+userIdHash   String   PK   (HMAC-SHA256 hex của Cognito sub, không phải userId thật)
+eventKey     String   SK   (<timestamp>#<eventId>)
+timestamp    String   ISO 8601 UTC, do server đặt
+eventId      String   UUID ngẫu nhiên
+productId    String   cùng tên với API (contracts/openapi.yaml)
+eventType    String   VIEW | ADD_TO_CART | PURCHASE
+ttl          Number   giây kể từ 1970, DynamoDB TTL xoá sau 90 ngày
 ```
 
 ### Vấn đề cần quyết định: Q2 có được Scan không?

@@ -1,0 +1,35 @@
+import { randomUUID } from 'node:crypto';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { requiredEnv } from '../../shared/config.js';
+import { captureClient, withTracing } from '../../shared/tracer.js';
+import { recordEvent, type RecordEventDeps } from './application/recordEvent.js';
+import { makeHandler } from './handler.js';
+import { DynamoEventRepository } from './infra/dynamoEventRepository.js';
+import { HmacUserIdHasher } from './infra/hmacUserIdHasher.js';
+
+// Chỗ duy nhất ghép use case với adapter thật; CDK trỏ Lambda vào file này.
+const db = DynamoDBDocumentClient.from(captureClient(new DynamoDBClient({})));
+const ssm = captureClient(new SSMClient({}));
+// Tên tham số, không phải khoá: /shop/<env>/events/hmac-key, SecureString An tạo bằng CLI
+const hmacKeyParameter = requiredEnv('HMAC_KEY_PARAMETER');
+
+async function loadHmacKey(): Promise<string> {
+  const { Parameter } = await ssm.send(
+    new GetParameterCommand({ Name: hmacKeyParameter, WithDecryption: true }),
+  );
+  if (!Parameter?.Value) throw new Error(`Tham số ${hmacKeyParameter} không có giá trị`);
+  return Parameter.Value;
+}
+
+const deps: RecordEventDeps = {
+  events: new DynamoEventRepository(db, requiredEnv('EVENTS_TABLE')),
+  hasher: new HmacUserIdHasher(loadHmacKey),
+  now: () => new Date().toISOString(),
+  newId: () => randomUUID(),
+};
+
+export const handler = withTracing(
+  makeHandler({ recordEvent: (input) => recordEvent(deps, input) }),
+);
