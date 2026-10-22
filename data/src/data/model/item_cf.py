@@ -59,6 +59,22 @@ def item_similarity(user_items: UserItems) -> Similarity:
     return dict(sim)
 
 
+def scored_for_user(
+    user_items: UserItems,
+    sim: Similarity,
+    user: str,
+    k: int = 10,
+) -> list[tuple[str, float]]:
+    """Top k (sản phẩm, điểm) cho một người dùng; rỗng nếu chưa có lịch sử (cold-start)."""
+    seen = user_items.get(user, {})
+    scores: dict[str, float] = defaultdict(float)
+    for item, w in seen.items():
+        for other, s in sim.get(item, {}).items():
+            if other not in seen:
+                scores[other] += w * s
+    return sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))[:k]
+
+
 def recommend_for_user(
     user_items: UserItems,
     sim: Similarity,
@@ -66,11 +82,4 @@ def recommend_for_user(
     k: int = 10,
 ) -> list[str]:
     """Top k sản phẩm cho một người dùng; rỗng nếu người dùng chưa có lịch sử (cold-start)."""
-    seen = user_items.get(user, {})
-    scores: dict[str, float] = defaultdict(float)
-    for item, w in seen.items():
-        for other, s in sim.get(item, {}).items():
-            if other not in seen:
-                scores[other] += w * s
-    ranked = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
-    return [item for item, _ in ranked[:k]]
+    return [item for item, _ in scored_for_user(user_items, sim, user, k)]
