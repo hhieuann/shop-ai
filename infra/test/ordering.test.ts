@@ -162,15 +162,25 @@ describe('ApiStack · ordering', () => {
     }
   });
 
-  it('ordersDeadLetterAlarm_pointsToRunbook', () => {
+  it('ordersDeadLetterAlarm_pointsToRunbook_inProd', () => {
     // Act
-    const template = synth(staging);
+    const template = synth(prod);
 
     // Assert
     template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: 'shop-stg-orders-dlq',
+      AlarmName: 'shop-prd-orders-dlq',
       AlarmDescription: 'Xử lý theo docs/runbooks/dlq-orders.md',
       Threshold: 1,
     });
+  });
+
+  it('ordersDeadLetterAlarm_isNotCreated_outsideProd', () => {
+    // Act
+    const alarms = synth(staging).findResources('AWS::CloudWatch::Alarm', {
+      Properties: { AlarmName: 'shop-stg-orders-dlq' },
+    });
+
+    // Assert: alarm mới chỉ ở prod, giữ dưới 10 alarm miễn phí của tài khoản chung (#235)
+    expect(Object.keys(alarms)).toHaveLength(0);
   });
 });

@@ -8,7 +8,7 @@ Mỗi alarm có một runbook: khi alarm kêu thì làm gì, theo thứ tự. Vi
 | [`api-latency.md`](api-latency.md) | `<tiền tố>-api-latency-p95`: p95 ≥ 1 giây, 15 phút liền | An |
 | [`lambda-errors.md`](lambda-errors.md) | `<tiền tố>-presignup-errors`: Lambda pre sign-up lỗi | An |
 | [`lambda-throttle.md`](lambda-throttle.md) | `shop-prd-lambda-throttles`: Lambda bị throttle (chỉ prod) | An |
-| [`dlq-orders.md`](dlq-orders.md) | `<tiền tố>-orders-dlq`: DLQ đơn hàng có ≥ 1 tin | Hoàng |
+| [`dlq-orders.md`](dlq-orders.md) | `shop-prd-orders-dlq`: DLQ đơn hàng có ≥ 1 tin (chỉ prod) | Hoàng |
 | `sqs-backlog.md` | Message SQS cũ nhất quá 5 phút | Hoàng |
 | `dynamodb-throttle.md` | DynamoDB bị throttle | Hoàng |
 | `canary-rollback.md` | Canary ordering báo lỗi | An |
