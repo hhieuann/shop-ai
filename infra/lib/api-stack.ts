@@ -254,6 +254,15 @@ export class ApiStack extends Stack {
     this.recsTable = new RecsTable(this, 'Recs', { shopEnv }).table;
     new CfnOutput(this, 'RecsTableName', { value: this.recsTable.tableName });
 
+    // API gợi ý (recommendation.md): also-bought, bestsellers công khai; for-you cần đăng nhập
+    const recsFn = this.addRecommendation(
+      shopEnv,
+      removalPolicy,
+      httpApi,
+      products,
+      this.recsTable,
+    );
+
     // Tin đơn đã xác nhận (ordering.md bước 2.3): ordering gửi, events nhận qua hàng đợi có DLQ
     const orderConfirmed = new OrderConfirmed(this, 'OrderConfirmed');
     new CfnOutput(this, 'OrderConfirmedTopicArn', { value: orderConfirmed.topic.topicArn });
@@ -270,6 +279,7 @@ export class ApiStack extends Stack {
         cart: cartFn,
         ordering: ordering.fn,
         events: eventsFn,
+        recommendation: recsFn,
         account: accountFn,
         health: healthFn,
       },
@@ -657,6 +667,107 @@ export class ApiStack extends Stack {
 
     new CfnOutput(this, 'EventsTableName', { value: events.tableName });
     return eventsFn;
+  }
+
+  /**
+   * Module recommendation: Lambda API gợi ý, đọc bảng recs mà pipeline mỗi đêm ghi.
+   * Quyền tối thiểu: GetItem (con trỏ), Query (dòng gợi ý) trên recs; đọc products CHỈ bằng
+   * BatchGetItem trên ARN bảng, không gồm index (ADR-0017, sửa 24/10); chỉ đọc đúng tham số khoá HMAC
+   * của events để băm userId giống events (threat model E6).
+   * `also-bought`, `bestsellers` công khai; `for-you` gắn JWT authorizer của Cognito.
+   */
+  private addRecommendation(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    products: Table,
+    recs: Table,
+  ) {
+    const hmacKeyParameter = `/shop/${shopEnv.name}/events/hmac-key`;
+    const fn = new NodejsFunction(this, 'RecommendationFunction', {
+      entry: path.join(API_SRC, 'modules', 'recommendation', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.seconds(5),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'RecommendationLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        RECS_TABLE: recs.tableName,
+        PRODUCTS_TABLE: products.tableName,
+        HMAC_KEY_PARAMETER: hmacKeyParameter,
+        POWERTOOLS_SERVICE_NAME: 'recommendation',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+        resources: [recs.tableArn],
+      }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
+    );
+    // SecureString mã hoá bằng khoá AWS quản lý aws/ssm: key policy đã cho dùng qua SSM, không cần kms:Decrypt
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: hmacKeyParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    Tags.of(fn).add('module', 'recommendation');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('RecommendationIntegration', fn);
+    const publicRoutes = [
+      ...httpApi.addRoutes({
+        path: '/api/v1/recs/also-bought',
+        methods: [HttpMethod.GET],
+        integration,
+      }),
+      ...httpApi.addRoutes({
+        path: '/api/v1/recs/bestsellers',
+        methods: [HttpMethod.GET],
+        integration,
+      }),
+    ];
+    for (const route of publicRoutes) {
+      Validations.of(route).acknowledge({
+        id: 'AwsSolutions::AwsSolutions-APIG4',
+        reason:
+          'Gợi ý mua kèm và hàng bán chạy là công khai như xem sản phẩm; chỉ for-you cần đăng nhập (ADR-0007).',
+      });
+    }
+    httpApi.addRoutes({
+      path: '/api/v1/recs/for-you',
+      methods: [HttpMethod.GET],
+      integration,
+      authorizer: this.authorizer,
+    });
+    return fn;
   }
 
   /** Lambda nhỏ không đọc dữ liệu (health, account): mặc định 128 MB, 3 giây; chỉ có quyền ghi log và X-Ray. */

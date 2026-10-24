@@ -19,10 +19,20 @@ export interface ListOptions {
   readonly limit: number;
 }
 
+interface Ranked {
+  readonly ids: string[];
+  /** Nguồn khi danh sách này là hàng bán chạy: `NEWEST` nếu pipeline xếp theo hàng mới */
+  readonly bestsellerSource: RecsSource;
+}
+
 /** Đọc dòng gợi ý của anchor trong phiên bản đang bật; rỗng khi pipeline chưa chạy */
-async function rankedIds(deps: RecsDeps, recType: RecType, anchor: string): Promise<string[]> {
-  const version = await deps.recs.activeVersion(recType);
-  return version === null ? [] : deps.recs.rankedProductIds(recType, anchor, version);
+async function ranked(deps: RecsDeps, recType: RecType, anchor: string): Promise<Ranked> {
+  const pointer = await deps.recs.activePointer(recType);
+  if (pointer === null) return { ids: [], bestsellerSource: 'BESTSELLER' };
+  return {
+    ids: await deps.recs.rankedProductIds(recType, anchor, pointer.version),
+    bestsellerSource: pointer.basis === 'NEWEST' ? 'NEWEST' : 'BESTSELLER',
+  };
 }
 
 /** Lấy sản phẩm của các mã ứng viên rồi lọc theo luật domain */
@@ -42,8 +52,12 @@ export async function getBestsellers(
   deps: RecsDeps,
   input: ListOptions & { readonly category?: string },
 ): Promise<RecsResult> {
-  const ids = await rankedIds(deps, 'BESTSELLER', input.category ?? ALL_CATEGORIES);
-  return toResult(deps, 'BESTSELLER', ids, new Set(input.exclude), input.limit);
+  const { ids, bestsellerSource } = await ranked(
+    deps,
+    'BESTSELLER',
+    input.category ?? ALL_CATEGORIES,
+  );
+  return toResult(deps, bestsellerSource, ids, new Set(input.exclude), input.limit);
 }
 
 /**
@@ -56,12 +70,12 @@ export async function getAlsoBought(
 ): Promise<RecsResult> {
   // Không gợi ý lại chính sản phẩm đang xem
   const exclude = new Set([...input.exclude, input.productId]);
-  const ids = await rankedIds(deps, 'ALSO_BOUGHT', input.productId);
+  const { ids } = await ranked(deps, 'ALSO_BOUGHT', input.productId);
   if (ids.length > 0) return toResult(deps, 'ALSO_BOUGHT', ids, exclude, input.limit);
 
   const anchor = (await deps.catalog.findMany([input.productId])).get(input.productId);
-  const fallback = await rankedIds(deps, 'BESTSELLER', anchor?.category ?? ALL_CATEGORIES);
-  return toResult(deps, 'BESTSELLER', fallback, exclude, input.limit);
+  const fallback = await ranked(deps, 'BESTSELLER', anchor?.category ?? ALL_CATEGORIES);
+  return toResult(deps, fallback.bestsellerSource, fallback.ids, exclude, input.limit);
 }
 
 /**
@@ -73,9 +87,9 @@ export async function getForYou(
   input: ListOptions & { readonly userId: string },
 ): Promise<RecsResult> {
   const exclude = new Set(input.exclude);
-  const ids = await rankedIds(deps, 'FOR_YOU', await deps.hasher.hash(input.userId));
+  const { ids } = await ranked(deps, 'FOR_YOU', await deps.hasher.hash(input.userId));
   if (ids.length > 0) return toResult(deps, 'PERSONALIZED', ids, exclude, input.limit);
 
-  const fallback = await rankedIds(deps, 'BESTSELLER', ALL_CATEGORIES);
-  return toResult(deps, 'BESTSELLER', fallback, exclude, input.limit);
+  const fallback = await ranked(deps, 'BESTSELLER', ALL_CATEGORIES);
+  return toResult(deps, fallback.bestsellerSource, fallback.ids, exclude, input.limit);
 }

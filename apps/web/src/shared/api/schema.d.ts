@@ -662,10 +662,12 @@ export interface components {
     /**
      * @description Nguồn của danh sách, để web chọn tiêu đề widget:
      *     `PERSONALIZED` (Dành cho bạn), `ALSO_BOUGHT` (Thường mua kèm),
-     *     `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016).
+     *     `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016),
+     *     `NEWEST` (danh sách hàng bán chạy nhưng cửa hàng chưa đủ đơn nên xếp theo hàng mới;
+     *     web dùng tiêu đề trung tính, không ghi "bán chạy").
      * @enum {string}
      */
-    RecsSource: 'PERSONALIZED' | 'ALSO_BOUGHT' | 'BESTSELLER';
+    RecsSource: 'PERSONALIZED' | 'ALSO_BOUGHT' | 'BESTSELLER' | 'NEWEST';
     /**
      * @example {
      *       "source": "ALSO_BOUGHT",
