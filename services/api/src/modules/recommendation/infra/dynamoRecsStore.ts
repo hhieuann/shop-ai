@@ -16,8 +16,8 @@ const pointerSchema = z.object({
   basis: z.enum(['PURCHASES_30D', 'PURCHASES_90D', 'PURCHASES_365D', 'NEWEST']).optional(),
 });
 
-/** Pipeline ghi mã sản phẩm vào cột `itemId` (data/src/data/pipeline/recs_table.py) */
-const rowSchema = z.object({ itemId: z.string() });
+/** Mã sản phẩm ở cột `productId` (nhóm chốt với Nhân 22/10, dynamodb-design.md bảng recs) */
+const rowSchema = z.object({ productId: z.string() });
 
 /** Đủ cho pipeline ghi tối đa 20 dòng mỗi anchor; Query dừng sớm nếu ghi ít hơn */
 const MAX_ROWS = 20;
@@ -65,13 +65,13 @@ export class DynamoRecsStore implements RecsStore {
         TableName: this.tableName,
         KeyConditionExpression: 'pk = :pk AND begins_with(sk, :version)',
         ExpressionAttributeValues: { ':pk': `${recType}#${anchor}`, ':version': `${version}#` },
-        ProjectionExpression: 'itemId',
+        ProjectionExpression: 'productId',
         Limit: MAX_ROWS,
       }),
     );
     return Items.flatMap((item) => {
       const parsed = rowSchema.safeParse(item);
-      return parsed.success ? [parsed.data.itemId] : [];
+      return parsed.success ? [parsed.data.productId] : [];
     });
   }
 

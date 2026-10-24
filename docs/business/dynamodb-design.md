@@ -264,7 +264,8 @@ nên con số quy mô ở đây là suy đoán — cần kiểm tra lại.)*
 
 Người viết: Nhân · Ngày: 09/10/2026 · Sửa 14/10 theo đề xuất của An: con trỏ ACTIVE
 chung cho cả bảng thay vì mỗi anchor một con trỏ · Sửa 25/10 (An, API gợi ý): con trỏ
-`ACTIVE#BESTSELLER` và cột `basis` như nhóm chốt với Nhân 22/10.
+`ACTIVE#BESTSELLER`, cột `basis`, cột `productId` (thay `itemId`), 20 dòng mỗi anchor như nhóm
+chốt với Nhân 22/10.
 
 ### Truy vấn cần có
 
@@ -309,10 +310,10 @@ basis           String   chỉ ở ACTIVE#BESTSELLER: PURCHASES_30D | PURCHASES_
                          (đơn quá ít thì nới 30 → 90 → 365 ngày, vẫn ít thì xếp theo hàng mới;
                          API trả source = NEWEST khi basis = NEWEST, contracts/openapi.yaml RecsSource)
 
-# Item dòng gợi ý (10 cái mỗi version mỗi anchor)
+# Item dòng gợi ý (20 cái mỗi version mỗi anchor, API lọc xong trả tối đa 10)
 pk              String   PK   (<recType>#<anchorId>)
-sk              String   SK   (<version>#<rank>, rank đệm 2 chữ số, ví dụ "7#01")
-itemId          String
+sk              String   SK   (<version>#<rank>, rank đệm 2 chữ số, ví dụ "20261027#01")
+productId       String
 score           Number
 source          String   (ASSOCIATION_RULE | ITEM_CF | BESTSELLER)
 generatedAt     String   (ISO 8601 UTC)
