@@ -144,7 +144,9 @@ export class Monitoring extends Construct {
         1,
         'lambda-errors',
       );
-      if (props.ordersDeadLetterQueue) {
+      // Alarm mới chỉ tạo ở prod: dev, staging, prod chung tài khoản và hạn mức 10 alarm miễn phí
+      // (nhóm chốt 24/10/2026); ở dev, staging xem DLQ trên dashboard và console SQS
+      if (shopEnv.isProd && props.ordersDeadLetterQueue) {
         addAlarm(
           'OrdersDeadLetterAlarm',
           'orders-dlq',

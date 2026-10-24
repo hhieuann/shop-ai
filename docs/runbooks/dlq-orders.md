@@ -1,6 +1,8 @@
 # Runbook: DLQ đơn hàng có tin
 
-Alarm: `<tiền tố>-orders-dlq` · Ngưỡng: DLQ có ≥ 1 tin · Người trực: Hoàng
+Alarm: `shop-prd-orders-dlq` (chỉ prod, #235) · Ngưỡng: DLQ có ≥ 1 tin · Người trực: Hoàng
+
+Dev và staging không có alarm (giữ dưới 10 alarm miễn phí của tài khoản chung): tự xem DLQ trên console SQS khi đơn kẹt ở `PENDING`, rồi làm theo các bước dưới.
 
 Worker `order-processor` nhận tin `{ orderId, userId, correlationId }` từ hàng đợi đơn (ordering.md, luồng SQS). Một tin lỗi **3 lần** thì SQS chuyển sang DLQ. Đơn đó **vẫn ở `PENDING`**: đã trừ kho, khách chưa nhận email xác nhận, `events` chưa có `PURCHASE`. MVP không có trạng thái `FAILED`, nên phải xử lý bằng tay theo trang này.
 
