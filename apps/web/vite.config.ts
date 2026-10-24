@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -20,6 +21,11 @@ export default defineConfig(({ mode }) => {
           secure: true,
         },
       },
+    },
+    test: {
+      // CI chạy test web song song với api (DynamoDB trong Docker) và infra (dựng stack CDK):
+      // máy thiếu CPU thì test dựng cả trang chủ vượt 5 giây mặc định dù trên máy chỉ ~0,3 giây (#238)
+      testTimeout: 15_000,
     },
   };
 });
