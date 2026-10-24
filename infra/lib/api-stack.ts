@@ -500,6 +500,8 @@ export class ApiStack extends Stack {
         CARTS_TABLE: carts.tableName,
         ORDERS_QUEUE_URL: queue.queueUrl,
         POWERTOOLS_SERVICE_NAME: 'ordering',
+        // Metric OrderEnqueueFailed tách theo môi trường (chung tài khoản, ADR-0013); alarm ở monitoring.ts dùng cùng namespace
+        POWERTOOLS_METRICS_NAMESPACE: shopEnv.stackPrefix,
         POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
         NODE_OPTIONS: '--enable-source-maps',
       },

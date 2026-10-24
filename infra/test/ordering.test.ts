@@ -183,4 +183,37 @@ describe('ApiStack · ordering', () => {
     // Assert: alarm mới chỉ ở prod, giữ dưới 10 alarm miễn phí của tài khoản chung (#235)
     expect(Object.keys(alarms)).toHaveLength(0);
   });
+
+  it('orderEnqueueFailedAlarm_watchesOrderingMetric_onlyInProd', () => {
+    // Act
+    const prodTemplate = synth(prod);
+    const stagingAlarms = synth(staging).findResources('AWS::CloudWatch::Alarm', {
+      Properties: { AlarmName: 'shop-stg-order-enqueue-failed' },
+    });
+
+    // Assert: metric Powertools của Lambda ordering, namespace theo môi trường (#244)
+    prodTemplate.hasResourceProperties('AWS::CloudWatch::Alarm', {
+      AlarmName: 'shop-prd-order-enqueue-failed',
+      Namespace: 'shop-prd',
+      MetricName: 'OrderEnqueueFailed',
+      Dimensions: [{ Name: 'service', Value: 'ordering' }],
+      AlarmDescription: 'Xử lý theo docs/runbooks/dlq-orders.md',
+    });
+    expect(Object.keys(stagingAlarms)).toHaveLength(0);
+  });
+
+  it('orderingFunction_writesMetricsToEnvironmentNamespace', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: {
+        Variables: Match.objectLike({
+          POWERTOOLS_SERVICE_NAME: 'ordering',
+          POWERTOOLS_METRICS_NAMESPACE: 'shop-stg',
+        }),
+      },
+    });
+  });
 });

@@ -1,6 +1,6 @@
 # Runbook: DLQ đơn hàng có tin
 
-Alarm: `shop-prd-orders-dlq` (chỉ prod, #235) · Ngưỡng: DLQ có ≥ 1 tin · Người trực: Hoàng
+Alarm: `shop-prd-orders-dlq` (chỉ prod, #235) · Ngưỡng: DLQ có ≥ 1 tin · Người trực: Hoàng · Cùng trang: `shop-prd-order-enqueue-failed` (mục riêng bên dưới)
 
 Dev và staging không có alarm (giữ dưới 10 alarm miễn phí của tài khoản chung): tự xem DLQ trên console SQS khi đơn kẹt ở `PENDING`, rồi làm theo các bước dưới.
 
@@ -43,6 +43,22 @@ Hàng đợi đơn và DLQ có từ #228; worker làm ở PR sau. Trước khi c
 - **Lỗi chưa sửa được, khách đang chờ:** để tin nằm trong DLQ (giữ 14 ngày), báo khách qua kênh hỗ trợ.
 - **Đơn không thể xử lý (tin hỏng, khách huỷ ngoài hệ thống):** admin huỷ đơn để hoàn kho (ordering.md BR-11, BR-12), rồi mới xoá tin khỏi DLQ.
 - Do deploy mới: rollback như [api-5xx.md](api-5xx.md) mục Giảm thiểu.
+
+## Alarm `shop-prd-order-enqueue-failed`: đơn đã ghi mà chưa gửi được tin
+
+Alarm này (chỉ prod, #244) kêu khi metric `OrderEnqueueFailed` (namespace `shop-prd`, dimension `service = ordering`) ≥ 1 trong 5 phút: API đã ghi đơn `PENDING` và trả 201 cho khách, nhưng gửi tin vào hàng đợi đơn lỗi (ordering.md, luồng SQS bước 1). Tin không tới worker nên **không vào DLQ**; đơn nằm `PENDING` tới khi có người gửi lại.
+
+1. Logs Insights, log group `…-OrderingLogs…`, khung giờ quanh lúc alarm:
+
+   ```text
+   fields @timestamp, orderId, correlationId, error.name, error.message
+   | filter message = "Không gửi được tin đơn hàng cho worker"
+   | sort @timestamp desc
+   ```
+
+2. Lỗi do quyền IAM hoặc hàng đợi bị xoá thì sửa trước (rollback như [api-5xx.md](api-5xx.md)).
+3. Gửi lại tin cho từng `orderId`: SQS → hàng đợi `…-OrdersQueue…` → **Send and receive messages**, body `{"orderId":"<orderId>","userId":"<userId>","type":"PLACED","correlationId":"<correlationId>"}` (`userId` lấy từ đơn trong bảng orders). Worker chống trùng theo `orderId`, gửi thừa không hại.
+4. Khách bấm lại "Xác nhận đặt hàng" với cùng Idempotency-Key thì API cũng tự gửi lại tin.
 
 ## Sửa gốc
 

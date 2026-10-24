@@ -158,6 +158,22 @@ export class Monitoring extends Construct {
           1,
           'dlq-orders',
         );
+        // Đơn đã ghi mà không gửi được tin cho worker (ordering.md, luồng SQS bước 1): metric do
+        // Lambda ordering ghi bằng Powertools Metrics, namespace = tiền tố stack, dimension service
+        addAlarm(
+          'OrderEnqueueFailedAlarm',
+          'order-enqueue-failed',
+          new Metric({
+            namespace: shopEnv.stackPrefix,
+            metricName: 'OrderEnqueueFailed',
+            dimensionsMap: { service: 'ordering' },
+            period,
+            statistic: Stats.SUM,
+          }),
+          1,
+          1,
+          'dlq-orders',
+        );
       }
       // Giới hạn Lambda chạy cùng lúc tính chung cả tài khoản (không dimension), nên chỉ canh ở prod
       if (shopEnv.isProd) {
