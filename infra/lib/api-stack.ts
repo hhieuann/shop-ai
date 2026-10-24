@@ -36,6 +36,7 @@ import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { Bucket } from 'aws-cdk-lib/aws-s3';
+import { Queue, QueueEncryption } from 'aws-cdk-lib/aws-sqs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
@@ -58,6 +59,10 @@ const DEMO_PRODUCTS_FILE = path.join(
 
 /** Tên GSI, trùng với PRODUCTS_BY_CATEGORY_INDEX trong services/api/src/modules/catalog/infra/. */
 export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
+/** GSI đơn theo trạng thái cho admin (dynamodb-design.md, bảng orders, Q3). */
+export const ORDERS_BY_STATUS_INDEX = 'byStatus';
+/** Thuộc tính của products mà ordering được ghi khi trừ, hoàn kho (threat model O7). */
+export const PRODUCT_ATTRIBUTES_ORDERING_WRITES = ['productId', 'stock'];
 
 /** Cách đóng gói chung cho các Lambda API: ESM cho Node 24, đóng gói cả AWS SDK. */
 const API_BUNDLING = {
@@ -233,7 +238,10 @@ export class ApiStack extends Stack {
     });
 
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
-    const cartFn = this.addCart(shopEnv, removalPolicy, httpApi, products);
+    const { cartFn, carts } = this.addCart(shopEnv, removalPolicy, httpApi, products);
+
+    // Đặt hàng (ordering.md): mọi route cần đăng nhập
+    const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
 
     // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
     const eventsFn = this.addEvents(shopEnv, removalPolicy, httpApi);
@@ -260,10 +268,12 @@ export class ApiStack extends Stack {
       apiFunctions: {
         catalog: catalogFn,
         cart: cartFn,
+        ordering: ordering.fn,
         events: eventsFn,
         account: accountFn,
         health: healthFn,
       },
+      ordersDeadLetterQueue: ordering.deadLetterQueue,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
     });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
@@ -391,7 +401,178 @@ export class ApiStack extends Stack {
     });
 
     new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
-    return cartFn;
+    return { cartFn, carts };
+  }
+
+  /**
+   * Module ordering (ordering.md; dynamodb-design.md, bảng orders): bảng orders, order-idempotency,
+   * hàng đợi đơn có DLQ và Lambda ordering.
+   * Quyền tối thiểu: orders GetItem, Query, PutItem, UpdateItem; order-idempotency như cart;
+   * trên bảng của module khác chỉ các quyền ghi ở ADR-0017 (#226): products BatchGetItem và
+   * UpdateItem chỉ cột `stock` (threat model O7), carts GetItem và UpdateItem; chỉ gửi vào hàng đợi đơn.
+   * Mọi route gắn JWT authorizer của Cognito.
+   */
+  private addOrdering(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    products: Table,
+    carts: Table,
+  ) {
+    // Khoá userId + orderId (ULID). Cùng bảng có item bộ đếm `#OPEN` (BR-14) và item đánh dấu
+    // `#KEY#<idempotencyKey>` (chống tạo đơn trùng khi lỗi sau commit); chỉ item đánh dấu có
+    // `expiresAt` nên TTL không bao giờ xoá đơn thật.
+    const orders = new Table(this, 'OrdersTable', {
+      partitionKey: { name: 'userId', type: AttributeType.STRING },
+      sortKey: { name: 'orderId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiresAt',
+      // ADR-0012: orders bật point-in-time recovery (RPO ≤ 5 phút cho đơn hàng)
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      deletionProtection: shopEnv.isProd,
+      removalPolicy,
+    });
+    // Admin xem đơn theo trạng thái, mới nhất trước (Q3); item `#OPEN`, `#KEY#…` không có status nên không vào
+    orders.addGlobalSecondaryIndex({
+      indexName: ORDERS_BY_STATUS_INDEX,
+      partitionKey: { name: 'status', type: AttributeType.STRING },
+      sortKey: { name: 'orderId', type: AttributeType.STRING },
+      projectionType: ProjectionType.ALL,
+    });
+    // Chống tạo đơn hai lần (ADR-0017): schema Powertools Idempotency, khoá `id`, TTL `expiration`
+    const orderIdempotency = new Table(this, 'OrderIdempotencyTable', {
+      partitionKey: { name: 'id', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiration',
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    Validations.of(orderIdempotency).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-DDB3',
+      reason:
+        'Bản ghi chống tạo đơn hai lần chỉ sống 24 giờ; đơn đã ghi có item đánh dấu riêng trong bảng orders.',
+    });
+
+    // Hàng đợi đơn cho worker order-processor (ordering.md, luồng SQS); lỗi quá 3 lần thì vào DLQ
+    const deadLetterQueue = new Queue(this, 'OrdersDeadLetterQueue', {
+      encryption: QueueEncryption.SQS_MANAGED,
+      enforceSSL: true,
+      retentionPeriod: Duration.days(14),
+    });
+    Validations.of(deadLetterQueue).acknowledge({
+      id: 'AwsSolutions-SQS3',
+      reason: 'Đây chính là DLQ của hàng đợi đơn; DLQ không cần DLQ của riêng nó.',
+    });
+    const queue = new Queue(this, 'OrdersQueue', {
+      encryption: QueueEncryption.SQS_MANAGED,
+      enforceSSL: true,
+      // Gấp 6 lần timeout dự kiến của worker (10 giây) theo khuyến nghị cho Lambda đọc SQS
+      visibilityTimeout: Duration.seconds(60),
+      deadLetterQueue: { queue: deadLetterQueue, maxReceiveCount: 3 },
+    });
+
+    const fn = new NodejsFunction(this, 'OrderingFunction', {
+      entry: path.join(API_SRC, 'modules', 'ordering', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 512,
+      // Giao dịch đặt hàng tới 54 thao tác, có thử lại khi giỏ đổi version
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'OrderingLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        ORDERS_TABLE: orders.tableName,
+        ORDER_IDEMPOTENCY_TABLE: orderIdempotency.tableName,
+        PRODUCTS_TABLE: products.tableName,
+        CARTS_TABLE: carts.tableName,
+        ORDERS_QUEUE_URL: queue.queueUrl,
+        POWERTOOLS_SERVICE_NAME: 'ordering',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+        resources: [orders.tableArn],
+      }),
+    );
+    // Các thao tác Powertools Idempotency cần, chỉ trên bảng idempotency của chính ordering
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: [
+          'dynamodb:GetItem',
+          'dynamodb:PutItem',
+          'dynamodb:UpdateItem',
+          'dynamodb:DeleteItem',
+        ],
+        resources: [orderIdempotency.tableArn],
+      }),
+    );
+    // Ngoại lệ ADR-0017: đọc tên, giá, tồn kho, trạng thái để chụp vào đơn và kiểm lại (BR-03)
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
+    );
+    // O7: trừ, hoàn kho chỉ được đụng cột `stock` (và khoá productId), không sửa được giá.
+    // Còn phải thử trên dev: điều kiện có tính thuộc tính trong ConditionExpression hay không (#228).
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:UpdateItem'],
+        resources: [products.tableArn],
+        conditions: {
+          'ForAllValues:StringEquals': {
+            'dynamodb:Attributes': PRODUCT_ATTRIBUTES_ORDERING_WRITES,
+          },
+        },
+      }),
+    );
+    // Ngoại lệ ADR-0017: đọc giỏ rồi bỏ các món đã đặt, ghi có điều kiện version trong cùng giao dịch
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+        resources: [carts.tableArn],
+      }),
+    );
+    queue.grantSendMessages(fn);
+
+    Tags.of(orders).add('module', 'ordering');
+    Tags.of(orderIdempotency).add('module', 'ordering');
+    Tags.of(queue).add('module', 'ordering');
+    Tags.of(deadLetterQueue).add('module', 'ordering');
+    Tags.of(fn).add('module', 'ordering');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('OrderingIntegration', fn);
+    httpApi.addRoutes({
+      path: '/api/v1/orders',
+      methods: [HttpMethod.GET, HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/orders/{orderId}',
+      methods: [HttpMethod.GET, HttpMethod.DELETE],
+      integration,
+      authorizer: this.authorizer,
+    });
+
+    new CfnOutput(this, 'OrdersTableName', { value: orders.tableName });
+    new CfnOutput(this, 'OrdersQueueUrl', { value: queue.queueUrl });
+    return { fn, orders, queue, deadLetterQueue };
   }
 
   /**
