@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import { ConflictError, NotFoundError, UnprocessableError } from '../../../shared/errors.js';
 
 /** Món không đặt được: số còn đặt được, 0 khi hết hàng, ngừng bán hoặc không còn trong catalog */
 export interface InvalidItem {
@@ -37,6 +37,16 @@ export class PriceChangedError extends ConflictError {
 export class TooManyOpenOrdersError extends ConflictError {
   constructor(readonly maxOpenOrders: number) {
     super(`Bạn đang có ${maxOpenOrders} đơn chưa giao`, { code: 'TOO_MANY_OPEN_ORDERS' });
+  }
+}
+
+/**
+ * BR-04: cùng Idempotency-Key đã tạo đơn nhưng nội dung khác → 422, cùng mã với lỗi Powertools
+ * (shared/idempotency.ts). Lỗi này đến từ item đánh dấu khi bản ghi Powertools đã không còn.
+ */
+export class IdempotencyKeyReusedError extends UnprocessableError {
+  constructor() {
+    super('Idempotency-Key đã dùng cho nội dung khác', { code: 'IDEMPOTENCY_KEY_REUSED' });
   }
 }
 
