@@ -2,7 +2,7 @@
 
 - Module: ordering
 - Vai trò: khách hàng đã đăng nhập; admin (huỷ đơn, chuyển trạng thái giao hàng)
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker)
 
 ## Luồng đặt hàng (checkout flow)
 
@@ -65,7 +65,7 @@ Là khách hàng, tôi muốn tick chọn các sản phẩm trong giỏ mà tôi
 - BR-10: Khách huỷ được đơn của mình khi trạng thái là `PENDING` hoặc `CONFIRMED`. Từ `SHIPPED` trở đi thì không huỷ được (409 `CANNOT_CANCEL`).
 - BR-11: Admin huỷ được đơn ở `PENDING`, `CONFIRMED` hoặc `SHIPPED` (hàng hoàn về kho). Không huỷ được đơn `DELIVERED` hay đơn đã `CANCELLED`.
 - BR-12: **Huỷ đơn thì hoàn tồn kho**: cộng lại `stock` cho mọi món trong đơn. Đổi trạng thái và cộng kho nằm trong một giao dịch, có điều kiện trạng thái hiện tại, nên bấm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn đang mở (`PENDING`, `CONFIRMED`) thì giảm `openOrders` trong cùng giao dịch (BR-14); huỷ đơn `SHIPPED` thì không, vì lúc chuyển `SHIPPED` đã giảm rồi.
-- BR-13: Huỷ đơn thì gửi email báo cho khách.
+- BR-13: Huỷ đơn thì gửi email báo cho khách. API huỷ đơn không gửi email trực tiếp: sau giao dịch huỷ, đẩy message `{ orderId, userId, type: "CANCELLED", correlationId }` vào cùng hàng đợi để worker `order-processor` gửi (luồng SQS).
 
 ## Máy trạng thái đơn hàng
 
@@ -103,10 +103,12 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 ## Luồng bất đồng bộ (SQS)
 
 1. API tạo đơn (giao dịch ở BR-08) → đẩy message `{ orderId, userId, correlationId }` vào SQS → trả đơn `PENDING` ngay.
+   - Giao dịch DynamoDB và lần gửi SQS không chung một giao dịch. Gửi SQS lỗi sau khi đơn đã ghi (SDK đã tự thử lại) thì **vẫn trả 201**: đơn đã có, khách không phải đặt lại. API ghi log mức error kèm `orderId`, `correlationId`, tăng metric `OrderEnqueueFailed`; alarm chỉ ở prod; xử lý theo runbook (gửi lại message). Gọi lại cùng `Idempotency-Key` thì trả đơn cũ và gửi lại message.
+   - Cách không phụ thuộc lần gửi này (DynamoDB Streams → EventBridge Pipes → SQS) để tuần Hardening.
 2. Worker `order-processor` nhận message:
    1. Chuyển `PENDING → CONFIRMED` bằng **ghi có điều kiện** (`status = PENDING`). Đơn đã `CONFIRMED` hoặc `CANCELLED` thì bỏ qua bước này.
    2. Gửi email xác nhận qua SES, chống gửi trùng bằng Powertools Idempotency với khoá `orderId`.
-   3. Gửi tin vào SNS topic `order-confirmed` (An dựng; tên topic lấy từ biến môi trường). Email báo admin và SQS của module `events` (có DLQ) cùng nghe topic này; `ordering` không ghi thẳng bảng `events` (nhóm chốt 17/10 và 21/10/2026). Nội dung tin:
+   3. Gửi tin vào SNS topic `order-confirmed` (An dựng ở #211; ARN lấy từ biến môi trường). Chỉ hàng đợi SQS của module `events` (có DLQ) nghe topic này; **không có email báo admin** (chốt 24/10/2026: mỗi đơn một email JSON thô, phải xác nhận đăng ký ở từng môi trường, dùng chung email cảnh báo thì lẫn với báo động; admin xem đơn ở trang admin, khách đã có email SES). `ordering` không ghi thẳng bảng `events` (nhóm chốt 17/10 và 21/10/2026). Nội dung tin:
 
       ```json
       {
@@ -121,6 +123,7 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 3. SQS có thể giao một message nhiều lần (at-least-once). Nhờ bước 2.1 có điều kiện, bước 2.2 và 2.3 có idempotency, chạy lại không đổi trạng thái sai, không gửi email hay tin `order-confirmed` hai lần.
 4. Email lỗi **không** làm đơn quay lại `PENDING`: trạng thái đã đổi ở bước 2.1. Message được thử lại; quá 3 lần thì vào DLQ, alarm kêu, xử lý theo runbook `dlq-orders.md`.
 5. Khách huỷ đơn khi message chưa tới worker: bước 2.1 thấy đơn đã `CANCELLED` nên bỏ qua, không gửi email xác nhận.
+6. Message `type: "CANCELLED"` (BR-13): worker đọc lại đơn, chỉ gửi email báo huỷ khi đơn đang `CANCELLED`; chống gửi trùng bằng Powertools Idempotency khoá `orderId` + `CANCELLED`. Không gửi tin `order-confirmed`.
 
 ## Trường hợp đặc biệt
 
