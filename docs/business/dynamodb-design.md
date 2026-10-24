@@ -263,7 +263,8 @@ nên con số quy mô ở đây là suy đoán — cần kiểm tra lại.)*
 ## Bảng `recs` (module recommendation)
 
 Người viết: Nhân · Ngày: 09/10/2026 · Sửa 14/10 theo đề xuất của An: con trỏ ACTIVE
-chung cho cả bảng thay vì mỗi anchor một con trỏ.
+chung cho cả bảng thay vì mỗi anchor một con trỏ · Sửa 25/10 (An, API gợi ý): con trỏ
+`ACTIVE#BESTSELLER` và cột `basis` như nhóm chốt với Nhân 22/10.
 
 ### Truy vấn cần có
 
@@ -299,11 +300,14 @@ version.
 ### Schema thuộc tính
 
 ```
-# Item con trỏ (2 cái, một cho mỗi recType)
+# Item con trỏ (3 cái, một cho mỗi recType)
 pk              String   PK   ("META")
-sk              String   SK   ("ACTIVE#FOR_YOU" hoặc "ACTIVE#ALSO_BOUGHT")
+sk              String   SK   ("ACTIVE#FOR_YOU", "ACTIVE#ALSO_BOUGHT" hoặc "ACTIVE#BESTSELLER")
 activeVersion   Number
 updatedAt       String   (ISO 8601 UTC)
+basis           String   chỉ ở ACTIVE#BESTSELLER: PURCHASES_30D | PURCHASES_90D | PURCHASES_365D | NEWEST
+                         (đơn quá ít thì nới 30 → 90 → 365 ngày, vẫn ít thì xếp theo hàng mới;
+                         API trả source = NEWEST khi basis = NEWEST, contracts/openapi.yaml RecsSource)
 
 # Item dòng gợi ý (10 cái mỗi version mỗi anchor)
 pk              String   PK   (<recType>#<anchorId>)
