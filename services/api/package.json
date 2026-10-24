@@ -18,6 +18,7 @@
     "@aws-lambda-powertools/tracer": "^2.36.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.1152.0",
     "@aws-sdk/client-dynamodb": "^3.1152.0",
+    "@aws-sdk/client-sqs": "^3.1152.0",
     "@aws-sdk/client-ssm": "^3.1152.0",
     "@aws-sdk/lib-dynamodb": "^3.1152.0",
     "ulid": "^2.4.0",
