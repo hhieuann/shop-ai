@@ -28,14 +28,14 @@ async function createRecsTable(): Promise<void> {
   );
 }
 
-/** Dòng gợi ý như pipeline ghi (data/src/data/pipeline/recs_table.py) */
-function row(pk: string, version: number, rank: number, itemId: string) {
+/** Dòng gợi ý như pipeline ghi (dynamodb-design.md, bảng recs) */
+function row(pk: string, version: number, rank: number, productId: string) {
   return {
     PutRequest: {
       Item: {
         pk,
         sk: `${version}#${String(rank).padStart(2, '0')}`,
-        itemId,
+        productId,
         score: 1,
         source: 'ITEM_CF',
       },
