@@ -17,7 +17,7 @@ Mỗi quyết định kiến trúc quan trọng được ghi thành một file: 
 | [0014](0014-canary-ordering.md) | Deploy Lambda ordering kiểu canary bằng CodeDeploy | Đề xuất |
 | [0015](0015-repo-public.md) | Repo public | Chấp nhận |
 | [0016](0016-tu-xay-mo-hinh-goi-y.md) | Tự xây mô hình gợi ý trên Lambda + DynamoDB, không dùng Personalize | Chấp nhận |
-| [0017](0017-ngoai-le-bang-cheo-module-va-idempotency.md) | Ngoại lệ có ghi lại: `cart` đọc `products`, `ordering` ghi `products` và `carts` trong một giao dịch; bảng idempotency riêng từng module | Chấp nhận |
+| [0017](0017-ngoai-le-bang-cheo-module-va-idempotency.md) | Ngoại lệ có ghi lại: `cart`, `recommendation` đọc `products`; `ordering` đọc `products`, `carts` và ghi trong một giao dịch (chỉ cột `stock` của `products`); pipeline gợi ý Scan `products` chỉ đọc; bảng idempotency riêng từng module (sửa 24/10) | Chấp nhận |
 | [0018](0018-e2e-api-bang-vitest.md) | E2E API bằng Vitest + `fetch` như smoke test, không dùng Newman trong CI (lỗ hổng High/Critical trong thư viện con) | Chấp nhận |
 
 ## Mẫu cho ADR mới

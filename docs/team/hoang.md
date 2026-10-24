@@ -11,7 +11,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 | Khu vực | Việc cụ thể |
 |---|---|
 | API bán hàng | `catalog`: liệt kê theo loại, chi tiết, lọc. `cart`: thêm, sửa, xoá. `ordering`: `POST /api/v1/orders` có `Idempotency-Key`, lịch sử đơn. `admin`: thêm sản phẩm, xem đơn theo trạng thái |
-| Xử lý đơn chạy nền | Worker `order-processor`: nhận đơn từ SQS, gửi email xác nhận qua SES, báo admin qua SNS. Nhận trùng message thì không gửi email hai lần |
+| Xử lý đơn chạy nền | Worker `order-processor`: nhận đơn từ SQS, gửi email xác nhận qua SES, gửi tin `order-confirmed` qua SNS cho module `events`. Nhận trùng message thì không gửi email hai lần |
 | Thiết kế dữ liệu | Bảng `products`, `carts`, `orders`, `idempotency`: khoá và index đi từ các truy vấn cần có |
 | Hợp đồng API | Các endpoint trên trong `contracts/openapi.yaml`, viết trước code |
 | Giao diện web | Trang danh sách, chi tiết, giỏ, đặt hàng, lịch sử đơn, admin. An làm hai widget gợi ý và phần đăng nhập |
@@ -38,7 +38,7 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 | 1 · 29/09–05/10 | Danh sách tuần này | Web chạy trên mock; OpenAPI bản 0 và thiết kế bảng đã merge |
 | 2 · 06–12/10 | Module `catalog` theo khuôn module mẫu; script nạp khoảng 100 sản phẩm; trang danh sách và chi tiết | Xem được sản phẩm thật trên dev |
 | 3 · 13–19/10 | Module `cart` và trang giỏ; E2E API bản 1 (đăng nhập, catalog, giỏ, ca lỗi) chạy trong CI; cùng nhóm nghiệm thu `v0.1.0` trên staging | E2E xanh; `v0.1.0` phát hành |
-| 4 · 20–26/10 | Module `ordering` với `Idempotency-Key`; worker `order-processor` qua SQS, email qua SES, báo admin qua SNS; trang lịch sử đơn | Đặt hàng trọn luồng trên dev, nhận được email |
+| 4 · 20–26/10 | Module `ordering` với `Idempotency-Key`; worker `order-processor` qua SQS, email qua SES, tin `order-confirmed` qua SNS; trang lịch sử đơn | Đặt hàng trọn luồng trên dev, nhận được email |
 | 5 · 27/10–02/11 | Module `admin` và trang admin; integration test bằng Testcontainers cho các repository; thêm case âm vào E2E; viết runbook | Chốt tính năng cho `v0.2.0` |
 | 6 · 03–09/11 | Sửa lỗi; Lighthouse ≥ 90; mẫu email; hỗ trợ An chạy load test | `v1.0.0-rc.1` |
 | 7–8 · 10–23/11 | Chương workshop của mình; 3 blog; tập demo; chỉ sửa lỗi trên `release/v1.0.0` | Chương workshop xong; `v1.0.0` |
