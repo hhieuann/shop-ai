@@ -14,6 +14,7 @@ import {
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import type { IFunction } from 'aws-cdk-lib/aws-lambda';
+import type { IQueue } from 'aws-cdk-lib/aws-sqs';
 import { Subscription, SubscriptionProtocol, Topic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
@@ -29,6 +30,8 @@ export interface MonitoringProps {
   readonly preSignUpFn: IFunction;
   /** Lambda đứng sau API, theo tên module: vẽ lỗi và thời gian chạy của từng hàm trên dashboard */
   readonly apiFunctions: Readonly<Record<string, IFunction>>;
+  /** DLQ của hàng đợi đơn: có tin là có đơn worker xử lý lỗi quá 3 lần, còn kẹt ở PENDING */
+  readonly ordersDeadLetterQueue?: IQueue;
   /**
    * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ secret ALARM_EMAIL).
    * Không ghi vào code vì repo public. Thiếu thì vẫn tạo topic, chỉ không có ai nhận.
@@ -141,6 +144,19 @@ export class Monitoring extends Construct {
         1,
         'lambda-errors',
       );
+      if (props.ordersDeadLetterQueue) {
+        addAlarm(
+          'OrdersDeadLetterAlarm',
+          'orders-dlq',
+          props.ordersDeadLetterQueue.metricApproximateNumberOfMessagesVisible({
+            period,
+            statistic: Stats.MAXIMUM,
+          }),
+          1,
+          1,
+          'dlq-orders',
+        );
+      }
       // Giới hạn Lambda chạy cùng lúc tính chung cả tài khoản (không dimension), nên chỉ canh ở prod
       if (shopEnv.isProd) {
         addAlarm(
