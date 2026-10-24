@@ -457,7 +457,9 @@ paths:
           description: |
             `OUT_OF_STOCK` có món hết hàng, không đủ số lượng hoặc ngừng bán, kèm `invalidItems` ·
             `PRICE_CHANGED` giá đã đổi, kèm `changedItems` · `ORDER_IN_PROGRESS` lần gửi trước
-            với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau
+            với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau ·
+            `TOO_MANY_OPEN_ORDERS` đang có 3 đơn PENDING hoặc CONFIRMED, không tạo đơn, không trừ kho
+            (ordering.md BR-14)
           content:
             application/problem+json:
               schema:
@@ -1029,7 +1031,7 @@ components:
           properties:
             code:
               type: string
-              enum: [OUT_OF_STOCK, PRICE_CHANGED, ORDER_IN_PROGRESS]
+              enum: [OUT_OF_STOCK, PRICE_CHANGED, ORDER_IN_PROGRESS, TOO_MANY_OPEN_ORDERS]
             invalidItems:
               type: array
               description: Món hết hàng, không đủ số lượng hoặc ngừng bán (khi OUT_OF_STOCK)
