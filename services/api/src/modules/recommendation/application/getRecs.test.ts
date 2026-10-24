@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RecProduct, RecType } from '../domain/recs.js';
+import type { BestsellerBasis, RecProduct, RecsPointer, RecType } from '../domain/recs.js';
 import type { ProductCatalog, RecsStore, UserIdHasher } from '../ports.js';
 import { getAlsoBought, getBestsellers, getForYou, type RecsDeps } from './getRecs.js';
 
@@ -19,17 +19,23 @@ function product(productId: string, category = 'gpu'): RecProduct {
 
 /** Bảng recs giả: con trỏ theo loại, dòng gợi ý theo `<loại>#<anchor>` của đúng phiên bản */
 class FakeRecs implements RecsStore {
-  readonly versions = new Map<RecType, number>();
+  readonly pointers = new Map<RecType, RecsPointer>();
   readonly rows = new Map<string, string[]>();
 
   set(recType: RecType, anchor: string, ids: string[]): this {
-    this.versions.set(recType, VERSION);
+    if (!this.pointers.has(recType)) this.pointers.set(recType, { version: VERSION });
     this.rows.set(`${recType}#${anchor}#${VERSION}`, ids);
     return this;
   }
 
-  async activeVersion(recType: RecType): Promise<number | null> {
-    return this.versions.get(recType) ?? null;
+  /** Cột `basis` của con trỏ ACTIVE#BESTSELLER */
+  basis(basis: BestsellerBasis): this {
+    this.pointers.set('BESTSELLER', { version: VERSION, basis });
+    return this;
+  }
+
+  async activePointer(recType: RecType): Promise<RecsPointer | null> {
+    return this.pointers.get(recType) ?? null;
   }
 
   async rankedProductIds(recType: RecType, anchor: string, version: number): Promise<string[]> {
@@ -151,6 +157,18 @@ describe('getForYou', () => {
     expect(result.source).toBe('BESTSELLER');
     expect(result.items.map((p) => p.productId)).toEqual(['b']);
   });
+
+  it('fallsBackWithNewestSource_whenBestsellersRankedByNewest', async () => {
+    // Arrange
+    const recs = new FakeRecs().set('BESTSELLER', 'ALL', ['b']).basis('NEWEST');
+    const catalog = new FakeCatalog(product('b'));
+
+    // Act
+    const result = await getForYou(deps(recs, catalog), { ...noFilter, userId: 'new-user' });
+
+    // Assert
+    expect(result.source).toBe('NEWEST');
+  });
 });
 
 describe('getBestsellers', () => {
@@ -180,5 +198,30 @@ describe('getBestsellers', () => {
 
     // Assert
     expect(result).toEqual({ source: 'BESTSELLER', items: [] });
+  });
+
+  it('returnsNewestSource_whenPipelineRankedByNewestProducts', async () => {
+    // Arrange: prod ít đơn, pipeline xếp theo hàng mới (chốt với Nhân 22/10); web đổi tiêu đề widget
+    const recs = new FakeRecs().set('BESTSELLER', 'ALL', ['a']).basis('NEWEST');
+    const catalog = new FakeCatalog(product('a'));
+
+    // Act
+    const result = await getBestsellers(deps(recs, catalog), noFilter);
+
+    // Assert
+    expect(result.source).toBe('NEWEST');
+    expect(result.items.map((p) => p.productId)).toEqual(['a']);
+  });
+
+  it('keepsBestsellerSource_whenBasisIsPurchases', async () => {
+    // Arrange
+    const recs = new FakeRecs().set('BESTSELLER', 'ALL', ['a']).basis('PURCHASES_90D');
+    const catalog = new FakeCatalog(product('a'));
+
+    // Act
+    const result = await getBestsellers(deps(recs, catalog), noFilter);
+
+    // Assert
+    expect(result.source).toBe('BESTSELLER');
   });
 });
