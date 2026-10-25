@@ -401,6 +401,115 @@ describe('DynamoOrderStore.listByUser', () => {
   });
 });
 
+describe('DynamoOrderStore.cancel', () => {
+  const LATER = '2026-10-25T04:00:00.000Z';
+
+  async function orderStatus(userId: string, orderId: string): Promise<string | undefined> {
+    return (await store.get(userId, orderId))?.status;
+  }
+
+  it('cancel_restocksEachItemAndDecrementsOpen_whenPending', async () => {
+    // Arrange: đơn PENDING mua 3 món A
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu, 3);
+    await store.place(cmd);
+
+    // Act
+    const result = await store.cancel({ order: cmd.order, now: LATER });
+
+    // Assert
+    expect(result).toBe('cancelled');
+    const saved = await store.get(userId, cmd.order.orderId);
+    expect(saved).toMatchObject({ status: 'CANCELLED', updatedAt: LATER });
+    expect(await stockOf(gpu.productId)).toBe(5);
+    expect(await openOrders(userId)).toBe(0);
+  });
+
+  it('cancel_returnsStatusChanged_andRestocksOnce_whenCancelledTwice', async () => {
+    // Arrange
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu, 3);
+    await store.place(cmd);
+    await store.cancel({ order: cmd.order, now: LATER });
+
+    // Act: lần hai vẫn tưởng đơn PENDING
+    const result = await store.cancel({ order: cmd.order, now: LATER });
+
+    // Assert: không cộng kho, không giảm bộ đếm thêm
+    expect(result).toBe('statusChanged');
+    expect(await stockOf(gpu.productId)).toBe(5);
+    expect(await openOrders(userId)).toBe(0);
+  });
+
+  it('cancel_returnsStatusChanged_andWritesNothing_whenShippedSinceRead', async () => {
+    // Arrange: đọc lúc PENDING, admin đã chuyển SHIPPED
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu, 2);
+    await store.place(cmd);
+    await dynamo.doc.send(
+      new UpdateCommand({
+        TableName: ORDERS,
+        Key: { userId, orderId: cmd.order.orderId },
+        UpdateExpression: 'SET #status = :shipped',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ':shipped': 'SHIPPED' },
+      }),
+    );
+
+    // Act
+    const result = await store.cancel({ order: cmd.order, now: LATER });
+
+    // Assert
+    expect(result).toBe('statusChanged');
+    expect(await orderStatus(userId, cmd.order.orderId)).toBe('SHIPPED');
+    expect(await stockOf(gpu.productId)).toBe(3);
+  });
+
+  it('cancel_allowsPlacingAgain_whenUserHadThreeOpenOrders', async () => {
+    // Arrange: đủ 3 đơn mở, đơn thứ 4 bị chặn (BR-14)
+    const userId = randomUUID();
+    const gpu = await seedProduct(10);
+    const placed = [command(userId, gpu), command(userId, gpu), command(userId, gpu)];
+    for (const cmd of placed) await store.place(cmd);
+    await expect(store.place(command(userId, gpu))).rejects.toBeInstanceOf(TooManyOpenOrdersError);
+
+    // Act
+    await store.cancel({ order: placed[0]!.order, now: LATER });
+    const again = await store.place(command(userId, gpu));
+
+    // Assert
+    expect(again).toEqual({ kind: 'created' });
+    expect(await openOrders(userId)).toBe(3);
+  });
+
+  it('cancel_throws_andDoesNotCreateProduct_whenProductMissing', async () => {
+    // Arrange: đơn ghi thẳng, trỏ tới sản phẩm không có trong bảng products
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu);
+    const ghostId = `ghost-${randomUUID()}`;
+    const order = { ...cmd.order, items: [{ ...cmd.order.items[0]!, productId: ghostId }] };
+    await dynamo.doc.send(new PutCommand({ TableName: ORDERS, Item: { ...order } }));
+    await dynamo.doc.send(
+      new PutCommand({ TableName: ORDERS, Item: { userId, orderId: '#OPEN', openOrders: 1 } }),
+    );
+
+    // Act
+    const act = store.cancel({ order, now: LATER });
+
+    // Assert: dữ liệu hỏng → lỗi để handler trả 500; không ghi gì
+    await expect(act).rejects.toThrow();
+    const { Item } = await dynamo.doc.send(
+      new GetCommand({ TableName: PRODUCTS, Key: { productId: ghostId } }),
+    );
+    expect(Item).toBeUndefined();
+    expect(await orderStatus(userId, order.orderId)).toBe('PENDING');
+  });
+});
+
 describe('placeOrder với adapter thật', () => {
   it('placeOrder_returnsSameOrder_whenRetriedWithSameKeyAfterCommit', async () => {
     // Arrange

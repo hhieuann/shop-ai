@@ -15,6 +15,7 @@ import {
   type InvalidItem,
 } from '../domain/errors.js';
 import {
+  isOpen,
   MAX_OPEN_ORDERS,
   PAYMENT_METHOD,
   toSummary,
@@ -23,6 +24,8 @@ import {
 } from '../domain/order.js';
 import {
   CartChangedError,
+  type CancelOrderCommand,
+  type OrderCancellation,
   type OrderHistory,
   type OrderHistoryPage,
   type OrderStore,
@@ -82,7 +85,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Bảng orders (dynamodb-design.md): đơn, item bộ đếm `#OPEN`, item đánh dấu `#KEY#<idempotencyKey>`.
  * `place` ghi một TransactWriteItems n + 4 thao tác trên products, orders, carts (ADR-0017).
  */
-export class DynamoOrderStore implements OrderStore, OrderHistory {
+export class DynamoOrderStore implements OrderStore, OrderHistory, OrderCancellation {
   private readonly maxConflictRetries: number;
   private readonly baseDelayMs: number;
 
@@ -131,6 +134,70 @@ export class DynamoOrderStore implements OrderStore, OrderHistory {
     );
     const orders = Items.slice(0, limit).map((item) => toSummary(historySchema.parse(item)));
     return { orders, hasMore: Items.length > limit };
+  }
+
+  /**
+   * Thứ tự: 0 đơn (điều kiện đúng trạng thái vừa đọc) · 1..n hoàn kho · (`#OPEN` khi đơn đang mở).
+   * Điều kiện "đúng trạng thái vừa đọc" giữ cho quyết định giảm `#OPEN` còn đúng lúc ghi.
+   */
+  async cancel({ order, now }: CancelOrderCommand): Promise<'cancelled' | 'statusChanged'> {
+    const updateOrder = {
+      Update: {
+        TableName: this.tables.orders,
+        Key: { userId: order.userId, orderId: order.orderId },
+        UpdateExpression: 'SET #status = :cancelled, updatedAt = :now',
+        ConditionExpression: '#status = :seen',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: {
+          ':cancelled': 'CANCELLED',
+          ':now': now,
+          ':seen': order.status,
+        },
+      },
+    };
+    // attribute_exists: không để UpdateItem tạo item sản phẩm rác khi sản phẩm không còn trong bảng
+    const restocks = order.items.map((item) => ({
+      Update: {
+        TableName: this.tables.products,
+        Key: { productId: item.productId },
+        UpdateExpression: 'SET stock = stock + :qty',
+        ConditionExpression: 'attribute_exists(productId)',
+        ExpressionAttributeValues: { ':qty': item.quantity },
+      },
+    }));
+    const decrementOpen = isOpen(order.status)
+      ? [
+          {
+            Update: {
+              TableName: this.tables.orders,
+              Key: { userId: order.userId, orderId: OPEN_COUNTER_SK },
+              UpdateExpression: 'SET openOrders = openOrders - :one',
+              ConditionExpression: 'openOrders > :zero',
+              ExpressionAttributeValues: { ':one': 1, ':zero': 0 },
+            },
+          },
+        ]
+      : [];
+
+    for (let attempt = 0; ; attempt++) {
+      if (attempt > 0) await sleep(this.baseDelayMs * 2 ** (attempt - 1));
+      try {
+        await this.db.send(
+          new TransactWriteCommand({ TransactItems: [updateOrder, ...restocks, ...decrementOpen] }),
+        );
+        return 'cancelled';
+      } catch (error) {
+        if (!(error instanceof TransactionCanceledException)) throw error;
+        const reasons = error.CancellationReasons ?? [];
+        if (reasons[0]?.Code === 'ConditionalCheckFailed') return 'statusChanged';
+        // Chỉ có TransactionConflict (request khác đụng cùng item) thì thử lại
+        const conflict = reasons.some((r) => r.Code === 'TransactionConflict');
+        const conditionFailed = reasons.some((r) => r.Code === 'ConditionalCheckFailed');
+        if (conflict && !conditionFailed && attempt < this.maxConflictRetries) continue;
+        // Sản phẩm không còn trong bảng hoặc `#OPEN` đã về 0: dữ liệu hỏng, để handler trả 500 (Q1, Q2)
+        throw error;
+      }
+    }
   }
 
   async place(command: PlaceOrderCommand): Promise<PlaceOrderResult> {
