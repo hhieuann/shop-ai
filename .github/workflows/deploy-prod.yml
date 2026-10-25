@@ -43,7 +43,9 @@ jobs:
       - name: cdk deploy shop-prd (canary cho ordering)
         env:
           ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-        run: pnpm --filter infra run deploy:prod --outputs-file cdk-outputs.json -c alarmEmail="$ALARM_EMAIL"
+          # Địa chỉ gửi SES chung cho mọi môi trường (một tài khoản, một vùng); thiếu thì worker không gửi email
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+        run: pnpm --filter infra run deploy:prod --outputs-file cdk-outputs.json -c alarmEmail="$ALARM_EMAIL" -c senderEmail="$SENDER_EMAIL"
       - name: Lấy URL CloudFront từ output của stack web
         # Lần deploy đầu của một môi trường chưa có biến BASE_URL; đọc thẳng output WebUrl để smoke test vẫn chạy.
         # Biến BASE_URL của environment chỉ còn là dự phòng.
