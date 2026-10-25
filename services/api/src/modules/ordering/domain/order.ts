@@ -147,7 +147,10 @@ export function buildOrder(input: NewOrderInput): Order {
   };
 }
 
-export function toSummary(order: Order): OrderSummary {
+/** Chỉ cần các cột lịch sử đơn đọc, nên dùng được cả với item không có shippingAddress */
+export function toSummary(
+  order: Pick<Order, 'orderId' | 'status' | 'items' | 'totalAmount' | 'createdAt'>,
+): OrderSummary {
   return {
     orderId: order.orderId,
     status: order.status,

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { TransactionCanceledException, type AttributeValue } from '@aws-sdk/client-dynamodb';
 import {
   GetCommand,
+  QueryCommand,
   TransactWriteCommand,
   type DynamoDBDocumentClient,
 } from '@aws-sdk/lib-dynamodb';
@@ -13,9 +14,17 @@ import {
   type ChangedItem,
   type InvalidItem,
 } from '../domain/errors.js';
-import { MAX_OPEN_ORDERS, PAYMENT_METHOD, type Order, type OrderItem } from '../domain/order.js';
+import {
+  MAX_OPEN_ORDERS,
+  PAYMENT_METHOD,
+  toSummary,
+  type Order,
+  type OrderItem,
+} from '../domain/order.js';
 import {
   CartChangedError,
+  type OrderHistory,
+  type OrderHistoryPage,
   type OrderStore,
   type PlaceOrderCommand,
   type PlaceOrderResult,
@@ -51,6 +60,15 @@ const orderSchema = z.object({
   updatedAt: z.string(),
 });
 
+/** Các cột lịch sử đơn đọc (ProjectionExpression): không đọc shippingAddress (threat model O8) */
+const historySchema = orderSchema.pick({
+  orderId: true,
+  status: true,
+  items: true,
+  totalAmount: true,
+  createdAt: true,
+});
+
 export interface DynamoOrderStoreOptions {
   /** Hai giao dịch cùng đụng một item (vd. 2 request song song tới `#OPEN`) thì thử lại từng này lần */
   readonly maxConflictRetries?: number;
@@ -64,7 +82,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Bảng orders (dynamodb-design.md): đơn, item bộ đếm `#OPEN`, item đánh dấu `#KEY#<idempotencyKey>`.
  * `place` ghi một TransactWriteItems n + 4 thao tác trên products, orders, carts (ADR-0017).
  */
-export class DynamoOrderStore implements OrderStore {
+export class DynamoOrderStore implements OrderStore, OrderHistory {
   private readonly maxConflictRetries: number;
   private readonly baseDelayMs: number;
 
@@ -87,6 +105,32 @@ export class DynamoOrderStore implements OrderStore {
     );
     if (!Item || !Item.orderId || String(Item.orderId).startsWith('#')) return null;
     return orderSchema.parse(Item);
+  }
+
+  /**
+   * Query mới nhất trước. Điều kiện khoá `orderId >= "0"` bỏ `#OPEN`, `#KEY#…` (`#` đứng trước
+   * chữ số) trước khi DynamoDB đếm Limit, nên trang luôn đủ món; lọc sau bằng FilterExpression thì
+   * trang có thể thiếu. Đọc limit + 1 để biết còn trang sau mà không trả về trang cuối rỗng.
+   */
+  async listByUser(
+    userId: string,
+    { limit, afterOrderId }: { readonly limit: number; readonly afterOrderId?: string },
+  ): Promise<OrderHistoryPage> {
+    const { Items = [] } = await this.db.send(
+      new QueryCommand({
+        TableName: this.tables.orders,
+        KeyConditionExpression: 'userId = :u AND orderId >= :zero',
+        ExpressionAttributeValues: { ':u': userId, ':zero': '0' },
+        ExpressionAttributeNames: { '#status': 'status', '#items': 'items' },
+        ProjectionExpression: 'orderId, #status, #items, totalAmount, createdAt',
+        ScanIndexForward: false,
+        Limit: limit + 1,
+        // userId luôn của người trong token; cursor chỉ mang orderId
+        ExclusiveStartKey: afterOrderId ? { userId, orderId: afterOrderId } : undefined,
+      }),
+    );
+    const orders = Items.slice(0, limit).map((item) => toSummary(historySchema.parse(item)));
+    return { orders, hasMore: Items.length > limit };
   }
 
   async place(command: PlaceOrderCommand): Promise<PlaceOrderResult> {

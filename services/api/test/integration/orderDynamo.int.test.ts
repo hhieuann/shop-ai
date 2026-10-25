@@ -275,6 +275,132 @@ describe('DynamoOrderStore.place', () => {
   });
 });
 
+/**
+ * Ghi thẳng `count` đơn cho một người (không qua place: BR-14 chỉ cho 3 đơn mở).
+ * orderId tăng dần theo i như ULID tăng theo thời gian; trả về theo thứ tự mới nhất trước.
+ */
+async function seedOrders(userId: string, count: number): Promise<string[]> {
+  const ids: string[] = [];
+  for (let i = 1; i <= count; i++) {
+    const orderId = `01K8${String(i).padStart(22, '0')}`;
+    const order = buildOrder({
+      orderId,
+      userId,
+      requested: [{ productId: 'gpu-1', quantity: 1, expectedPrice: 1_000_000 }],
+      products: new Map([
+        [
+          'gpu-1',
+          { productId: 'gpu-1', name: 'GPU', price: 1_000_000, stock: 9, status: 'ACTIVE' },
+        ],
+      ]),
+      shippingAddress: ADDRESS,
+      now: NOW,
+    });
+    await dynamo.doc.send(new PutCommand({ TableName: ORDERS, Item: { ...order } }));
+    ids.push(orderId);
+  }
+  return ids.reverse();
+}
+
+/** Đọc hết lịch sử theo từng trang `limit`, như web bấm "Sau" tới khi hết */
+async function readAllPages(userId: string, limit: number): Promise<string[][]> {
+  const pages: string[][] = [];
+  let afterOrderId: string | undefined;
+  for (;;) {
+    const page = await store.listByUser(userId, { limit, afterOrderId });
+    pages.push(page.orders.map((o) => o.orderId));
+    if (!page.hasMore) return pages;
+    afterOrderId = page.orders.at(-1)?.orderId;
+  }
+}
+
+describe('DynamoOrderStore.listByUser', () => {
+  it('listByUser_returnsNewestFirst_andSkipsCounterAndMarker', async () => {
+    // Arrange: #OPEN và #KEY#… cùng partition như place ghi
+    const userId = randomUUID();
+    const ids = await seedOrders(userId, 3);
+    for (const orderId of ['#OPEN', `#KEY#${randomUUID()}`]) {
+      await dynamo.doc.send(new PutCommand({ TableName: ORDERS, Item: { userId, orderId } }));
+    }
+
+    // Act: limit 3 đúng bằng số đơn, item # không được chiếm chỗ
+    const page = await store.listByUser(userId, { limit: 3 });
+
+    // Assert
+    expect(page.orders.map((o) => o.orderId)).toEqual(ids);
+    expect(page.hasMore).toBe(false);
+    expect(page.orders[0]).toEqual({
+      orderId: ids[0],
+      status: 'PENDING',
+      totalAmount: 1_000_000,
+      itemCount: 1,
+      createdAt: NOW,
+    });
+  });
+
+  it('listByUser_pagesWithoutGapsOrDuplicates', async () => {
+    // Arrange
+    const userId = randomUUID();
+    const ids = await seedOrders(userId, 5);
+
+    // Act
+    const pages = await readAllPages(userId, 2);
+
+    // Assert
+    expect(pages).toEqual([ids.slice(0, 2), ids.slice(2, 4), ids.slice(4)]);
+  });
+
+  it('listByUser_hasMoreFalse_whenCountIsExactMultipleOfLimit', async () => {
+    // Arrange
+    const userId = randomUUID();
+    const ids = await seedOrders(userId, 4);
+
+    // Act
+    const pages = await readAllPages(userId, 2);
+
+    // Assert: không có trang thứ 3 rỗng
+    expect(pages).toEqual([ids.slice(0, 2), ids.slice(2)]);
+  });
+
+  it('listByUser_returnsOnlyOwnOrders', async () => {
+    // Arrange
+    const userA = randomUUID();
+    const userB = randomUUID();
+    const own = await seedOrders(userA, 1);
+    await seedOrders(userB, 2);
+
+    // Act
+    const page = await store.listByUser(userA, { limit: 20 });
+
+    // Assert
+    expect(page.orders.map((o) => o.orderId)).toEqual(own);
+  });
+
+  it('listByUser_returnsEmpty_whenUserHasNoOrders', async () => {
+    // Act
+    const page = await store.listByUser(randomUUID(), { limit: 20 });
+
+    // Assert
+    expect(page).toEqual({ orders: [], hasMore: false });
+  });
+
+  it('listByUser_doesNotReadShippingAddress', async () => {
+    // Arrange
+    const userId = randomUUID();
+    await seedOrders(userId, 1);
+    const send = vi.spyOn(dynamo.doc, 'send');
+
+    // Act
+    const page = await store.listByUser(userId, { limit: 20 });
+
+    // Assert
+    expect(JSON.stringify(page)).not.toContain(ADDRESS.phone);
+    const query = send.mock.calls[0]?.[0] as QueryCommand;
+    expect(query.input.ProjectionExpression).not.toContain('shippingAddress');
+    send.mockRestore();
+  });
+});
+
 describe('placeOrder với adapter thật', () => {
   it('placeOrder_returnsSameOrder_whenRetriedWithSameKeyAfterCommit', async () => {
     // Arrange
