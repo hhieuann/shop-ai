@@ -120,15 +120,14 @@ describe('ApiStack · ordering', () => {
     expect(JSON.stringify(statements)).not.toMatch(/Scan|BatchWriteItem|CartIdempotencyTable/);
   });
 
-  it('orderingFunction_canUpdateOnlyStockOfProducts', () => {
+  it('orderingFunction_updatesProductsWithoutAttributeCondition', () => {
     // Act
     const statements = on(orderingStatements(synth(staging)), 'ProductsTable');
 
-    // Assert: O7, UpdateItem trên products có điều kiện chỉ productId và stock
+    // Assert: O7, không có điều kiện dynamodb:Attributes vì giao dịch trừ kho có điều kiện status, price (ADR-0017)
     const update = statements.find((s) => s.Action === 'dynamodb:UpdateItem');
-    expect(update?.Condition).toEqual({
-      'ForAllValues:StringEquals': { 'dynamodb:Attributes': ['productId', 'stock'] },
-    });
+    expect(update).toBeDefined();
+    expect(update?.Condition).toBeUndefined();
   });
 
   it('orderingFunction_canOnlySendToOrdersQueue', () => {
