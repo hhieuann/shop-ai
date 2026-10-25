@@ -2,7 +2,7 @@ import { expiresAt, type ClientEventType, type StoredEvent } from '../domain/eve
 import type { EventRepository, UserIdHasher } from '../ports.js';
 
 export interface RecordEventDeps {
-  readonly events: EventRepository;
+  readonly events: Pick<EventRepository, 'put'>;
   readonly hasher: UserIdHasher;
   readonly now: () => string;
   readonly newId: () => string;

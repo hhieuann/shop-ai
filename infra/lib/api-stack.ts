@@ -33,6 +33,7 @@ import {
 import { AttributeType, BillingMode, ProjectionType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { Bucket } from 'aws-cdk-lib/aws-s3';
@@ -244,7 +245,7 @@ export class ApiStack extends Stack {
     const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
 
     // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
-    const eventsFn = this.addEvents(shopEnv, removalPolicy, httpApi);
+    const { eventsFn, events } = this.addEvents(shopEnv, removalPolicy, httpApi);
 
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
@@ -267,6 +268,8 @@ export class ApiStack extends Stack {
     const orderConfirmed = new OrderConfirmed(this, 'OrderConfirmed');
     new CfnOutput(this, 'OrderConfirmedTopicArn', { value: orderConfirmed.topic.topicArn });
     new CfnOutput(this, 'EventsPurchaseQueueUrl', { value: orderConfirmed.eventsQueue.queueUrl });
+    // events.md mục 1: consumer ghi mỗi món của đơn đã xác nhận thành một PURCHASE
+    this.addPurchaseConsumer(shopEnv, removalPolicy, events, orderConfirmed.eventsQueue);
 
     // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
     const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
@@ -668,7 +671,74 @@ export class ApiStack extends Stack {
     });
 
     new CfnOutput(this, 'EventsTableName', { value: events.tableName });
-    return eventsFn;
+    return { eventsFn, events };
+  }
+
+  /**
+   * Consumer `PURCHASE` của module events: Lambda riêng, đọc hàng đợi `order-confirmed` của events.
+   * Quyền tối thiểu: PutItem trên bảng events (khoá suy ra từ orderId + productId, có điều kiện
+   * không ghi đè, nên tin giao lại không thành lượt mua thứ hai); đọc đúng tham số khoá HMAC như
+   * Lambda API (threat model E6); nhận, xoá tin trên đúng hàng đợi này (SqsEventSource tự cấp).
+   * Tin lỗi được báo riêng từng tin (reportBatchItemFailures); sau 5 lần vào DLQ.
+   */
+  private addPurchaseConsumer(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    events: Table,
+    queue: Queue,
+  ) {
+    const hmacKeyParameter = `/shop/${shopEnv.name}/events/hmac-key`;
+    const fn = new NodejsFunction(this, 'EventsPurchaseFunction', {
+      entry: path.join(API_SRC, 'modules', 'events', 'purchaseLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      // Hàng đợi để visibility timeout 30 giây, tức 6 lần timeout này (order-confirmed.ts)
+      timeout: Duration.seconds(5),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'EventsPurchaseLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        EVENTS_TABLE: events.tableName,
+        HMAC_KEY_PARAMETER: hmacKeyParameter,
+        POWERTOOLS_SERVICE_NAME: 'events-purchase',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:PutItem'], resources: [events.tableArn] }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: hmacKeyParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    fn.addEventSource(new SqsEventSource(queue, { batchSize: 10, reportBatchItemFailures: true }));
+    Tags.of(fn).add('module', 'events');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+    return fn;
   }
 
   /**

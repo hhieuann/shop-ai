@@ -3,6 +3,8 @@ import type { StoredEvent } from './domain/event.js';
 /** Use case chỉ biết interface này; adapter DynamoDB nằm trong infra/. */
 export interface EventRepository {
   put(event: StoredEvent): Promise<void>;
+  /** Ghi nếu chưa có dòng cùng khoá; trả `false` khi đã có (tin giao lại), không ném lỗi. */
+  putOnce(event: StoredEvent): Promise<boolean>;
 }
 
 /**

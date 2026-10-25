@@ -102,3 +102,68 @@ describe('ApiStack · events', () => {
     });
   });
 });
+
+/** Các statement IAM của role Lambda nhận PURCHASE */
+function purchaseStatements(template: Template): { Action: unknown; Resource: unknown }[] {
+  const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
+    JSON.stringify(p.Properties.Roles).includes('EventsPurchaseFunctionServiceRole'),
+  );
+  return policies.flatMap((p) => p.Properties.PolicyDocument.Statement);
+}
+
+describe('ApiStack · events PURCHASE consumer', () => {
+  it('purchaseFunction_readsEventsQueue_withPartialBatchFailures', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert: events.md mục 1; tin lỗi giao lại riêng từng tin, sau 5 lần vào DLQ
+    template.hasResourceProperties('AWS::Lambda::EventSourceMapping', {
+      FunctionName: { Ref: Match.stringLikeRegexp('^EventsPurchaseFunction') },
+      EventSourceArn: {
+        'Fn::GetAtt': [Match.stringLikeRegexp('^OrderConfirmedEventsQueue'), 'Arn'],
+      },
+      BatchSize: 10,
+      FunctionResponseTypes: ['ReportBatchItemFailures'],
+    });
+  });
+
+  it('purchaseFunction_timeoutFitsQueueVisibilityTimeout', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert: visibility 30 giây của hàng đợi = 6 lần timeout 5 giây
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Timeout: 5,
+      Environment: {
+        Variables: Match.objectLike({
+          EVENTS_TABLE: { Ref: Match.stringLikeRegexp('^EventsTable') },
+          HMAC_KEY_PARAMETER: '/shop/staging/events/hmac-key',
+          POWERTOOLS_SERVICE_NAME: 'events-purchase',
+        }),
+      },
+    });
+  });
+
+  it('purchaseFunction_canOnlyPutItemOnEventsTable_readItsHmacKey_andConsumeItsQueue', () => {
+    // Act
+    const statements = purchaseStatements(synth(staging));
+    const dynamo = statements.filter((s) => JSON.stringify(s.Action).includes('dynamodb:'));
+    const ssm = statements.filter((s) => JSON.stringify(s.Action).includes('ssm:'));
+    const sqs = statements.filter((s) => JSON.stringify(s.Action).includes('sqs:'));
+
+    // Assert: không đọc bảng nào, không gửi tin, không đọc tham số khác (threat model E6, E9)
+    expect(dynamo).toHaveLength(1);
+    expect(dynamo[0]?.Action).toBe('dynamodb:PutItem');
+    expect(dynamo[0]?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^EventsTable/), 'Arn'],
+    });
+    expect(ssm).toHaveLength(1);
+    expect(JSON.stringify(ssm[0]?.Resource)).toContain(':parameter/shop/staging/events/hmac-key');
+    expect(sqs).toHaveLength(1);
+    expect(JSON.stringify(sqs[0]?.Action)).not.toContain('sqs:SendMessage');
+    expect(sqs[0]?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^OrderConfirmedEventsQueue/), 'Arn'],
+    });
+    expect(JSON.stringify(statements)).not.toContain('sns:');
+  });
+});

@@ -1,3 +1,4 @@
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { PutCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import type { StoredEvent } from '../domain/event.js';
 import type { EventRepository } from '../ports.js';
@@ -25,5 +26,15 @@ export class DynamoEventRepository implements EventRepository {
         ConditionExpression: 'attribute_not_exists(eventKey)',
       }),
     );
+  }
+
+  async putOnce(event: StoredEvent): Promise<boolean> {
+    try {
+      await this.put(event);
+      return true;
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) return false;
+      throw error;
+    }
   }
 }

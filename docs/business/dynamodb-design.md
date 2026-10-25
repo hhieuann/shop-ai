@@ -209,7 +209,7 @@ expiresAt       Number   epoch giây, 24 giờ sau khi tạo; bảng orders bậ
 ---
 ## Bảng `events` (module events)
 
-Người viết: Nhân · Ngày: 09/10/2026 · Sửa 22/10/2026: khoá và thuộc tính theo code `modules/events`; GSI1 để sau.
+Người viết: Nhân · Ngày: 09/10/2026 · Sửa 22/10/2026: khoá và thuộc tính theo code `modules/events`; GSI1 để sau · Sửa 25/10/2026: thuộc tính của `PURCHASE`.
 
 ### Truy vấn cần có
 
@@ -235,10 +235,12 @@ GSI1 cho Q3 (`productId` + `timestamp`) chưa tạo; thêm khi làm phát hiện
 userIdHash   String   PK   (HMAC-SHA256 hex của Cognito sub, không phải userId thật)
 eventKey     String   SK   (<timestamp>#<eventId>)
 timestamp    String   ISO 8601 UTC, do server đặt
-eventId      String   ULID (CONTRIBUTING.md, chuẩn code)
+eventId      String   ULID (CONTRIBUTING.md, chuẩn code); PURCHASE: <orderId>#<productId> để tin SQS giao lại không ghi trùng
 productId    String   cùng tên với API (contracts/openapi.yaml)
 eventType    String   VIEW | ADD_TO_CART | PURCHASE
 ttl          Number   giây kể từ 1970, DynamoDB TTL xoá sau 90 ngày
+orderId      String   chỉ PURCHASE, để pipeline gom món theo đơn
+quantity     Number   chỉ PURCHASE
 ```
 
 ### Vấn đề cần quyết định: Q2 có được Scan không?
