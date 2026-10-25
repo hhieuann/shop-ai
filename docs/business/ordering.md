@@ -2,7 +2,7 @@
 
 - Module: ordering
 - Vai trò: khách hàng đã đăng nhập; admin (huỷ đơn, chuyển trạng thái giao hàng)
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker); 25/10/2026 (tin `order-confirmed` không bọc Idempotency)
 
 ## Luồng đặt hàng (checkout flow)
 
@@ -119,8 +119,8 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
       }
       ```
 
-      Không có `shippingAddress`, họ tên, SĐT, giá (threat model O8). Bước này chạy cả khi bước 2.1 bỏ qua vì đơn đã `CONFIRMED`, để lần thử lại vẫn gửi được nếu lần trước SNS lỗi; chống gửi trùng bằng Powertools Idempotency khoá `orderId`, như bước 2.2. Đơn đã `CANCELLED` thì không gửi.
-3. SQS có thể giao một message nhiều lần (at-least-once). Nhờ bước 2.1 có điều kiện, bước 2.2 và 2.3 có idempotency, chạy lại không đổi trạng thái sai, không gửi email hay tin `order-confirmed` hai lần.
+      Không có `shippingAddress`, họ tên, SĐT, giá (threat model O8). Bước này chạy cả khi bước 2.1 bỏ qua vì đơn đã `CONFIRMED`, để lần thử lại vẫn gửi được nếu lần trước SNS lỗi. Không bọc Powertools Idempotency (chốt 25/10/2026): tin gửi lại giống hệt (`confirmedAt` là thời điểm chuyển `CONFIRMED`), consumer `events` đã chống trùng theo `<orderId>#<productId>` (#252), nên gửi lại không tạo lượt mua thứ hai. Đơn đã `CANCELLED` thì không gửi.
+3. SQS có thể giao một message nhiều lần (at-least-once). Nhờ bước 2.1 có điều kiện, bước 2.2 có idempotency và consumer của bước 2.3 chống trùng, chạy lại không đổi trạng thái sai, không gửi email hai lần, không ghi PURCHASE hai lần.
 4. Email lỗi **không** làm đơn quay lại `PENDING`: trạng thái đã đổi ở bước 2.1. Message được thử lại; quá 3 lần thì vào DLQ, alarm kêu, xử lý theo runbook `dlq-orders.md`.
 5. Khách huỷ đơn khi message chưa tới worker: bước 2.1 thấy đơn đã `CANCELLED` nên bỏ qua, không gửi email xác nhận.
 6. Message `type: "CANCELLED"` (BR-13): worker đọc lại đơn, chỉ gửi email báo huỷ khi đơn đang `CANCELLED`; chống gửi trùng bằng Powertools Idempotency khoá `orderId` + `CANCELLED`. Không gửi tin `order-confirmed`.
