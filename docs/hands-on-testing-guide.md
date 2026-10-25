@@ -211,6 +211,7 @@ tests/e2e-api/
 ├─ auth.e2e.ts
 ├─ catalog.e2e.ts
 ├─ cart.e2e.ts
+├─ orders.e2e.ts
 ├─ negative.e2e.ts
 └─ reports/               junit.xml, đã có trong .gitignore
 ```
@@ -221,7 +222,7 @@ tests/e2e-api/
 | `catalog.e2e.ts` | `GET /api/v1/products` (lọc, tìm, trang sau), `GET /api/v1/products/{id}` | Đúng dạng; trang sau theo `nextCursor` không trùng trang trước; lọc `gpu` chỉ ra `gpu`; tìm `chuot` ra tên có "chuột"; chi tiết 200 |
 | `cart.e2e.ts` | `POST`, `PUT`, `DELETE` `/api/v1/cart/items…`, `GET /api/v1/cart` | Thêm 1 rồi thêm 1 thì cộng dồn 2; sửa về 1; xoá thì giỏ không còn món đó |
 | `negative.e2e.ts` | Các lệnh gọi sai | Thiếu token, token sai: 401 `{"message":"Unauthorized"}` (JWT authorizer chặn trước Lambda, không theo RFC 9457); số lượng 0, `category` lạ: 400 `problem+json`; sản phẩm không có: 404 `problem+json`; sai mật khẩu: Cognito trả `NotAuthorizedException` |
-| `order.e2e.ts` (Sprint 2) | `POST /api/v1/orders` hai lần cùng `Idempotency-Key` | 201, lần hai trả cùng `orderId`; xem đơn của người khác: 404 |
+| `orders.e2e.ts` | `POST /api/v1/orders` (thiếu khoá, rồi hai lần cùng `Idempotency-Key`), `GET /api/v1/orders`, `GET`, `DELETE` `/api/v1/orders/{orderId}` | Thiếu khoá: 400; đặt: 201 `PENDING`, lần hai 200 cùng `orderId`; lịch sử có đơn ở đầu; chi tiết đúng; đơn không thuộc mình: 404; huỷ: `CANCELLED`, huỷ lần hai: 409 `CANNOT_CANCEL`. Trước khi chạy huỷ đơn mở còn sót (BR-14), `afterAll` luôn huỷ đơn vừa đặt |
 
 ### 6.2. Biến môi trường
 
