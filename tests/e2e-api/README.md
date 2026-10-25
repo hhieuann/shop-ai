@@ -10,6 +10,7 @@ tests/e2e-api/
 ├─ auth.e2e.ts            đăng nhập, GET /me
 ├─ catalog.e2e.ts         danh sách, lọc, tìm, trang sau, chi tiết
 ├─ cart.e2e.ts            thêm, sửa, xoá món trong giỏ của người dùng E2E
+├─ orders.e2e.ts          đặt, gửi lại cùng Idempotency-Key, xem, huỷ đơn; luôn huỷ đơn vừa đặt
 ├─ negative.e2e.ts        thiếu token, dữ liệu sai, không tìm thấy, sai mật khẩu
 └─ reports/               junit.xml, đã có trong .gitignore
 ```
