@@ -1,4 +1,9 @@
-import { ConflictError, NotFoundError, UnprocessableError } from '../../../shared/errors.js';
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnprocessableError,
+} from '../../../shared/errors.js';
 
 /** Món không đặt được: số còn đặt được, 0 khi hết hàng, ngừng bán hoặc không còn trong catalog */
 export interface InvalidItem {
@@ -54,6 +59,13 @@ export class IdempotencyKeyReusedError extends UnprocessableError {
 export class OrderNotFoundError extends NotFoundError {
   constructor(readonly orderId: string) {
     super(`Không tìm thấy đơn ${orderId}`);
+  }
+}
+
+/** Cursor lịch sử đơn không giải mã được → 400 (#230). */
+export class InvalidOrderCursorError extends BadRequestError {
+  constructor() {
+    super('Con trỏ phân trang không hợp lệ');
   }
 }
 
