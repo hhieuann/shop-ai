@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { orderConfirmedEvent } from './notification.js';
+import { formatVnd, orderConfirmedEvent, orderEmail } from './notification.js';
 import type { Order } from './order.js';
 
 const ORDER: Order = {
@@ -48,5 +48,61 @@ describe('orderConfirmedEvent', () => {
     for (const leaked of ['shippingAddress', ORDER.shippingAddress.phone, 'price', 'name']) {
       expect(json).not.toContain(leaked);
     }
+  });
+});
+
+describe('orderEmail', () => {
+  it('orderEmail_listsItemsTotalAndCod_whenConfirmed', () => {
+    // Act
+    const email = orderEmail(ORDER, 'CONFIRMED');
+
+    // Assert
+    expect(email.subject).toBe(`Black Magic: đã xác nhận đơn ${ORDER.orderId}`);
+    expect(email.text).toContain('- ASUS TUF RTX 4070 × 1');
+    expect(email.text).toContain('- Nguồn 750W × 2');
+    expect(email.text).toContain('19.900.000 ₫');
+    expect(email.text).toContain('Thanh toán khi nhận hàng (COD), miễn phí vận chuyển');
+    expect(email.html).toContain('<li>Nguồn 750W × 2</li>');
+  });
+
+  it('orderEmail_saysNoPaymentDue_whenCancelled', () => {
+    // Act
+    const email = orderEmail(ORDER, 'CANCELLED');
+
+    // Assert
+    expect(email.subject).toBe(`Black Magic: đã huỷ đơn ${ORDER.orderId}`);
+    expect(email.text).toContain(`Đơn ${ORDER.orderId} đã được huỷ.`);
+    expect(email.text).toContain('Bạn không phải thanh toán');
+  });
+
+  it.each(['CONFIRMED', 'CANCELLED'] as const)('orderEmail_hasNoPersonalDataOrLink_%s', (kind) => {
+    // Act
+    const email = JSON.stringify(orderEmail(ORDER, kind));
+
+    // Assert: thư đi qua hộp thư bên ngoài; khách xem đủ thông tin ở trang đơn
+    const { fullName, phone, address } = ORDER.shippingAddress;
+    for (const leaked of [fullName, phone, address, ORDER.userId, 'http']) {
+      expect(email).not.toContain(leaked);
+    }
+  });
+
+  it('orderEmail_escapesHtml_inProductName', () => {
+    // Arrange
+    const order = { ...ORDER, items: [{ ...ORDER.items[0]!, name: 'Cáp <b>USB</b> & "C"' }] };
+
+    // Act
+    const email = orderEmail(order, 'CONFIRMED');
+
+    // Assert
+    expect(email.html).toContain('Cáp &lt;b&gt;USB&lt;/b&gt; &amp; &quot;C&quot;');
+    expect(email.text).toContain('Cáp <b>USB</b> & "C"');
+  });
+
+  it('formatVnd_groupsThousandsWithDots', () => {
+    // Act
+    const text = formatVnd(31_800_000);
+
+    // Assert
+    expect(text).toBe('31.800.000 ₫');
   });
 });

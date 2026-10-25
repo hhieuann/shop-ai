@@ -1,4 +1,4 @@
-import type { OrderConfirmedEvent } from './domain/notification.js';
+import type { EmailContent, OrderConfirmedEvent } from './domain/notification.js';
 import type { Order, OrderSummary, ProductSnapshot } from './domain/order.js';
 
 /**
@@ -108,6 +108,29 @@ export interface OrderConfirmation {
 /** Gửi tin `order-confirmed` lên SNS (ordering.md bước 2.3); consumer events chống trùng theo đơn, món */
 export interface OrderEvents {
   publishConfirmed(event: OrderConfirmedEvent): Promise<void>;
+}
+
+/** Email khách theo Cognito `sub` (An chốt 25/10); không lưu, không log. null khi không tìm thấy */
+export interface CustomerDirectory {
+  emailOf(userId: string): Promise<string | null>;
+}
+
+/** Lý do SES không gửi thư mà thử lại cũng vô ích: không vào DLQ, chỉ log warn + metric */
+export type EmailRejectedReason =
+  'not_verified' | 'throttled' | 'sending_disabled' | 'no_recipient';
+
+export type SendEmailResult =
+  | { readonly status: 'sent' }
+  | { readonly status: 'rejected'; readonly reason: EmailRejectedReason };
+
+/** Gửi thư qua SES. Lỗi tạm (mạng, 5xx) thì ném để SQS giao lại tin */
+export interface Mailer {
+  send(to: string, content: EmailContent): Promise<SendEmailResult>;
+}
+
+/** Metric của bước gửi thư; tách khỏi OrderMetrics để API ordering không phải hiện thực */
+export interface EmailMetrics {
+  emailRejected(reason: EmailRejectedReason): void;
 }
 
 /** Tin gửi worker order-processor (ordering.md, luồng SQS); không có dữ liệu cá nhân (O8) */
