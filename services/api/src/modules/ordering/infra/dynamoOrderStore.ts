@@ -1,9 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { TransactionCanceledException, type AttributeValue } from '@aws-sdk/client-dynamodb';
+import {
+  ConditionalCheckFailedException,
+  TransactionCanceledException,
+  type AttributeValue,
+} from '@aws-sdk/client-dynamodb';
 import {
   GetCommand,
   QueryCommand,
   TransactWriteCommand,
+  UpdateCommand,
   type DynamoDBDocumentClient,
 } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
@@ -26,6 +31,7 @@ import {
   CartChangedError,
   type CancelOrderCommand,
   type OrderCancellation,
+  type OrderConfirmation,
   type OrderHistory,
   type OrderHistoryPage,
   type OrderStore,
@@ -85,7 +91,9 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Bảng orders (dynamodb-design.md): đơn, item bộ đếm `#OPEN`, item đánh dấu `#KEY#<idempotencyKey>`.
  * `place` ghi một TransactWriteItems n + 4 thao tác trên products, orders, carts (ADR-0017).
  */
-export class DynamoOrderStore implements OrderStore, OrderHistory, OrderCancellation {
+export class DynamoOrderStore
+  implements OrderStore, OrderHistory, OrderCancellation, OrderConfirmation
+{
   private readonly maxConflictRetries: number;
   private readonly baseDelayMs: number;
 
@@ -134,6 +142,30 @@ export class DynamoOrderStore implements OrderStore, OrderHistory, OrderCancella
     );
     const orders = Items.slice(0, limit).map((item) => toSummary(historySchema.parse(item)));
     return { orders, hasMore: Items.length > limit };
+  }
+
+  /** Worker xác nhận đơn: chỉ đổi khi đơn còn `PENDING` (khách có thể vừa huỷ) */
+  async confirm({ order, now }: { readonly order: Order; readonly now: string }) {
+    try {
+      await this.db.send(
+        new UpdateCommand({
+          TableName: this.tables.orders,
+          Key: { userId: order.userId, orderId: order.orderId },
+          UpdateExpression: 'SET #status = :confirmed, updatedAt = :now',
+          ConditionExpression: '#status = :pending',
+          ExpressionAttributeNames: { '#status': 'status' },
+          ExpressionAttributeValues: {
+            ':confirmed': 'CONFIRMED',
+            ':pending': 'PENDING',
+            ':now': now,
+          },
+        }),
+      );
+      return 'confirmed' as const;
+    } catch (error) {
+      if (error instanceof ConditionalCheckFailedException) return 'notPending' as const;
+      throw error;
+    }
   }
 
   /**
