@@ -62,8 +62,6 @@ const DEMO_PRODUCTS_FILE = path.join(
 export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
 /** GSI đơn theo trạng thái cho admin (dynamodb-design.md, bảng orders, Q3). */
 export const ORDERS_BY_STATUS_INDEX = 'byStatus';
-/** Thuộc tính của products mà ordering được ghi khi trừ, hoàn kho (threat model O7). */
-export const PRODUCT_ATTRIBUTES_ORDERING_WRITES = ['productId', 'stock'];
 
 /** Cách đóng gói chung cho các Lambda API: ESM cho Node 24, đóng gói cả AWS SDK. */
 const API_BUNDLING = {
@@ -422,7 +420,7 @@ export class ApiStack extends Stack {
    * hàng đợi đơn có DLQ và Lambda ordering.
    * Quyền tối thiểu: orders GetItem, Query, PutItem, UpdateItem; order-idempotency như cart;
    * trên bảng của module khác chỉ các quyền ghi ở ADR-0017 (#226): products BatchGetItem và
-   * UpdateItem chỉ cột `stock` (threat model O7), carts GetItem và UpdateItem; chỉ gửi vào hàng đợi đơn.
+   * UpdateItem (trừ, hoàn kho), carts GetItem và UpdateItem; chỉ gửi vào hàng đợi đơn.
    * Mọi route gắn JWT authorizer của Cognito.
    */
   private addOrdering(
@@ -532,18 +530,10 @@ export class ApiStack extends Stack {
     fn.addToRolePolicy(
       new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
     );
-    // O7: trừ, hoàn kho chỉ được đụng cột `stock` (và khoá productId), không sửa được giá.
-    // Còn phải thử trên dev: điều kiện có tính thuộc tính trong ConditionExpression hay không (#228).
+    // Trừ, hoàn kho trong TransactWriteItems. Không có điều kiện dynamodb:Attributes (O7, ADR-0017):
+    // điều kiện đó tính cả status, price trong ConditionExpression nên IAM chặn lệnh trừ kho.
     fn.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['dynamodb:UpdateItem'],
-        resources: [products.tableArn],
-        conditions: {
-          'ForAllValues:StringEquals': {
-            'dynamodb:Attributes': PRODUCT_ATTRIBUTES_ORDERING_WRITES,
-          },
-        },
-      }),
+      new PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [products.tableArn] }),
     );
     // Ngoại lệ ADR-0017: đọc giỏ rồi bỏ các món đã đặt, ghi có điều kiện version trong cùng giao dịch
     fn.addToRolePolicy(

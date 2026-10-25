@@ -112,7 +112,7 @@ Module `ordering` chưa có code (`services/api/src/modules/` hiện có `accoun
 | O4 | T | Gửi lại request làm tạo đơn hai lần | Vừa | `Idempotency-Key`, bảng `order-idempotency` riêng (ADR-0017, BR-04) | Theo thiết kế |
 | O5 | T | Hai người cùng mua món cuối, bán vượt tồn kho | Vừa | Một `TransactWriteItems` có điều kiện `stock >= quantity` (BR-08) | Theo thiết kế |
 | O6 | D | **Giữ kho ác ý:** tạo nhiều đơn COD không định nhận, tồn kho bị trừ, khách thật thấy hết hàng | Vừa | Mỗi tài khoản tối đa 3 đơn `PENDING`, `CONFIRMED`, kiểm bằng bộ đếm `openOrders` trong cùng giao dịch tạo đơn; đơn thứ 4 trả 409 `TOO_MANY_OPEN_ORDERS` (ordering.md BR-14). Admin huỷ đơn để hoàn kho (BR-11, BR-12); throttle riêng cho `POST /api/v1/orders` chưa có | Theo thiết kế (ordering.md BR-14) |
-| O7 | E | Role `ordering` có `UpdateItem` trên `products` nên sửa được cả giá, không chỉ tồn kho | Vừa | Thử điều kiện `dynamodb:Attributes` chỉ cho `stock` (ADR-0017 đã ghi sẽ thử) | Theo thiết kế · Hoàng phụ trách |
+| O7 | E | Role `ordering` có `UpdateItem` trên `products` nên sửa được cả giá, không chỉ tồn kho | Vừa | Đã thử điều kiện `dynamodb:Attributes` chỉ cho `stock`: IAM chặn cả lệnh trừ kho vì điều kiện giao dịch dùng `status`, `price`, nên đã bỏ (ADR-0017). Role chỉ có `UpdateItem` trên `products`, không `PutItem`, `DeleteItem`; code chỉ ghi `stock` | Chấp nhận rủi ro (ADR-0017) · Hoàng phụ trách |
 | O8 | I | `shippingAddress` lọt vào log, message SQS hoặc tin SNS `order-confirmed` (topic không có email admin, chốt 24/10) | Vừa | Message SQS chỉ gồm `{orderId, userId, correlationId}` (ordering.md); tin SNS `order-confirmed` gồm `{ orderId, userId, confirmedAt, items: [{ productId, quantity }] }`, không có `shippingAddress`, họ tên, SĐT, giá (ordering.md bước 2.3); không log body request | Theo thiết kế (SQS, SNS) · Đề xuất (log) |
 | O9 | T | Message SQS giả hoặc bị sửa | Thấp | Chỉ role API có `sqs:SendMessage`; worker đọc lại đơn từ DynamoDB, không tin nội dung message ngoài `orderId` | Đề xuất |
 | O10 | R | Khách chối đã đặt đơn | Thấp | Đơn lưu `userId` từ JWT, `createdAt`, `correlationId`; email xác nhận | Theo thiết kế |
@@ -150,7 +150,7 @@ Mỗi dòng **Đề xuất** sẽ thành một issue riêng, ghi rõ mức và c
 
 - [ ] L4: response headers policy (CSP và các header bảo mật) cho CloudFront (An, tuần 5)
 - [x] O6: giới hạn 3 đơn đang mở mỗi tài khoản, đã vào ordering.md BR-14 (#192); còn test khi có code (Hoàng)
-- [ ] O7: điều kiện `dynamodb:Attributes` cho role `ordering` (Hoàng)
+- [x] O7: đã thử điều kiện `dynamodb:Attributes` cho role `ordering`, IAM chặn giao dịch trừ kho nên bỏ, chấp nhận rủi ro (ADR-0017) (Hoàng)
 - [ ] O8, O9: không đưa `shippingAddress` vào tin SNS và log; worker không tin nội dung message
 - [ ] C1: chọn cách xử lý việc gọi thẳng `execute-api` (An, tuần 5)
 - [ ] C6: xác nhận đã tắt "Allow administrators to bypass" của environment `production`; An sửa câu "giới hạn bằng tên stack" trong ADR-0013 cho đúng thực tế (#180)
