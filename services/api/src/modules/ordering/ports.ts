@@ -1,4 +1,4 @@
-import type { Order, ProductSnapshot } from './domain/order.js';
+import type { Order, OrderSummary, ProductSnapshot } from './domain/order.js';
 
 /**
  * Thông tin sản phẩm mới nhất của module catalog (tên, giá, tồn kho, trạng thái).
@@ -59,6 +59,23 @@ export type PlaceOrderResult =
 export interface OrderStore {
   place(command: PlaceOrderCommand): Promise<PlaceOrderResult>;
   get(userId: string, orderId: string): Promise<Order | null>;
+}
+
+/** Một trang lịch sử đơn; `hasMore` true khi sau đơn cuối trang còn đơn cũ hơn */
+export interface OrderHistoryPage {
+  readonly orders: readonly OrderSummary[];
+  readonly hasMore: boolean;
+}
+
+/**
+ * Lịch sử đơn của một người trong bảng orders, mới nhất trước (dynamodb-design.md, Q2).
+ * Không lẫn item `#OPEN`, `#KEY#…`; `afterOrderId` là đơn cuối của trang trước.
+ */
+export interface OrderHistory {
+  listByUser(
+    userId: string,
+    page: { readonly limit: number; readonly afterOrderId?: string },
+  ): Promise<OrderHistoryPage>;
 }
 
 /** Tin gửi worker order-processor (ordering.md, luồng SQS); không có dữ liệu cá nhân (O8) */
