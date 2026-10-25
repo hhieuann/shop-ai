@@ -57,6 +57,20 @@ rollback chỉ cần sửa đúng 1 item con trỏ, áp dụng cho mọi ngườ
 4. Nếu kém hơn baseline → không đổi con trỏ, giữ nguyên version đang chạy, gia hạn `ttl` các dòng của version đang ACTIVE, ghi log/cảnh báo.
 5. Idempotent: chạy lại cùng một ngày với cùng dữ liệu đầu vào không được tạo thêm bản ghi trùng (dùng `version` hoặc khoá theo ngày để kiểm tra đã chạy chưa trước khi ghi).
 
+**Cách job chạy trên AWS (code ở `data/src/data/pipeline/`, cập nhật 25/10/2026):**
+
+- Đầu vào: Scan bảng `products` (chỉ `productId, category, status, createdAt`) và bảng `events`
+  (ADR-0017). Dòng hỏng thì bỏ qua và đếm vào log, không làm hỏng cả lần chạy.
+- Tập test cho bước 2: sự kiện trong 30 ngày cuối; mô hình học từ sự kiện trước đó. Mô hình được chấm
+  là đúng thứ ghi vào bảng (luật hoặc CF, thiếu thì bù hàng bán chạy), baseline là top 10 bán chạy 30 ngày.
+  Chưa có đơn hay người dùng nào để chấm thì hai bên đều 0 nên vẫn bật.
+- Dev, staging: trộn thêm dữ liệu giả lập 365 ngày tới hôm qua (UTC) vì gần như không có người mua thật.
+  FOR_YOU chỉ ghi cho người dùng thật (`userIdHash` có trong bảng `events`); dữ liệu giả lập vẫn dùng
+  để học độ tương tự. Prod chỉ dùng sự kiện thật.
+- Gia hạn `ttl` ở bước 4 chỉ Query được theo `pk`, nên dùng anchor của lần chạy này; anchor không còn
+  thì dòng cũ tự hết hạn sau 7 ngày.
+- Lỗi nào cũng làm Lambda báo lỗi (không nuốt lỗi), để alarm ở prod bắt được.
+
 ## 4. Đánh giá
 
 - **Chỉ số:** `precision@10` và `coverage`.

@@ -31,8 +31,11 @@ class RecsStore(Protocol):
 
     def active_version(self, rec_type: RecType) -> int | None: ...
 
-    def extend_ttl(self, rec_type: RecType, version: int, ttl: int) -> int:
-        """Đặt `ttl` mới cho mọi dòng của phiên bản; trả về số dòng đã gia hạn."""
+    def extend_ttl(self, rec_type: RecType, version: int, ttl: int, anchors: Sequence[str]) -> int:
+        """Đặt `ttl` mới cho các dòng của phiên bản thuộc `anchors`; trả về số dòng đã gia hạn.
+
+        Bảng recs chỉ Query được theo pk, nên cần biết anchor; dùng anchor của lần chạy này.
+        Anchor không còn (sản phẩm ngừng bán, người dùng hết sự kiện) thì để dòng cũ tự hết hạn."""
         ...
 
 
@@ -68,7 +71,7 @@ def run_nightly(
 
     active = store.active_version(rec_type)
     if active is not None and active != version:
-        store.extend_ttl(rec_type, active, expires_at(now))
+        store.extend_ttl(rec_type, active, expires_at(now), sorted(recs))
     return RunResult(rec_type, version, len(rows), False, active, "kém baseline, giữ phiên bản cũ")
 
 

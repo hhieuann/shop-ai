@@ -37,11 +37,9 @@ class MemoryStore:
         pointer = self.items.get(("META", f"ACTIVE#{rec_type}"))
         return None if pointer is None else int(str(pointer["activeVersion"]))
 
-    def extend_ttl(self, rec_type: RecType, version: int, ttl: int) -> int:
-        rows = [
-            v for (pk, sk), v in self.items.items()
-            if pk.startswith(f"{rec_type}#") and sk.startswith(f"{version}#")
-        ]
+    def extend_ttl(self, rec_type: RecType, version: int, ttl: int, anchors: Sequence[str]) -> int:
+        pks = {f"{rec_type}#{a}" for a in anchors}
+        rows = [v for (pk, sk), v in self.items.items() if pk in pks and sk.startswith(f"{version}#")]
         for row in rows:
             row["ttl"] = ttl
         return len(rows)
