@@ -1,3 +1,4 @@
+import type { OrderConfirmedEvent } from './domain/notification.js';
 import type { Order, OrderSummary, ProductSnapshot } from './domain/order.js';
 
 /**
@@ -91,6 +92,22 @@ export interface CancelOrderCommand {
  */
 export interface OrderCancellation {
   cancel(command: CancelOrderCommand): Promise<'cancelled' | 'statusChanged'>;
+}
+
+/**
+ * Worker xác nhận đơn (ordering.md bước 2.1): `PENDING → CONFIRMED` bằng ghi có điều kiện.
+ * `notPending` khi đơn đã đổi trạng thái (đã xác nhận ở lần giao trước, hoặc khách vừa huỷ).
+ */
+export interface OrderConfirmation {
+  confirm(command: {
+    readonly order: Order;
+    readonly now: string;
+  }): Promise<'confirmed' | 'notPending'>;
+}
+
+/** Gửi tin `order-confirmed` lên SNS (ordering.md bước 2.3); consumer events chống trùng theo đơn, món */
+export interface OrderEvents {
+  publishConfirmed(event: OrderConfirmedEvent): Promise<void>;
 }
 
 /** Tin gửi worker order-processor (ordering.md, luồng SQS); không có dữ liệu cá nhân (O8) */
