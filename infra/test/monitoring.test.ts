@@ -2,6 +2,7 @@ import { App, Duration, Stack } from 'aws-cdk-lib';
 import { HttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { Code, Function as LambdaFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { describe, expect, it } from 'vitest';
 import type { ShopEnvironment } from '../lib/config.js';
 import { Monitoring } from '../lib/monitoring.js';
@@ -239,5 +240,39 @@ describe('Monitoring', () => {
     expect(body).toContain('Latency');
     expect(body).toContain('\\"label\\":\\"catalog\\"'); // mỗi Lambda một đường, có nhãn tên module
     expect(body).toContain('ConcurrentExecutions'); // so với giới hạn 1.000 của tài khoản
+  });
+
+  it('dashboard_showsWorkerAndOrdersQueue_withoutNewAlarm_whenDev', () => {
+    // Arrange: như synth() nhưng thêm worker và hàng đợi đơn
+    const app = new App();
+    const stack = new Stack(app, 'TestStack', { env: { region: 'ap-southeast-1' } });
+    const fakeFunction = (id: string) =>
+      new LambdaFunction(stack, id, {
+        runtime: Runtime.NODEJS_24_X,
+        handler: 'index.handler',
+        code: Code.fromInline('exports.handler = async (e) => e;'),
+        timeout: Duration.seconds(3),
+      });
+    new Monitoring(stack, 'Monitoring', {
+      shopEnv: dev,
+      httpApi: new HttpApi(stack, 'Api'),
+      preSignUpFn: fakeFunction('PreSignUp'),
+      apiFunctions: { catalog: fakeFunction('Catalog') },
+      workerFunctions: { 'order-processor': fakeFunction('Worker') },
+      ordersQueue: new Queue(stack, 'OrdersQueue'),
+      ordersDeadLetterQueue: new Queue(stack, 'OrdersDlq'),
+    });
+
+    // Act
+    const template = Template.fromStack(stack);
+
+    // Assert: runbook sqs-backlog đọc các widget này; dev vẫn chỉ 3 alarm như trước
+    const body = JSON.stringify(
+      Object.values(template.findResources('AWS::CloudWatch::Dashboard'))[0],
+    );
+    expect(body).toContain('\\"label\\":\\"order-processor\\"');
+    expect(body).toContain('ApproximateAgeOfOldestMessage');
+    expect(body).toContain('\\"label\\":\\"DLQ\\"');
+    template.resourceCountIs('AWS::CloudWatch::Alarm', 3);
   });
 });
