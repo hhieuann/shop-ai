@@ -6,7 +6,7 @@ Dev và staging không có alarm (giữ dưới 10 alarm miễn phí của tài 
 
 Worker `order-processor` nhận tin `{ orderId, userId, correlationId }` từ hàng đợi đơn (ordering.md, luồng SQS). Một tin lỗi **3 lần** thì SQS chuyển sang DLQ. Đơn đó **vẫn ở `PENDING`**: đã trừ kho, khách chưa nhận email xác nhận, `events` chưa có `PURCHASE`. MVP không có trạng thái `FAILED`, nên phải xử lý bằng tay theo trang này.
 
-Hàng đợi đơn và DLQ có từ #228; worker làm ở PR sau. Trước khi có worker, tin chỉ nằm ở hàng đợi chính, chưa vào DLQ.
+Hàng đợi đơn và DLQ có từ #228. Worker là Lambda `…-OrderProcessorFunction…` (log group `…-OrderProcessorLogs…`), code ở `services/api/src/modules/ordering/processorLambda.ts` (#259). Dev và staging không có alarm, nhưng dashboard `<tiền tố>-overview` có widget số tin trong DLQ ở mọi môi trường. Tin còn tồn ở hàng đợi chính mà chưa vào DLQ thì xem [`sqs-backlog.md`](sqs-backlog.md).
 
 ## Dấu hiệu
 
@@ -17,7 +17,7 @@ Hàng đợi đơn và DLQ có từ #228; worker làm ở PR sau. Trước khi c
 
 1. Mở dashboard `<tiền tố>-overview`: lỗi Lambda của worker và `ordering` có tăng cùng lúc không.
 2. SQS → hàng đợi `…-OrdersDeadLetterQueue…` → **Send and receive messages** → **Poll for messages**. Ghi lại `orderId`, `correlationId` của từng tin. **Không** bấm Delete lúc này.
-3. CloudWatch → Logs Insights, log group của worker, khung giờ 1 giờ:
+3. CloudWatch → Logs Insights, log group `…-OrderProcessorLogs…` của worker, khung giờ 1 giờ:
 
    ```text
    fields @timestamp, level, message, error.name, error.message
