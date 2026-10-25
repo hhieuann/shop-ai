@@ -11,6 +11,7 @@ import {
   signIn,
   type Order,
   type OrderList,
+  type OrderStatus,
   type ProductList,
   type ProductSummary,
 } from './api.js';
@@ -22,6 +23,12 @@ const SHIPPING_ADDRESS = {
   address: 'Không giao, kiểm thử tự động',
   province: 'TP. Hồ Chí Minh',
 };
+
+/** Đơn vừa đặt: còn `PENDING` hoặc worker đã xác nhận (`CONFIRMED`) */
+const OPEN_STATUSES: readonly OrderStatus[] = ['PENDING', 'CONFIRMED'];
+/** Worker thường xác nhận trong vài giây; chờ tối đa 20 giây, đọc lại mỗi giây */
+const CONFIRM_TIMEOUT_MS = 20_000;
+const POLL_INTERVAL_MS = 1_000;
 
 /** ULID hợp lệ sinh lúc chạy, gần như chắc chắn không có trong bảng: 4 ký tự đầu cố định + 22 số */
 function unknownOrderId(): string {
@@ -35,6 +42,17 @@ describe.skipIf(!ready)('E2E đặt hàng', () => {
   // Sinh lúc chạy (UUID), không viết cứng chuỗi trông như khoá để gitleaks không báo nhầm
   const idempotencyKey = randomUUID();
   let orderId = '';
+
+  /** Đọc lại đơn tới khi có trạng thái mong muốn hoặc hết giờ; trả trạng thái đọc được lần cuối */
+  async function waitForStatus(id: string, wanted: OrderStatus): Promise<OrderStatus | undefined> {
+    const deadline = Date.now() + CONFIRM_TIMEOUT_MS;
+    let status: OrderStatus | undefined;
+    for (;;) {
+      status = ((await call(`/orders/${id}`, { token })).body as Order | null)?.status;
+      if (status === wanted || Date.now() >= deadline) return status;
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+  }
 
   const orderBody = () => ({
     items: [{ productId: product.productId, quantity: 1, expectedPrice: product.price }],
@@ -120,7 +138,9 @@ describe.skipIf(!ready)('E2E đặt hàng', () => {
     expect(res.status).toBe(200);
     expect(res.cacheControl).toContain('no-store');
     const [first] = (res.body as OrderList).items;
-    expect(first).toMatchObject({ orderId, status: 'PENDING', itemCount: 1 });
+    expect(first).toMatchObject({ orderId, itemCount: 1 });
+    // Worker order-processor có thể đã xác nhận đơn trong vài giây sau khi đặt (#263)
+    expect(OPEN_STATUSES).toContain(first?.status);
   });
 
   it('getOrder_returnsPlacedOrder', async () => {
@@ -129,12 +149,21 @@ describe.skipIf(!ready)('E2E đặt hàng', () => {
 
     // Assert
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
-      orderId,
-      status: 'PENDING',
-      shippingAddress: SHIPPING_ADDRESS,
-    });
+    expect(res.body).toMatchObject({ orderId, shippingAddress: SHIPPING_ADDRESS });
+    expect(OPEN_STATUSES).toContain((res.body as Order).status);
   });
+
+  it(
+    'getOrder_becomesConfirmed_byWorker',
+    async () => {
+      // Act: worker đọc hàng đợi đơn, chuyển PENDING → CONFIRMED (ordering.md luồng SQS bước 2.1)
+      const status = await waitForStatus(orderId, 'CONFIRMED');
+
+      // Assert: các test huỷ phía sau chạy trên đơn đã CONFIRMED (khách huỷ được, BR-10)
+      expect(status).toBe('CONFIRMED');
+    },
+    CONFIRM_TIMEOUT_MS + 10_000,
+  );
 
   it('getOrder_returns404_whenOrderNotOwned', async () => {
     // Act: khoá đọc gồm userId của token, nên đơn của người khác và đơn không có cùng trả 404
