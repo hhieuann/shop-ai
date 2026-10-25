@@ -78,6 +78,21 @@ export interface OrderHistory {
   ): Promise<OrderHistoryPage>;
 }
 
+/** Một lần ghi giao dịch huỷ đơn (dynamodb-design.md, huỷ đơn) */
+export interface CancelOrderCommand {
+  /** Đơn vừa đọc; trạng thái lúc ghi phải còn đúng `order.status` */
+  readonly order: Order;
+  readonly now: string;
+}
+
+/**
+ * Huỷ đơn trong bảng orders: đổi `CANCELLED`, hoàn kho từng món, giảm `#OPEN` khi đơn đang mở,
+ * trong một giao dịch (ordering.md BR-12). `statusChanged` khi trạng thái đã đổi kể từ lúc đọc.
+ */
+export interface OrderCancellation {
+  cancel(command: CancelOrderCommand): Promise<'cancelled' | 'statusChanged'>;
+}
+
 /** Tin gửi worker order-processor (ordering.md, luồng SQS); không có dữ liệu cá nhân (O8) */
 export interface OrderMessage {
   readonly orderId: string;
