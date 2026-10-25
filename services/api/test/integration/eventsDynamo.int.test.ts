@@ -61,4 +61,32 @@ describe('DynamoEventRepository', () => {
       ConditionalCheckFailedException,
     );
   });
+
+  it('putOnce_returnsFalse_andKeepsFirstRow_whenSameKeyIsWrittenAgain', async () => {
+    // Arrange: cùng tin order-confirmed giao hai lần thì cùng khoá
+    const purchase = event({
+      userIdHash: 'hash-c',
+      eventId: 'order-1#gpu-1',
+      eventType: 'PURCHASE',
+      productId: 'gpu-1',
+      orderId: 'order-1',
+      quantity: 1,
+    });
+
+    // Act
+    const first = await repo.putOnce(purchase);
+    const second = await repo.putOnce({ ...purchase, quantity: 9 });
+
+    // Assert
+    expect([first, second]).toEqual([true, false]);
+    const { Items } = await dynamo.doc.send(
+      new QueryCommand({
+        TableName: EVENTS,
+        KeyConditionExpression: 'userIdHash = :u',
+        ExpressionAttributeValues: { ':u': 'hash-c' },
+      }),
+    );
+    expect(Items).toHaveLength(1);
+    expect(Items?.[0]).toMatchObject({ orderId: 'order-1', quantity: 1, eventType: 'PURCHASE' });
+  });
 });

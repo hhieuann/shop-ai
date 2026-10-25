@@ -1,6 +1,6 @@
 # Threat model bản 0 (STRIDE)
 
-Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10 và 22/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
+Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10 và 25/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
 
 Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới ADR-0017,
 `docs/business/` (account, cart, ordering, events, recommendation),
@@ -128,10 +128,10 @@ Route `POST /api/v1/events` đã có trong `contracts/openapi.yaml` (#174): bắ
 | E3 | S | Gửi sự kiện mang `userId` của người khác | Vừa | `userId` lấy từ token Cognito, không nhận từ body (events.md mục 5); contract từ chối trường lạ (`additionalProperties: false`, #174) | Đã có (contract) · Theo thiết kế (module) |
 | E4 | T | Client gửi `timestamp` giả để làm lệch việc chia train, test theo thời gian | Vừa | Server đặt `timestamp` (events.md mục 3) | Theo thiết kế |
 | E5 | I | `userId` thật lọt vào bảng `events` hoặc dữ liệu huấn luyện | Cao | Lưu `HMAC(key, userId)` thay cho `userId` (events.md mục 2); pipeline chỉ xuất các cột cho phép | Theo thiết kế |
-| E6 | I | Khoá HMAC bị lộ (trong code, log, repo public) | Cao | SSM SecureString `/shop/<env>/events/hmac-key`, tạo bằng CLI nên không nằm trong repo hay template CloudFormation; chỉ Lambda `events`, Lambda gợi ý (tra `FOR_YOU#<userIdHash>`) và pipeline có `ssm:GetParameter` trên đúng tham số; một hàm băm dùng chung `services/api/src/shared/userIdHash.ts` không bao giờ log khoá; gitleaks quét mỗi PR | Đã có (Lambda `events`, #204) · Theo thiết kế (gợi ý, pipeline) |
+| E6 | I | Khoá HMAC bị lộ (trong code, log, repo public) | Cao | SSM SecureString `/shop/<env>/events/hmac-key`, tạo bằng CLI nên không nằm trong repo hay template CloudFormation; chỉ Lambda `events`, Lambda nhận `PURCHASE`, Lambda gợi ý (tra `FOR_YOU#<userIdHash>`) và pipeline có `ssm:GetParameter` trên đúng tham số; một hàm băm dùng chung `services/api/src/shared/userIdHash.ts` không bao giờ log khoá; gitleaks quét mỗi PR | Đã có (Lambda `events`, #204) · Theo thiết kế (gợi ý, pipeline) |
 | E7 | D | Spam sự kiện làm tăng chi phí DynamoDB | Vừa | Throttle stage 50 request/giây, burst 100 (`api-stack.ts`); rule WAF cho `/api/events` | Đã có (throttle) · Theo thiết kế (WAF) |
 | E8 | E | Role `events` đọc, ghi được bảng của module khác | Vừa | Mỗi module một role, chỉ quyền trên bảng của mình (ADR-0009, ADR-0012); review IAM ở tuần 4 | Theo thiết kế |
-| E9 | S, T | Tin giả gửi lên topic `order-confirmed` hoặc thẳng vào hàng đợi `events`, tạo `PURCHASE` giả | Cao | Topic policy chỉ cho role `ordering` gọi `sns:Publish`; queue policy chỉ nhận từ đúng topic (`aws:SourceArn`); consumer bỏ tin sai định dạng vào DLQ, không ghi | Đề xuất (An dựng topic và hàng đợi) |
+| E9 | S, T | Tin giả gửi lên topic `order-confirmed` hoặc thẳng vào hàng đợi `events`, tạo `PURCHASE` giả | Cao | Topic policy chỉ cho role `ordering` gọi `sns:Publish`; queue policy chỉ nhận từ đúng topic (`aws:SourceArn`); consumer bỏ tin sai định dạng vào DLQ, không ghi; khoá `PURCHASE` là `<orderId>#<productId>` nên tin giao lại không thành lượt mua thứ hai; role consumer không có `sqs:SendMessage`, `sns:Publish` | Đã có: queue policy (#211), consumer (25/10) · Đề xuất: topic policy khi `order-processor` có role |
 
 ### 4.4. Chung cho cả ba luồng
 
@@ -155,7 +155,7 @@ Mỗi dòng **Đề xuất** sẽ thành một issue riêng, ghi rõ mức và c
 - [ ] C1: chọn cách xử lý việc gọi thẳng `execute-api` (An, tuần 5)
 - [ ] C6: xác nhận đã tắt "Allow administrators to bypass" của environment `production`; An sửa câu "giới hạn bằng tên stack" trong ADR-0013 cho đúng thực tế (#180)
 - [ ] E2: thí nghiệm đầu độc gợi ý ở tuần 5
-- [ ] E9: topic policy và queue policy khi An dựng `order-confirmed`
+- [ ] E9: queue policy đã có (#211), consumer đã có (25/10); còn topic policy chỉ cho role `order-processor` publish khi worker có role
 - [ ] Bản 1: thêm pipeline gợi ý mỗi đêm, bucket dữ liệu, bảng `recs`, trang admin
 
 ## 6. Câu hỏi mở

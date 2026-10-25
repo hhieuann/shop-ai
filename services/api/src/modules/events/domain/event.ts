@@ -19,8 +19,21 @@ export interface StoredEvent {
   readonly timestamp: string;
   /** Giây kể từ 1970, để DynamoDB TTL tự xoá sau RETENTION_DAYS ngày */
   readonly ttl: number;
+  /** Chỉ có ở PURCHASE: pipeline gom món theo đơn cho luật mua kèm (events.md mục 1) */
+  readonly orderId?: string;
+  /** Chỉ có ở PURCHASE: số lượng của món trong đơn */
+  readonly quantity?: number;
 }
 
 export function expiresAt(timestamp: string): number {
   return Math.floor(Date.parse(timestamp) / 1000) + RETENTION_DAYS * 24 * 60 * 60;
+}
+
+/**
+ * ID của sự kiện PURCHASE không ngẫu nhiên mà suy ra từ đơn và sản phẩm.
+ * SQS có thể giao một tin nhiều lần (at-least-once); cùng tin thì cùng khoá, nên ghi lần hai
+ * bị điều kiện `attribute_not_exists` chặn, không sinh lượt mua giả làm lệch gợi ý.
+ */
+export function purchaseEventId(orderId: string, productId: string): string {
+  return `${orderId}#${productId}`;
 }

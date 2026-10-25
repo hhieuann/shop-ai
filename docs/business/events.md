@@ -8,6 +8,7 @@
 >
 > Cập nhật 22/10/2026: route `POST /api/v1/events` đã có trong contract (#174), code module
 > ở `services/api/src/modules/events` (#200), hạ tầng ở `infra/lib/api-stack.ts` (`addEvents`).
+> Cập nhật 25/10/2026: consumer `PURCHASE` (`purchaseLambda.ts`, `addPurchaseConsumer`).
 
 ## 1. Loại sự kiện
 
@@ -29,7 +30,20 @@ món trong đơn thành một sự kiện `PURCHASE`. `ordering` không ghi th�
 ADR-0009. Nội dung tin: `{ orderId, userId, confirmedAt, items: [{ productId, quantity }] }`,
 không có `shippingAddress` (ordering.md, luồng SQS bước 2.3). Consumer dùng `confirmedAt`
 làm thời điểm sự kiện, băm `userId` như mục 2, và lưu thêm `orderId`, `quantity` để pipeline
-gom món theo đơn cho luật mua kèm. Consumer làm sau khi An dựng topic và hàng đợi.
+gom món theo đơn cho luật mua kèm.
+
+**Consumer `PURCHASE` (25/10/2026):** Lambda riêng `EventsPurchaseFunction` đọc hàng đợi SQS
+của `events` (raw message, không có envelope SNS), mỗi lần tối đa 10 tin.
+
+- Mỗi sản phẩm trong đơn thành một dòng; cùng sản phẩm nhiều dòng thì cộng `quantity`.
+- `eventId` của `PURCHASE` là `<orderId>#<productId>`, không ngẫu nhiên. SQS có thể giao một tin
+  nhiều lần; cùng tin thì cùng khoá, PutItem có điều kiện `attribute_not_exists` chặn lần ghi thứ hai
+  và consumer coi như đã xong, không sinh lượt mua giả.
+- Tin không phải JSON hoặc sai schema (thiếu `orderId`, `items` rỗng, `quantity` không phải số
+  nguyên dương, `confirmedAt` không phải ISO 8601) thì báo lỗi riêng tin đó (`batchItemFailures`),
+  không ghi gì; sau 5 lần SQS chuyển vào DLQ, giữ 14 ngày để xem lại.
+- Ghi lỗi (DynamoDB, SSM) cũng báo lỗi riêng tin đó để SQS giao lại; tin khác trong lô vẫn ghi.
+- Log chỉ có `messageId`, `orderId` và số dòng ghi được, không có `userId` hay `userIdHash` (mục 5).
 
 ## 2. Ẩn danh `userId`
 
@@ -51,12 +65,12 @@ gom món theo đơn cho luật mua kèm. Consumer làm sau khi An dựng topic v
 
 | Trường | Ghi chú |
 |---|---|
-| `eventId` | Sinh tự động |
+| `eventId` | ULID do server sinh; riêng `PURCHASE` là `<orderId>#<productId>` (mục 1) |
 | `userIdHash` | HMAC, không phải `userId` thật |
-| `itemId` | Sản phẩm liên quan |
+| `productId` | Sản phẩm liên quan, cùng tên với API |
 | `eventType` | `VIEW` \| `ADD_TO_CART` \| `PURCHASE` |
-| `timestamp` | **Do server đặt**, không nhận từ client (tránh client gửi giờ giả) |
-| `source` | Tuỳ chọn: web, mobile... |
+| `timestamp` | **Do server đặt**, không nhận từ client (tránh client gửi giờ giả); `PURCHASE` lấy `confirmedAt` của ordering |
+| `orderId`, `quantity` | Chỉ có ở `PURCHASE` |
 
 ## 4. Dùng để làm gì
 
