@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { apiEvent, parseBody } from '../../../test/helpers/http.js';
 import { ConflictError } from '../../shared/errors.js';
 import {
+  CannotCancelError,
   IdempotencyKeyReusedError,
   InvalidOrderCursorError,
   OrderNotFoundError,
@@ -17,6 +18,7 @@ import type { OrderingUseCases } from './routes.js';
 const CREATE = 'POST /api/v1/orders';
 const LIST = 'GET /api/v1/orders';
 const DETAIL = 'GET /api/v1/orders/{orderId}';
+const CANCEL = 'DELETE /api/v1/orders/{orderId}';
 /** Idempotency-Key sinh lúc chạy (UUID); không viết cứng chuỗi trông như khoá để gitleaks không báo nhầm */
 const IDEMPOTENCY_HEADER = randomUUID();
 const USER = 'user-sub-1';
@@ -60,6 +62,7 @@ function useCases(result = { value: { order: ORDER, created: true }, replayed: f
     placeOrder: vi.fn().mockResolvedValue(result),
     listOrders: vi.fn().mockResolvedValue({ items: [SUMMARY], nextCursor: 'next' }),
     getOrder: vi.fn().mockResolvedValue(ORDER),
+    cancelOrder: vi.fn().mockResolvedValue({ ...ORDER, status: 'CANCELLED' }),
   } satisfies OrderingUseCases;
 }
 
@@ -348,24 +351,68 @@ describe('ordering handler · GET /api/v1/orders/{orderId}', () => {
   });
 });
 
-describe('ordering handler · route chưa có', () => {
-  it('route_returns501_untilImplemented DELETE /api/v1/orders/{orderId}', async () => {
+describe('ordering handler · DELETE /api/v1/orders/{orderId}', () => {
+  function cancelEvent(options: { userId?: string } = { userId: USER }) {
+    const { userId } = options;
+    return apiEvent({ routeKey: CANCEL, userId, pathParameters: { orderId: ORDER.orderId } });
+  }
+
+  it('cancelOrder_returns200NoStore_withUserFromToken', async () => {
     // Arrange
-    const handler = makeHandler(useCases());
+    const cases = useCases();
+    const handler = makeHandler(cases);
 
     // Act
-    const res = await handler(
-      apiEvent({
-        routeKey: 'DELETE /api/v1/orders/{orderId}',
-        userId: USER,
-        pathParameters: { orderId: ORDER.orderId },
-      }),
-    );
+    const res = await handler(cancelEvent());
 
-    // Assert: #231 huỷ đơn
-    expect(res.statusCode).toBe(501);
+    // Assert
+    expect(res.statusCode).toBe(200);
+    expect(res.headers?.['cache-control']).toBe('no-store');
+    expect(parseBody(res)).toEqual({ ...ORDER, status: 'CANCELLED' });
+
+    // Verify: userId từ token, correlationId là requestId
+    expect(cases.cancelOrder).toHaveBeenCalledExactlyOnceWith({
+      userId: USER,
+      orderId: ORDER.orderId,
+      correlationId: 'req-test',
+    });
   });
 
+  it.each([
+    ['CANNOT_CANCEL', new CannotCancelError(ORDER.orderId), 409],
+    ['không có hoặc của người khác', new OrderNotFoundError(ORDER.orderId), 404],
+  ])('cancelOrder_returnsProblem_when%s', async (_label, error, status) => {
+    // Arrange
+    const cases = useCases();
+    cases.cancelOrder.mockRejectedValue(error);
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(cancelEvent());
+
+    // Assert
+    expect(res.statusCode).toBe(status);
+    expect(res.headers?.['content-type']).toBe('application/problem+json');
+    if (status === 409) expect(parseBody(res)).toMatchObject({ code: 'CANNOT_CANCEL' });
+  });
+
+  it('cancelOrder_returns401_whenNoToken', async () => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(cancelEvent({}));
+
+    // Assert
+    expect(res.statusCode).toBe(401);
+
+    // Verify
+    expect(cases.cancelOrder).not.toHaveBeenCalled();
+  });
+});
+
+describe('ordering handler · route lạ', () => {
   it('route_returns404_whenUnknownRoute', async () => {
     // Arrange
     const handler = makeHandler(useCases());

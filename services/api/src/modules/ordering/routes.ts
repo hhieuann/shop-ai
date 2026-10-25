@@ -2,6 +2,7 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer, Context } from 'aws-lambd
 import { z } from 'zod';
 import { json, problem, validationProblem, type HttpResult } from '../../shared/http/response.js';
 import { parseIdempotencyKey } from '../../shared/idempotency.js';
+import type { CancelOrderInput } from './application/cancelOrder.js';
 import type { ListOrdersInput, ListOrdersOutput } from './application/listOrders.js';
 import type { PlaceOrderOutput } from './application/placeOrder.js';
 import { MAX_PAGE_SIZE } from './domain/history.js';
@@ -28,6 +29,7 @@ export interface OrderingUseCases {
   ): Promise<{ readonly value: PlaceOrderOutput; readonly replayed: boolean }>;
   listOrders(input: ListOrdersInput): Promise<ListOrdersOutput>;
   getOrder(input: { readonly userId: string; readonly orderId: string }): Promise<Order>;
+  cancelOrder(input: CancelOrderInput): Promise<Order>;
 }
 
 type Route = (
@@ -101,15 +103,6 @@ function orderResponse(status: number, body: unknown): HttpResult {
   return { ...result, headers: { ...result.headers, 'cache-control': 'no-store' } };
 }
 
-/** DELETE đơn chưa có use case (#231): trả 501 như Lambda tạm ở #234 */
-const notImplemented: Route = async (event) =>
-  problem({
-    status: 501,
-    title: 'Not Implemented',
-    detail: `Route ${event.routeKey} chưa có`,
-    traceId: event.requestContext.requestId,
-  });
-
 /** Bảng route → use case. Khoá trùng route trong contracts/openapi.yaml và HTTP API ở infra/. */
 export const routes: Readonly<Record<string, Route>> = {
   'POST /api/v1/orders': async (event, userId, { placeOrder }, context) => {
@@ -141,5 +134,10 @@ export const routes: Readonly<Record<string, Route>> = {
     const orderId = event.pathParameters?.orderId ?? '';
     return orderResponse(200, await getOrder({ userId, orderId }));
   },
-  'DELETE /api/v1/orders/{orderId}': notImplemented,
+  'DELETE /api/v1/orders/{orderId}': async (event, userId, { cancelOrder }) => {
+    // Không huỷ được → CannotCancelError → 409; không có hoặc của người khác → 404
+    const orderId = event.pathParameters?.orderId ?? '';
+    const correlationId = event.requestContext.requestId;
+    return orderResponse(200, await cancelOrder({ userId, orderId, correlationId }));
+  },
 };
