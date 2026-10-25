@@ -70,3 +70,14 @@ def run_nightly(
     if active is not None and active != version:
         store.extend_ttl(rec_type, active, expires_at(now))
     return RunResult(rec_type, version, len(rows), False, active, "kém baseline, giữ phiên bản cũ")
+
+
+def run_bestsellers(
+    store: RecsStore, recs: Mapping[str, Sequence[Rec]], basis: str, now: datetime
+) -> RunResult:
+    """Hàng bán chạy chính là baseline nên luôn bật; `basis` cho API biết cách xếp (NEWEST là chưa đủ đơn)."""
+    version = version_for(now)
+    rows = row_items("BESTSELLER", version, recs, now)
+    store.put_items(rows)
+    store.put_items([pointer_item("BESTSELLER", version, now, basis)])
+    return RunResult("BESTSELLER", version, len(rows), True, version, basis)

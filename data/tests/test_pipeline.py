@@ -7,8 +7,14 @@ from datetime import UTC, datetime, timedelta
 from data.evaluate import Scores
 from data.model.association import mine_rules
 from data.model.item_cf import build_user_items, item_similarity
-from data.pipeline.build import also_bought, bestseller_counts, for_you
-from data.pipeline.nightly import run_nightly
+from data.pipeline.build import (
+    CatalogItem,
+    also_bought,
+    bestseller_counts,
+    bestsellers,
+    for_you,
+)
+from data.pipeline.nightly import run_bestsellers, run_nightly
 from data.pipeline.recs_table import Rec, RecType, pointer_item, row_items, version_for
 
 NOW = datetime(2026, 10, 22, 17, 0, tzinfo=UTC)
@@ -55,7 +61,7 @@ def test_dong_goi_y_co_khoa_rank_dem_hai_chu_so_va_ttl_7_ngay():
     rows = row_items("ALSO_BOUGHT", 20261022, RECS, NOW)
 
     # Assert
-    assert [(r["pk"], r["sk"], r["itemId"]) for r in rows] == [
+    assert [(r["pk"], r["sk"], r["productId"]) for r in rows] == [
         ("ALSO_BOUGHT#P1", "20261022#01", "P2"),
         ("ALSO_BOUGHT#P1", "20261022#02", "P3"),
     ]
@@ -63,16 +69,16 @@ def test_dong_goi_y_co_khoa_rank_dem_hai_chu_so_va_ttl_7_ngay():
     assert rows[0]["generatedAt"] == "2026-10-22T17:00:00.000Z"
 
 
-def test_chi_giu_toi_da_10_goi_y_moi_anchor():
-    # Arrange
-    many = {"P1": [Rec(f"X{i}", 1.0, "BESTSELLER") for i in range(15)]}
+def test_chi_giu_toi_da_20_goi_y_moi_anchor():
+    # Arrange: API còn lọc hàng hết, INACTIVE, exclude nên pipeline ghi 20 dòng
+    many = {"P1": [Rec(f"X{i}", 1.0, "BESTSELLER") for i in range(25)]}
 
     # Act
     rows = row_items("ALSO_BOUGHT", 1, many, NOW)
 
     # Assert
-    assert [r["sk"] for r in rows][-1] == "1#10"
-    assert len(rows) == 10
+    assert [r["sk"] for r in rows][-1] == "1#20"
+    assert len(rows) == 20
 
 
 def test_con_tro_khong_co_ttl():
@@ -177,3 +183,66 @@ def test_danh_cho_ban_dung_cf_va_bo_mon_da_tuong_tac():
 
     # Assert: b từ CF, c bù từ bán chạy, không gợi ý lại a
     assert [(r.item_id, r.source) for r in recs["u1"]] == [("b", "ITEM_CF"), ("c", "BESTSELLER")]
+
+
+# --------------------------------------------------------------------------
+# Hàng bán chạy: 30 → 90 → 365 ngày, ít nhất 5 đơn; không đủ thì hàng mới nhất
+# --------------------------------------------------------------------------
+CATALOG = [
+    CatalogItem("g1", "gpu", "ACTIVE", "2026-08-01T00:00:00.000Z"),
+    CatalogItem("g2", "gpu", "ACTIVE", "2026-09-01T00:00:00.000Z"),
+    CatalogItem("p1", "psu", "ACTIVE", "2026-07-01T00:00:00.000Z"),
+    CatalogItem("x1", "gpu", "INACTIVE", "2026-10-01T00:00:00.000Z"),
+]
+
+
+def orders(n: int, product: str, days_ago: int) -> list[tuple[str, str, datetime]]:
+    return [(f"{product}-o{i}", product, NOW - timedelta(days=days_ago)) for i in range(n)]
+
+
+def test_ban_chay_30_ngay_khi_du_5_don():
+    # Arrange
+    purchases = orders(4, "p1", 3) + orders(1, "g1", 3)
+
+    # Act
+    basis, recs = bestsellers(purchases, CATALOG, NOW)
+
+    # Assert: p1 bán nhiều nhất; gpu chỉ có g1 bán được rồi bù g2 mới nhất; không có hàng INACTIVE
+    assert basis == "PURCHASES_30D"
+    assert [r.item_id for r in recs["ALL"]] == ["p1", "g1", "g2"]
+    assert [r.item_id for r in recs["gpu"]] == ["g1", "g2"]
+    assert set(recs) == {"ALL", "gpu", "psu"}
+
+
+def test_noi_cua_so_khi_30_ngay_chua_du_5_don():
+    # Arrange: 5 đơn nhưng 60 ngày trước
+    purchases = orders(5, "g2", 60)
+
+    # Act
+    basis, _ = bestsellers(purchases, CATALOG, NOW)
+
+    # Assert
+    assert basis == "PURCHASES_90D"
+
+
+def test_hang_moi_nhat_khi_chua_du_don_o_moi_cua_so():
+    # Act
+    basis, recs = bestsellers(orders(2, "p1", 3), CATALOG, NOW)
+
+    # Assert: g2 tạo sau g1, sau p1; x1 INACTIVE bị bỏ
+    assert basis == "NEWEST"
+    assert [r.item_id for r in recs["ALL"]] == ["g2", "g1", "p1"]
+
+
+def test_con_tro_ban_chay_luon_bat_va_ghi_basis():
+    # Arrange
+    store = MemoryStore()
+    basis, recs = bestsellers([], CATALOG, NOW)
+
+    # Act
+    result = run_bestsellers(store, recs, basis, NOW)
+
+    # Assert
+    assert result.activated
+    assert store.items[("META", "ACTIVE#BESTSELLER")]["basis"] == "NEWEST"
+    assert store.items[("BESTSELLER#gpu", "20261022#01")]["productId"] == "g2"
