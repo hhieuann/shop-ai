@@ -198,7 +198,7 @@ expiresAt       Number   epoch giây, 24 giờ sau khi tạo; bảng orders bậ
   3. **1..n sai:** dựa vào `ALL_OLD` của món đó trả 409 `OUT_OF_STOCK` hoặc `PRICE_CHANGED` (có người mua hoặc đổi giá giữa bước đọc và giao dịch).
   4. **n+3 sai:** 409 `TOO_MANY_OPEN_ORDERS`.
 - Giới hạn 100 thao tác mỗi giao dịch → một đơn tối đa 50 dòng (ordering.md BR-02) cộng 4 thao tác, tối đa 54, là an toàn.
-- IAM giới hạn `UpdateItem` trên `products` chỉ cột `stock` (O7, ADR-0017). Nếu thử trên dev thấy điều kiện `status`, `price` hoặc `ALL_OLD` bị chặn thì làm theo ADR-0017 (bỏ điều kiện IAM), không bỏ điều kiện của giao dịch.
+- IAM cho `ordering` `UpdateItem` trên `products` **không** có điều kiện `dynamodb:Attributes` (O7, ADR-0017): thử trên dev 25/10 thì điều kiện này chặn lệnh trừ kho vì `ConditionExpression` dùng `status`, `price`. Điều kiện của giao dịch giữ nguyên.
 
 **Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn `PENDING` hoặc `CONFIRMED` thêm `UpdateItem` item `#OPEN`: `SET openOrders = openOrders - 1` với điều kiện `openOrders > 0`.
 

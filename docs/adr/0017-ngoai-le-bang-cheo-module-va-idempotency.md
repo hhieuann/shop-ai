@@ -23,7 +23,7 @@
 |---|---|---|---|
 | `cart` | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index | Xem giỏ, thêm món, gộp giỏ: đọc tên, ảnh, giá, tồn kho, trạng thái |
 | `ordering` | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index, `ProjectionExpression` `productId, name, price, stock, status` | Đọc trước giao dịch đặt hàng: chụp tên, giá vào đơn, kiểm lại từng món (BR-03, BR-07) |
-| `ordering` | `products` (catalog) | `dynamodb:UpdateItem`, điều kiện IAM `dynamodb:Attributes` chỉ `productId`, `stock` (threat model O7, #234) | Trừ tồn kho khi đặt, cộng lại khi huỷ, trong `TransactWriteItems` |
+| `ordering` | `products` (catalog) | `dynamodb:UpdateItem` trên ARN bảng, không có điều kiện `dynamodb:Attributes` (threat model O7, xem bên dưới) | Trừ tồn kho khi đặt, cộng lại khi huỷ, trong `TransactWriteItems` |
 | `ordering` | `carts` (cart) | `dynamodb:GetItem` | Đọc giỏ để biết danh sách và `version` hiện tại |
 | `ordering` | `carts` (cart) | `dynamodb:UpdateItem`, ghi `SET items, version, updatedAt` với điều kiện `version = :v` | Bỏ các món đã đặt khỏi giỏ trong cùng giao dịch, không đè thay đổi giỏ song song |
 | `recommendation` (API) | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index (giống `cart`) | Lấy tồn kho, trạng thái mới nhất để bỏ hàng hết, `INACTIVE` khỏi gợi ý |
@@ -32,7 +32,7 @@
 
 Không cấp `PutItem`, `DeleteItem`, `BatchWriteItem` trên bảng của module khác. Không cấp `Scan` trên bảng của module khác, **trừ** pipeline gợi ý mỗi đêm đọc `products` và `events` như bảng trên (job nền, catalog 104 sản phẩm; luật "không Scan" của API vẫn giữ cho mọi Lambda phục vụ request).
 
-**Giới hạn theo thuộc tính cho `ordering` trên `products` (O7):** điều kiện `dynamodb:Attributes` đã có trong IAM từ #234. Chưa thử được trên sandbox, nên thử trên dev bằng giao dịch đặt hàng thật khi có code `POST /api/v1/orders` (#229), gồm cả điều kiện `stock >= :qty` trong `ConditionExpression`. Chạy được thì giữ; không chạy thì bỏ điều kiện IAM, giữ mức hành động `UpdateItem` như bảng, và ghi kết quả vào đây. Kết quả thử: _chưa có (chờ #229)_.
+**Giới hạn theo thuộc tính cho `ordering` trên `products` (O7):** điều kiện `dynamodb:Attributes` đã có trong IAM từ #234. Chưa thử được trên sandbox, nên thử trên dev bằng giao dịch đặt hàng thật khi có code `POST /api/v1/orders` (#229), gồm cả điều kiện `stock >= :qty` trong `ConditionExpression`. Chạy được thì giữ; không chạy thì bỏ điều kiện IAM, giữ mức hành động `UpdateItem` như bảng, và ghi kết quả vào đây. Kết quả thử (25/10/2026, dev, sau #248): `POST /api/v1/orders` trả 500, IAM chặn lệnh trừ kho (`AccessDeniedException` với `dynamodb:UpdateItem` trên `products`, 3 lần lúc 02:02:24, 02:03:35, 02:03:53 UTC; dòng log rút gọn: `… is not authorized to perform: dynamodb:UpdateItem on resource: …:table/shop-dev-api-ProductsTable… because no identity-based policy allows the dynamodb:UpdateItem action`) vì `dynamodb:Attributes` tính cả thuộc tính trong `ConditionExpression`, mà điều kiện trừ kho dùng `status`, `price` ngoài `stock`. Đã bỏ điều kiện IAM, giữ nguyên điều kiện của giao dịch (`stock >= :qty AND status = ACTIVE AND price = :price`). Role `ordering` vẫn chỉ có `UpdateItem` trên `products` như bảng trên, nên về lý thuyết sửa được giá; code chỉ ghi `SET stock = …` và đi qua port, chấp nhận rủi ro này (O7).
 
 **2. Code vẫn đi qua port.** Luật "module không import module khác" (`.dependency-cruiser.cjs`) giữ nguyên:
 
