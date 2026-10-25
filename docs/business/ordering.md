@@ -107,7 +107,7 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
    - Cách không phụ thuộc lần gửi này (DynamoDB Streams → EventBridge Pipes → SQS) để tuần Hardening.
 2. Worker `order-processor` nhận message:
    1. Chuyển `PENDING → CONFIRMED` bằng **ghi có điều kiện** (`status = PENDING`). Đơn đã `CONFIRMED` hoặc `CANCELLED` thì bỏ qua bước này.
-   2. Gửi email xác nhận qua SES, chống gửi trùng bằng Powertools Idempotency với khoá `orderId`.
+   2. Gửi email xác nhận qua SES, chống gửi trùng bằng Powertools Idempotency với khoá `orderId` (`<orderId>#CONFIRMED`, bảng `order-idempotency`). Chạy **sau** bước 3 (chốt 25/10/2026), để email lỗi không chặn tin `order-confirmed`. Email khách đọc từ Cognito theo `userId` (`ListUsers` lọc `sub`), không lưu vào đơn, không ghi log. Nội dung: mã đơn, tên × số lượng, tổng tiền, COD, miễn phí vận chuyển; không có họ tên, địa chỉ, SĐT, không có link. SES từ chối mà gửi lại cũng vô ích (địa chỉ chưa xác minh trong sandbox, tài khoản bị tạm dừng gửi, throttle sau khi client đã thử lại hết lượt, không tìm thấy email khách) thì ghi log warn + metric `OrderEmailRejected`, coi như xong, không vào DLQ. Lambda thiếu cấu hình thư (`USER_POOL_ID`, `ORDER_IDEMPOTENCY_TABLE`, `SENDER_EMAIL`) thì bỏ bước này.
    3. Gửi tin vào SNS topic `order-confirmed` (An dựng ở #211; ARN lấy từ biến môi trường). Chỉ hàng đợi SQS của module `events` (có DLQ) nghe topic này; **không có email báo admin** (chốt 24/10/2026: mỗi đơn một email JSON thô, phải xác nhận đăng ký ở từng môi trường, dùng chung email cảnh báo thì lẫn với báo động; admin xem đơn ở trang admin, khách đã có email SES). `ordering` không ghi thẳng bảng `events` (nhóm chốt 17/10 và 21/10/2026). Nội dung tin:
 
       ```json
@@ -121,7 +121,7 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 
       Không có `shippingAddress`, họ tên, SĐT, giá (threat model O8). Bước này chạy cả khi bước 2.1 bỏ qua vì đơn đã `CONFIRMED`, để lần thử lại vẫn gửi được nếu lần trước SNS lỗi. Không bọc Powertools Idempotency (chốt 25/10/2026): tin gửi lại giống hệt (`confirmedAt` là thời điểm chuyển `CONFIRMED`), consumer `events` đã chống trùng theo `<orderId>#<productId>` (#252), nên gửi lại không tạo lượt mua thứ hai. Đơn đã `CANCELLED` thì không gửi.
 3. SQS có thể giao một message nhiều lần (at-least-once). Nhờ bước 2.1 có điều kiện, bước 2.2 có idempotency và consumer của bước 2.3 chống trùng, chạy lại không đổi trạng thái sai, không gửi email hai lần, không ghi PURCHASE hai lần.
-4. Email lỗi **không** làm đơn quay lại `PENDING`: trạng thái đã đổi ở bước 2.1. Message được thử lại; quá 3 lần thì vào DLQ, alarm kêu, xử lý theo runbook `dlq-orders.md`.
+4. Email lỗi **không** làm đơn quay lại `PENDING`: trạng thái đã đổi ở bước 2.1. Chỉ lỗi tạm (mạng, SES hay Cognito lỗi 5xx) mới làm message được thử lại; quá 3 lần thì vào DLQ, alarm kêu (prod), xử lý theo runbook `dlq-orders.md`. Bị SES từ chối hẳn thì không thử lại (bước 2.2).
 5. Khách huỷ đơn khi message chưa tới worker: bước 2.1 thấy đơn đã `CANCELLED` nên bỏ qua, không gửi email xác nhận.
 6. Message `type: "CANCELLED"` (BR-13): worker đọc lại đơn, chỉ gửi email báo huỷ khi đơn đang `CANCELLED`; chống gửi trùng bằng Powertools Idempotency khoá `orderId` + `CANCELLED`. Không gửi tin `order-confirmed`.
 
