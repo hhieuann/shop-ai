@@ -30,6 +30,10 @@ export interface MonitoringProps {
   readonly preSignUpFn: IFunction;
   /** Lambda đứng sau API, theo tên module: vẽ lỗi và thời gian chạy của từng hàm trên dashboard */
   readonly apiFunctions: Readonly<Record<string, IFunction>>;
+  /** Lambda chạy nền (đọc SQS), theo tên: vẽ chung với Lambda API trên dashboard */
+  readonly workerFunctions?: Readonly<Record<string, IFunction>>;
+  /** Hàng đợi đơn của worker order-processor: tuổi tin cũ nhất cho runbook sqs-backlog */
+  readonly ordersQueue?: IQueue;
   /** DLQ của hàng đợi đơn: có tin là có đơn worker xử lý lỗi quá 3 lần, còn kẹt ở PENDING */
   readonly ordersDeadLetterQueue?: IQueue;
   /**
@@ -193,8 +197,8 @@ export class Monitoring extends Construct {
       }
 
       // Dashboard "Shop tổng quan": runbook mở trang này trước tiên
-      const { httpApi, preSignUpFn, apiFunctions } = props;
-      const fns = { ...apiFunctions, presignup: preSignUpFn };
+      const { httpApi, preSignUpFn, apiFunctions, workerFunctions } = props;
+      const fns = { ...apiFunctions, ...workerFunctions, presignup: preSignUpFn };
       const dashboard = new Dashboard(this, 'Dashboard', {
         dashboardName: `${shopEnv.stackPrefix}-overview`,
         defaultInterval: Duration.hours(3),
@@ -260,6 +264,41 @@ export class Monitoring extends Construct {
           width: 8,
         }),
       );
+      // Hàng đợi đơn ở mọi môi trường, không alarm (dev, staging không có alarm; runbook sqs-backlog)
+      const { ordersQueue, ordersDeadLetterQueue } = props;
+      if (ordersQueue && ordersDeadLetterQueue) {
+        dashboard.addWidgets(
+          new GraphWidget({
+            title: 'Hàng đợi đơn: tuổi tin cũ nhất (giây)',
+            left: [
+              ordersQueue.metricApproximateAgeOfOldestMessage({
+                period,
+                statistic: Stats.MAXIMUM,
+                label: 'tin cũ nhất',
+              }),
+            ],
+            width: 12,
+          }),
+          new GraphWidget({
+            title: 'Hàng đợi đơn: tin đang chờ và tin trong DLQ',
+            left: [
+              ordersQueue.metricApproximateNumberOfMessagesVisible({
+                period,
+                statistic: Stats.MAXIMUM,
+                label: 'đang chờ',
+              }),
+            ],
+            right: [
+              ordersDeadLetterQueue.metricApproximateNumberOfMessagesVisible({
+                period,
+                statistic: Stats.MAXIMUM,
+                label: 'DLQ',
+              }),
+            ],
+            width: 12,
+          }),
+        );
+      }
     }
 
     Tags.of(this).add('module', 'monitoring');

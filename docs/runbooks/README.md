@@ -9,7 +9,7 @@ Mỗi alarm có một runbook: khi alarm kêu thì làm gì, theo thứ tự. Vi
 | [`lambda-errors.md`](lambda-errors.md) | `<tiền tố>-presignup-errors`: Lambda pre sign-up lỗi | An |
 | [`lambda-throttle.md`](lambda-throttle.md) | `shop-prd-lambda-throttles`: Lambda bị throttle (chỉ prod) | An |
 | [`dlq-orders.md`](dlq-orders.md) | `shop-prd-orders-dlq`: DLQ đơn hàng có ≥ 1 tin (chỉ prod) | Hoàng |
-| `sqs-backlog.md` | Message SQS cũ nhất quá 5 phút | Hoàng |
+| [`sqs-backlog.md`](sqs-backlog.md) | Không có alarm (đã hết 10 alarm miễn phí): xem widget tuổi tin cũ nhất của hàng đợi đơn trên dashboard, quá 5 phút là tồn đọng | Hoàng |
 | `dynamodb-throttle.md` | DynamoDB bị throttle | Hoàng |
 | `canary-rollback.md` | Canary ordering báo lỗi | An |
 | `cost-spike.md` | Chi phí vượt $5, $10, $20 | An |
