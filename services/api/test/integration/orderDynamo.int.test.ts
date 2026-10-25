@@ -6,6 +6,7 @@ import {
   placeOrder,
   type PlaceOrderDeps,
 } from '../../src/modules/ordering/application/placeOrder.js';
+import { processOrderMessage } from '../../src/modules/ordering/application/processOrderMessage.js';
 import {
   OutOfStockError,
   PriceChangedError,
@@ -16,7 +17,11 @@ import { markerExpiresAt, payloadHash } from '../../src/modules/ordering/domain/
 import { DynamoCartReader } from '../../src/modules/ordering/infra/dynamoCartReader.js';
 import { DynamoOrderStore } from '../../src/modules/ordering/infra/dynamoOrderStore.js';
 import { DynamoProductCatalog } from '../../src/modules/ordering/infra/dynamoProductCatalog.js';
-import { CartChangedError, type PlaceOrderCommand } from '../../src/modules/ordering/ports.js';
+import {
+  CartChangedError,
+  type OrderEvents,
+  type PlaceOrderCommand,
+} from '../../src/modules/ordering/ports.js';
 import { cartsTableDefinition } from '../helpers/cart.js';
 import { productItem, productsTableDefinition, uniqueProduct } from '../helpers/catalog.js';
 import { startDynamoLocal, type DynamoLocal } from '../helpers/dynamo.js';
@@ -507,6 +512,92 @@ describe('DynamoOrderStore.cancel', () => {
     );
     expect(Item).toBeUndefined();
     expect(await orderStatus(userId, order.orderId)).toBe('PENDING');
+  });
+});
+
+describe('DynamoOrderStore.confirm', () => {
+  const CONFIRMED_AT = '2026-10-25T03:00:05.000Z';
+
+  it('confirm_setsConfirmedAndUpdatedAt_whenPending', async () => {
+    // Arrange
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu);
+    await store.place(cmd);
+
+    // Act
+    const result = await store.confirm({ order: cmd.order, now: CONFIRMED_AT });
+
+    // Assert: đơn xác nhận vẫn tính là đơn mở (BR-14), không đụng #OPEN
+    expect(result).toBe('confirmed');
+    const saved = await store.get(userId, cmd.order.orderId);
+    expect(saved).toMatchObject({ status: 'CONFIRMED', updatedAt: CONFIRMED_AT });
+    expect(await openOrders(userId)).toBe(1);
+  });
+
+  it('confirm_returnsNotPending_andKeepsUpdatedAt_whenConfirmedTwice', async () => {
+    // Arrange: SQS giao lại tin sau khi đã xác nhận
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu);
+    await store.place(cmd);
+    await store.confirm({ order: cmd.order, now: CONFIRMED_AT });
+
+    // Act
+    const result = await store.confirm({ order: cmd.order, now: '2026-10-25T04:00:00.000Z' });
+
+    // Assert: confirmedAt của tin gửi lại không đổi
+    expect(result).toBe('notPending');
+    expect(await store.get(userId, cmd.order.orderId)).toMatchObject({ updatedAt: CONFIRMED_AT });
+  });
+
+  it('confirm_returnsNotPending_andStaysCancelled_whenCancelledFirst', async () => {
+    // Arrange: khách huỷ trước khi tin tới worker
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu);
+    await store.place(cmd);
+    await store.cancel({ order: cmd.order, now: CONFIRMED_AT });
+
+    // Act
+    const result = await store.confirm({ order: cmd.order, now: '2026-10-25T04:00:00.000Z' });
+
+    // Assert
+    expect(result).toBe('notPending');
+    expect(await store.get(userId, cmd.order.orderId)).toMatchObject({ status: 'CANCELLED' });
+  });
+});
+
+describe('processOrderMessage với bảng orders thật', () => {
+  it('processOrderMessage_publishesOnceWithSameConfirmedAt_whenMessageDeliveredTwice', async () => {
+    // Arrange
+    const userId = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userId, gpu, 2);
+    await store.place(cmd);
+    const events = { publishConfirmed: vi.fn<OrderEvents['publishConfirmed']>(async () => {}) };
+    const deps = { orders: store, events, now: () => '2026-10-25T03:00:05.000Z' };
+    const message = {
+      orderId: cmd.order.orderId,
+      userId,
+      type: 'PLACED' as const,
+      correlationId: 'corr-1',
+    };
+
+    // Act: SQS giao cùng tin hai lần (at-least-once)
+    const first = await processOrderMessage(deps, message);
+    const second = await processOrderMessage({ ...deps, now: () => 'không dùng tới' }, message);
+
+    // Assert: lần hai không xác nhận lại; tin gửi lại giống hệt (consumer events chống trùng)
+    expect([first, second]).toEqual(['confirmed', 'republished']);
+    expect(events.publishConfirmed).toHaveBeenCalledTimes(2);
+    expect(events.publishConfirmed.mock.calls[1]).toEqual(events.publishConfirmed.mock.calls[0]);
+    expect(events.publishConfirmed.mock.calls[0]?.[0]).toEqual({
+      orderId: cmd.order.orderId,
+      userId,
+      confirmedAt: '2026-10-25T03:00:05.000Z',
+      items: [{ productId: gpu.productId, quantity: 2 }],
+    });
   });
 });
 
