@@ -28,8 +28,9 @@
 | `ordering` | `carts` (cart) | `dynamodb:UpdateItem`, ghi `SET items, version, updatedAt` với điều kiện `version = :v` | Bỏ các món đã đặt khỏi giỏ trong cùng giao dịch, không đè thay đổi giỏ song song |
 | `recommendation` (API) | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index (giống `cart`) | Lấy tồn kho, trạng thái mới nhất để bỏ hàng hết, `INACTIVE` khỏi gợi ý |
 | `recommendation` (pipeline mỗi đêm) | `products` (catalog) | `dynamodb:Scan` chỉ đọc, `ProjectionExpression` `productId, category, status, createdAt` | Danh sách sản phẩm và loại cho baseline bán chạy theo loại; chạy nền mỗi đêm, không phục vụ request |
+| `recommendation` (pipeline mỗi đêm) | `events` (events) | `dynamodb:Scan` chỉ đọc trên ARN bảng | Đọc sự kiện đã ẩn danh (`userIdHash`, không có `userId` thật) để tính gợi ý và đếm đơn cho hàng bán chạy; chạy nền mỗi đêm, không phục vụ request (thêm 25/10/2026) |
 
-Không cấp `PutItem`, `DeleteItem`, `BatchWriteItem` trên bảng của module khác. Không cấp `Scan` trên bảng của module khác, **trừ** pipeline gợi ý mỗi đêm đọc `products` như bảng trên (job nền, catalog 104 sản phẩm; luật "không Scan" của API vẫn giữ cho mọi Lambda phục vụ request).
+Không cấp `PutItem`, `DeleteItem`, `BatchWriteItem` trên bảng của module khác. Không cấp `Scan` trên bảng của module khác, **trừ** pipeline gợi ý mỗi đêm đọc `products` và `events` như bảng trên (job nền, catalog 104 sản phẩm; luật "không Scan" của API vẫn giữ cho mọi Lambda phục vụ request).
 
 **Giới hạn theo thuộc tính cho `ordering` trên `products` (O7):** điều kiện `dynamodb:Attributes` đã có trong IAM từ #234. Chưa thử được trên sandbox, nên thử trên dev bằng giao dịch đặt hàng thật khi có code `POST /api/v1/orders` (#229), gồm cả điều kiện `stock >= :qty` trong `ConditionExpression`. Chạy được thì giữ; không chạy thì bỏ điều kiện IAM, giữ mức hành động `UpdateItem` như bảng, và ghi kết quả vào đây. Kết quả thử: _chưa có (chờ #229)_.
 

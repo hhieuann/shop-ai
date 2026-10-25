@@ -1,8 +1,9 @@
 """
 Dòng của bảng `recs` theo docs/business/dynamodb-design.md, mục "Bảng `recs`".
 
-- Dòng gợi ý: pk = `<recType>#<anchorId>`, sk = `<version>#<rank>` (rank đệm 2 chữ số, 01–10).
-- Con trỏ: pk = `META`, sk = `ACTIVE#<recType>`, giữ `activeVersion`.
+- Dòng gợi ý: pk = `<recType>#<anchorId>`, sk = `<version>#<rank>` (rank đệm 2 chữ số, 01–20).
+  20 dòng mỗi anchor vì API còn bỏ hàng hết, INACTIVE, `exclude` rồi mới lấy tối đa 10 món.
+- Con trỏ: pk = `META`, sk = `ACTIVE#<recType>`, giữ `activeVersion`; con trỏ BESTSELLER có thêm `basis`.
 - `ttl` của dòng gợi ý = lúc ghi + 7 ngày; con trỏ không có `ttl`.
 
 Chỉ dựng dữ liệu, không gọi AWS; phần ghi DynamoDB nằm ở adapter riêng.
@@ -14,10 +15,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-RecType = Literal["FOR_YOU", "ALSO_BOUGHT"]
+RecType = Literal["FOR_YOU", "ALSO_BOUGHT", "BESTSELLER"]
 Source = Literal["ASSOCIATION_RULE", "ITEM_CF", "BESTSELLER"]
 
-TOP_K = 10
+TOP_K = 20
 ROW_TTL = timedelta(days=7)
 
 
@@ -61,7 +62,7 @@ def row_items(
                 {
                     "pk": f"{rec_type}#{anchor}",
                     "sk": f"{version}#{rank:02d}",
-                    "itemId": rec.item_id,
+                    "productId": rec.item_id,
                     "score": rec.score,
                     "source": rec.source,
                     "generatedAt": iso(generated_at),
@@ -71,10 +72,15 @@ def row_items(
     return items
 
 
-def pointer_item(rec_type: RecType, version: int, updated_at: datetime) -> dict[str, object]:
-    return {
+def pointer_item(
+    rec_type: RecType, version: int, updated_at: datetime, basis: str | None = None
+) -> dict[str, object]:
+    item: dict[str, object] = {
         "pk": "META",
         "sk": f"ACTIVE#{rec_type}",
         "activeVersion": version,
         "updatedAt": iso(updated_at),
     }
+    if basis is not None:
+        item["basis"] = basis
+    return item

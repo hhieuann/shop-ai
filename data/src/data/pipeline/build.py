@@ -10,11 +10,26 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from data.model.association import Rule
 from data.model.item_cf import Similarity, UserItems, scored_for_user
 from data.pipeline.recs_table import TOP_K, Rec
+
+ALL = "ALL"
+MIN_ORDERS = 5
+WINDOWS_DAYS = (30, 90, 365)
+
+
+@dataclass(frozen=True)
+class CatalogItem:
+    """Cột đọc từ bảng products (ProjectionExpression: productId, category, status, createdAt)."""
+
+    product_id: str
+    category: str
+    status: str
+    created_at: str
 
 
 def bestseller_counts(
@@ -62,3 +77,45 @@ def for_you(
         recs = [Rec(item, score, "ITEM_CF") for item, score in scored_for_user(user_items, sim, user, k)]
         out[user] = _fill(recs, ranked, set(seen), k)
     return out
+
+
+def bestsellers(
+    purchases: Sequence[tuple[str, str, datetime]],
+    catalog: Sequence[CatalogItem],
+    until: datetime,
+    k: int = TOP_K,
+) -> tuple[str, dict[str, list[Rec]]]:
+    """Hàng bán chạy cho anchor `ALL` và từng category, kèm `basis` ghi lên con trỏ.
+
+    `purchases` là (orderId, productId, thời điểm). Cửa sổ ngắn nhất trong 30, 90, 365 ngày có
+    ít nhất 5 đơn thì dùng cửa sổ đó (`PURCHASES_<n>D`); không cửa sổ nào đủ thì xếp theo hàng mới
+    nhất (`NEWEST`). Mỗi anchor bù thêm hàng mới nhất cùng loại cho đủ `k` dòng. Chỉ hàng ACTIVE.
+    """
+    active = [c for c in catalog if c.status == "ACTIVE"]
+    active_ids = {c.product_id for c in active}
+    newest = sorted(active, key=lambda c: (c.created_at, c.product_id), reverse=True)
+
+    basis, counts = "NEWEST", Counter[str]()
+    for days in WINDOWS_DAYS:
+        since = until - timedelta(days=days)
+        window = [(o, p) for o, p, ts in purchases if since <= ts < until and p in active_ids]
+        if len({o for o, _ in window}) >= MIN_ORDERS:
+            basis, counts = f"PURCHASES_{days}D", Counter(p for _, p in window)
+            break
+
+    def ranked(items: Sequence[CatalogItem]) -> list[Rec]:
+        ids = {c.product_id for c in items}
+        sold = sorted(((p, n) for p, n in counts.items() if p in ids), key=lambda kv: (-kv[1], kv[0]))
+        recs = [Rec(p, float(n), "BESTSELLER") for p, n in sold[:k]]
+        taken = {r.item_id for r in recs}
+        for c in (c for c in newest if c.product_id in ids):
+            if len(recs) >= k:
+                break
+            if c.product_id not in taken:
+                recs.append(Rec(c.product_id, 0.0, "BESTSELLER"))
+        return recs
+
+    out = {ALL: ranked(active)}
+    for category in sorted({c.category for c in active}):
+        out[category] = ranked([c for c in active if c.category == category])
+    return basis, out
