@@ -31,7 +31,7 @@ Hàng đợi đơn và DLQ có từ #228. Worker là Lambda `…-OrderProcessorF
 
 | Thấy gì | Nghĩa là |
 |---|---|
-| `MessageRejected`, `Email address is not verified` (SES) | SES còn ở sandbox hoặc email gửi chưa xác minh |
+| `MessageRejected`, `Email address is not verified` (SES) | Từ #264, lỗi này **không còn vào DLQ**: worker ghi log warn "Không gửi được thư cho khách" + metric `OrderEmailRejected` (dimension `reason`) rồi bỏ qua. Thấy trong DLQ nghĩa là bản worker cũ; còn metric tăng thì xem mục dưới |
 | `AuthorizationError` khi gửi `order-confirmed` | Role worker thiếu `sns:Publish` trên topic |
 | `AccessDeniedException` trên bảng `orders` | Quyền IAM của worker bị đổi khi deploy |
 | `Task timed out` | SES, SNS chậm hoặc worker khởi động lạnh lâu |
@@ -59,6 +59,27 @@ Alarm này (chỉ prod, #244) kêu khi metric `OrderEnqueueFailed` (namespace `s
 2. Lỗi do quyền IAM hoặc hàng đợi bị xoá thì sửa trước (rollback như [api-5xx.md](api-5xx.md)).
 3. Gửi lại tin cho từng `orderId`: SQS → hàng đợi `…-OrdersQueue…` → **Send and receive messages**, body `{"orderId":"<orderId>","userId":"<userId>","type":"PLACED","correlationId":"<correlationId>"}` (`userId` lấy từ đơn trong bảng orders). Worker chống trùng theo `orderId`, gửi thừa không hại.
 4. Khách bấm lại "Xác nhận đặt hàng" với cùng Idempotency-Key thì API cũng tự gửi lại tin.
+
+## Metric `OrderEmailRejected`: thư không gửi được, không vào DLQ
+
+Worker ghi metric này (namespace `<tiền tố>`, dimension `service = order-processor`, `reason`) mỗi khi bỏ qua một thư mà gửi lại cũng vô ích. Đơn vẫn `CONFIRMED` hoặc `CANCELLED` đúng, PURCHASE vẫn ghi; chỉ khách không nhận thư. Không có alarm.
+
+| `reason` | Nghĩa là | Làm gì |
+|---|---|---|
+| `not_verified` | SES sandbox: địa chỉ nhận chưa xác minh. Mỗi lần deploy dev, staging có 1–2 lần do người dùng E2E `e2e-user@example.com` | Bình thường ở sandbox. Cần thư thật thì nhờ An xác minh địa chỉ đó hoặc xin thoát sandbox |
+| `throttled` | Vượt 1 thư/giây của sandbox dù client đã thử lại | Tăng đều thì giảm `batchSize` của worker trong `infra/lib/api-stack.ts` bằng PR |
+| `sending_disabled` | Tài khoản SES bị tạm dừng gửi | Báo An ngay, xem SES console → Account dashboard |
+| `no_recipient` | Không tìm thấy email của chủ đơn trong Cognito (tài khoản đã xoá) | Không cần làm gì |
+
+Logs Insights, log group `…-OrderProcessorLogs…`:
+
+```text
+fields @timestamp, orderId, kind, reason
+| filter message = "Không gửi được thư cho khách, bỏ qua"
+| sort @timestamp desc
+```
+
+Log không có địa chỉ email; không chép email khách vào ghi chú sự cố.
 
 ## Sửa gốc
 

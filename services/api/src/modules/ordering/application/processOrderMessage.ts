@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { orderConfirmedEvent } from '../domain/notification.js';
+import { orderConfirmedEvent, type EmailKind } from '../domain/notification.js';
 import type { Order } from '../domain/order.js';
-import type { OrderConfirmation, OrderEvents, OrderStore } from '../ports.js';
+import type { OrderConfirmation, OrderEvents, OrderStore, SendEmailResult } from '../ports.js';
 
 /**
  * Tin trong hàng đợi đơn do API gửi (application/notifyWorker.ts). Worker chỉ dùng `orderId`, `userId`
@@ -20,6 +20,11 @@ export interface ProcessOrderMessageDeps {
   readonly events: OrderEvents;
   /** ISO 8601 UTC; test truyền giờ cố định */
   readonly now: () => string;
+  /**
+   * Gửi thư cho chủ đơn (ordering.md 2.2, BR-13), đã bọc chống gửi trùng theo `orderId` + loại thư.
+   * Không có khi Lambda thiếu cấu hình thư (`emailConfig`): worker vẫn xác nhận đơn, gửi tin.
+   */
+  readonly sendEmail?: (order: Order, kind: EmailKind) => Promise<SendEmailResult>;
 }
 
 /** Kết quả để handler ghi log; không có dữ liệu cá nhân */
@@ -29,6 +34,9 @@ export type ProcessOrderOutcome =
   | 'skippedCancelled'
   | 'skippedNotFound'
   | 'skippedPastConfirmed'
+  | 'cancelEmailSent'
+  | 'cancelEmailRejected'
+  | 'skippedNotCancelled'
   | 'cancelNoted';
 
 /** Trạng thái đổi giữa lúc đọc và ghi (khách vừa huỷ): đọc lại, tối đa từng này lần */
@@ -39,14 +47,15 @@ export const MAX_CONFIRM_ATTEMPTS = 3;
  * - PLACED: đơn `CANCELLED` thì bỏ qua; `PENDING` thì xác nhận có điều kiện; đơn `CONFIRMED` (vừa xác
  *   nhận hoặc từ lần giao trước) thì gửi tin `order-confirmed`. Gửi lại mỗi lần chạy, không bọc
  *   Idempotency: consumer events chống trùng theo `<orderId>#<productId>` (#252).
- * - CANCELLED: email báo huỷ làm ở PR email (BR-13); tạm thời chỉ báo lại cho handler ghi log.
- * Lỗi (DynamoDB, SNS) thì ném để SQS giao lại tin.
+ *   Sau tin `order-confirmed` thì gửi thư xác nhận (Q3: thư lỗi không chặn PURCHASE).
+ * - CANCELLED (BR-13): đọc lại đơn, chỉ gửi thư báo huỷ khi đơn đang `CANCELLED`.
+ * Không có `sendEmail` thì bỏ bước thư. Lỗi (DynamoDB, SNS, lỗi tạm của SES) thì ném để SQS giao lại tin.
  */
 export async function processOrderMessage(
   deps: ProcessOrderMessageDeps,
   message: OrderMessageInput,
 ): Promise<ProcessOrderOutcome> {
-  if (message.type === 'CANCELLED') return 'cancelNoted';
+  if (message.type === 'CANCELLED') return cancelled(deps, message);
 
   for (let attempt = 1; ; attempt++) {
     const order = await deps.orders.get(message.userId, message.orderId);
@@ -62,6 +71,7 @@ export async function processOrderMessage(
         return 'skippedPastConfirmed';
       case 'CONFIRMED':
         await deps.events.publishConfirmed(orderConfirmedEvent(order));
+        await deps.sendEmail?.(order, 'CONFIRMED');
         return 'republished';
       case 'PENDING': {
         const now = deps.now();
@@ -69,6 +79,7 @@ export async function processOrderMessage(
         if (result === 'confirmed') {
           const confirmed: Order = { ...order, status: 'CONFIRMED', updatedAt: now };
           await deps.events.publishConfirmed(orderConfirmedEvent(confirmed));
+          await deps.sendEmail?.(confirmed, 'CONFIRMED');
           return 'confirmed';
         }
         // Trạng thái vừa đổi: đọc lại rồi xét lại; đổi liên tục thì ném để SQS giao lại sau
@@ -78,4 +89,17 @@ export async function processOrderMessage(
       }
     }
   }
+}
+
+/** Tin CANCELLED: thư báo huỷ chỉ khi đơn đang `CANCELLED` (tin giả, tin cũ thì bỏ qua) */
+async function cancelled(
+  deps: ProcessOrderMessageDeps,
+  message: OrderMessageInput,
+): Promise<ProcessOrderOutcome> {
+  if (!deps.sendEmail) return 'cancelNoted';
+  const order = await deps.orders.get(message.userId, message.orderId);
+  if (!order) return 'skippedNotFound';
+  if (order.status !== 'CANCELLED') return 'skippedNotCancelled';
+  const result = await deps.sendEmail(order, 'CANCELLED');
+  return result.status === 'sent' ? 'cancelEmailSent' : 'cancelEmailRejected';
 }

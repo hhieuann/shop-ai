@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Order, OrderStatus } from '../domain/order.js';
+import type { SendEmailResult } from '../ports.js';
 import {
   MAX_CONFIRM_ATTEMPTS,
   processOrderMessage,
@@ -170,11 +171,11 @@ describe('processOrderMessage', () => {
     await expect(act).rejects.toThrow('SNS không phản hồi');
   });
 
-  it('processOrderMessage_notesCancelledMessage_withoutReadingOrder', async () => {
-    // Arrange
+  it('processOrderMessage_notesCancelledMessage_withoutReadingOrder_whenEmailDisabled', async () => {
+    // Arrange: Lambda thiếu cấu hình thư (emailConfig), không có sendEmail
     const d = deps();
 
-    // Act: email huỷ làm ở PR email (BR-13)
+    // Act
     const outcome = await processOrderMessage(d, { ...PLACED, type: 'CANCELLED' });
 
     // Assert
@@ -184,4 +185,129 @@ describe('processOrderMessage', () => {
     expect(d.orders.get).not.toHaveBeenCalled();
     expect(d.events.publishConfirmed).not.toHaveBeenCalled();
   });
+
+  it('processOrderMessage_confirmsPublishesThenEmails_inThatOrder', async () => {
+    // Arrange
+    const d = withEmail(deps());
+
+    // Act
+    const outcome = await processOrderMessage(d, PLACED);
+
+    // Assert
+    expect(outcome).toBe('confirmed');
+
+    // Verify: thư sau tin order-confirmed (thư lỗi không chặn PURCHASE), đơn đã CONFIRMED
+    expect(d.sendEmail).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ status: 'CONFIRMED', updatedAt: NOW }),
+      'CONFIRMED',
+    );
+    expect(d.events.publishConfirmed.mock.invocationCallOrder[0]).toBeLessThan(
+      d.sendEmail.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('processOrderMessage_emailsAgain_whenRedeliveredAfterConfirm', async () => {
+    // Arrange: lần trước xác nhận xong nhưng gửi thư lỗi; chống trùng do idempotency ở lambda
+    const d = withEmail(deps({ reads: [withStatus('CONFIRMED')] }));
+
+    // Act
+    await processOrderMessage(d, PLACED);
+
+    // Verify
+    expect(d.sendEmail).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ status: 'CONFIRMED' }),
+      'CONFIRMED',
+    );
+  });
+
+  it('processOrderMessage_keepsOutcome_whenEmailRejected', async () => {
+    // Arrange: SES từ chối (vd. người dùng E2E chưa xác minh)
+    const d = withEmail(deps(), { status: 'rejected', reason: 'not_verified' });
+
+    // Act
+    const outcome = await processOrderMessage(d, PLACED);
+
+    // Assert: không ném, tin không vào DLQ
+    expect(outcome).toBe('confirmed');
+  });
+
+  it('processOrderMessage_throws_whenEmailFailsTemporarily', async () => {
+    // Arrange
+    const d = withEmail(deps());
+    d.sendEmail.mockRejectedValue(new Error('SES không phản hồi'));
+
+    // Act
+    const act = processOrderMessage(d, PLACED);
+
+    // Assert: SQS giao lại; lần sau đơn đã CONFIRMED nên chỉ gửi lại tin và thư
+    await expect(act).rejects.toThrow('SES không phản hồi');
+  });
+
+  it.each([
+    ['sent', 'cancelEmailSent'],
+    ['rejected', 'cancelEmailRejected'],
+  ] as const)(
+    'processOrderMessage_emailsCancellation_whenOrderCancelled (%s)',
+    async (status, expected) => {
+      // Arrange
+      const result =
+        status === 'sent'
+          ? ({ status: 'sent' } as const)
+          : ({ status: 'rejected', reason: 'not_verified' } as const);
+      const d = withEmail(deps({ reads: [withStatus('CANCELLED')] }), result);
+
+      // Act
+      const outcome = await processOrderMessage(d, { ...PLACED, type: 'CANCELLED' });
+
+      // Assert
+      expect(outcome).toBe(expected);
+
+      // Verify: không gửi tin order-confirmed khi huỷ
+      expect(d.sendEmail).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ status: 'CANCELLED' }),
+        'CANCELLED',
+      );
+      expect(d.events.publishConfirmed).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['đơn không còn CANCELLED', withStatus('CONFIRMED'), 'skippedNotCancelled'],
+    ['không có đơn', null, 'skippedNotFound'],
+  ] as const)(
+    'processOrderMessage_skipsCancellationEmail_when%s',
+    async (_label, read, expected) => {
+      // Arrange
+      const d = withEmail(deps({ reads: [read] }));
+
+      // Act
+      const outcome = await processOrderMessage(d, { ...PLACED, type: 'CANCELLED' });
+
+      // Assert
+      expect(outcome).toBe(expected);
+
+      // Verify
+      expect(d.sendEmail).not.toHaveBeenCalled();
+    },
+  );
+
+  it('processOrderMessage_doesNotEmail_whenCancelledBeforeConfirm', async () => {
+    // Arrange: tin PLACED tới khi đơn đã huỷ (ordering.md mục 5)
+    const d = withEmail(deps({ reads: [withStatus('CANCELLED')] }));
+
+    // Act
+    await processOrderMessage(d, PLACED);
+
+    // Verify: thư huỷ đi theo tin CANCELLED riêng, không theo tin PLACED
+    expect(d.sendEmail).not.toHaveBeenCalled();
+  });
 });
+
+/** Thêm bước gửi thư vào deps, mặc định gửi được */
+function withEmail<D extends ReturnType<typeof deps>>(
+  d: D,
+  result: SendEmailResult = { status: 'sent' },
+) {
+  const sendEmail = vi.fn<NonNullable<ProcessOrderMessageDeps['sendEmail']>>(async () => result);
+  return { ...d, sendEmail } satisfies ProcessOrderMessageDeps;
+}

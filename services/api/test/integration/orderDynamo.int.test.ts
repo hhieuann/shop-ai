@@ -8,6 +8,10 @@ import {
 } from '../../src/modules/ordering/application/placeOrder.js';
 import { processOrderMessage } from '../../src/modules/ordering/application/processOrderMessage.js';
 import {
+  sendOrderEmail,
+  type SendOrderEmailDeps,
+} from '../../src/modules/ordering/application/sendOrderEmail.js';
+import {
   OutOfStockError,
   PriceChangedError,
   TooManyOpenOrdersError,
@@ -19,12 +23,15 @@ import { DynamoOrderStore } from '../../src/modules/ordering/infra/dynamoOrderSt
 import { DynamoProductCatalog } from '../../src/modules/ordering/infra/dynamoProductCatalog.js';
 import {
   CartChangedError,
+  type Mailer,
   type OrderEvents,
   type PlaceOrderCommand,
+  type SendEmailResult,
 } from '../../src/modules/ordering/ports.js';
 import { cartsTableDefinition } from '../helpers/cart.js';
 import { productItem, productsTableDefinition, uniqueProduct } from '../helpers/catalog.js';
 import { startDynamoLocal, type DynamoLocal } from '../helpers/dynamo.js';
+import { makeIdempotentUseCase } from '../../src/shared/idempotency.js';
 import { ordersTableDefinition } from '../helpers/ordering.js';
 
 const ORDERS = 'orders-test';
@@ -637,5 +644,84 @@ describe('placeOrder với adapter thật', () => {
 
     // Verify: gửi tin cả hai lần, worker chống trùng theo orderId
     expect(deps.queue.enqueue).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('gửi thư có chống trùng trên bảng order-idempotency thật', () => {
+  const IDEMPOTENCY = 'order-idempotency-test';
+  const PRODUCT: ProductSnapshot = {
+    productId: 'gpu-1',
+    name: 'GPU',
+    price: 1_000_000,
+    stock: 9,
+    status: 'ACTIVE',
+  };
+
+  beforeAll(async () => {
+    await dynamo.client.send(
+      new CreateTableCommand({
+        TableName: IDEMPOTENCY,
+        AttributeDefinitions: [{ AttributeName: 'id', AttributeType: 'S' }],
+        KeySchema: [{ AttributeName: 'id', KeyType: 'HASH' }],
+        BillingMode: 'PAY_PER_REQUEST',
+      }),
+    );
+  });
+
+  /** Ghép như processorLambda.ts: khoá `<orderId>#<loại thư>`, payload chỉ có mã đơn và loại thư */
+  function idempotentEmail(result: SendEmailResult) {
+    const mailer = { send: vi.fn<Mailer['send']>(async () => result) };
+    const emailDeps: SendOrderEmailDeps = {
+      customers: { emailOf: async () => 'khach@example.com' },
+      mailer,
+      metrics: { emailRejected: vi.fn() },
+    };
+    const run = makeIdempotentUseCase(
+      (payload: { orderId: string; kind: 'CONFIRMED' | 'CANCELLED' }) =>
+        sendOrderEmail(
+          emailDeps,
+          { ...command(randomUUID(), PRODUCT).order, orderId: payload.orderId },
+          payload.kind,
+        ),
+      { tableName: IDEMPOTENCY, inProgressCode: 'ORDER_EMAIL_IN_PROGRESS', client: dynamo.client },
+    );
+    const send = (userId: string, orderId: string) =>
+      run({
+        userId,
+        idempotencyKey: `${orderId}#CONFIRMED`,
+        payload: { orderId, kind: 'CONFIRMED' },
+      });
+    return { mailer, send };
+  }
+
+  it('sendEmail_sendsOnce_whenSameOrderDeliveredTwice', async () => {
+    // Arrange
+    const { mailer, send } = idempotentEmail({ status: 'sent' });
+    const userId = randomUUID();
+    const orderId = `01K8${randomUUID().replaceAll('-', '').slice(0, 22).toUpperCase()}`;
+
+    // Act: SQS giao cùng tin hai lần
+    const first = await send(userId, orderId);
+    const second = await send(userId, orderId);
+
+    // Assert: lần hai trả kết quả đã lưu, không gửi thư lần nữa
+    expect(first.value).toEqual({ status: 'sent' });
+    expect(second).toEqual({ value: { status: 'sent' }, replayed: true });
+    expect(mailer.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('sendEmail_doesNotRetry_whenSesRejectedBefore', async () => {
+    // Arrange: sandbox từ chối (vd. người dùng E2E chưa xác minh)
+    const { mailer, send } = idempotentEmail({ status: 'rejected', reason: 'not_verified' });
+    const userId = randomUUID();
+    const orderId = `01K8${randomUUID().replaceAll('-', '').slice(0, 22).toUpperCase()}`;
+
+    // Act
+    await send(userId, orderId);
+    const again = await send(userId, orderId);
+
+    // Assert: kết quả bị từ chối cũng được lưu, lần giao lại không gửi thử vô ích
+    expect(again.replayed).toBe(true);
+    expect(mailer.send).toHaveBeenCalledTimes(1);
   });
 });
