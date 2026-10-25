@@ -1,4 +1,3 @@
-import { logger } from '../../../shared/logger.js';
 import { IdempotencyKeyReusedError, OrderNotFoundError } from '../domain/errors.js';
 import {
   buildOrder,
@@ -15,6 +14,7 @@ import {
   type OrderStore,
   type ProductCatalog,
 } from '../ports.js';
+import { notifyWorker } from './notifyWorker.js';
 
 export interface PlaceOrderDeps {
   readonly catalog: ProductCatalog;
@@ -115,22 +115,11 @@ async function existingOrder(
   return { order, created: false };
 }
 
-/** Gửi tin lỗi không làm hỏng request: đơn đã ghi, khách không phải đặt lại (ordering.md, luồng SQS bước 1) */
-async function enqueue(deps: PlaceOrderDeps, order: Order, correlationId: string): Promise<void> {
-  try {
-    await deps.queue.enqueue({
-      orderId: order.orderId,
-      userId: order.userId,
-      type: 'PLACED',
-      correlationId,
-    });
-  } catch (error) {
-    // Chỉ ghi mã đơn và correlationId, không ghi địa chỉ, SĐT (O8)
-    logger.error('Không gửi được tin đơn hàng cho worker', {
-      error,
-      orderId: order.orderId,
-      correlationId,
-    });
-    deps.metrics.enqueueFailed();
-  }
+function enqueue(deps: PlaceOrderDeps, order: Order, correlationId: string): Promise<void> {
+  return notifyWorker(deps, {
+    orderId: order.orderId,
+    userId: order.userId,
+    type: 'PLACED',
+    correlationId,
+  });
 }
