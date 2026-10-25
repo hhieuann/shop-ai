@@ -7,6 +7,8 @@ import { ulid } from 'ulid';
 import { requiredEnv } from '../../shared/config.js';
 import { makeIdempotentUseCase } from '../../shared/idempotency.js';
 import { captureClient, withTracing } from '../../shared/tracer.js';
+import { getOrder } from './application/getOrder.js';
+import { listOrders } from './application/listOrders.js';
 import { placeOrder, type PlaceOrderDeps } from './application/placeOrder.js';
 import type { RequestedItem, ShippingAddress } from './domain/order.js';
 import { makeHandler } from './handler.js';
@@ -20,14 +22,16 @@ import { SqsOrderQueue } from './infra/sqsOrderQueue.js';
 // Client tạo một lần ngoài handler để dùng lại giữa các request.
 const dynamo = captureClient(new DynamoDBClient({}));
 const db = DynamoDBDocumentClient.from(dynamo);
+// Một adapter cho bảng orders: ghi đơn (OrderStore) và đọc lịch sử (OrderHistory)
+const orders = new DynamoOrderStore(db, {
+  orders: requiredEnv('ORDERS_TABLE'),
+  products: requiredEnv('PRODUCTS_TABLE'),
+  carts: requiredEnv('CARTS_TABLE'),
+});
 const deps: PlaceOrderDeps = {
   catalog: new DynamoProductCatalog(db, requiredEnv('PRODUCTS_TABLE')),
   carts: new DynamoCartReader(db, requiredEnv('CARTS_TABLE')),
-  orders: new DynamoOrderStore(db, {
-    orders: requiredEnv('ORDERS_TABLE'),
-    products: requiredEnv('PRODUCTS_TABLE'),
-    carts: requiredEnv('CARTS_TABLE'),
-  }),
+  orders,
   queue: new SqsOrderQueue(captureClient(new SQSClient({})), requiredEnv('ORDERS_QUEUE_URL')),
   // Namespace từ POWERTOOLS_METRICS_NAMESPACE, dimension service từ POWERTOOLS_SERVICE_NAME
   metrics: new PowertoolsOrderMetrics(new Metrics()),
@@ -67,5 +71,8 @@ export const handler = withTracing(
           context,
         ),
       ),
+    // Chỉ đọc nên không bọc idempotency
+    listOrders: (input) => listOrders({ history: orders }, input),
+    getOrder: (input) => getOrder({ orders }, input),
   }),
 );

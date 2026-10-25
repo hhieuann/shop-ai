@@ -4,6 +4,8 @@ import { apiEvent, parseBody } from '../../../test/helpers/http.js';
 import { ConflictError } from '../../shared/errors.js';
 import {
   IdempotencyKeyReusedError,
+  InvalidOrderCursorError,
+  OrderNotFoundError,
   OutOfStockError,
   PriceChangedError,
   TooManyOpenOrdersError,
@@ -13,6 +15,8 @@ import { makeHandler } from './handler.js';
 import type { OrderingUseCases } from './routes.js';
 
 const CREATE = 'POST /api/v1/orders';
+const LIST = 'GET /api/v1/orders';
+const DETAIL = 'GET /api/v1/orders/{orderId}';
 /** Idempotency-Key sinh lúc chạy (UUID); không viết cứng chuỗi trông như khoá để gitleaks không báo nhầm */
 const IDEMPOTENCY_HEADER = randomUUID();
 const USER = 'user-sub-1';
@@ -43,8 +47,20 @@ const ORDER: Order = {
   updatedAt: '2026-10-25T03:00:00.000Z',
 };
 
+const SUMMARY = {
+  orderId: ORDER.orderId,
+  status: ORDER.status,
+  totalAmount: ORDER.totalAmount,
+  itemCount: 1,
+  createdAt: ORDER.createdAt,
+};
+
 function useCases(result = { value: { order: ORDER, created: true }, replayed: false }) {
-  return { placeOrder: vi.fn().mockResolvedValue(result) } satisfies OrderingUseCases;
+  return {
+    placeOrder: vi.fn().mockResolvedValue(result),
+    listOrders: vi.fn().mockResolvedValue({ items: [SUMMARY], nextCursor: 'next' }),
+    getOrder: vi.fn().mockResolvedValue(ORDER),
+  } satisfies OrderingUseCases;
 }
 
 function createEvent(
@@ -189,7 +205,9 @@ describe('ordering handler · POST /api/v1/orders', () => {
     ['IDEMPOTENCY_KEY_REUSED', new IdempotencyKeyReusedError(), 422, {}],
   ])('createOrder_returnsProblemWithCode_%s', async (code, error, status, extensions) => {
     // Arrange
-    const handler = makeHandler({ placeOrder: vi.fn().mockRejectedValue(error) });
+    const cases = useCases();
+    cases.placeOrder.mockRejectedValue(error);
+    const handler = makeHandler(cases);
 
     // Act
     const res = await handler(createEvent());
@@ -202,9 +220,9 @@ describe('ordering handler · POST /api/v1/orders', () => {
 
   it('createOrder_returns500WithoutDetails_whenUnexpectedError', async () => {
     // Arrange
-    const handler = makeHandler({
-      placeOrder: vi.fn().mockRejectedValue(new Error('bảng orders không tồn tại')),
-    });
+    const cases = useCases();
+    cases.placeOrder.mockRejectedValue(new Error('bảng orders không tồn tại'));
+    const handler = makeHandler(cases);
 
     // Act
     const res = await handler(createEvent());
@@ -215,21 +233,136 @@ describe('ordering handler · POST /api/v1/orders', () => {
   });
 });
 
-describe('ordering handler · route chưa có', () => {
+describe('ordering handler · GET /api/v1/orders', () => {
+  it('listOrders_returns200NoStore_withUserFromToken', async () => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(
+      apiEvent({ routeKey: LIST, userId: USER, query: { limit: '10', cursor: 'abc' } }),
+    );
+
+    // Assert
+    expect(res.statusCode).toBe(200);
+    expect(res.headers?.['cache-control']).toBe('no-store');
+    expect(parseBody(res)).toEqual({ items: [SUMMARY], nextCursor: 'next' });
+
+    // Verify: limit đổi sang số, userId từ token
+    expect(cases.listOrders).toHaveBeenCalledExactlyOnceWith({
+      userId: USER,
+      limit: 10,
+      cursor: 'abc',
+    });
+  });
+
   it.each([
-    'GET /api/v1/orders',
-    'GET /api/v1/orders/{orderId}',
-    'DELETE /api/v1/orders/{orderId}',
-  ])('route_returns501_untilImplemented %s', async (routeKey) => {
+    ['limit 0', { limit: '0' }],
+    ['limit 51', { limit: '51' }],
+    ['limit không phải số', { limit: 'abc' }],
+    ['limit lẻ', { limit: '2.5' }],
+    ['cursor quá dài', { cursor: 'a'.repeat(201) }],
+  ])('listOrders_returns400_when%s', async (_label, query) => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(apiEvent({ routeKey: LIST, userId: USER, query }));
+
+    // Assert
+    expect(res.statusCode).toBe(400);
+    expect(res.headers?.['content-type']).toBe('application/problem+json');
+
+    // Verify
+    expect(cases.listOrders).not.toHaveBeenCalled();
+  });
+
+  it('listOrders_returns400_whenCursorCannotBeDecoded', async () => {
+    // Arrange
+    const cases = useCases();
+    cases.listOrders.mockRejectedValue(new InvalidOrderCursorError());
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(apiEvent({ routeKey: LIST, userId: USER, query: { cursor: 'x' } }));
+
+    // Assert
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('listOrders_returns401_whenNoToken', async () => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(apiEvent({ routeKey: LIST }));
+
+    // Assert
+    expect(res.statusCode).toBe(401);
+
+    // Verify
+    expect(cases.listOrders).not.toHaveBeenCalled();
+  });
+});
+
+describe('ordering handler · GET /api/v1/orders/{orderId}', () => {
+  it('getOrder_returns200NoStore_withUserFromToken', async () => {
+    // Arrange
+    const cases = useCases();
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(
+      apiEvent({ routeKey: DETAIL, userId: USER, pathParameters: { orderId: ORDER.orderId } }),
+    );
+
+    // Assert
+    expect(res.statusCode).toBe(200);
+    expect(res.headers?.['cache-control']).toBe('no-store');
+    expect(parseBody(res)).toEqual(ORDER);
+
+    // Verify
+    expect(cases.getOrder).toHaveBeenCalledExactlyOnceWith({
+      userId: USER,
+      orderId: ORDER.orderId,
+    });
+  });
+
+  it('getOrder_returns404_whenNotFoundOrSomeoneElses', async () => {
+    // Arrange
+    const cases = useCases();
+    cases.getOrder.mockRejectedValue(new OrderNotFoundError(ORDER.orderId));
+    const handler = makeHandler(cases);
+
+    // Act
+    const res = await handler(
+      apiEvent({ routeKey: DETAIL, userId: USER, pathParameters: { orderId: ORDER.orderId } }),
+    );
+
+    // Assert
+    expect(res.statusCode).toBe(404);
+    expect(res.headers?.['content-type']).toBe('application/problem+json');
+  });
+});
+
+describe('ordering handler · route chưa có', () => {
+  it('route_returns501_untilImplemented DELETE /api/v1/orders/{orderId}', async () => {
     // Arrange
     const handler = makeHandler(useCases());
 
     // Act
     const res = await handler(
-      apiEvent({ routeKey, userId: USER, pathParameters: { orderId: ORDER.orderId } }),
+      apiEvent({
+        routeKey: 'DELETE /api/v1/orders/{orderId}',
+        userId: USER,
+        pathParameters: { orderId: ORDER.orderId },
+      }),
     );
 
-    // Assert: #230 xem đơn, #231 huỷ đơn
+    // Assert: #231 huỷ đơn
     expect(res.statusCode).toBe(501);
   });
 

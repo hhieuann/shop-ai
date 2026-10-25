@@ -2,10 +2,13 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer, Context } from 'aws-lambd
 import { z } from 'zod';
 import { json, problem, validationProblem, type HttpResult } from '../../shared/http/response.js';
 import { parseIdempotencyKey } from '../../shared/idempotency.js';
+import type { ListOrdersInput, ListOrdersOutput } from './application/listOrders.js';
 import type { PlaceOrderOutput } from './application/placeOrder.js';
+import { MAX_PAGE_SIZE } from './domain/history.js';
 import {
   MAX_LINES,
   MAX_QUANTITY,
+  type Order,
   type RequestedItem,
   type ShippingAddress,
 } from './domain/order.js';
@@ -23,6 +26,8 @@ export interface OrderingUseCases {
     },
     context?: Context,
   ): Promise<{ readonly value: PlaceOrderOutput; readonly replayed: boolean }>;
+  listOrders(input: ListOrdersInput): Promise<ListOrdersOutput>;
+  getOrder(input: { readonly userId: string; readonly orderId: string }): Promise<Order>;
 }
 
 type Route = (
@@ -68,6 +73,17 @@ const createOrderBody = z.object({
   }),
 });
 
+/** Query GET /api/v1/orders theo contracts/openapi.yaml (listOrders) */
+const listQuery = z.object({
+  limit: z.coerce
+    .number()
+    .int('limit là số nguyên')
+    .min(1, `limit từ 1 tới ${MAX_PAGE_SIZE}`)
+    .max(MAX_PAGE_SIZE, `limit từ 1 tới ${MAX_PAGE_SIZE}`)
+    .optional(),
+  cursor: z.string().min(1).max(200, 'cursor không hợp lệ').optional(),
+});
+
 /** Body JSON; sai cú pháp thì trả undefined để báo lỗi 400 như thiếu trường */
 function readJson(event: APIGatewayProxyEventV2WithJWTAuthorizer): unknown {
   if (!event.body) return undefined;
@@ -85,7 +101,7 @@ function orderResponse(status: number, body: unknown): HttpResult {
   return { ...result, headers: { ...result.headers, 'cache-control': 'no-store' } };
 }
 
-/** GET, DELETE đơn chưa có use case (#230, #231): trả 501 như Lambda tạm ở #234 */
+/** DELETE đơn chưa có use case (#231): trả 501 như Lambda tạm ở #234 */
 const notImplemented: Route = async (event) =>
   problem({
     status: 501,
@@ -114,7 +130,16 @@ export const routes: Readonly<Record<string, Route>> = {
     // 201 lần đầu; gọi lại cùng khoá (Powertools hoặc item đánh dấu) trả 200 cùng đơn
     return orderResponse(value.created && !replayed ? 201 : 200, value.order);
   },
-  'GET /api/v1/orders': notImplemented,
-  'GET /api/v1/orders/{orderId}': notImplemented,
+  'GET /api/v1/orders': async (event, userId, { listOrders }) => {
+    const query = listQuery.safeParse(event.queryStringParameters ?? {});
+    if (!query.success) return validationProblem(query.error, event.requestContext.requestId);
+    // Cursor sai → InvalidOrderCursorError → 400
+    return orderResponse(200, await listOrders({ userId, ...query.data }));
+  },
+  'GET /api/v1/orders/{orderId}': async (event, userId, { getOrder }) => {
+    // orderId sai dạng thì use case trả 404 (contract getOrder không có 400)
+    const orderId = event.pathParameters?.orderId ?? '';
+    return orderResponse(200, await getOrder({ userId, orderId }));
+  },
   'DELETE /api/v1/orders/{orderId}': notImplemented,
 };
