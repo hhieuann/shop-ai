@@ -216,3 +216,118 @@ describe('ApiStack · ordering', () => {
     });
   });
 });
+
+/** Các statement IAM của role Lambda worker order-processor */
+function workerStatements(template: Template): Statement[] {
+  const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
+    JSON.stringify(p.Properties.Roles).includes('OrderProcessorFunctionServiceRole'),
+  );
+  return policies.flatMap((p) => p.Properties.PolicyDocument.Statement as Statement[]);
+}
+
+/** Logical id của role worker, để so với điều kiện trong topic policy */
+function workerRoleId(template: Template): string {
+  const [id] = Object.keys(template.findResources('AWS::IAM::Role')).filter((key) =>
+    key.startsWith('OrderProcessorFunctionServiceRole'),
+  );
+  if (!id) throw new Error('Không thấy role của worker order-processor');
+  return id;
+}
+
+describe('ApiStack · worker order-processor', () => {
+  it('worker_readsOrdersQueue_withPartialBatchFailures_andTwoConcurrent', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert: ordering.md luồng SQS; tin lỗi giao lại riêng từng tin, quá 3 lần vào DLQ có sẵn
+    template.hasResourceProperties('AWS::Lambda::EventSourceMapping', {
+      FunctionName: { Ref: Match.stringLikeRegexp('^OrderProcessorFunction') },
+      EventSourceArn: { 'Fn::GetAtt': [Match.stringLikeRegexp('^OrdersQueue'), 'Arn'] },
+      BatchSize: 5,
+      FunctionResponseTypes: ['ReportBatchItemFailures'],
+      ScalingConfig: { MaximumConcurrency: 2 },
+    });
+  });
+
+  it('worker_runsWorkerEntry_withTableAndTopicFromStack', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert: tên bảng, ARN topic lấy từ tài nguyên của stack, không ghi cứng
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      MemorySize: 256,
+      Timeout: 10,
+      Architectures: ['arm64'],
+      Environment: {
+        Variables: Match.objectLike({
+          ORDERS_TABLE: { Ref: Match.stringLikeRegexp('^OrdersTable') },
+          ORDER_CONFIRMED_TOPIC_ARN: { Ref: Match.stringLikeRegexp('^OrderConfirmedTopic') },
+          POWERTOOLS_SERVICE_NAME: 'order-processor',
+        }),
+      },
+    });
+  });
+
+  it('worker_canOnlyReadAndUpdateOrders_andPublishOrderConfirmed', () => {
+    // Act
+    const statements = workerStatements(synth(staging));
+    const dynamo = statements.filter((s) => JSON.stringify(s.Action).includes('dynamodb:'));
+    const sns = statements.filter((s) => JSON.stringify(s.Action).includes('sns:'));
+
+    // Assert: chỉ bảng orders, không đặt điều kiện dynamodb:Attributes (#253, #254)
+    expect(dynamo).toHaveLength(1);
+    expect(dynamo[0]?.Action).toEqual(['dynamodb:GetItem', 'dynamodb:UpdateItem']);
+    expect(dynamo[0]?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^OrdersTable/), 'Arn'],
+    });
+    expect(dynamo[0]?.Condition).toBeUndefined();
+    expect(sns).toHaveLength(1);
+    expect(sns[0]?.Action).toBe('sns:Publish');
+    expect(sns[0]?.Resource).toEqual({ Ref: expect.stringMatching(/^OrderConfirmedTopic/) });
+
+    // Verify: không gửi được vào hàng đợi, không đụng products, carts, idempotency, SES, Cognito
+    const all = JSON.stringify(statements);
+    expect(all).not.toContain('sqs:SendMessage');
+    for (const forbidden of [
+      'ProductsTable',
+      'CartsTable',
+      'Idempotency',
+      'ses:',
+      'cognito-idp:',
+    ]) {
+      expect(all).not.toContain(forbidden);
+    }
+  });
+
+  it('orderConfirmedTopic_deniesPublish_fromAnyoneButWorkerRole', () => {
+    // Act
+    const template = synth(staging);
+    const roleId = workerRoleId(template);
+
+    // Assert: threat model E9; Deny vì Allow không chặn được principal cùng tài khoản
+    template.hasResourceProperties('AWS::SNS::TopicPolicy', {
+      Topics: [{ Ref: Match.stringLikeRegexp('^OrderConfirmedTopic') }],
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Effect: 'Deny',
+            Principal: { AWS: '*' },
+            Action: 'sns:Publish',
+            Condition: { ArnNotEquals: { 'aws:PrincipalArn': { 'Fn::GetAtt': [roleId, 'Arn'] } } },
+          }),
+        ]),
+      },
+    });
+  });
+
+  it('worker_existsInProd_withSameLimits', () => {
+    // Act
+    const template = synth(prod);
+
+    // Assert: prod cũng xác nhận đơn tự động, cùng giới hạn chạy cùng lúc
+    template.hasResourceProperties('AWS::Lambda::EventSourceMapping', {
+      FunctionName: { Ref: Match.stringLikeRegexp('^OrderProcessorFunction') },
+      ScalingConfig: { MaximumConcurrency: 2 },
+    });
+  });
+});

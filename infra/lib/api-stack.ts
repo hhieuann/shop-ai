@@ -31,12 +31,13 @@ import {
   UserPoolOperation,
 } from 'aws-cdk-lib/aws-cognito';
 import { AttributeType, BillingMode, ProjectionType, Table } from 'aws-cdk-lib/aws-dynamodb';
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { AnyPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import type { Bucket } from 'aws-cdk-lib/aws-s3';
+import type { Topic } from 'aws-cdk-lib/aws-sns';
 import { Queue, QueueEncryption } from 'aws-cdk-lib/aws-sqs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
@@ -268,6 +269,14 @@ export class ApiStack extends Stack {
     new CfnOutput(this, 'EventsPurchaseQueueUrl', { value: orderConfirmed.eventsQueue.queueUrl });
     // events.md mục 1: consumer ghi mỗi món của đơn đã xác nhận thành một PURCHASE
     this.addPurchaseConsumer(shopEnv, removalPolicy, events, orderConfirmed.eventsQueue);
+    // Worker order-processor (ordering.md, luồng SQS): xác nhận đơn, gửi tin order-confirmed
+    const orderProcessorFn = this.addOrderProcessor(
+      shopEnv,
+      removalPolicy,
+      ordering.orders,
+      ordering.queue,
+      orderConfirmed.topic,
+    );
 
     // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
     const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
@@ -284,6 +293,8 @@ export class ApiStack extends Stack {
         account: accountFn,
         health: healthFn,
       },
+      workerFunctions: { 'order-processor': orderProcessorFn },
+      ordersQueue: ordering.queue,
       ordersDeadLetterQueue: ordering.deadLetterQueue,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
     });
@@ -717,6 +728,83 @@ export class ApiStack extends Stack {
     );
     fn.addEventSource(new SqsEventSource(queue, { batchSize: 10, reportBatchItemFailures: true }));
     Tags.of(fn).add('module', 'events');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+    return fn;
+  }
+
+  /**
+   * Worker order-processor của module ordering (ordering.md, luồng SQS; code ở
+   * services/api/src/modules/ordering/processorLambda.ts, #259): đọc hàng đợi đơn, xác nhận đơn
+   * `PENDING → CONFIRMED`, gửi tin `order-confirmed`. Lambda riêng, quyền riêng, tách khỏi Lambda API.
+   * Quyền tối thiểu: GetItem, UpdateItem trên orders; sns:Publish lên topic; đọc hàng đợi do event
+   * source tự cấp. Không có sqs:SendMessage, không quyền trên products, carts. Email SES làm ở PR sau.
+   */
+  private addOrderProcessor(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    orders: Table,
+    queue: Queue,
+    topic: Topic,
+  ) {
+    const fn = new NodejsFunction(this, 'OrderProcessorFunction', {
+      entry: path.join(API_SRC, 'modules', 'ordering', 'processorLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      // Hàng đợi đơn để visibility timeout 60 giây, tức 6 lần timeout này (addOrdering)
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'OrderProcessorLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        ORDERS_TABLE: orders.tableName,
+        ORDER_CONFIRMED_TOPIC_ARN: topic.topicArn,
+        POWERTOOLS_SERVICE_NAME: 'order-processor',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    // Đọc lại đơn (threat model O9) và xác nhận có điều kiện. Không đặt điều kiện dynamodb:Attributes:
+    // điều kiện đó tính cả thuộc tính trong ConditionExpression và chỉ thử được trên AWS (#253, #254)
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+        resources: [orders.tableArn],
+      }),
+    );
+    topic.grantPublish(fn);
+    // Threat model E9: chỉ role worker được gửi tin lên topic. Allow trong topic policy không chặn được
+    // principal cùng tài khoản đã có sns:Publish trong IAM policy, nên dùng Deny với mọi principal khác.
+    // SNS giao tin vào hàng đợi events không phải sns:Publish nên không bị ảnh hưởng.
+    topic.addToResourcePolicy(
+      new PolicyStatement({
+        effect: Effect.DENY,
+        principals: [new AnyPrincipal()],
+        actions: ['sns:Publish'],
+        resources: [topic.topicArn],
+        conditions: { ArnNotEquals: { 'aws:PrincipalArn': fn.role!.roleArn } },
+      }),
+    );
+    // maxConcurrency 2 là mức thấp nhất AWS cho phép: giữ nhịp chậm cho SES sandbox (1 thư/giây) ở PR
+    // email và không chiếm Lambda chạy cùng lúc của cả tài khoản
+    fn.addEventSource(
+      new SqsEventSource(queue, { batchSize: 5, reportBatchItemFailures: true, maxConcurrency: 2 }),
+    );
+    Tags.of(fn).add('module', 'ordering');
     Validations.of(fn).acknowledge(
       {
         id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
