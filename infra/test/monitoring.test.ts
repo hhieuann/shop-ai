@@ -152,25 +152,83 @@ describe('Monitoring', () => {
     // Assert: 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu
     template.hasResourceProperties('AWS::CloudWatch::Alarm', {
       AlarmName: 'shop-dev-api-latency-p95',
-      MetricName: 'Latency',
-      ExtendedStatistic: 'p95',
-      Period: 300,
       EvaluationPeriods: 3,
       Threshold: 1000,
       TreatMissingData: 'notBreaching',
+      Metrics: Match.arrayWith([
+        Match.objectLike({
+          Id: 'p95',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ MetricName: 'Latency' }),
+            Period: 300,
+            Stat: 'p95',
+          }),
+        }),
+      ]),
     });
   });
 
-  it('preSignUpErrorsAlarm_firesOnFirstError', () => {
+  it('apiLatencyAlarm_ignoresPeriodsUnderTwentyRequests', () => {
     // Act
     const template = synth('test@example.com', dev);
 
-    // Assert: pre sign-up lỗi là không ai đăng ký được, và lỗi này không hiện ở 5xx của API
+    // Assert: lưu lượng thưa thì p95 chỉ là vài lần khởi động lạnh (staging 21/10)
+    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
+      AlarmName: 'shop-dev-api-latency-p95',
+      Metrics: Match.arrayWith([
+        Match.objectLike({ Expression: 'IF(requests >= 20, p95, 0)', ReturnData: true }),
+        Match.objectLike({
+          Id: 'requests',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ MetricName: 'Count' }),
+            Stat: 'Sum',
+          }),
+        }),
+      ]),
+    });
+  });
+
+  it('preSignUpErrorsAlarm_firesOnFirstErrorThatIsNotARejection', () => {
+    // Act
+    const template = synth('test@example.com', dev);
+
+    // Assert: pre sign-up lỗi là không ai đăng ký được, và lỗi này không hiện ở 5xx của API.
+    // Từ chối đăng ký (trùng username) cũng vào Errors nên trừ ra (staging 21/10)
     template.hasResourceProperties('AWS::CloudWatch::Alarm', {
       AlarmName: 'shop-dev-presignup-errors',
-      Namespace: 'AWS/Lambda',
-      MetricName: 'Errors',
       Threshold: 1,
+      Metrics: Match.arrayWith([
+        Match.objectLike({ Expression: 'FILL(errors, 0) - FILL(rejected, 0)', ReturnData: true }),
+        Match.objectLike({
+          Id: 'errors',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ Namespace: 'AWS/Lambda', MetricName: 'Errors' }),
+          }),
+        }),
+        Match.objectLike({
+          Id: 'rejected',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ Namespace: 'shop-dev', MetricName: 'PreSignUpRejected' }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  it('preSignUpRejectedFilter_countsOnlySignUpRejectedError', () => {
+    // Act
+    const template = synth('test@example.com', dev);
+
+    // Assert: dòng "Invoke Error" của runtime Node chứa errorType của lỗi ném ra
+    template.hasResourceProperties('AWS::Logs::MetricFilter', {
+      FilterPattern: '"Invoke Error" "SignUpRejectedError"',
+      MetricTransformations: [
+        Match.objectLike({
+          MetricNamespace: 'shop-dev',
+          MetricName: 'PreSignUpRejected',
+          MetricValue: '1',
+        }),
+      ],
     });
   });
 

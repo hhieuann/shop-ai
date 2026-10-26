@@ -14,7 +14,8 @@ import {
 } from 'aws-cdk-lib/aws-cloudwatch';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
-import type { IFunction } from 'aws-cdk-lib/aws-lambda';
+import type { IFunction, Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
+import { FilterPattern, MetricFilter } from 'aws-cdk-lib/aws-logs';
 import type { IQueue } from 'aws-cdk-lib/aws-sqs';
 import { Subscription, SubscriptionProtocol, Topic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
@@ -27,8 +28,8 @@ export interface MonitoringProps {
   readonly shopEnv: ShopEnvironment;
   /** HTTP API cần canh 5xx và độ trễ */
   readonly httpApi: IHttpApi;
-  /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API */
-  readonly preSignUpFn: IFunction;
+  /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API. Cần log group để đếm lần từ chối */
+  readonly preSignUpFn: LambdaFunction;
   /** Lambda đứng sau API, theo tên module: vẽ lỗi và thời gian chạy của từng hàm trên dashboard */
   readonly apiFunctions: Readonly<Record<string, IFunction>>;
   /** Lambda chạy nền (đọc SQS), theo tên: vẽ chung với Lambda API trên dashboard */
@@ -134,19 +135,45 @@ export class Monitoring extends Construct {
         1,
         'api-5xx',
       );
-      // 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu
+      // 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu. Lưu lượng thưa thì p95 chỉ là
+      // vài request khởi động lạnh (staging 21/10), nên chu kỳ dưới 20 request tính là 0
       addAlarm(
         'ApiLatencyAlarm',
         'api-latency-p95',
-        props.httpApi.metricLatency({ period, statistic: Stats.p(95) }),
+        new MathExpression({
+          expression: 'IF(requests >= 20, p95, 0)',
+          usingMetrics: {
+            requests: props.httpApi.metricCount({ period, statistic: Stats.SUM }),
+            p95: props.httpApi.metricLatency({ period, statistic: Stats.p(95) }),
+          },
+          period,
+          label: 'p95 khi có từ 20 request',
+        }),
         1000,
         3,
         'api-latency',
       );
+      // Từ chối đăng ký (trùng hoặc sai luật username) cũng là ném lỗi nên vào Errors của Lambda (staging
+      // 21/10). Đếm riêng lần từ chối qua log rồi trừ ra; còn lại là lỗi thật: timeout, Cognito lỗi, code hỏng
+      const rejected = new MetricFilter(this, 'PreSignUpRejectedFilter', {
+        logGroup: props.preSignUpFn.logGroup,
+        metricNamespace: shopEnv.stackPrefix,
+        metricName: 'PreSignUpRejected',
+        filterPattern: FilterPattern.allTerms('Invoke Error', 'SignUpRejectedError'),
+        metricValue: '1',
+      });
       addAlarm(
         'PreSignUpErrorsAlarm',
         'presignup-errors',
-        props.preSignUpFn.metricErrors({ period, statistic: Stats.SUM }),
+        new MathExpression({
+          expression: 'FILL(errors, 0) - FILL(rejected, 0)',
+          usingMetrics: {
+            errors: props.preSignUpFn.metricErrors({ period, statistic: Stats.SUM }),
+            rejected: rejected.metric({ period, statistic: Stats.SUM }),
+          },
+          period,
+          label: 'Lỗi không phải từ chối đăng ký',
+        }),
         1,
         1,
         'lambda-errors',
