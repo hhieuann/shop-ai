@@ -17,7 +17,7 @@ Doanh nghiệp thường tách mỗi môi trường một tài khoản AWS bằn
 ## Hệ quả
 
 - Dễ hơn: không tốn thêm tài khoản; chi phí gom một chỗ.
-- Khó hơn: một role có quyền rộng trong tài khoản demo có thể chạm vào cả ba môi trường. Role deploy tách theo môi trường và giới hạn bằng tên stack.
+- Khó hơn: một role có quyền rộng trong tài khoản demo có thể chạm vào cả ba môi trường. Role deploy tách theo môi trường nhưng **chưa** giới hạn theo tên stack: cả ba role `gh-deploy-*` assume được `cfn-exec-role` có AdministratorAccess (bootstrap mặc định). Lớp chặn thật nằm ở GitHub Environments và ruleset; nhóm chấp nhận rủi ro này (threat model C6, #180).
 - Báo cáo ghi rõ đây là đánh đổi có chủ ý.
 
 ## Cập nhật 01/10/2026
