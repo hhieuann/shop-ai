@@ -1,6 +1,6 @@
 # Threat model bản 0 (STRIDE)
 
-Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10 và 25/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
+Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10, 25/10 và 26/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
 
 Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới ADR-0017,
 `docs/business/` (account, cart, ordering, events, recommendation),
@@ -123,10 +123,10 @@ Route `POST /api/v1/events` đã có trong `contracts/openapi.yaml` (#174): bắ
 
 | # | STRIDE | Mối đe doạ | Mức | Cách giảm thiểu | Trạng thái |
 |---|---|---|---|---|---|
-| E1 | T | Client gửi `PURCHASE` giả để đẩy sản phẩm lên gợi ý | Cao | API công khai chỉ nhận `VIEW`, `ADD_TO_CART` (enum trong contract, #174); `PURCHASE` chỉ đến từ topic `order-confirmed` khi đơn `CONFIRMED` (events.md mục 1) | Đã có (contract) · Theo thiết kế (module) |
+| E1 | T | Client gửi `PURCHASE` giả để đẩy sản phẩm lên gợi ý | Cao | API công khai chỉ nhận `VIEW`, `ADD_TO_CART` (enum trong contract, #174); `PURCHASE` chỉ đến từ topic `order-confirmed` khi đơn `CONFIRMED` (events.md mục 1) | Đã có: contract (#174), module (#200), consumer (#252), E2E `events.e2e.ts` |
 | E2 | T | **Đầu độc gợi ý:** nhiều tài khoản ảo spam `VIEW`, `ADD_TO_CART` | Cao | Rule WAF riêng cho `/api/events` (ADR-0006); giới hạn trọng số mỗi cặp (user, item); thí nghiệm có số liệu trước và sau ở tuần 5 (nhan.md) | Theo thiết kế · Đề xuất (giới hạn trọng số) |
-| E3 | S | Gửi sự kiện mang `userId` của người khác | Vừa | `userId` lấy từ token Cognito, không nhận từ body (events.md mục 5); contract từ chối trường lạ (`additionalProperties: false`, #174) | Đã có (contract) · Theo thiết kế (module) |
-| E4 | T | Client gửi `timestamp` giả để làm lệch việc chia train, test theo thời gian | Vừa | Server đặt `timestamp` (events.md mục 3) | Theo thiết kế |
+| E3 | S | Gửi sự kiện mang `userId` của người khác | Vừa | `userId` lấy từ token Cognito, không nhận từ body (events.md mục 5); contract từ chối trường lạ (`additionalProperties: false`, #174) | Đã có: contract, module (#200), E2E `events.e2e.ts` |
+| E4 | T | Client gửi `timestamp` giả để làm lệch việc chia train, test theo thời gian | Vừa | Server đặt `timestamp` (events.md mục 3) | Đã có: module (#200), E2E `events.e2e.ts` |
 | E5 | I | `userId` thật lọt vào bảng `events` hoặc dữ liệu huấn luyện | Cao | Lưu `HMAC(key, userId)` thay cho `userId` (events.md mục 2); pipeline chỉ xuất các cột cho phép | Theo thiết kế |
 | E6 | I | Khoá HMAC bị lộ (trong code, log, repo public) | Cao | SSM SecureString `/shop/<env>/events/hmac-key`, tạo bằng CLI nên không nằm trong repo hay template CloudFormation; chỉ Lambda `events`, Lambda nhận `PURCHASE`, Lambda gợi ý (tra `FOR_YOU#<userIdHash>`) và pipeline có `ssm:GetParameter` trên đúng tham số; một hàm băm dùng chung `services/api/src/shared/userIdHash.ts` không bao giờ log khoá; gitleaks quét mỗi PR | Đã có (Lambda `events`, #204) · Theo thiết kế (gợi ý, pipeline) |
 | E7 | D | Spam sự kiện làm tăng chi phí DynamoDB | Vừa | Throttle stage 50 request/giây, burst 100 (`api-stack.ts`); rule WAF cho `/api/events` | Đã có (throttle) · Theo thiết kế (WAF) |
