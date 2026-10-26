@@ -7,14 +7,23 @@ import type { ShopEnvironment } from '../lib/config.js';
 const staging: ShopEnvironment = { name: 'staging', stackPrefix: 'shop-stg', isProd: false };
 const prod: ShopEnvironment = { name: 'prod', stackPrefix: 'shop-prd', isProd: true };
 
+/** Địa chỉ gửi giả cho test, giống `-c senderEmail` mà deploy truyền từ secret (#261) */
+const SENDER = 'shop@example.com';
+
 const templates = new Map<string, Template>();
-function synth(shopEnv: ShopEnvironment): Template {
-  let template = templates.get(shopEnv.name);
+function synth(shopEnv: ShopEnvironment, senderEmail?: string): Template {
+  const cacheKey = `${shopEnv.name}:${senderEmail ?? ''}`;
+  let template = templates.get(cacheKey);
   if (!template) {
     // Bỏ qua bước esbuild cho test chạy nhanh; đóng gói thật do `cdk synth` kiểm.
-    const app = new App({ context: { 'aws:cdk:bundling-stacks': [] } });
+    const app = new App({
+      context: {
+        'aws:cdk:bundling-stacks': [],
+        ...(senderEmail === undefined ? {} : { senderEmail }),
+      },
+    });
     const stack = new ApiStack(app, 'TestApi', { shopEnv, env: { region: 'ap-southeast-1' } });
-    templates.set(shopEnv.name, (template = Template.fromStack(stack)));
+    templates.set(cacheKey, (template = Template.fromStack(stack)));
   }
   return template;
 }
@@ -268,8 +277,8 @@ describe('ApiStack · worker order-processor', () => {
     });
   });
 
-  it('worker_canOnlyReadAndUpdateOrders_andPublishOrderConfirmed', () => {
-    // Act
+  it('worker_withoutSenderEmail_canOnlyReadAndUpdateOrders_andPublishOrderConfirmed', () => {
+    // Act: máy local, CI của PR không truyền -c senderEmail
     const statements = workerStatements(synth(staging));
     const dynamo = statements.filter((s) => JSON.stringify(s.Action).includes('dynamodb:'));
     const sns = statements.filter((s) => JSON.stringify(s.Action).includes('sns:'));
@@ -294,6 +303,82 @@ describe('ApiStack · worker order-processor', () => {
       'Idempotency',
       'ses:',
       'cognito-idp:',
+    ]) {
+      expect(all).not.toContain(forbidden);
+    }
+  });
+
+  it('worker_withoutSenderEmail_skipsEmailStep', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert: thiếu biến thì worker bỏ bước thư (emailConfig.ts); metric vẫn theo môi trường
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: {
+        Variables: Match.objectLike({
+          POWERTOOLS_SERVICE_NAME: 'order-processor',
+          POWERTOOLS_METRICS_NAMESPACE: 'shop-stg',
+          USER_POOL_ID: Match.absent(),
+          ORDER_IDEMPOTENCY_TABLE: Match.absent(),
+          SENDER_EMAIL: Match.absent(),
+        }),
+      },
+    });
+  });
+
+  it('worker_withSenderEmail_getsEmailVariablesFromStack', () => {
+    // Act
+    const template = synth(staging, SENDER);
+
+    // Assert: đủ 3 biến thì worker bật bước thư (emailConfig.ts); user pool, bảng lấy từ stack
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: {
+        Variables: Match.objectLike({
+          POWERTOOLS_SERVICE_NAME: 'order-processor',
+          POWERTOOLS_METRICS_NAMESPACE: 'shop-stg',
+          USER_POOL_ID: { Ref: Match.stringLikeRegexp('^UserPool') },
+          ORDER_IDEMPOTENCY_TABLE: { Ref: Match.stringLikeRegexp('^OrderIdempotencyTable') },
+          SENDER_EMAIL: SENDER,
+        }),
+      },
+    });
+  });
+
+  it('worker_withSenderEmail_sendsOnlyFromSender_andReadsOwnUserPoolAndIdempotency', () => {
+    // Act
+    const statements = workerStatements(synth(staging, SENDER));
+    const ses = statements.filter((s) => JSON.stringify(s.Action).includes('ses:'));
+    const cognito = statements.filter((s) => JSON.stringify(s.Action).includes('cognito-idp:'));
+    const idempotency = on(statements, 'OrderIdempotencyTable');
+
+    // Assert: sandbox kiểm quyền cả địa chỉ nhận nên resource là identity/*, điều kiện khoá
+    // địa chỉ gửi
+    expect(ses).toHaveLength(1);
+    expect(ses[0]?.Action).toBe('ses:SendEmail');
+    expect(JSON.stringify(ses[0]?.Resource)).toContain(':identity/*');
+    expect(ses[0]?.Condition).toEqual({ StringEquals: { 'ses:FromAddress': SENDER } });
+    // An chốt 25/10: chỉ ListUsers, chỉ trên user pool của môi trường này
+    expect(cognito).toHaveLength(1);
+    expect(cognito[0]?.Action).toBe('cognito-idp:ListUsers');
+    expect(cognito[0]?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^UserPool/), 'Arn'],
+    });
+    // Powertools Idempotency chống gửi thư trùng, chỉ trên bảng order-idempotency
+    expect(actions(idempotency)).toEqual([
+      'dynamodb:DeleteItem',
+      'dynamodb:GetItem',
+      'dynamodb:PutItem',
+      'dynamodb:UpdateItem',
+    ]);
+
+    // Verify: vẫn không gửi được vào hàng đợi, không đụng products, carts, cart-idempotency
+    const all = JSON.stringify(statements);
+    for (const forbidden of [
+      'sqs:SendMessage',
+      'ses:SendRawEmail',
+      'ProductsTable',
+      'CartsTable',
+      'CartIdempotencyTable',
     ]) {
       expect(all).not.toContain(forbidden);
     }
