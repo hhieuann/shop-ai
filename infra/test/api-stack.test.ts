@@ -193,7 +193,12 @@ describe('ApiStack', () => {
         ]),
       },
     });
-    expect(JSON.stringify(template.toJSON())).not.toContain('dynamodb:BatchWriteItem');
+    // Chỉ xét role của Lambda seed: pipeline gợi ý có BatchWriteItem trên bảng recs của nó
+    const seedPolicies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
+      JSON.stringify(p.Properties.Roles).includes('SeedProductsFunction'),
+    );
+    expect(seedPolicies.length).toBeGreaterThan(0);
+    expect(JSON.stringify(seedPolicies)).not.toContain('dynamodb:BatchWriteItem');
   });
 
   it('httpApi_routesHealthToDedicatedFunctionWithoutDataAccess', () => {
