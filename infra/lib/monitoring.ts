@@ -6,6 +6,7 @@ import {
   ComparisonOperator,
   Dashboard,
   GraphWidget,
+  MathExpression,
   Metric,
   Stats,
   TreatMissingData,
@@ -36,6 +37,8 @@ export interface MonitoringProps {
   readonly ordersQueue?: IQueue;
   /** DLQ của hàng đợi đơn: có tin là có đơn worker xử lý lỗi quá 3 lần, còn kẹt ở PENDING */
   readonly ordersDeadLetterQueue?: IQueue;
+  /** Lambda job gợi ý mỗi đêm: không có lần chạy thành công nào trong 26 giờ thì báo (chỉ prod) */
+  readonly recsPipelineFn?: IFunction;
   /**
    * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ secret ALARM_EMAIL).
    * Không ghi vào code vì repo public. Thiếu thì vẫn tạo topic, chỉ không có ai nhận.
@@ -178,6 +181,33 @@ export class Monitoring extends Construct {
           1,
           'dlq-orders',
         );
+      }
+      // Job đêm chạy 1 lần mỗi ngày: đếm lần chạy KHÔNG lỗi theo từng giờ, 26 giờ liền bằng 0 thì báo.
+      // Bắt được cả lỗi (Invocations = Errors) lẫn không chạy (lịch hỏng, thiếu quyền gọi Lambda);
+      // giờ không có số liệu tính là 0 nhờ FILL. Chỉ prod, cùng lý do hạn mức alarm ở trên.
+      if (shopEnv.isProd && props.recsPipelineFn) {
+        const hourly = { period: Duration.hours(1), statistic: Stats.SUM };
+        const alarm = new Alarm(this, 'RecsPipelineNoSuccessAlarm', {
+          alarmName: `${shopEnv.stackPrefix}-recs-pipeline-no-success`,
+          alarmDescription: 'Xử lý theo docs/runbooks/recs-pipeline.md',
+          metric: new MathExpression({
+            expression: 'FILL(invocations, 0) - FILL(errors, 0)',
+            usingMetrics: {
+              invocations: props.recsPipelineFn.metricInvocations(hourly),
+              errors: props.recsPipelineFn.metricErrors(hourly),
+            },
+            period: Duration.hours(1),
+            label: 'Lần chạy thành công',
+          }),
+          threshold: 1,
+          evaluationPeriods: 26,
+          datapointsToAlarm: 26,
+          comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
+          treatMissingData: TreatMissingData.BREACHING,
+        });
+        alarm.addAlarmAction(new SnsAction(this.alarmTopic));
+        alarm.addOkAction(new SnsAction(this.alarmTopic));
+        alarms.push(alarm);
       }
       // Giới hạn Lambda chạy cùng lúc tính chung cả tài khoản (không dimension), nên chỉ canh ở prod
       if (shopEnv.isProd) {

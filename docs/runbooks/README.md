@@ -8,6 +8,7 @@ Mỗi alarm có một runbook: khi alarm kêu thì làm gì, theo thứ tự. Vi
 | [`api-latency.md`](api-latency.md) | `<tiền tố>-api-latency-p95`: p95 ≥ 1 giây, 15 phút liền | An |
 | [`lambda-errors.md`](lambda-errors.md) | `<tiền tố>-presignup-errors`: Lambda pre sign-up lỗi | An |
 | [`lambda-throttle.md`](lambda-throttle.md) | `shop-prd-lambda-throttles`: Lambda bị throttle (chỉ prod) | An |
+| [`recs-pipeline.md`](recs-pipeline.md) | `shop-prd-recs-pipeline-no-success`: job gợi ý mỗi đêm 26 giờ không chạy thành công (chỉ prod) | Nhân |
 | [`dlq-orders.md`](dlq-orders.md) | `shop-prd-orders-dlq`: DLQ đơn hàng có ≥ 1 tin (chỉ prod) | Hoàng |
 | [`sqs-backlog.md`](sqs-backlog.md) | Không có alarm (đã hết 10 alarm miễn phí): xem widget tuổi tin cũ nhất của hàng đợi đơn trên dashboard, quá 5 phút là tồn đọng | Hoàng |
 | `dynamodb-throttle.md` | DynamoDB bị throttle | Hoàng |

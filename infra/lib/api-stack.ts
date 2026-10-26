@@ -44,6 +44,7 @@ import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 import { Monitoring } from './monitoring.js';
 import { OrderConfirmed } from './order-confirmed.js';
+import { RecsPipeline } from './recs-pipeline.js';
 import { RecsTable } from './recs-table.js';
 import { TrainingData } from './training-data.js';
 
@@ -269,6 +270,15 @@ export class ApiStack extends Stack {
     new CfnOutput(this, 'EventsPurchaseQueueUrl', { value: orderConfirmed.eventsQueue.queueUrl });
     // events.md mục 1: consumer ghi mỗi món của đơn đã xác nhận thành một PURCHASE
     this.addPurchaseConsumer(shopEnv, removalPolicy, events, orderConfirmed.eventsQueue);
+
+    // Job gợi ý mỗi đêm (recommendation.md mục 3): đọc products, events, ghi bảng recs
+    const recsPipeline = new RecsPipeline(this, 'RecsPipeline', {
+      shopEnv,
+      removalPolicy,
+      recs: this.recsTable,
+      products,
+      events,
+    });
     // Worker order-processor (ordering.md, luồng SQS): xác nhận đơn, gửi tin order-confirmed
     const orderProcessorFn = this.addOrderProcessor(
       shopEnv,
@@ -293,7 +303,8 @@ export class ApiStack extends Stack {
         account: accountFn,
         health: healthFn,
       },
-      workerFunctions: { 'order-processor': orderProcessorFn },
+      workerFunctions: { 'order-processor': orderProcessorFn, 'recs-pipeline': recsPipeline.fn },
+      recsPipelineFn: recsPipeline.fn,
       ordersQueue: ordering.queue,
       ordersDeadLetterQueue: ordering.deadLetterQueue,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
