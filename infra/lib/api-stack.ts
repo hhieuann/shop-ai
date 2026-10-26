@@ -48,6 +48,13 @@ import { RecsPipeline } from './recs-pipeline.js';
 import { RecsTable } from './recs-table.js';
 import { TrainingData } from './training-data.js';
 
+/** Bước gửi thư của worker order-processor (#265); chỉ có khi deploy truyền `-c senderEmail` */
+interface OrderEmailInfra {
+  readonly userPool: UserPool;
+  readonly idempotency: Table;
+  readonly senderEmail: string;
+}
+
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
 const API_SRC = path.join(REPO_ROOT, 'services', 'api', 'src');
 /** 104 sản phẩm demo (services/api/seed/catalog), nạp tự động khi deploy môi trường không phải prod */
@@ -279,13 +286,19 @@ export class ApiStack extends Stack {
       products,
       events,
     });
-    // Worker order-processor (ordering.md, luồng SQS): xác nhận đơn, gửi tin order-confirmed
+    // Worker order-processor (ordering.md, luồng SQS): xác nhận đơn, gửi tin, gửi thư.
+    // Địa chỉ gửi SES truyền bằng -c senderEmail=... (#261); rỗng (máy local, CI của PR) thì
+    // worker không gửi thư
+    const senderEmail: unknown = this.node.tryGetContext('senderEmail');
     const orderProcessorFn = this.addOrderProcessor(
       shopEnv,
       removalPolicy,
       ordering.orders,
       ordering.queue,
       orderConfirmed.topic,
+      typeof senderEmail === 'string' && senderEmail !== ''
+        ? { userPool: auth.userPool, idempotency: ordering.orderIdempotency, senderEmail }
+        : undefined,
     );
 
     // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
@@ -599,7 +612,7 @@ export class ApiStack extends Stack {
 
     new CfnOutput(this, 'OrdersTableName', { value: orders.tableName });
     new CfnOutput(this, 'OrdersQueueUrl', { value: queue.queueUrl });
-    return { fn, orders, queue, deadLetterQueue };
+    return { fn, orders, orderIdempotency, queue, deadLetterQueue };
   }
 
   /**
@@ -758,7 +771,9 @@ export class ApiStack extends Stack {
    * services/api/src/modules/ordering/processorLambda.ts, #259): đọc hàng đợi đơn, xác nhận đơn
    * `PENDING → CONFIRMED`, gửi tin `order-confirmed`. Lambda riêng, quyền riêng, tách khỏi Lambda API.
    * Quyền tối thiểu: GetItem, UpdateItem trên orders; sns:Publish lên topic; đọc hàng đợi do event
-   * source tự cấp. Không có sqs:SendMessage, không quyền trên products, carts. Email SES làm ở PR sau.
+   * source tự cấp. Không có sqs:SendMessage, không quyền trên products, carts.
+   * Có `email` thì thêm bước gửi thư: bảng order-idempotency, `cognito-idp:ListUsers` trên user
+   * pool của môi trường, `ses:SendEmail` chỉ từ địa chỉ gửi.
    */
   private addOrderProcessor(
     shopEnv: ShopEnvironment,
@@ -766,6 +781,7 @@ export class ApiStack extends Stack {
     orders: Table,
     queue: Queue,
     topic: Topic,
+    email: OrderEmailInfra | undefined,
   ) {
     const fn = new NodejsFunction(this, 'OrderProcessorFunction', {
       entry: path.join(API_SRC, 'modules', 'ordering', 'processorLambda.ts'),
@@ -784,6 +800,8 @@ export class ApiStack extends Stack {
         ORDERS_TABLE: orders.tableName,
         ORDER_CONFIRMED_TOPIC_ARN: topic.topicArn,
         POWERTOOLS_SERVICE_NAME: 'order-processor',
+        // Metric OrderEmailRejected tách theo môi trường như ordering (chung tài khoản, ADR-0013)
+        POWERTOOLS_METRICS_NAMESPACE: shopEnv.stackPrefix,
         POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
         NODE_OPTIONS: '--enable-source-maps',
       },
@@ -810,6 +828,7 @@ export class ApiStack extends Stack {
         conditions: { ArnNotEquals: { 'aws:PrincipalArn': fn.role!.roleArn } },
       }),
     );
+    if (email) this.grantOrderEmail(fn, email);
     // maxConcurrency 2 là mức thấp nhất AWS cho phép: giữ nhịp chậm cho SES sandbox (1 thư/giây) ở PR
     // email và không chiếm Lambda chạy cùng lúc của cả tài khoản
     fn.addEventSource(
@@ -828,6 +847,54 @@ export class ApiStack extends Stack {
       },
     );
     return fn;
+  }
+
+  /**
+   * Bước gửi thư của worker (ordering.md bước 2.2, #265): đủ 3 biến `USER_POOL_ID`,
+   * `ORDER_IDEMPOTENCY_TABLE`, `SENDER_EMAIL` thì worker bật bước này (emailConfig.ts).
+   */
+  private grantOrderEmail(fn: NodejsFunction, email: OrderEmailInfra) {
+    fn.addEnvironment('USER_POOL_ID', email.userPool.userPoolId);
+    fn.addEnvironment('ORDER_IDEMPOTENCY_TABLE', email.idempotency.tableName);
+    fn.addEnvironment('SENDER_EMAIL', email.senderEmail);
+    // Thao tác Powertools Idempotency cần, chỉ trên bảng order-idempotency
+    // (khoá `<orderId>#<loại thư>`)
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: [
+          'dynamodb:GetItem',
+          'dynamodb:PutItem',
+          'dynamodb:UpdateItem',
+          'dynamodb:DeleteItem',
+        ],
+        resources: [email.idempotency.tableArn],
+      }),
+    );
+    // An chốt 25/10: email khách đọc bằng ListUsers lọc `sub`, chỉ trên user pool của môi trường
+    // này. IAM không giới hạn được theo `sub`, nên role đọc được email mọi khách trong pool
+    // (threat model O11)
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:ListUsers'],
+        resources: [email.userPool.userPoolArn],
+      }),
+    );
+    // Sandbox (cả 3 môi trường) SES kiểm quyền cả trên identity của địa chỉ nhận: chỉ ghi ARN địa
+    // chỉ gửi thì mọi thư bị AccessDenied. Nên mở identity/* của tài khoản, vùng này và khoá địa
+    // chỉ gửi bằng điều kiện ses:FromAddress. Không có ses:SendRawEmail, không configuration set.
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ses:SendEmail'],
+        resources: [this.formatArn({ service: 'ses', resource: 'identity', resourceName: '*' })],
+        conditions: { StringEquals: { 'ses:FromAddress': email.senderEmail } },
+      }),
+    );
+    Validations.of(fn).acknowledge({
+      // Tên ghi nhận chứa region và account thật; CI synth khi chưa biết account nên dùng chữ thay thế
+      id: `AwsSolutions-IAM5[Resource::arn:aws:ses:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:identity/*]`,
+      reason:
+        'Sandbox SES kiểm quyền cả địa chỉ nhận; ses:FromAddress chỉ cho gửi từ địa chỉ của shop.',
+    });
   }
 
   /**
