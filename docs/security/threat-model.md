@@ -142,7 +142,7 @@ Route `POST /api/v1/events` đã có trong `contracts/openapi.yaml` (#174): bắ
 | C3 | I | Lỗi trả về lộ stack trace, tên bảng | Thấp | Lỗi theo RFC 9457 kèm `traceId`, không lộ stack trace (engineering-plan.md) | Theo thiết kế, kiểm bằng ZAP ở tuần 5 |
 | C4 | I | Commit secret hoặc dữ liệu thật vào repo public | Vừa | Mỗi PR chạy gitleaks, `pnpm audit` (check "Security · secrets & dependencies") và CodeQL; chỉ dùng dữ liệu giả lập (ADR-0015) | Đã có |
 | C5 | R | Không truy vết được request bất thường | Thấp | Access log API có `requestId`, IP, route, status, giữ 14 ngày (`api-stack.ts`); log WAF khi gắn WAF | Đã có (access log) |
-| C6 | E | **Role deploy có quyền admin cả tài khoản:** ba role `gh-deploy-*` được assume mọi role CDK bootstrap, trong đó `cfn-exec-role` mang AdministratorAccess (bootstrap mặc định). Dev, staging, prod chung một tài khoản (ADR-0013) nên role của dev sửa hoặc xoá được `shop-prd` | Cao | Trust policy khớp chính xác `aud` và `sub` (`infra/bootstrap/github-oidc.yaml`). Lớp chặn thật nằm ở GitHub, An kiểm ngày 21/10: environment `dev` chỉ `develop`, `staging` chỉ `release/*`, `production` chỉ tag `v*` và cần 3 người duyệt, chặn tự duyệt; chỉ admin tạo được tag `v*`; `develop`, `main` bắt buộc PR và CI xanh. Riêng "Allow administrators to bypass" của `production` đang bật, An nhận tắt ngày 21/10. Action bên thứ ba pin theo SHA | Chấp nhận (#180) |
+| C6 | E | **Role deploy có quyền admin cả tài khoản:** ba role `gh-deploy-*` được assume mọi role CDK bootstrap, trong đó `cfn-exec-role` mang AdministratorAccess (bootstrap mặc định). Dev, staging, prod chung một tài khoản (ADR-0013) nên role của dev sửa hoặc xoá được `shop-prd` | Cao | Trust policy khớp chính xác `aud` và `sub` (`infra/bootstrap/github-oidc.yaml`). Lớp chặn thật nằm ở GitHub, An kiểm ngày 21/10: environment `dev` chỉ `develop`, `staging` chỉ `release/*`, `production` chỉ tag `v*`, cần 1 trong 3 người duyệt và chặn tự duyệt, không cho admin bỏ qua (tắt ngày 21/10, kiểm lại 26/10); chỉ admin tạo, sửa, xoá được tag `v*`; `develop`, `main` bắt buộc PR và CI xanh. Action bên thứ ba pin theo SHA | Chấp nhận (#180) |
 
 ## 5. Việc tiếp theo
 
@@ -153,9 +153,9 @@ Mỗi dòng **Đề xuất** sẽ thành một issue riêng, ghi rõ mức và c
 - [x] O7: đã thử điều kiện `dynamodb:Attributes` cho role `ordering`, IAM chặn giao dịch trừ kho nên bỏ, chấp nhận rủi ro (ADR-0017) (Hoàng)
 - [ ] O8, O9: không đưa `shippingAddress` vào tin SNS và log; worker không tin nội dung message
 - [ ] C1: chọn cách xử lý việc gọi thẳng `execute-api` (An, tuần 5)
-- [ ] C6: xác nhận đã tắt "Allow administrators to bypass" của environment `production`; An sửa câu "giới hạn bằng tên stack" trong ADR-0013 cho đúng thực tế (#180)
+- [x] C6: xác nhận đã tắt "Allow administrators to bypass" của environment `production`; An sửa câu "giới hạn bằng tên stack" trong ADR-0013 cho đúng thực tế (#180)
 - [ ] E2: thí nghiệm đầu độc gợi ý ở tuần 5
-- [ ] E9: queue policy đã có (#211), consumer đã có (25/10); còn topic policy chỉ cho role `order-processor` publish khi worker có role
+- [x] E9: queue policy đã có (#211), consumer đã có (25/10); topic policy chặn mọi principal trừ role `order-processor` publish (#263)
 - [ ] Bản 1: thêm pipeline gợi ý mỗi đêm, bucket dữ liệu, bảng `recs`, trang admin
 
 ## 6. Câu hỏi mở
