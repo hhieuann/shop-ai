@@ -267,3 +267,40 @@ def test_lambda_tron_du_lieu_gia_lap_va_khong_log_ma_nguoi_dung(tmp_path: Path):
     text = json.dumps(summary)
     assert "hash-that" not in text
     assert '"u0' not in text
+
+
+def test_lambda_chi_in_mot_dong_json(tmp_path: Path, capsys, monkeypatch):
+    # Arrange: thay boto3 bằng bảng giả, chạy chế độ giả lập như dev
+    import sys
+    import types
+
+    seed = json.loads(DEFAULT_PRODUCTS.read_text(encoding="utf-8-sig"))["products"]
+    tables = {
+        "recs": FakeTable(),
+        "products": FakeTable(
+            [{"productId": p["productId"], "category": p["category"], "status": "ACTIVE",
+              "createdAt": "2026-10-01T00:00:00.000Z"} for p in seed],
+            page_size=50,
+        ),
+        "events": FakeTable([]),
+    }
+    fake_boto3 = types.SimpleNamespace(
+        resource=lambda _name: types.SimpleNamespace(Table=lambda name: tables[name])
+    )
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    for key, value in {"RECS_TABLE": "recs", "PRODUCTS_TABLE": "products", "EVENTS_TABLE": "events",
+                       "SYNTHETIC": "1", "PRODUCTS_JSON": str(DEFAULT_PRODUCTS)}.items():
+        monkeypatch.setenv(key, value)
+    from data.pipeline.lambda_handler import handler
+
+    # Act
+    handler({}, None)
+    out = capsys.readouterr()
+
+    # Assert: đúng 1 dòng, là JSON, không có gì ở stderr
+    lines = out.out.strip().splitlines()
+    assert len(lines) == 1
+    line = json.loads(lines[0])
+    assert line["message"] == "Job gợi ý mỗi đêm xong"
+    assert line["syntheticEvents"] > 1000
+    assert out.err == ""
