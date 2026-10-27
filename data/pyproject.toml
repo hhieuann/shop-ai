@@ -13,6 +13,7 @@ dependencies = []
 data = "data.generator.synthetic:cli"
 data-eval = "data.evaluate:cli"
 data-eval-for-you = "data.evaluate_for_you:cli"
+data-poison = "data.security.poisoning:cli"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
