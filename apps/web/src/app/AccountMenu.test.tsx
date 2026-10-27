@@ -97,7 +97,7 @@ describe('AccountMenu', () => {
     expect(await screen.findByRole('button', { name: 'Đăng nhập' })).toBeInTheDocument();
   });
 
-  it('đăng xuất xoá giỏ khách, dữ liệu phiên và giỏ, đơn trong bộ nhớ đệm; giữ sản phẩm', async () => {
+  it('đăng xuất xoá giỏ khách, dữ liệu phiên và giỏ, đơn, gợi ý trong bộ nhớ đệm; giữ sản phẩm', async () => {
     localStorage.setItem('shop-ai:dev-token', 'dev');
     localStorage.setItem(
       'shop-ai:guest-cart',
@@ -109,6 +109,7 @@ describe('AccountMenu', () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(['cart', 'mine'], { items: [], totalAmount: 0 });
     queryClient.setQueryData(['orders', 'list'], { items: [] });
+    queryClient.setQueryData(['recs', 'for-you'], { source: 'PERSONALIZED', items: [] });
     queryClient.setQueryData(['products', 'detail', 'gpu-1'], { productId: 'gpu-1' });
     const user = userEvent.setup();
     renderAt('/products', queryClient);
@@ -123,6 +124,8 @@ describe('AccountMenu', () => {
     expect(sessionStorage.getItem('shop-ai:checkout-items')).toBeNull();
     expect(queryClient.getQueryData(['cart', 'mine'])).toBeUndefined();
     expect(queryClient.getQueryData(['orders', 'list'])).toBeUndefined();
+    // Người đăng nhập sau trên cùng máy không thấy "Dành cho bạn" của người trước
+    expect(queryClient.getQueryData(['recs', 'for-you'])).toBeUndefined();
     expect(queryClient.getQueryData(['products', 'detail', 'gpu-1'])).toEqual({
       productId: 'gpu-1',
     });
