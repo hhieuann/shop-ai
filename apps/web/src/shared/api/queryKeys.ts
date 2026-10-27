@@ -22,5 +22,8 @@ export const queryKeys = {
     /** Khác key với for-you: vừa đăng nhập thì gọi API mới, không dùng lại cache hàng bán chạy */
     bestsellers: () => ['recs', 'bestsellers'] as const,
     forYou: () => ['recs', 'for-you'] as const,
+    /** Kèm danh sách loại trừ: giỏ đổi thì lấy lại, món vừa thêm không còn trong gợi ý */
+    alsoBought: (productId: string, exclude: readonly string[]) =>
+      ['recs', 'also-bought', productId, exclude] as const,
   },
 } as const;
