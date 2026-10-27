@@ -107,7 +107,7 @@ Module `ordering` chưa có code (`services/api/src/modules/` hiện có `accoun
 | # | STRIDE | Mối đe doạ | Mức | Cách giảm thiểu | Trạng thái |
 |---|---|---|---|---|---|
 | O1 | T | Client sửa giá, tổng tiền | Cao | Server tự tính `totalAmount`, kiểm lại từng món và `expectedPrice` (ordering.md BR-03, BR-06, BR-07) | Theo thiết kế |
-| O2 | I, T | IDOR: xem hoặc huỷ đơn người khác bằng cách đổi `orderId` | Cao | `userId` lấy từ JWT, không lấy từ body; đơn của người khác trả 404 (ordering.md) | Theo thiết kế · test IDOR ở tuần 5 |
+| O2 | I, T | IDOR: xem hoặc huỷ đơn người khác bằng cách đổi `orderId` | Cao | `userId` lấy từ JWT, không lấy từ body; khoá đọc gồm `userId`, đơn của người khác trả 404 (ordering.md); cursor chỉ chứa `orderId` | Đã có: rà soát [idor-review.md](idor-review.md), integration test xem và huỷ đơn người khác, E2E `idor.e2e.ts` |
 | O3 | E | Khách tự chuyển đơn sang `SHIPPED`, `DELIVERED` | Cao | Chỉ nhóm `admin` được chuyển; kiểm ở backend, không dựa vào việc giao diện ẩn nút | Theo thiết kế |
 | O4 | T | Gửi lại request làm tạo đơn hai lần | Vừa | `Idempotency-Key`, bảng `order-idempotency` riêng (ADR-0017, BR-04) | Theo thiết kế |
 | O5 | T | Hai người cùng mua món cuối, bán vượt tồn kho | Vừa | Một `TransactWriteItems` có điều kiện `stock >= quantity` (BR-08) | Theo thiết kế |

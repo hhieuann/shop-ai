@@ -12,6 +12,7 @@ tests/e2e-api/
 ├─ cart.e2e.ts            thêm, sửa, xoá món trong giỏ của người dùng E2E
 ├─ orders.e2e.ts          đặt, gửi lại cùng Idempotency-Key, xem, chờ worker xác nhận, huỷ đơn; luôn huỷ đơn vừa đặt
 ├─ events.e2e.ts          ghi VIEW, ADD_TO_CART; từ chối PURCHASE, userId trong body, thiếu token
+├─ idor.e2e.ts            huỷ đơn không phải của mình, cursor tự chế, dữ liệu riêng cần token và no-store
 ├─ negative.e2e.ts        thiếu token, dữ liệu sai, không tìm thấy, sai mật khẩu
 └─ reports/               junit.xml, đã có trong .gitignore
 ```

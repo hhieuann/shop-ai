@@ -6,12 +6,15 @@ import {
   placeOrder,
   type PlaceOrderDeps,
 } from '../../src/modules/ordering/application/placeOrder.js';
+import { cancelOrder } from '../../src/modules/ordering/application/cancelOrder.js';
+import { getOrder } from '../../src/modules/ordering/application/getOrder.js';
 import { processOrderMessage } from '../../src/modules/ordering/application/processOrderMessage.js';
 import {
   sendOrderEmail,
   type SendOrderEmailDeps,
 } from '../../src/modules/ordering/application/sendOrderEmail.js';
 import {
+  OrderNotFoundError,
   OutOfStockError,
   PriceChangedError,
   TooManyOpenOrdersError,
@@ -644,6 +647,45 @@ describe('placeOrder với adapter thật', () => {
 
     // Verify: gửi tin cả hai lần, worker chống trùng theo orderId
     expect(deps.queue.enqueue).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('IDOR: người khác biết đúng orderId (threat model O2)', () => {
+  it('getOrder_throwsNotFound_whenOrderBelongsToAnotherUser', async () => {
+    // Arrange: A có đơn thật; B là người dùng khác đã biết orderId của A
+    const userA = randomUUID();
+    const userB = randomUUID();
+    const cmd = command(userA, await seedProduct(5));
+    await store.place(cmd);
+
+    // Act + Assert: khoá đọc gồm userId của token B, nên giống như đơn không có
+    await expect(
+      getOrder({ orders: store }, { userId: userB, orderId: cmd.order.orderId }),
+    ).rejects.toBeInstanceOf(OrderNotFoundError);
+    expect(await store.get(userA, cmd.order.orderId)).not.toBeNull();
+  });
+
+  it('cancelOrder_throwsNotFound_andWritesNothing_whenOrderBelongsToAnotherUser', async () => {
+    // Arrange
+    const userA = randomUUID();
+    const userB = randomUUID();
+    const gpu = await seedProduct(5);
+    const cmd = command(userA, gpu, 2);
+    await store.place(cmd);
+    const queue = { enqueue: vi.fn(async () => {}) };
+
+    // Act
+    const act = cancelOrder(
+      { orders: store, queue, metrics: { enqueueFailed: vi.fn() }, now: () => NOW },
+      { userId: userB, orderId: cmd.order.orderId, correlationId: 'corr-idor' },
+    );
+
+    // Assert: 404, đơn của A vẫn PENDING, kho không được hoàn, worker không nhận tin huỷ
+    await expect(act).rejects.toBeInstanceOf(OrderNotFoundError);
+    expect((await store.get(userA, cmd.order.orderId))?.status).toBe('PENDING');
+    expect(await stockOf(gpu.productId)).toBe(3);
+    expect(await openOrders(userA)).toBe(1);
+    expect(queue.enqueue).not.toHaveBeenCalled();
   });
 });
 
