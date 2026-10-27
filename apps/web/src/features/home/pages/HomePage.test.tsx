@@ -97,14 +97,15 @@ describe('HomePage', () => {
     expect(pairs[0]).toHaveAccessibleName('Card đồ hoạ + Nguồn RTX 4070 Super cần nguồn từ 750W');
   });
 
-  it('3 khối sản phẩm theo thứ tự, mỗi khối có link Xem tất cả; khối "Đang được mua nhiều" chưa hiện', async () => {
+  it('4 khối sản phẩm theo thứ tự, khối gợi ý "Đang được mua nhiều" đứng đầu; khối thường có link Xem tất cả', async () => {
     renderHome();
+    // Khối gợi ý hiện sau khi biết khách chưa đăng nhập
+    await screen.findByRole('heading', { level: 2, name: 'Đang được mua nhiều' });
     const titles = screen
       .getAllByRole('heading', { level: 2 })
       .map((h) => h.textContent)
       .filter((t) => t !== 'Mua card đồ hoạ, xem luôn món thường mua kèm');
-    expect(titles).toEqual(['Hàng mới về', 'Card đồ hoạ', 'Laptop']);
-    expect(screen.queryByText('Đang được mua nhiều')).toBeNull();
+    expect(titles).toEqual(['Đang được mua nhiều', 'Hàng mới về', 'Card đồ hoạ', 'Laptop']);
 
     const laptop = screen.getByRole('region', { name: 'Laptop' });
     expect(within(laptop).getByRole('link', { name: 'Xem tất cả' })).toHaveAttribute(
