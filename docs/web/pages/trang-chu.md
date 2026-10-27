@@ -124,5 +124,5 @@ Banner khuyến mãi và dải banner nhỏ, chấm phân trang banner, flash sa
 
 ## 8. Việc còn lại
 - Thiết kế trang chủ khi đã đăng nhập (mục 7).
-- Widget "Đang được mua nhiều" (An): đặt vào `features/home/components/PopularProducts.tsx`, đã có chỗ ở đúng vị trí khối 1; hiện chưa render gì (chưa có API).
+- Widget "Đang được mua nhiều" (An): `features/home/components/PopularProducts.tsx`, gọi `GET /api/v1/recs/bestsellers` hoặc `/for-you` khi đã đăng nhập. Còn thiếu dòng phụ "Dựa trên các món bạn đã xem" (mục 7): `StoryBlock` chưa có chỗ cho dòng phụ.
 - Bộ dữ liệu demo chưa có ảnh sản phẩm: thẻ hiện icon loại hàng trên ô xám.
