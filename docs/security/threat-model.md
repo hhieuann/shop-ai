@@ -1,6 +1,6 @@
 # Threat model bản 0 (STRIDE)
 
-Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10, 25/10 và 26/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
+Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10, 25/10, 26/10 và 27/10/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
 
 Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới ADR-0017,
 `docs/business/` (account, cart, ordering, events, recommendation),
@@ -125,7 +125,7 @@ Route `POST /api/v1/events` đã có trong `contracts/openapi.yaml` (#174): bắ
 | # | STRIDE | Mối đe doạ | Mức | Cách giảm thiểu | Trạng thái |
 |---|---|---|---|---|---|
 | E1 | T | Client gửi `PURCHASE` giả để đẩy sản phẩm lên gợi ý | Cao | API công khai chỉ nhận `VIEW`, `ADD_TO_CART` (enum trong contract, #174); `PURCHASE` chỉ đến từ topic `order-confirmed` khi đơn `CONFIRMED` (events.md mục 1) | Đã có: contract (#174), module (#200), consumer (#252), E2E `events.e2e.ts` |
-| E2 | T | **Đầu độc gợi ý:** nhiều tài khoản ảo spam `VIEW`, `ADD_TO_CART` | Cao | Rule WAF riêng cho `/api/events` (ADR-0006); giới hạn trọng số mỗi cặp (user, item); thí nghiệm có số liệu trước và sau ở tuần 5 (nhan.md) | Theo thiết kế · Đề xuất (giới hạn trọng số) |
+| E2 | T | **Đầu độc gợi ý:** nhiều tài khoản ảo spam `VIEW`, `ADD_TO_CART` | Cao | Rule WAF riêng cho `/api/events` (ADR-0006); mỗi cặp (user, item) chỉ lấy trọng số lớn nhất; "Thường mua kèm" chỉ học từ `PURCHASE` | Đã có: trọng số lớn nhất (#172), thí nghiệm [poisoning-experiment.md](poisoning-experiment.md): spam lặp lại 38–43% → 0–2% · Dời sang v1.0.0-rc.1: WAF |
 | E3 | S | Gửi sự kiện mang `userId` của người khác | Vừa | `userId` lấy từ token Cognito, không nhận từ body (events.md mục 5); contract từ chối trường lạ (`additionalProperties: false`, #174) | Đã có: contract, module (#200), E2E `events.e2e.ts` |
 | E4 | T | Client gửi `timestamp` giả để làm lệch việc chia train, test theo thời gian | Vừa | Server đặt `timestamp` (events.md mục 3) | Đã có: module (#200), E2E `events.e2e.ts` |
 | E5 | I | `userId` thật lọt vào bảng `events` hoặc dữ liệu huấn luyện | Cao | Lưu `HMAC(key, userId)` thay cho `userId` (events.md mục 2); pipeline chỉ xuất các cột cho phép | Theo thiết kế |
@@ -155,7 +155,7 @@ Mỗi dòng **Đề xuất** sẽ thành một issue riêng, ghi rõ mức và c
 - [ ] O8, O9: không đưa `shippingAddress` vào tin SNS và log; worker không tin nội dung message
 - [ ] C1: chọn cách xử lý việc gọi thẳng `execute-api` (An, tuần 5)
 - [x] C6: xác nhận đã tắt "Allow administrators to bypass" của environment `production`; An sửa câu "giới hạn bằng tên stack" trong ADR-0013 cho đúng thực tế (#180)
-- [ ] E2: thí nghiệm đầu độc gợi ý ở tuần 5
+- [x] E2: thí nghiệm đầu độc gợi ý (27/10, poisoning-experiment.md); còn rule WAF ở v1.0.0-rc.1
 - [x] E9: queue policy đã có (#211), consumer đã có (25/10); topic policy chặn mọi principal trừ role `order-processor` publish (#263)
 - [ ] Bản 1: thêm pipeline gợi ý mỗi đêm, bucket dữ liệu, bảng `recs`, trang admin
 

@@ -10,6 +10,7 @@ Phần dữ liệu và gợi ý, viết bằng Python 3.13, quản lý bằng uv
 | `model/` | Mô hình gợi ý tự xây ([ADR-0016](../docs/adr/0016-tu-xay-mo-hinh-goi-y.md)): luật mua kèm (support, confidence, lift) cho "Thường mua kèm"; gợi ý theo món tương tự cho "Dành cho bạn" |
 | `baseline/` | Hàng bán chạy theo loại: gợi ý cho người mới, và là mốc để so sánh mô hình |
 | `pipeline/` | Job mỗi đêm: gom sự kiện → kiểm dữ liệu → tính gợi ý → ghi bảng `recs` theo phiên bản → đổi con trỏ ACTIVE |
+| `security/` | Thí nghiệm đầu độc gợi ý (`uv run data-poison`), kết quả ở `docs/security/poisoning-experiment.md` |
 | `tests/` | pytest theo AAA+ |
 
 ## Quy tắc dữ liệu
