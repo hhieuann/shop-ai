@@ -9,14 +9,15 @@ Biến môi trường:
   chia phân khúc; cùng file seed của bảng products nên mã sản phẩm khớp web.
 
 Lỗi nào cũng ném ra ngoài để Lambda ghi Errors và lần chạy được tính là không thành công (alarm prod).
-Log chỉ có số lượng và điểm, không có `userIdHash` hay mã người dùng.
+Mỗi lần chạy in đúng 1 dòng JSON, chỉ có số lượng và điểm, không có `userIdHash` hay mã người dùng.
 """
 from __future__ import annotations
 
+import io
 import json
-import logging
 import os
 import tempfile
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -33,9 +34,6 @@ from data.pipeline.sources import (
     synthetic_events,
 )
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
 SYNTHETIC_DAYS = 365
 
 
@@ -43,8 +41,10 @@ def synthetic_data(now: datetime, products_json: Path, out_dir: Path) -> list[Ev
     """Sinh 365 ngày dữ liệu, ngày cuối là hôm qua theo UTC (nhóm chốt 22/10/2026)."""
     end = (now - timedelta(days=1)).date()
     start = end - timedelta(days=SYNTHETIC_DAYS - 1)
-    synthetic.main(["--out", str(out_dir), "--start", start.isoformat(), "--end", end.isoformat(),
-                    "--products", str(products_json)])
+    # Generator in khoảng 90 dòng thống kê ra stdout, stderr; trong Lambda chỉ giữ 1 dòng JSON tổng kết
+    with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+        synthetic.main(["--out", str(out_dir), "--start", start.isoformat(), "--end", end.isoformat(),
+                        "--products", str(products_json)])
     return synthetic_events(out_dir)
 
 
@@ -84,5 +84,6 @@ def handler(event: object, context: object) -> dict[str, Any]:
         datetime.now(UTC),
         Path(products_json) if products_json else None,
     )
-    logger.info(json.dumps({"message": "Job gợi ý mỗi đêm xong", **summary}, ensure_ascii=False))
+    # In thẳng 1 dòng JSON (không qua logging, vốn thêm tiền tố) để Logs Insights tự tách trường
+    print(json.dumps({"level": "INFO", "message": "Job gợi ý mỗi đêm xong", **summary}, ensure_ascii=False))
     return summary
