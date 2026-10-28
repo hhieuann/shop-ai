@@ -1075,7 +1075,9 @@ export class ApiStack extends Stack {
       // Cognito chờ trigger tối đa 5 giây; 128 MB quá ít CPU, khởi động lạnh có lần quá 3 giây (staging 21/10)
       { memorySize: 512, timeout: Duration.seconds(5) },
     );
-    // Không dùng userPool.userPoolArn: user pool đã trỏ tới Lambda này, trỏ ngược lại sẽ thành vòng
+    // Không dùng userPool.userPoolArn: user pool đã trỏ tới Lambda này, trỏ ngược lại sẽ thành vòng.
+    // userpool/* gồm cả user pool của môi trường khác (chung tài khoản, ADR-0013), nên chỉ cho pool có
+    // tag env cùng môi trường; tag do infra/bin/shop.ts gắn cho mọi tài nguyên
     preSignUpFn.addToRolePolicy(
       new PolicyStatement({
         actions: ['cognito-idp:ListUsers'],
@@ -1086,13 +1088,14 @@ export class ApiStack extends Stack {
             resourceName: '*',
           }),
         ],
+        conditions: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
       }),
     );
     Validations.of(preSignUpFn).acknowledge({
       // Tên ghi nhận chứa region và account thật; CI synth khi chưa biết account nên dùng chữ thay thế
       id: `AwsSolutions-IAM5[Resource::arn:aws:cognito-idp:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:userpool/*]`,
       reason:
-        'Chỉ ListUsers (đọc) để kiểm trùng username; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
+        'Chỉ ListUsers (đọc) để kiểm trùng username, chỉ trên pool có tag env cùng môi trường; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
     });
     userPool.addTrigger(UserPoolOperation.PRE_SIGN_UP, preSignUpFn);
 
