@@ -306,6 +306,24 @@ describe('ApiStack', () => {
     expect(actions.filter((a) => a.startsWith('cognito-idp:'))).toEqual(['cognito-idp:ListUsers']);
   });
 
+  it.each([dev, prod])('preSignUp_listUsersOnlyOnUserPoolOfSameEnv_$name', (shopEnv) => {
+    // Arrange: dev, staging, prod chung một tài khoản (ADR-0013); ARN phải là userpool/* để tránh
+    // phụ thuộc vòng với trigger, nên giới hạn bằng tag env của user pool
+    const template = synth(shopEnv);
+
+    // Assert: ListUsers chỉ được trên user pool có tag env cùng môi trường
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: 'cognito-idp:ListUsers',
+            Condition: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
+          }),
+        ]),
+      },
+    });
+  });
+
   it('e2eClient_existsOnlyOutsideProd_andUsesPasswordAuth', () => {
     // Assert: dev có client E2E cho Newman (USER_PASSWORD_AUTH), authorizer chấp nhận token của nó
     const devTemplate = synth(dev);
