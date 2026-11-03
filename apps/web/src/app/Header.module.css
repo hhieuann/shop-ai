@@ -253,4 +253,40 @@
   .needs {
     display: block;
   }
+
+  /*
+   * Hàng 2 thu lại khi cuộn (§9.1, chỉ trang chi tiết): khối bọc tan ra để hàng 1 tự dính suốt trang,
+   * hàng 2 nằm trong luồng trang, cuộn đi cùng nội dung và mờ dần. Không đổi chiều cao phần tử dính
+   * nào nên nội dung không bị xô, trang ngắn không chớp.
+   */
+  .collapse {
+    display: contents;
+  }
+  .collapse .topBar {
+    position: sticky;
+    top: 0;
+    z-index: 210;
+    transition: box-shadow var(--dur-base) var(--ease-standard);
+  }
+  /* Trên vùng tối của menu (200), dưới hàng 1 để bảng thả xuống của hàng 1 nằm trên hàng 2 */
+  .collapse .needs {
+    z-index: 205;
+    transition:
+      opacity var(--dur-base) var(--ease-standard),
+      transform var(--dur-base) var(--ease-standard);
+  }
+  .needsHidden .topBar {
+    box-shadow: var(--shadow-sm);
+  }
+  .needsHidden .needs {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .collapse .topBar,
+  .collapse .needs {
+    transition: none;
+  }
 }

@@ -31,6 +31,8 @@ export const router = createBrowserRouter([
       },
       {
         path: 'products/:productId',
+        // Từ 1280px hàng 2 header thu lại khi cuộn (pages/chi-tiet-san-pham.md §3.8)
+        handle: { headerNeeds: 'collapse' } satisfies RouteHandle,
         lazy: async () => ({
           Component: (await import('./features/catalog/pages/ProductDetailPage')).ProductDetailPage,
         }),
