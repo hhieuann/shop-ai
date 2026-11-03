@@ -362,8 +362,8 @@ function alertTone(error: unknown): 'warning' | 'danger' {
     : 'danger';
 }
 
-/** Thông báo lỗi đặt hàng theo mã nghiệp vụ (ordering.md "Trường hợp đặc biệt") */
-function OrderErrorMessage({
+/** Thông báo lỗi đặt hàng theo mã nghiệp vụ (ordering.md "Trường hợp đặc biệt", "Màn hình") */
+export function OrderErrorMessage({
   error,
   nameOf,
 }: {
@@ -400,6 +400,14 @@ function OrderErrorMessage({
               </li>
             ))}
           </ul>
+        </>
+      );
+    case 'TOO_MANY_OPEN_ORDERS':
+      // Câu và link theo ordering.md mục Màn hình (BR-14, #315)
+      return (
+        <>
+          Bạn đang có 3 đơn chưa giao. Huỷ bớt đơn hoặc chờ đơn được giao rồi đặt tiếp.{' '}
+          <Link to="/orders">Xem đơn hàng</Link>
         </>
       );
     case 'ORDER_IN_PROGRESS':
