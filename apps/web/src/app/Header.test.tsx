@@ -1,11 +1,19 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+  createMemoryRouter,
+  useLocation,
+} from 'react-router-dom';
 import { Header } from './Header';
+import { RootLayout, type RouteHandle } from './RootLayout';
 
 /** jsdom không có matchMedia: điều khiển bản máy tính (≥1280) hay điện thoại bằng biến này */
 let desktop = true;
@@ -27,18 +35,29 @@ beforeEach(() => {
   desktop = true;
   localStorage.clear();
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  scrollPage(0);
+});
+
+/** jsdom không cuộn thật: đặt scrollY rồi phát sự kiện scroll như trình duyệt */
+function scrollPage(y: number) {
+  Object.defineProperty(window, 'scrollY', { value: y, configurable: true, writable: true });
+  fireEvent.scroll(window);
+}
+
+const needsNav = () => screen.getByRole('navigation', { name: 'Mua theo nhu cầu' });
 
 function CurrentUrl() {
   const location = useLocation();
   return <p data-testid="url">{`${location.pathname}${location.search}`}</p>;
 }
 
-function renderAt(path: string) {
+function renderAt(path: string, collapseNeeds = false) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter initialEntries={[path]}>
-        <Header />
+        <Header collapseNeeds={collapseNeeds} />
         <Routes>
           <Route path="*" element={<CurrentUrl />} />
         </Routes>
@@ -146,5 +165,76 @@ describe('Header', () => {
     await user.click(within(drawer).getByRole('button', { name: 'Đóng' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('button', { name: 'Danh mục' })).toHaveFocus();
+  });
+});
+
+describe('Header: hàng 2 thu lại khi cuộn (trang chi tiết, ≥1280)', () => {
+  it('có collapseNeeds: cuộn xuống thì hàng 2 có inert, về đầu trang thì bỏ inert', () => {
+    renderAt('/products/01M3GQ5TR0DH1Z32GWGG764J9X', true);
+    expect(needsNav()).not.toHaveAttribute('inert');
+
+    scrollPage(120);
+    expect(needsNav()).toHaveAttribute('inert');
+
+    scrollPage(0);
+    expect(needsNav()).not.toHaveAttribute('inert');
+  });
+
+  it('vào trang khi đã đang cuộn thì hàng 2 ẩn ngay', () => {
+    Object.defineProperty(window, 'scrollY', { value: 300, configurable: true, writable: true });
+    renderAt('/products/01M3GQ5TR0DH1Z32GWGG764J9X', true);
+    expect(needsNav()).toHaveAttribute('inert');
+  });
+
+  it('không có collapseNeeds: cuộn xuống hàng 2 không đổi', () => {
+    renderAt('/products');
+    scrollPage(120);
+    expect(needsNav()).not.toHaveAttribute('inert');
+  });
+
+  it('dưới 1280: cuộn xuống hàng 2 không đổi', () => {
+    desktop = false;
+    renderAt('/products/01M3GQ5TR0DH1Z32GWGG764J9X', true);
+    scrollPage(120);
+    expect(needsNav()).not.toHaveAttribute('inert');
+  });
+
+  it('RootLayout bật theo handle của route, route khác không bật', () => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: <RootLayout />,
+          children: [
+            {
+              path: 'products/:productId',
+              handle: { headerNeeds: 'collapse' } satisfies RouteHandle,
+              element: <p>Chi tiết</p>,
+            },
+            { path: 'products', element: <p>Danh sách</p> },
+          ],
+        },
+      ],
+      { initialEntries: ['/products/01M3GQ5TR0DH1Z32GWGG764J9X'] },
+    );
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    scrollPage(120);
+    expect(needsNav()).toHaveAttribute('inert');
+
+    cleanup();
+    scrollPage(0);
+    const listRouter = createMemoryRouter(router.routes, { initialEntries: ['/products'] });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={listRouter} />
+      </QueryClientProvider>,
+    );
+    scrollPage(120);
+    expect(needsNav()).not.toHaveAttribute('inert');
   });
 });

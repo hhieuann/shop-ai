@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
@@ -17,6 +17,8 @@ import {
   normalizeSearch,
   searchWithoutPaging,
 } from '../features/catalog/lib/productFilters';
+import { DESKTOP_QUERY, useMediaQuery } from '../shared/hooks/useMediaQuery';
+import { useScrolledDown } from '../shared/hooks/useScrolledDown';
 import { AccountMenu } from './AccountMenu';
 import { CategoryMenuButton } from './CategoryMenuButton';
 import { Logo } from './Logo';
@@ -37,8 +39,12 @@ const NEEDS: { label: string; icon: LucideIcon; search: string }[] = [
  * Hàng 1 nền chàm: logo, nút Danh mục + ô tìm kiếm, Đơn hàng, tài khoản, giỏ.
  * Hàng 2 nền trắng (≥1280px): 6 link mua theo nhu cầu.
  * Dưới 1280px: nút menu, logo giữa, tài khoản, giỏ; ô tìm kiếm xuống hàng riêng.
+ *
+ * `collapseNeeds` (route có `handle.headerNeeds = 'collapse'`, chỉ trang chi tiết): từ 1280px chỉ hàng 1
+ * dính, hàng 2 nằm trong luồng trang và mờ đi khi đã cuộn (design-system §9.1 "Hàng 2 thu lại khi cuộn").
+ * Khối bọc là <div> để đổi sang `display: contents` mà không mất landmark của <header>.
  */
-export function Header() {
+export function Header({ collapseNeeds = false }: { collapseNeeds?: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -49,6 +55,15 @@ export function Header() {
   const [text, setText] = useState(urlQ);
   useEffect(() => setText(urlQ), [urlQ]);
 
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const needsHidden = useScrolledDown(collapseNeeds && desktop);
+
+  // React 18 chưa nhận prop inert: đặt thẳng lên DOM để Tab và trình đọc màn hình bỏ qua hàng 2 đã ẩn
+  const needsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    needsRef.current?.toggleAttribute('inert', needsHidden);
+  }, [needsHidden]);
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const q = normalizeSearch(text);
@@ -56,8 +71,16 @@ export function Header() {
   };
 
   return (
-    <header className={styles.header}>
-      <div className={styles.topBar}>
+    <div
+      className={[
+        styles.header,
+        collapseNeeds && styles.collapse,
+        needsHidden && styles.needsHidden,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <header className={styles.topBar}>
         <div className={styles.top}>
           <Logo className={styles.logo} />
 
@@ -92,9 +115,9 @@ export function Header() {
             </NavLink>
           </nav>
         </div>
-      </div>
+      </header>
 
-      <nav className={styles.needs} aria-label="Mua theo nhu cầu">
+      <nav ref={needsRef} className={styles.needs} aria-label="Mua theo nhu cầu">
         <ul className={styles.needList}>
           {NEEDS.map(({ label, icon: Icon, search }) => {
             // Bỏ cursor, page khi so: đang ở trang 2 của "Chơi game" vẫn đánh dấu "Chơi game"
@@ -115,6 +138,6 @@ export function Header() {
           })}
         </ul>
       </nav>
-    </header>
+    </div>
   );
 }
