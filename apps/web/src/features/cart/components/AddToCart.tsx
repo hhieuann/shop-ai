@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
 import { ApiError } from '../../../shared/api/client';
 import type { Product } from '../../../shared/api/types';
 import { Alert } from '../../../shared/components/Alert';
@@ -9,8 +10,9 @@ import { addErrorMessage } from '../lib/addErrorMessage';
 import styles from './AddToCart.module.css';
 
 /**
- * Chọn số lượng và thêm vào giỏ. Khách chưa đăng nhập vẫn thêm được: món vào giỏ trên
- * trình duyệt, chỉ phải đăng nhập lúc đặt hàng (cart.md BR-01).
+ * Chọn số lượng và thêm vào giỏ, phần dưới của hộp mua ở trang chi tiết (chi-tiet-san-pham.md §3.4).
+ * Khách chưa đăng nhập vẫn thêm được: món vào giỏ trên trình duyệt, chỉ phải đăng nhập lúc đặt hàng
+ * (cart.md BR-01).
  */
 export function AddToCart({ product }: { product: Product }) {
   const { add } = useCart();
@@ -21,7 +23,8 @@ export function AddToCart({ product }: { product: Product }) {
   if (!canBuy) {
     return (
       <div className={styles.box}>
-        <button type="button" className={styles.primary} disabled>
+        {/* Hết hàng: không có bộ chọn số lượng, nút vô hiệu không icon (§4) */}
+        <button type="button" className={styles.soldOut} disabled>
           Hết hàng
         </button>
       </div>
@@ -49,6 +52,7 @@ export function AddToCart({ product }: { product: Product }) {
         disabled={add.isPending}
         aria-busy={add.isPending || undefined}
       >
+        {!add.isPending && <ShoppingCart size={20} aria-hidden="true" />}
         {add.isPending ? 'Đang thêm…' : 'Thêm vào giỏ'}
       </button>
 
@@ -58,7 +62,14 @@ export function AddToCart({ product }: { product: Product }) {
         </Alert>
       )}
       {add.isError && (
-        <Alert tone="danger">
+        // Vượt giới hạn số lượng là cảnh báo; các lỗi khác là lỗi (design-system §9.13)
+        <Alert
+          tone={
+            add.error instanceof ApiError && add.error.code === 'QUANTITY_LIMIT'
+              ? 'warning'
+              : 'danger'
+          }
+        >
           {addErrorMessage(add.error)}
           {add.error instanceof ApiError && add.error.status === 401 && (
             <>
