@@ -1,6 +1,6 @@
 # Giao diện web: Black Magic
 
-Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao diện chàm (11/10/2026):** bố cục theo một trang bán linh kiện máy tính trong nước, màu chủ đạo chàm; code đã đổi theo tài liệu. **Trang danh sách sản phẩm** chốt bản mới ngày 13/10/2026, code đã đổi theo. Mọi giá trị màu, chữ, khoảng cách nằm trong code ở [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu ở đây giải thích **dùng cái gì, ở đâu, trông ra sao**.
+Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao diện chàm (11/10/2026):** bố cục theo một trang bán linh kiện máy tính trong nước, màu chủ đạo chàm; code đã đổi theo tài liệu. **Trang danh sách sản phẩm** chốt bản mới ngày 13/10/2026, code đã đổi theo. **Trang chi tiết sản phẩm** chốt bản mới ngày 03/11/2026, code chưa đổi. Mọi giá trị màu, chữ, khoảng cách nằm trong code ở [`apps/web/src/styles/tokens.css`](../../apps/web/src/styles/tokens.css); tài liệu ở đây giải thích **dùng cái gì, ở đâu, trông ra sao**.
 
 ## Đọc theo thứ tự nào
 
@@ -20,7 +20,7 @@ Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao 
 | [design-system.md](design-system.md) | Đầy đủ: token, chữ, bố cục, trạng thái tương tác, trợ năng, **mọi component dùng chung** |
 | [pages/trang-chu.md](pages/trang-chu.md) | Trang chủ `/` (bản chàm, chốt 11/10/2026) |
 | [pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md) | Danh sách và kết quả tìm kiếm `/products?q=&category=&sort=` (bản chốt 13/10/2026: cột lọc loại hàng, thẻ có nút "Thêm vào giỏ", chuyển trang "Trước · Trang N · Sau") |
-| [pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) | Chi tiết sản phẩm `/products/:productId` |
+| [pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) | Chi tiết sản phẩm `/products/:productId` (bản chốt 03/11/2026: thông số dạng ô mở panel bên phải, hộp mua 360px, hàng 2 header thu lại khi cuộn) |
 | [pages/gio-hang.md](pages/gio-hang.md) | Giỏ hàng `/cart` |
 | [pages/dat-hang.md](pages/dat-hang.md) | Đặt hàng `/checkout` |
 | [pages/dang-nhap.md](pages/dang-nhap.md) | Đăng nhập `/login`, tạo tài khoản `/register` (An làm) |
