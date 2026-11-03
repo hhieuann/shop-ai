@@ -26,6 +26,7 @@ cáo này không lặp lại mà chỉ tóm tắt và dẫn bằng chứng.
 | Thí nghiệm đầu độc gợi ý (E2) | 27/10 | [poisoning-experiment.md](poisoning-experiment.md) (#290) |
 | Rà soát IDOR (O2) | 27/10 | [idor-review.md](idor-review.md), integration test và E2E `idor.e2e.ts` 11 ca (#296) |
 | Quét ZAP baseline vào dev (L4, C3) | 27/10, 10:37–10:38 | Tóm tắt trong threat model L4, C3 (#298, #301); báo cáo HTML không commit |
+| Nghiệm thu bảo mật S1–S6 trên staging (`v0.2.0`) | 03/11, 09:05–09:16 | 6/6 đạt: xem, huỷ đơn người khác 404; không token 401; giá sai 409 `PRICE_CHANGED`; cùng `Idempotency-Key` khác nội dung 422; tin `order-confirmed` không có dữ liệu cá nhân |
 | Kiểm tra tự động mỗi PR | liên tục | gitleaks, `pnpm audit`, CodeQL, cdk-nag (C4) |
 
 ## 3. Kết quả chính
@@ -68,28 +69,20 @@ bản băm của nó, đơn của người khác trả 404, phản hồi dữ li
 
 ## 4. Tình trạng theo threat model
 
-Đếm theo cột Trạng thái của [threat-model.md](threat-model.md) ngày 29/10 (một dòng có thể vừa "Đã có"
+Đếm theo cột Trạng thái của [threat-model.md](threat-model.md) ngày 03/11 (một dòng có thể vừa "Đã có"
 một phần vừa "Theo thiết kế" phần còn lại).
 
 | Mức | Số dòng | Đã có, toàn phần hoặc một phần | Còn mở (Đề xuất, Theo thiết kế) | Chấp nhận |
 |---|---|---|---|---|
-| Cao | 11 | O2, E1, E2, E6, E9 | L5, L6, O1, O3, E5 | C6 |
-| Vừa | 16 | L1, E3, E4, E7, C4 | L4, O4, O5, O6, O8, O11, E8, C1, C2 | L8, O7 |
+| Cao | 11 | O1, O2, E1, E2, E6, E9 | L5, L6, O3, E5 | C6 |
+| Vừa | 16 | L1, O4, O5, O6, O8, E3, E4, E7, C4 | L4, O11, E8, C1, C2 | L8, O7 |
 | Thấp | 7 | L2, L7, C3, C5 | O9, O10 | L3 |
 
-### 4.1. Dòng cần cập nhật trạng thái
+### 4.1. Dòng đã cập nhật trạng thái (03/11)
 
-Đối chiếu code ngày 29/10, các dòng sau đã có code nhưng threat model vẫn ghi "Theo thiết kế". Cần
-người phụ trách xác nhận rồi mới sửa threat model:
-
-| Dòng | Bằng chứng trong code | Người xác nhận |
-|---|---|---|
-| O1 (giá, tổng tiền do server tính) | `checkItems_throwsPriceChangedWithCurrentPrice_whenPriceDiffers`; điều kiện `price = :price` trong `dynamoOrderStore.ts` | Hoàng |
-| O4 (idempotency) | `createOrder_returns400_whenIdempotencyKeyMissing`, `placeOrder_throwsIdempotencyKeyReused_whenMarkerHasDifferentHash` | Hoàng |
-| O5 (bán vượt tồn kho) | `ConditionExpression: 'stock >= :qty AND ...'` trong `dynamoOrderStore.ts` | Hoàng |
-| O6 (giữ kho ác ý) | bộ đếm `openOrders` trong `dynamoOrderStore.ts` | Hoàng |
-| O8 (SNS không có dữ liệu cá nhân) | `orderConfirmedEvent_hasNoPersonalDataOrPrice` | Hoàng |
-| E5 (`userId` thật không vào bảng `events`) | test ở mục 3.4 | Nhân |
+Hoàng xác nhận ngày 03/11: O1, O4, O5, O6, O8 đã có code và test trên `release/v0.2.0`; threat model đã
+chuyển các dòng này sang "Đã có", kèm tên test. E5 vẫn ghi "Theo thiết kế" ở threat model; bằng chứng ở
+mục 3.4, sẽ cập nhật cùng lúc với phần pipeline.
 
 ### 4.2. Rủi ro còn mở, theo thứ tự ưu tiên
 
