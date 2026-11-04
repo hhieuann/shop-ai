@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { balancedColumns } from '../lib/specGrid';
 import type { SpecEntry } from '../lib/specLabels';
@@ -21,10 +21,12 @@ export function SpecTiles({
 }) {
   const listRef = useRef<HTMLUListElement>(null);
   const count = rows.length;
-  // Chưa đo được bề rộng (lần vẽ đầu, môi trường test): tối đa 2 cột
+  // Chưa đo được bề rộng (trước lần đo đầu, môi trường test không có layout): tối đa 2 cột
   const [cols, setCols] = useState(() => balancedColumns(count, 0, 0, TILE_GAP));
 
-  useEffect(() => {
+  // Đo lần đầu trước khi trình duyệt vẽ (useLayoutEffect): không có khung hình 2 cột rồi mới đổi
+  // số cột, khối thông số không đổi chiều cao sau khi hiện nên phần bên dưới không bị đẩy (CLS)
+  useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
     const measure = () => {
