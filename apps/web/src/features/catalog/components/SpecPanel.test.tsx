@@ -215,6 +215,8 @@ describe('SpecPanel: mục lục và theo dõi cuộn', () => {
     act(onlySeen('Nguồn đề xuất'));
     expect(marked()).toEqual(['Kích thước']);
 
+    // Tới nơi: thân dừng ở mục đã bấm, chỉ còn mục đó trong vùng theo dõi
+    act(onlySeen('Kích thước'));
     act(scrollEnd);
     expect(marked()).toEqual(['Kích thước']);
 
@@ -250,8 +252,49 @@ describe('SpecPanel: mục lục và theo dõi cuộn', () => {
     act(onlySeen('VRAM'));
     expect(marked()).toEqual(['Nguồn đề xuất']);
 
+    act(onlySeen('Nguồn đề xuất'));
     act(scrollEnd);
     expect(marked()).toEqual(['Nguồn đề xuất']);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('người dùng tự cuộn lúc đang chờ, không có scrollend: hết 1000ms đánh dấu phần đang thấy', () => {
+    openPanel({ index: 0 });
+
+    act(onlySeen('Kích thước'));
+    expect(marked()).toEqual(['VRAM']);
+
+    act(() => vi.advanceTimersByTime(1000));
+    expect(marked()).toEqual(['Kích thước']);
+  });
+
+  it('người dùng tự cuộn lúc đang chờ, có scrollend: đánh dấu phần đang thấy', () => {
+    openPanel({ index: 0 });
+
+    act(onlySeen('Kích thước'));
+    act(scrollEnd);
+    expect(marked()).toEqual(['Kích thước']);
+  });
+
+  it('bấm mục phía trên, tới nơi chỉ thấy mục đó: cuộn xong vẫn là mục đã bấm', () => {
+    openPanel({ index: 3 });
+    act(scrollEnd);
+
+    fireEvent.click(tocItem('Kích thước'));
+    act(onlySeen('Kích thước'));
+    act(scrollEnd);
+    expect(marked()).toEqual(['Kích thước']);
+  });
+
+  it('cuộn xong mà không thấy phần nào: giữ mục đã bấm', () => {
+    openPanel({ index: 0 });
+    act(scrollEnd);
+
+    fireEvent.click(tocItem('khoa_moi'));
+    act(() =>
+      report?.(ROWS.map((row) => ({ target: sectionAt(row.label), isIntersecting: false }))),
+    );
+    act(scrollEnd);
+    expect(marked()).toEqual(['khoa_moi']);
   });
 });

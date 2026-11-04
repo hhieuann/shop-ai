@@ -117,14 +117,3 @@ export function specEntries(
     })
     .sort((a, b) => rank(a.key) - rank(b.key));
 }
-
-/** Các dòng của bảng "Thông số kỹ thuật", giữ thứ tự khoá như trong dữ liệu */
-export function specRows(
-  specs: Readonly<Record<string, unknown>> | undefined,
-): { label: string; value: string }[] {
-  if (!specs) return [];
-  return Object.entries(specs).flatMap(([key, raw]) => {
-    const value = specValue(raw);
-    return value === undefined ? [] : [{ label: SPEC_LABELS[key] ?? key, value }];
-  });
-}

@@ -254,8 +254,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `LiveAnnouncerProvider` + `useAnnounce` (vùng thông báo cho trình đọc màn hình, đặt một lần ở cấp trang) | `shared/components/LiveAnnouncer.tsx`, `shared/hooks/useAnnounce.ts` | ✅ (§9.23) |
 | `FilterPanel`, `FilterSheet` | `features/catalog/components/` (nhóm lọc dùng chung `CategoryFilter`) | ✅ (trang danh sách, §9.20) |
 | `CursorPager` | `shared/components/CursorPager.tsx` | ✅ (trang danh sách, §9.21) |
-| `SpecTiles` (ô thông số, chia đều theo hàng) | `features/catalog/components/SpecTiles.tsx`; phép chia cột ở `features/catalog/lib/specGrid.ts` | 📝 (trang chi tiết, §9.24; thay `SpecTable`) |
-| `SpecPanel` (panel thông số mở từ bên phải) | `features/catalog/components/SpecPanel.tsx`; câu giải thích ở `features/catalog/lib/specHelp.ts`, thứ tự ô `SPEC_ORDER` ở `specLabels.ts` | 📝 (trang chi tiết, §9.24) |
+| `SpecTiles` (ô thông số, chia đều theo hàng) | `features/catalog/components/SpecTiles.tsx`; phép chia cột ở `features/catalog/lib/specGrid.ts` | ✅ (trang chi tiết, §9.24; thay `SpecTable`) |
+| `SpecPanel` (panel thông số mở từ bên phải) | `features/catalog/components/SpecPanel.tsx`; câu giải thích ở `features/catalog/lib/specHelp.ts`, thứ tự ô `SPEC_ORDER` ở `specLabels.ts` | ✅ (trang chi tiết, §9.24) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |

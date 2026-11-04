@@ -25,9 +25,13 @@
 .spec {
   grid-area: spec;
 }
-/* Bảng thông số cũ có sẵn khoảng cách trên; trong khối thì bỏ */
-.spec > * {
-  margin-top: 0;
+/* Tiêu đề khối thông số: <640 18/26, cách ô 12px; từ 640 20/28, cách 16px (§3.5) */
+.specTitle {
+  margin: 0 0 var(--space-150);
+  color: var(--fg-heading);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
 }
 .buy {
   grid-area: buy;
@@ -273,6 +277,11 @@
   }
   .empty {
     padding: 56px var(--space-300);
+  }
+  .specTitle {
+    margin-bottom: var(--space-200);
+    font-size: 20px;
+    line-height: 28px;
   }
   .name {
     font-size: var(--text-title-md);

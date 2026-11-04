@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { shouldRetry } from '../../../shared/api/retry';
@@ -43,6 +43,12 @@ const fetchMock = vi.fn(async (url: string) =>
 );
 
 beforeEach(() => {
+  // jsdom không có ResizeObserver (ô thông số đo bề rộng để chia cột)
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
   reply = () => json(GPU);
   fetchMock.mockClear();
   vi.stubGlobal('fetch', fetchMock);
@@ -106,6 +112,40 @@ describe('ProductDetailPage', () => {
     renderPage();
     await screen.findByRole('heading', { level: 1 });
     expect(screen.queryByRole('heading', { name: 'Thông số kỹ thuật' })).toBeNull();
+  });
+
+  it('khối thông số: h2 và một ô cho mỗi thông số, xếp theo SPEC_ORDER', async () => {
+    // Map DynamoDB trả khoá theo thứ tự bất kỳ
+    reply = () =>
+      json({ ...GPU, specs: { kich_thuoc: '301mm', nguon_de_xuat: '650W', vram: '12GB GDDR6X' } });
+    renderPage();
+    const section = await screen.findByRole('region', { name: 'Thông số kỹ thuật' });
+    const tiles = within(section).getAllByRole('button');
+    expect(tiles.map((b) => b.textContent)).toEqual([
+      'VRAM 12GB GDDR6X',
+      'Nguồn đề xuất 650W',
+      'Kích thước 301mm',
+    ]);
+    expect(tiles.every((b) => b.getAttribute('aria-haspopup') === 'dialog')).toBe(true);
+  });
+
+  it('bấm ô 2: panel mở ở thông số đó, focus nút Đóng; Esc thì focus về ô 2', async () => {
+    renderPage();
+    const section = await screen.findByRole('region', { name: 'Thông số kỹ thuật' });
+    const tile = within(section).getAllByRole('button')[1]!;
+
+    fireEvent.click(tile);
+    const dialog = screen.getByRole('dialog', { name: 'Thông số kỹ thuật' });
+    const toc = within(dialog).getByRole('navigation', { name: 'Các thông số' });
+    expect(within(toc).getByRole('button', { name: 'Nguồn đề xuất' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Đóng' })).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(tile).toHaveFocus();
   });
 
   it('không có ảnh thì hiện icon loại hàng; có ảnh thì ảnh có alt là tên, không lazy', async () => {
