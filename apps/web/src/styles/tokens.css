@@ -128,11 +128,15 @@
    */
   --content-max: 1920px;
   --gutter: 16px;
+
+  /* Trang chi tiết sản phẩm (design-system §10): chỉ kích thước bố cục, không thêm màu, chữ, bóng */
+  --spec-tile-min: 150px; /* bề rộng tối thiểu một ô thông số, JS chia cột đọc giá trị này (§9.24) */
 }
 
 @media (min-width: 640px) {
   :root {
     --gutter: 24px;
+    --spec-tile-min: 220px;
   }
 }
 @media (min-width: 960px) {
