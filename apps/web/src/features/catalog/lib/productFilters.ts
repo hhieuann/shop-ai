@@ -27,6 +27,11 @@ const CATEGORY_LABELS: Record<ProductCategory, string> = {
   accessory: 'Phụ kiện', // túi, balo, hub USB, cáp, đế tản nhiệt (catalog.md BR-02)
 };
 
+/** Tên tiếng Việt của loại hàng (breadcrumb, link loại ở trang chi tiết) */
+export function categoryLabel(category: ProductCategory): string {
+  return CATEGORY_LABELS[category];
+}
+
 export const CATEGORIES = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({
   value: value as ProductCategory,
   label,
