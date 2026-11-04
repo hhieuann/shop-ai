@@ -1,3 +1,4 @@
+import { useId, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { Banknote, Search, Truck } from 'lucide-react';
@@ -9,7 +10,8 @@ import { Price } from '../../../shared/components/Price';
 import { AddToCart } from '../../cart/components/AddToCart';
 import { AlsoBought } from '../components/AlsoBought';
 import { CategoryIcon } from '../components/CategoryIcon';
-import { SpecTable } from '../components/SpecTable';
+import { SpecPanel } from '../components/SpecPanel';
+import { SpecTiles } from '../components/SpecTiles';
 import { StockBadge } from '../components/StockBadge';
 import { categoryLabel } from '../lib/productFilters';
 import { specEntries } from '../lib/specLabels';
@@ -24,6 +26,9 @@ const MEDIA_SIZE = 560;
  */
 export function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
+  const specTitleId = useId();
+  // Panel thông số đang mở: thông số vừa bấm và ô đã mở (đóng xong focus về ô đó)
+  const [panel, setPanel] = useState<{ index: number; opener: HTMLElement } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.products.detail(productId!),
@@ -45,7 +50,7 @@ export function ProductDetailPage() {
 
   const label = categoryLabel(data.category);
   const categoryHref = `/products?category=${data.category}`;
-  const hasSpecs = specEntries(data.category, data.specs).length > 0;
+  const specs = specEntries(data.category, data.specs);
   const soldOut = data.status !== 'ACTIVE' || data.stock <= 0;
 
   return (
@@ -107,13 +112,26 @@ export function ProductDetailPage() {
           <AddToCart product={data} />
         </aside>
 
-        {hasSpecs && (
-          // Tạm giữ bảng thông số cũ (có sẵn tiêu đề); ô thông số và panel thay ở PR sau
-          <div className={`${styles.block} ${styles.spec}`}>
-            <SpecTable specs={data.specs} />
-          </div>
+        {specs.length > 0 && (
+          // Thông số là ô bấm được, bấm mở panel giải thích (§3.5, §3.6)
+          <section aria-labelledby={specTitleId} className={`${styles.block} ${styles.spec}`}>
+            <h2 id={specTitleId} className={styles.specTitle}>
+              Thông số kỹ thuật
+            </h2>
+            <SpecTiles rows={specs} onOpen={(index, opener) => setPanel({ index, opener })} />
+          </section>
         )}
       </div>
+
+      {panel && (
+        <SpecPanel
+          category={data.category}
+          rows={specs}
+          initialIndex={panel.index}
+          opener={panel.opener}
+          onClose={() => setPanel(null)}
+        />
+      )}
 
       {/* Toàn bề ngang, ngoài lưới (§3.7) */}
       <AlsoBought productId={data.productId} />

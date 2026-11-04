@@ -16,8 +16,9 @@ import type { SpecEntry } from '../lib/specLabels';
 import styles from './SpecPanel.module.css';
 
 /**
- * Sau khi vừa mở hay bấm mục lục: chờ thân cuộn xong (sự kiện scrollend) mới tin lại kết quả theo dõi.
- * Không có scrollend (trình duyệt cũ, vị trí không đổi) thì hết khoảng này (ms) coi như đã cuộn xong
+ * Sau khi vừa mở hay bấm mục lục: chờ thân cuộn xong (sự kiện scrollend) mới đổi mục đang xem theo
+ * kết quả theo dõi. Không có scrollend (trình duyệt cũ, vị trí không đổi) thì hết khoảng này (ms)
+ * coi như đã cuộn xong
  */
 const SCROLL_END_FALLBACK_MS = 1000;
 /** Dự phòng khi không có transitionend (giảm chuyển động, môi trường test): gỡ panel sau khoảng này */
@@ -48,8 +49,10 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const spacerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  // Mục đang cuộn tới (vừa mở hay vừa bấm mục lục); khác null thì chưa tin kết quả theo dõi
+  // Mục đang cuộn tới (vừa mở hay vừa bấm mục lục); khác null thì chưa đổi mục theo kết quả theo dõi
   const jumpTarget = useRef<number | null>(null);
+  // Các phần đang thấy trong vùng theo dõi; luôn cập nhật, kể cả lúc đang chờ cuộn xong
+  const visible = useRef(new Set<number>());
   const jumpFallback = useRef<ReturnType<typeof setTimeout>>();
   const closing = useRef(false);
 
@@ -91,11 +94,13 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
     spacer.style.height = `${Math.max(0, content.clientHeight - last.offsetHeight)}px`;
   }, [rows.length]);
 
-  // Thân cuộn tới nơi: đánh dấu đúng mục đã chọn rồi mới tin lại kết quả theo dõi
+  // Thân cuộn xong: đánh dấu phần trên cùng đang thấy. Người dùng tự cuộn giữa chừng thì ra phần
+  // đang xem; dừng đúng ở mục đã chọn thì cũng ra mục đó. Không thấy phần nào thì giữ mục đã chọn
   const endJump = useCallback(() => {
     clearTimeout(jumpFallback.current);
     if (jumpTarget.current === null) return;
-    setActive(jumpTarget.current);
+    const seen = visible.current;
+    setActive(seen.size > 0 ? Math.min(...seen) : jumpTarget.current);
     jumpTarget.current = null;
   }, []);
   // Bắt đầu cuộn tới một mục; chọn mục khác giữa chừng thì huỷ lượt chờ cũ
@@ -165,16 +170,17 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
   useEffect(() => {
     const content = contentRef.current;
     if (!content || typeof IntersectionObserver === 'undefined') return;
-    const visible = new Set<number>();
+    const seen = visible.current;
+    seen.clear();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const index = Number((entry.target as HTMLElement).dataset.index);
-          if (entry.isIntersecting) visible.add(index);
-          else visible.delete(index);
+          if (entry.isIntersecting) seen.add(index);
+          else seen.delete(index);
         }
-        if (jumpTarget.current !== null || visible.size === 0) return;
-        setActive(Math.min(...visible));
+        if (jumpTarget.current !== null || seen.size === 0) return;
+        setActive(Math.min(...seen));
       },
       { root: content, rootMargin: '-1px 0px -60% 0px' },
     );

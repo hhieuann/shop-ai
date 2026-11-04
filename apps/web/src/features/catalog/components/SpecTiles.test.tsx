@@ -83,6 +83,13 @@ describe('SpecTiles', () => {
     expect(cols()).toBe('1');
   });
 
+  it('đã có bề rộng lúc gắn: đúng số cột ngay sau lần vẽ đầu, không chờ ResizeObserver', () => {
+    width = 900;
+    render(<SpecTiles rows={ROWS} onOpen={vi.fn()} />);
+    // 900px, ô tối thiểu 220px: tối đa 3 cột, 5 ô thành 3 + 2
+    expect(cols()).toBe('3');
+  });
+
   it('5 thông số: rộng 1360px thì 1 hàng 5 ô, thu về 810px thì 3 + 2', () => {
     render(<SpecTiles rows={ROWS} onOpen={vi.fn()} />);
 
