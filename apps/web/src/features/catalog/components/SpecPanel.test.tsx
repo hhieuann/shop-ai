@@ -148,33 +148,110 @@ describe('SpecPanel', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+});
 
-  it('cuộn thân: phần trên cùng đang thấy thành mục đang xem, trừ 400ms ngay sau khi mở', () => {
-    // IntersectionObserver giả: giữ callback để test báo phần nào đang thấy
-    let report: ((entries: Partial<IntersectionObserverEntry>[]) => void) | undefined;
+describe('SpecPanel: mục lục và theo dõi cuộn', () => {
+  /** IntersectionObserver giả: giữ callback và tuỳ chọn để test báo phần nào đang thấy */
+  let report: ((entries: Partial<IntersectionObserverEntry>[]) => void) | undefined;
+  let options: IntersectionObserverInit | undefined;
+  beforeEach(() => {
+    report = undefined;
+    options = undefined;
     vi.stubGlobal(
       'IntersectionObserver',
       class {
-        constructor(cb: (entries: Partial<IntersectionObserverEntry>[]) => void) {
+        constructor(
+          cb: (entries: Partial<IntersectionObserverEntry>[]) => void,
+          init?: IntersectionObserverInit,
+        ) {
           report = cb;
+          options = init;
         }
         observe() {}
         disconnect() {}
       },
     );
+  });
+
+  const sectionAt = (name: string) => screen.getByRole('region', { name });
+  /** Chỉ phần `name` đang thấy (các phần khác ra khỏi vùng theo dõi) */
+  const onlySeen = (name: string) => () =>
+    report?.(
+      ROWS.map((row) => ({
+        target: sectionAt(row.label),
+        isIntersecting: row.label === name,
+      })),
+    );
+  const scrollEnd = () => fireEvent(sectionAt('VRAM').parentElement!, new Event('scrollend'));
+  const marked = () =>
+    within(screen.getByRole('navigation', { name: 'Các thông số' }))
+      .getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-current') === 'true')
+      .map((b) => b.textContent);
+
+  it('phần trước chỉ chạm mép trên không tính: rootMargin trên là -1px', () => {
     openPanel({ index: 0 });
-    const sectionAt = (name: string) => screen.getByRole('region', { name });
-    const seen = (name: string) => () =>
-      report?.([{ target: sectionAt(name), isIntersecting: true }]);
+    expect(options?.rootMargin).toBe('-1px 0px -60% 0px');
+  });
 
-    // Ngay sau khi mở: kết quả theo dõi bị bỏ qua, mục vừa chọn giữ nguyên
-    act(seen('khoa_moi'));
-    expect(tocItem('VRAM')).toHaveAttribute('aria-current', 'true');
+  it('vừa mở: bỏ qua kết quả theo dõi tới khi thân cuộn xong, sau đó theo dõi lại', () => {
+    openPanel({ index: 0 });
 
-    // Quá 400ms: phần đang thấy thành mục đang xem
+    act(onlySeen('khoa_moi'));
+    expect(marked()).toEqual(['VRAM']);
+
+    act(scrollEnd);
+    act(onlySeen('khoa_moi'));
+    expect(marked()).toEqual(['khoa_moi']);
+  });
+
+  it('bấm mục phía trên: giữa lúc cuộn báo phần trước vẫn giữ mục đã bấm, cuộn xong theo dõi lại', () => {
+    openPanel({ index: 3 });
+    act(scrollEnd);
+
+    fireEvent.click(tocItem('Kích thước'));
+    // Cuộn mượt lâu hơn 400ms: phần ngay trước lọt vào vùng theo dõi trước khi cuộn xong
     act(() => vi.advanceTimersByTime(500));
-    act(seen('khoa_moi'));
-    expect(tocItem('khoa_moi')).toHaveAttribute('aria-current', 'true');
-    expect(tocItem('VRAM')).not.toHaveAttribute('aria-current');
+    act(onlySeen('Nguồn đề xuất'));
+    expect(marked()).toEqual(['Kích thước']);
+
+    act(scrollEnd);
+    expect(marked()).toEqual(['Kích thước']);
+
+    // Cuộn xong rồi người dùng tự cuộn: kết quả theo dõi lại có tác dụng
+    act(onlySeen('Nguồn đề xuất'));
+    expect(marked()).toEqual(['Nguồn đề xuất']);
+  });
+
+  it('không có scrollend: sau 1000ms coi như đã cuộn xong, theo dõi lại', () => {
+    openPanel({ index: 0 });
+    act(scrollEnd);
+    fireEvent.click(tocItem('khoa_moi'));
+
+    act(() => vi.advanceTimersByTime(999));
+    act(onlySeen('Kích thước'));
+    expect(marked()).toEqual(['khoa_moi']);
+
+    act(() => vi.advanceTimersByTime(1));
+    act(onlySeen('Kích thước'));
+    expect(marked()).toEqual(['Kích thước']);
+  });
+
+  it('bấm mục khác giữa lúc cuộn: kết thúc ở mục bấm sau, không còn hẹn giờ cũ', () => {
+    openPanel({ index: 3 });
+    act(scrollEnd);
+
+    fireEvent.click(tocItem('Kích thước'));
+    act(() => vi.advanceTimersByTime(600));
+    fireEvent.click(tocItem('Nguồn đề xuất'));
+
+    // Hẹn giờ của lần bấm đầu (lẽ ra hết ở 1000ms) không còn: vẫn bỏ qua kết quả theo dõi
+    act(() => vi.advanceTimersByTime(500));
+    act(onlySeen('VRAM'));
+    expect(marked()).toEqual(['Nguồn đề xuất']);
+
+    act(scrollEnd);
+    expect(marked()).toEqual(['Nguồn đề xuất']);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
