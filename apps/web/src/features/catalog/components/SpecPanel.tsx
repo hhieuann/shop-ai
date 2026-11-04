@@ -15,8 +15,11 @@ import { specHelp } from '../lib/specHelp';
 import type { SpecEntry } from '../lib/specLabels';
 import styles from './SpecPanel.module.css';
 
-/** Sau khi bấm mục lục hay vừa mở: bỏ qua kết quả theo dõi cuộn trong khoảng này (ms) */
-const IGNORE_OBSERVER_MS = 400;
+/**
+ * Sau khi vừa mở hay bấm mục lục: chờ thân cuộn xong (sự kiện scrollend) mới tin lại kết quả theo dõi.
+ * Không có scrollend (trình duyệt cũ, vị trí không đổi) thì hết khoảng này (ms) coi như đã cuộn xong
+ */
+const SCROLL_END_FALLBACK_MS = 1000;
 /** Dự phòng khi không có transitionend (giảm chuyển động, môi trường test): gỡ panel sau khoảng này */
 const CLOSE_FALLBACK_MS = 250;
 
@@ -45,7 +48,9 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const spacerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const ignoreUntil = useRef(0);
+  // Mục đang cuộn tới (vừa mở hay vừa bấm mục lục); khác null thì chưa tin kết quả theo dõi
+  const jumpTarget = useRef<number | null>(null);
+  const jumpFallback = useRef<ReturnType<typeof setTimeout>>();
   const closing = useRef(false);
 
   // closed: ngoài màn hình; open: đã trượt vào. Khung hình sau khi gắn mới đổi sang open để có chuyển động
@@ -86,17 +91,43 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
     spacer.style.height = `${Math.max(0, content.clientHeight - last.offsetHeight)}px`;
   }, [rows.length]);
 
+  // Thân cuộn tới nơi: đánh dấu đúng mục đã chọn rồi mới tin lại kết quả theo dõi
+  const endJump = useCallback(() => {
+    clearTimeout(jumpFallback.current);
+    if (jumpTarget.current === null) return;
+    setActive(jumpTarget.current);
+    jumpTarget.current = null;
+  }, []);
+  // Bắt đầu cuộn tới một mục; chọn mục khác giữa chừng thì huỷ lượt chờ cũ
+  const startJump = useCallback(
+    (index: number) => {
+      setActive(index);
+      jumpTarget.current = index;
+      clearTimeout(jumpFallback.current);
+      jumpFallback.current = setTimeout(endJump, SCROLL_END_FALLBACK_MS);
+    },
+    [endJump],
+  );
+  useEffect(() => {
+    const content = contentRef.current;
+    content?.addEventListener('scrollend', endJump);
+    return () => {
+      content?.removeEventListener('scrollend', endJump);
+      clearTimeout(jumpFallback.current);
+    };
+  }, [endJump]);
+
   // Mở: cuộn ngay (không trượt) tới thông số vừa bấm, đánh dấu mục, focus nút đóng
   useLayoutEffect(() => {
     measureSpacer();
     const content = contentRef.current;
     const section = sectionRefs.current[initialIndex];
     if (content && section) content.scrollTop = section.offsetTop;
-    ignoreUntil.current = Date.now() + IGNORE_OBSERVER_MS;
+    startJump(initialIndex);
     closeRef.current?.focus();
     const frame = requestAnimationFrame(() => setState('open'));
     return () => cancelAnimationFrame(frame);
-  }, [initialIndex, measureSpacer]);
+  }, [initialIndex, measureSpacer, startJump]);
 
   // Gỡ xong: trả focus về ô đã mở
   useEffect(() => () => opener?.focus(), [opener]);
@@ -129,7 +160,8 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
     return () => observer.disconnect();
   }, [measureSpacer]);
 
-  // Theo dõi khi cuộn: phần trên cùng đang thấy (trong 40% trên của thân) thành mục đang xem
+  // Theo dõi khi cuộn: phần trên cùng đang thấy (trong 40% trên của thân) thành mục đang xem.
+  // rootMargin -1px ở trên: phần trước chỉ chạm mép trên (diện tích 0) không tính là đang thấy
   useEffect(() => {
     const content = contentRef.current;
     if (!content || typeof IntersectionObserver === 'undefined') return;
@@ -141,10 +173,10 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
           if (entry.isIntersecting) visible.add(index);
           else visible.delete(index);
         }
-        if (Date.now() < ignoreUntil.current || visible.size === 0) return;
+        if (jumpTarget.current !== null || visible.size === 0) return;
         setActive(Math.min(...visible));
       },
-      { root: content, rootMargin: '0px 0px -60% 0px' },
+      { root: content, rootMargin: '-1px 0px -60% 0px' },
     );
     for (const section of sectionRefs.current) if (section) observer.observe(section);
     return () => observer.disconnect();
@@ -156,8 +188,7 @@ export function SpecPanel({ category, rows, initialIndex, opener, onClose }: Spe
   }, [active]);
 
   const goTo = (index: number) => {
-    setActive(index);
-    ignoreUntil.current = Date.now() + IGNORE_OBSERVER_MS;
+    startJump(index);
     const content = contentRef.current;
     const section = sectionRefs.current[index];
     if (!content || !section) return;
