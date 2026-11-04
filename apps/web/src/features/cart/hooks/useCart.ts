@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../../shared/api/client';
+import { recordEvent } from '../../../shared/api/events';
 import { queryKeys } from '../../../shared/api/queryKeys';
 import type { Cart, CartItem, Product, ProductSummary } from '../../../shared/api/types';
 import { useSession } from '../../../shared/auth/useSession';
@@ -130,6 +131,11 @@ export function useCart() {
       if (isGuest) return commit(addLine(loadGuestCart(), product.productId, quantity, product));
       const cart = await api.post<Cart>('/cart/items', { productId: product.productId, quantity });
       queryClient.setQueryData(queryKeys.cart.mine(), cart);
+    },
+    // Thêm giỏ thành công khi đã đăng nhập: ghi ADD_TO_CART cho gợi ý (events.md mục 1).
+    // Khách vãng lai không ghi; gộp giỏ lúc đăng nhập và đổi số lượng trong giỏ không đi qua đây
+    onSuccess: (_result, { product }) => {
+      if (!isGuest) void recordEvent(product.productId, 'ADD_TO_CART');
     },
   });
 

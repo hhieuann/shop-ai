@@ -9,6 +9,7 @@ Bố cục: nền xám, các khối trắng bo 16px. Cột trái có khối sả
 - `GET /api/v1/products/{productId}` trả `Product`: `productId`, `name`, `brand`, `category`, `price`, `stock`, `status`, `imageUrl?` (**một ảnh**), `description`, `specs?` (object khoá → giá trị, tuỳ loại hàng), `createdAt`, `updatedAt`. **API không đổi** cho trang này.
 - `INACTIVE`, không có sản phẩm hay `productId` sai dạng → API trả 404 (catalog BR-04), nên trang không có trạng thái "Ngừng bán".
 - Thêm vào giỏ qua `useCart().add` (cart BR-01): đã đăng nhập thì `POST /api/v1/cart/items`; chưa đăng nhập thì vào giỏ khách trên trình duyệt, **không** chuyển sang `/login`. Số lượng 1 … min(99, `stock`) (cart BR-03); giỏ đã có món này thì server có thể trả `QUANTITY_LIMIT` kèm `maxAddable`.
+- Lượt xem cho gợi ý: đã đăng nhập và tải được sản phẩm thì gửi `POST /api/v1/events` `VIEW` một lần cho mỗi sản phẩm (`useRecordView`, events.md mục 1); khách vãng lai, 404 hay lỗi thì không gửi; gửi lỗi thì bỏ qua, không ảnh hưởng trang.
 - Widget "Thường mua kèm" ở cuối trang: `AlsoBought` có sẵn (`GET /api/v1/recs/also-bought`, ADR-0016, An làm), không đổi.
 
 **Ghép dữ liệu thông số với giao diện** (phần web tự lo, không cần đổi API):

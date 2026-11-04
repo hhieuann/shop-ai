@@ -15,6 +15,7 @@ import { SpecTiles } from '../components/SpecTiles';
 import { StockBadge } from '../components/StockBadge';
 import { categoryLabel } from '../lib/productFilters';
 import { specEntries } from '../lib/specLabels';
+import { useRecordView } from '../hooks/useRecordView';
 import styles from './ProductDetailPage.module.css';
 
 /** Ảnh lớn đầu trang: đặt sẵn kích thước để không giật bố cục (ô vuông, tối đa --pdp-media-max) */
@@ -35,6 +36,8 @@ export function ProductDetailPage() {
     queryFn: () => api.get<Product>(`/products/${productId}`),
     enabled: !!productId,
   });
+  // Lượt xem cho gợi ý: chỉ khi đã tải được sản phẩm (404, lỗi thì không có data)
+  useRecordView(data?.productId);
 
   if (isLoading) return <DetailSkeleton />;
   // INACTIVE, không có hoặc productId sai dạng đều là 404 (catalog BR-04); không thử lại (retry.ts)
