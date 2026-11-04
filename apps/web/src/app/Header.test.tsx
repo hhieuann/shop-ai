@@ -237,4 +237,34 @@ describe('Header: hàng 2 thu lại khi cuộn (trang chi tiết, ≥1280)', () 
     scrollPage(120);
     expect(needsNav()).not.toHaveAttribute('inert');
   });
+
+  it('RootLayout: route có handle flushTop thì main bỏ khoảng đệm trên, route khác giữ', () => {
+    const routes = [
+      {
+        path: '/',
+        element: <RootLayout />,
+        children: [
+          {
+            path: 'products/:productId',
+            handle: { headerNeeds: 'collapse', flushTop: true } satisfies RouteHandle,
+            element: <p>Chi tiết</p>,
+          },
+          { path: 'cart', element: <p>Giỏ hàng</p> },
+        ],
+      },
+    ];
+    const renderRoute = (path: string) =>
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />
+        </QueryClientProvider>,
+      );
+
+    renderRoute('/products/01M3GQ5TR0DH1Z32GWGG764J9X');
+    expect(screen.getByRole('main').className).toMatch(/flushTop/);
+    cleanup();
+
+    renderRoute('/cart');
+    expect(screen.getByRole('main').className).not.toMatch(/flushTop/);
+  });
 });

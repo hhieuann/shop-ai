@@ -18,3 +18,7 @@
 .plain .main {
   padding-top: 0;
 }
+/* Route có handle.flushTop: nội dung sát header, khoảng cách do nội dung tự đặt */
+.main.flushTop {
+  padding-top: 0;
+}

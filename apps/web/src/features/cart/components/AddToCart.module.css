@@ -2,8 +2,6 @@
 .box {
   display: grid;
   gap: var(--space-200);
-  /* Trang chi tiết cũ chưa có hộp mua: giữ khoảng cách với mô tả tới khi làm lại bố cục trang */
-  margin-top: var(--space-200);
 }
 /* Nhãn bên trái, bộ chọn số lượng bên phải */
 .row {

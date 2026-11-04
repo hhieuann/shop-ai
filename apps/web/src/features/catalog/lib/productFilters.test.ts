@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  categoryLabel,
   filtersFromSearchParams,
   normalizeSearch,
   pageFromSearchParams,
@@ -226,5 +227,12 @@ describe('searchWithoutPaging', () => {
 
     // Assert
     expect(result).toBe(search);
+  });
+});
+
+describe('categoryLabel', () => {
+  it('trả tên tiếng Việt của loại hàng, cùng bảng với menu và bộ lọc', () => {
+    expect(categoryLabel('gpu')).toBe('Card đồ hoạ');
+    expect(categoryLabel('accessory')).toBe('Phụ kiện');
   });
 });
