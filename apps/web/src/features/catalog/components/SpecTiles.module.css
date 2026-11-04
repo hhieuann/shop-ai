@@ -1,0 +1,67 @@
+/* Ô thông số trang chi tiết (docs/web/design-system.md §9.24). Số cột --spec-cols do SpecTiles.tsx tính */
+.list {
+  display: grid;
+  grid-template-columns: repeat(var(--spec-cols, 2), minmax(0, 1fr));
+  gap: 8px; /* khớp TILE_GAP trong SpecTiles.tsx */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px var(--space-150);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  color: var(--fg-default);
+  text-align: left;
+  transition: background-color var(--dur-fast) ease-out;
+}
+/* :not(:disabled) để thắng `button:hover:not(:disabled)` của base.css */
+.tile:hover:not(:disabled) {
+  background: var(--bg-primary-tint);
+}
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.label {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.value {
+  overflow: hidden;
+  color: var(--fg-default);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Điện thoại (<640): ẩn mũi tên để ô đủ chỗ cho giá trị */
+.arrow {
+  display: none;
+  flex-shrink: 0;
+  color: var(--fg-subdued);
+  transition: color var(--dur-fast) ease-out;
+}
+.tile:hover .arrow {
+  color: var(--fg-primary);
+}
+
+@media (min-width: 640px) {
+  .tile {
+    gap: var(--space-150);
+    padding: var(--space-150);
+  }
+  .arrow {
+    display: block;
+  }
+}

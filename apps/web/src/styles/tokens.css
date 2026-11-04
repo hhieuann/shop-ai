@@ -131,12 +131,14 @@
 
   /* Trang chi tiết sản phẩm (design-system §10): chỉ kích thước bố cục, không thêm màu, chữ, bóng */
   --spec-panel-width: calc(100vw - 32px); /* panel thông số, chừa 32px vùng tối bên trái (§9.24) */
+  --spec-tile-min: 150px; /* bề rộng tối thiểu một ô thông số, JS chia cột đọc giá trị này (§9.24) */
 }
 
 @media (min-width: 640px) {
   :root {
     --gutter: 24px;
     --spec-panel-width: max(50vw, 560px);
+    --spec-tile-min: 220px;
   }
 }
 @media (min-width: 960px) {
