@@ -251,6 +251,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
+| `CartBadge` (nhãn số trên icon giỏ) | `features/cart/components/CartBadge.tsx`; số lấy từ `features/cart/hooks/useCartCount.ts` | ✅ (header, §9.1) |
+| `FlyToCart` (hiệu ứng thêm vào giỏ) | `features/cart/components/FlyToCart.tsx`; gọi `flyToCart()` trong `features/cart/lib/flyToCart.ts` | ✅ (§9.25) |
 | `LiveAnnouncerProvider` + `useAnnounce` (vùng thông báo cho trình đọc màn hình, đặt một lần ở cấp trang) | `shared/components/LiveAnnouncer.tsx`, `shared/hooks/useAnnounce.ts` | ✅ (§9.23) |
 | `FilterPanel`, `FilterSheet` | `features/catalog/components/` (nhóm lọc dùng chung `CategoryFilter`) | ✅ (trang danh sách, §9.20) |
 | `CursorPager` | `shared/components/CursorPager.tsx` | ✅ (trang danh sách, §9.21) |
@@ -276,7 +278,7 @@ Hai hàng, dính đầu trang (`position: sticky; top: 0; z-index: 210`). Hàng 
 | Đơn hàng | đầu nhóm nút bên phải; `NavLink` cao 44px, padding `0 10px`, bo 10px, icon `Package` 28 + nhãn 16/24/500, gap 8px; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn |
 | Đăng nhập | nút mở menu tài khoản, cùng kích thước với Đơn hàng: icon `User` 28 + nhãn + `ChevronDown` 16 (§9.17) |
 | Vạch ngăn | 1px × 28px `--border-on-chrome`, cách hai bên 6px |
-| Giỏ hàng | chỉ icon `ShoppingCart` 30 trong ô 48×44, bo 10px, `aria-label="Giỏ hàng"`; hover nền `--bg-chrome-hover`; trang hiện tại có vạch trắng 2px dưới icon |
+| Giỏ hàng | chỉ icon `ShoppingCart` 30 trong ô 48×44, bo 10px, `aria-label="Giỏ hàng"` (có món: "Giỏ hàng, N sản phẩm"); hover nền `--bg-chrome-hover`; trang hiện tại có vạch trắng 2px dưới icon. **Nhãn số** (`CartBadge`): N = số sản phẩm khác nhau trong giỏ (số dòng, tối đa 50, không phải tổng số lượng), lấy bằng `useCartCount` (khách vãng lai đếm giỏ trên trình duyệt, đã đăng nhập dùng chung cache `GET /api/v1/cart`); 0 hoặc giỏ đang tải, lỗi thì không có nhãn. Nhãn tròn ở góc trên phải icon, cao 18px và rộng tối thiểu 18px tính cả viền, padding ngang 5px, bo `--radius-full`, chữ 11px đậm 700 `tabular-nums` (line-height 14px, căn giữa trong viền), nền `--bg-deal`, chữ `--fg-on-deal`, viền 2px `--bg-chrome`; giống nhau máy tính và điện thoại; `aria-hidden` (số đọc qua `aria-label` của link), không nằm trong vùng `aria-live`. Icon giỏ có thuộc tính `data-cart-target` làm đích cho hiệu ứng §9.25 |
 | Hàng 2 | cao **56px**, nền `--bg-surface`, `--shadow-sm`; `<nav aria-label="Mua theo nhu cầu">` gồm **6 link xếp thành một cụm căn giữa**, cách nhau **24px** (`justify-content: center; gap: 24px`). Mỗi link cao 42px, padding `10px 12px`, bo 8px, icon 20 `--fg-primary` + chữ 16/22/600 `--fg-heading`, gap 8px; hover nền `--bg-primary-tint`; link của trang đang xem: nền `--bg-primary-tint-2`, chữ `--fg-primary` |
 
 Sáu link hàng 2 (nhóm khách theo project-plan, đường dẫn là bộ lọc đã có):
@@ -703,6 +705,17 @@ Chốt 03/11/2026 theo trang tham khảo phụ (khối ô thông số, bấm ô 
 | Giảm chuyển động | `prefers-reduced-motion: reduce` (đã tắt chung trong `base.css`): mở/đóng ngay |
 
 **Câu giải thích** (`specHelp.ts`): object `Record<string, string>`, khoá `"<loại>.<khoá>"` cho nghĩa riêng theo loại hàng, `"<khoá>"` cho nghĩa chung; tra `loại.khoá` trước rồi `khoá`. Mỗi câu chỉ nói thông số đó là gì và đơn vị ghi thế nào; **không** khuyên nên chọn mức nào, **không** nói linh kiện nào lắp hay chạy được với nhau (catalog BR-06), không nhắc hãng hay sản phẩm cụ thể. Câu không phụ thuộc giá trị của sản phẩm.
+
+### 9.25 Hiệu ứng thêm vào giỏ (`FlyToCart`, ✅)
+Chốt 05/11/2026 (#356, thay #185). Thêm vào giỏ **thành công** từ hộp mua trang chi tiết (`AddToCart`) hoặc nút trên thẻ (`AddToCartButton`, §9.23) thì một ô bay từ nút vừa bấm tới icon giỏ trên header (§9.1). Thêm lỗi thì không bay, số không đổi. Câu "Đã thêm … vào giỏ." giữ như cũ.
+
+| Phần | Số đo |
+|---|---|
+| Ô bay | tròn 40px, nền `--bg-primary`, giữa là `CategoryIcon` 20px của loại hàng, màu `--fg-on-primary` (không có loại hàng thì `ShoppingCart`); `position: fixed`, gắn vào `body` (portal), `pointer-events: none`, `aria-hidden` |
+| Đường bay | từ tâm nút tới tâm icon giỏ (đánh dấu `data-cart-target`, đọc vị trí bằng `getBoundingClientRect` lúc bấm); đường cong: trục ngang chạy theo `--ease-standard`, trục dọc theo `ease-in`; 600ms; nhỏ dần còn 16px, mờ dần ở 20% cuối. Web Animations API |
+| Số trên giỏ | trong lúc bay nhãn giữ số cũ; tới nơi thì hiện số mới và nhãn nảy `scale(1 → 1,25 → 1)` 200ms. Thêm lại món đã có thì số không đổi, chỉ nảy |
+| Bấm nhiều lần | mỗi lần một ô |
+| Không bay | `prefers-reduced-motion: reduce`, icon giỏ không thấy trên màn hình (bị panel thông số phủ, không có trong trang), hoặc phần hiệu ứng (`FlyToCart`, tải riêng sau gói JS đầu tiên) chưa tải xong hay tải lỗi: không có ô bay, không nảy, số đổi ngay. Tải lỗi không làm sập trang |
 
 ## 10. Token sẽ thêm khi cần
 

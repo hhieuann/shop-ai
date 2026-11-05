@@ -1,0 +1,20 @@
+/* Nhãn số trên icon giỏ (design-system §9.1): góc trên phải icon, giống nhau máy tính và điện thoại */
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--bg-chrome);
+  border-radius: var(--radius-full);
+  background: var(--bg-deal);
+  color: var(--fg-on-deal);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}

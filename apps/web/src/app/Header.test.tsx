@@ -168,6 +168,27 @@ describe('Header', () => {
   });
 });
 
+describe('Header: số trên icon giỏ', () => {
+  it('giỏ trống: link "Giỏ hàng", không có nhãn số', () => {
+    renderAt('/');
+    expect(screen.getByRole('link', { name: 'Giỏ hàng' })).toBeInTheDocument();
+    expect(screen.queryByTestId('cart-badge')).toBeNull();
+  });
+
+  it('giỏ khách có 3 sản phẩm khác nhau: nhãn 3, link đọc "Giỏ hàng, 3 sản phẩm"', async () => {
+    localStorage.setItem(
+      'shop-ai:guest-cart',
+      JSON.stringify(
+        ['p-1', 'p-2', 'p-3'].map((productId) => ({ productId, quantity: 2, addedPrice: 100 })),
+      ),
+    );
+    renderAt('/');
+    const link = await screen.findByRole('link', { name: 'Giỏ hàng, 3 sản phẩm' });
+    expect(link).toHaveAttribute('href', '/cart');
+    expect(await within(link).findByTestId('cart-badge')).toHaveTextContent('3');
+  });
+});
+
 describe('Header: hàng 2 thu lại khi cuộn (trang chi tiết, ≥1280)', () => {
   it('có collapseNeeds: cuộn xuống thì hàng 2 có inert, về đầu trang thì bỏ inert', () => {
     renderAt('/products/01M3GQ5TR0DH1Z32GWGG764J9X', true);
