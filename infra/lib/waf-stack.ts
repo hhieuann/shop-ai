@@ -4,7 +4,7 @@ import { CfnLoggingConfiguration, CfnWebACL } from 'aws-cdk-lib/aws-wafv2';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 
-/** Ngưỡng của rule giới hạn tốc độ, đếm theo IP trong 5 phút (cửa sổ mặc định của WAF) */
+/** Ngưỡng của rule giới hạn tốc độ, đếm request `/api/` theo IP trong 5 phút (cửa sổ mặc định của WAF) */
 export const RATE_LIMIT_ALL = 1000;
 export const RATE_LIMIT_EVENTS = 300;
 
@@ -16,15 +16,36 @@ function visibility(metricName: string): CfnWebACL.VisibilityConfigProperty {
   return { cloudWatchMetricsEnabled: true, metricName, sampledRequestsEnabled: true };
 }
 
-function managedRule(name: string, priority: number): CfnWebACL.RuleProperty {
+/**
+ * Rule managed của AWS. `countOnly`: chỉ đếm và ghi log, không chặn; dùng cho rule dễ chặn nhầm trong
+ * những ngày đầu, xem log rồi mới chuyển sang chặn (docs/runbooks/waf.md).
+ */
+function managedRule(name: string, priority: number, countOnly = false): CfnWebACL.RuleProperty {
   return {
     name,
     priority,
     statement: { managedRuleGroupStatement: { vendorName: 'AWS', name } },
-    overrideAction: { none: {} },
+    overrideAction: countOnly ? { count: {} } : { none: {} },
     visibilityConfig: visibility(name),
   };
 }
+
+function pathStartsWith(searchString: string): CfnWebACL.StatementProperty {
+  return {
+    byteMatchStatement: {
+      fieldToMatch: { uriPath: {} },
+      positionalConstraint: 'STARTS_WITH',
+      searchString,
+      textTransformations: [{ priority: 0, type: 'NONE' }],
+    },
+  };
+}
+
+/**
+ * Core rule set chỉ đếm cho tới khi xem log sau lần deploy prod đầu (v1.0.0-rc.1); đổi thành false bằng
+ * PR riêng khi log không có chặn nhầm. Các rule còn lại chặn ngay vì ít khả năng nhầm.
+ */
+export const COMMON_RULE_SET_COUNT_ONLY = true;
 
 /**
  * WAF cho CloudFront theo ADR-0006 (cập nhật 29/10/2026): web ACL scope CLOUDFRONT bắt buộc nằm ở
@@ -52,9 +73,17 @@ export class WafStack extends Stack {
         // Rule rẻ, chặn sớm IP xấu đã biết trước khi tốn công kiểm nội dung
         managedRule('AWSManagedRulesAmazonIpReputationList', 10),
         {
+          // Chỉ đếm request API: file tĩnh do CloudFront cache, một lần mở trang tải hàng chục file nên
+          // nhiều người chung Wi-Fi (một IP) lúc demo dễ chạm ngưỡng nếu đếm cả file tĩnh
           name: 'RateLimitPerIp',
           priority: 20,
-          statement: { rateBasedStatement: { limit: RATE_LIMIT_ALL, aggregateKeyType: 'IP' } },
+          statement: {
+            rateBasedStatement: {
+              limit: RATE_LIMIT_ALL,
+              aggregateKeyType: 'IP',
+              scopeDownStatement: pathStartsWith('/api/'),
+            },
+          },
           action: { block: {} },
           visibilityConfig: visibility('RateLimitPerIp'),
         },
@@ -66,20 +95,13 @@ export class WafStack extends Stack {
             rateBasedStatement: {
               limit: RATE_LIMIT_EVENTS,
               aggregateKeyType: 'IP',
-              scopeDownStatement: {
-                byteMatchStatement: {
-                  fieldToMatch: { uriPath: {} },
-                  positionalConstraint: 'STARTS_WITH',
-                  searchString: '/api/v1/events',
-                  textTransformations: [{ priority: 0, type: 'NONE' }],
-                },
-              },
+              scopeDownStatement: pathStartsWith('/api/v1/events'),
             },
           },
           action: { block: {} },
           visibilityConfig: visibility('RateLimitEventsPerIp'),
         },
-        managedRule('AWSManagedRulesCommonRuleSet', 40),
+        managedRule('AWSManagedRulesCommonRuleSet', 40, COMMON_RULE_SET_COUNT_ONLY),
         managedRule('AWSManagedRulesKnownBadInputsRuleSet', 50),
       ],
     });

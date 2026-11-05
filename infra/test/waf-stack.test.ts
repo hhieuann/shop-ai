@@ -6,7 +6,12 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import { describe, expect, it } from 'vitest';
 import { ApiStack } from '../lib/api-stack.js';
 import type { ShopEnvironment } from '../lib/config.js';
-import { RATE_LIMIT_ALL, RATE_LIMIT_EVENTS, WafStack } from '../lib/waf-stack.js';
+import {
+  COMMON_RULE_SET_COUNT_ONLY,
+  RATE_LIMIT_ALL,
+  RATE_LIMIT_EVENTS,
+  WafStack,
+} from '../lib/waf-stack.js';
 import { WebStack } from '../lib/web-stack.js';
 
 const prod: ShopEnvironment = { name: 'prod', stackPrefix: 'shop-prd', isProd: true };
@@ -79,7 +84,15 @@ describe('WafStack', () => {
         Match.objectLike({
           Name: 'RateLimitPerIp',
           Action: { Block: {} },
-          Statement: { RateBasedStatement: { Limit: RATE_LIMIT_ALL, AggregateKeyType: 'IP' } },
+          Statement: {
+            RateBasedStatement: Match.objectLike({
+              Limit: RATE_LIMIT_ALL,
+              AggregateKeyType: 'IP',
+              ScopeDownStatement: {
+                ByteMatchStatement: Match.objectLike({ SearchString: '/api/' }),
+              },
+            }),
+          },
         }),
         Match.objectLike({
           Name: 'RateLimitEventsPerIp',
@@ -101,6 +114,17 @@ describe('WafStack', () => {
       ]),
     });
     expect(RATE_LIMIT_EVENTS).toBeLessThan(RATE_LIMIT_ALL);
+  });
+
+  it('commonRuleSet_onlyCounts_whileOtherManagedRulesBlock', () => {
+    // Assert: core rule set dễ chặn nhầm nên chỉ đếm ở lần deploy đầu; IP reputation, known bad inputs chặn
+    const override = (name: string) =>
+      (rules().find((r) => r.Name === name) as { OverrideAction?: Record<string, unknown> })
+        .OverrideAction;
+    expect(COMMON_RULE_SET_COUNT_ONLY).toBe(true);
+    expect(override('AWSManagedRulesCommonRuleSet')).toEqual({ Count: {} });
+    expect(override('AWSManagedRulesAmazonIpReputationList')).toEqual({ None: {} });
+    expect(override('AWSManagedRulesKnownBadInputsRuleSet')).toEqual({ None: {} });
   });
 
   it('logging_goesToWafLogGroup_andRedactsTokens', () => {
