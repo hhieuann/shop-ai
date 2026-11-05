@@ -14,6 +14,7 @@
     "generate:types": "openapi-typescript ../../contracts/openapi.yaml -o src/shared/api/schema.d.ts"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-query-devtools": "^5.105.0",
     "aws-amplify": "^6.22.2",
