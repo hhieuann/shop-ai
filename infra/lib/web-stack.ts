@@ -39,17 +39,19 @@ export interface WebStackProps extends StackProps {
   /** Cognito của stack api; web đọc qua /config.json lúc chạy. */
   readonly userPoolId: string;
   readonly userPoolClientId: string;
+  /** Web ACL của WafStack (us-east-1); chỉ prod có (ADR-0006, cập nhật 29/10/2026). */
+  readonly webAclArn?: string;
 }
 
 /**
  * Web của shop theo ADR-0006: một CloudFront cho mỗi môi trường.
  * `/` đọc bucket S3 riêng tư qua Origin Access Control; `/api/*` sang API Gateway, cùng tên miền nên không có CORS.
- * WAF và gói CloudFront Free làm ở bước sau.
+ * WAF chỉ gắn ở prod, trả theo dùng (ADR-0006, cập nhật 29/10/2026); dev, staging không có WAF.
  */
 export class WebStack extends Stack {
   constructor(scope: Construct, id: string, props: WebStackProps) {
     super(scope, id, props);
-    const { shopEnv, httpApi, webDistPath, userPoolId, userPoolClientId } = props;
+    const { shopEnv, httpApi, webDistPath, userPoolId, userPoolClientId, webAclArn } = props;
 
     const bucket = new Bucket(this, 'WebBucket', {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
@@ -91,6 +93,7 @@ export class WebStack extends Stack {
 
     const distribution = new Distribution(this, 'Distribution', {
       comment: `shop-ai web (${shopEnv.name})`,
+      webAclId: webAclArn,
       defaultRootObject: 'index.html',
       // Gồm châu Á; rẻ hơn PriceClass_All
       priceClass: PriceClass.PRICE_CLASS_200,
@@ -148,10 +151,6 @@ export class WebStack extends Stack {
         reason: 'Shop bán cho khách ở mọi nơi; không chặn theo quốc gia.',
       },
       {
-        id: 'AwsSolutions-CFR2',
-        reason: 'WAF gắn ở bước sau theo ADR-0006 (gói CloudFront Free có 5 rule WAF).',
-      },
-      {
         id: 'AwsSolutions-CFR3',
         reason: 'Log truy cập CloudFront tốn S3 và chưa cần ở giai đoạn này; bật khi làm giám sát.',
       },
@@ -207,6 +206,14 @@ export class WebStack extends Stack {
           'Runtime của Lambda do CDK tự chọn cho BucketDeployment và tự xoá file; cập nhật theo phiên bản CDK.',
       },
     );
+
+    if (webAclArn === undefined) {
+      Validations.of(this).acknowledge({
+        id: 'AwsSolutions-CFR2',
+        reason:
+          'Dev, staging không gắn WAF để tiết kiệm chi phí (ADR-0006, cập nhật 29/10/2026); chỉ prod có WAF.',
+      });
+    }
 
     new CfnOutput(this, 'WebUrl', { value: `https://${distribution.distributionDomainName}` });
     new CfnOutput(this, 'WebBucketName', { value: bucket.bucketName });
