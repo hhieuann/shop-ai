@@ -460,7 +460,7 @@ Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelled
 ### 9.12 Trạng thái tải, rỗng, lỗi
 | Trạng thái | Cách hiển thị |
 |---|---|
-| Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (cao 360px, bo 8px), gradient `#EEEEEE → #F5F5F5` chạy 1,6s, `aria-hidden` |
+| Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (ô vuông theo bề rộng cột cộng phần chữ 96px, từ 1280px là 80px; bo 12px như thẻ), gradient `#EEEEEE → #F5F5F5` chạy 1,6s, `aria-hidden` |
 | Đang tải (trang) | dòng "Đang tải …" màu `--fg-subdued` |
 | Đang tải lại với bộ lọc mới | giữ kết quả cũ, lưới opacity .6, `aria-busy="true"` |
 | Rỗng (`EmptyState`) | khung `--bg-surface`, viền `--border-divider`, **bo 16px**, padding `40px 16px`, chữ căn giữa; một câu giải thích + một link/nút đi tiếp |

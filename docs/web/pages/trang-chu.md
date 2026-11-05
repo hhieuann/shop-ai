@@ -98,6 +98,7 @@ Dòng phụ cạnh tiêu đề của bản 6 ("Hàng bán chạy theo từng lo�
 
 ### 3.6 Widget "Đang được mua nhiều" (An làm)
 Đặt **ngay dưới hàng đầu trang**, là khối sản phẩm đầu tiên. Dùng đúng `StoryBlock` + `Carousel` + `ProductCard`, không CSS riêng. Khách chưa đăng nhập hoặc chưa có dữ liệu → hàng bán chạy theo loại (baseline). API không trả gì → ẩn khối, không để khối rỗng.
+- Lúc đang đọc phiên (chưa biết đăng nhập hay chưa): giữ chỗ bằng khung chờ cùng chiều cao khối, dòng tiêu đề để trống, `aria-hidden`; biết phiên mới hiện tiêu đề; lỗi hoặc rỗng thì ẩn khối (#367, tránh CLS).
 
 ## 4. Responsive
 

@@ -93,8 +93,10 @@ describe('PopularProducts', () => {
     // Act
     renderWidget();
 
-    // Assert: chưa biết đăng nhập hay chưa thì chưa hiện khối, chưa gọi API nào
+    // Assert: chưa biết đăng nhập hay chưa thì chưa có tiêu đề nào, chưa gọi API nào,
+    // nhưng có khung giữ chỗ (ẩn với trình đọc màn hình) để khối hiện sau không đẩy trang (#367)
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.getByTestId('popular-placeholder')).toHaveAttribute('aria-hidden', 'true');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

@@ -32,8 +32,10 @@ export function PopularProducts() {
     enabled: session !== 'loading',
   });
 
-  // Chưa biết đăng nhập hay chưa thì chưa biết tiêu đề nào đúng: không hiện, tránh nháy tiêu đề
-  if (session === 'loading' || isError || (data && data.items.length === 0)) return null;
+  // Chưa biết đăng nhập hay chưa thì chưa biết tiêu đề nào đúng: chưa hiện tiêu đề (tránh nháy tiêu đề),
+  // nhưng vẫn giữ chỗ cùng chiều cao để khối hiện ra sau không đẩy các khối bên dưới (CLS, #367)
+  if (session === 'loading') return <Placeholder />;
+  if (isError || (data && data.items.length === 0)) return null;
 
   const title = signedIn ? 'Dành cho bạn' : 'Đang được mua nhiều';
   return (
@@ -52,5 +54,25 @@ export function PopularProducts() {
             ))}
       </Carousel>
     </StoryBlock>
+  );
+}
+
+/** Dòng tiêu đề trống nhưng vẫn giữ chiều cao một dòng chữ: một ký tự khoảng trắng không ngắt (U+00A0) */
+const BLANK_TITLE = ' ';
+
+/** Khung giữ chỗ lúc chưa biết phiên: cùng bố cục khối, dòng tiêu đề để trống, chỉ để nhìn */
+function Placeholder() {
+  return (
+    <div aria-hidden="true" data-testid="popular-placeholder">
+      <StoryBlock title={BLANK_TITLE}>
+        <Carousel label="Đang tải">
+          {Array.from({ length: SKELETONS }, (_, i) => (
+            <CarouselItem key={i}>
+              <div className={styles.skeleton} />
+            </CarouselItem>
+          ))}
+        </Carousel>
+      </StoryBlock>
+    </div>
   );
 }
