@@ -2,9 +2,7 @@ import { useId, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { Banknote, Search, Truck } from 'lucide-react';
-import { api, ApiError } from '../../../shared/api/client';
-import { queryKeys } from '../../../shared/api/queryKeys';
-import type { Product } from '../../../shared/api/types';
+import { ApiError } from '../../../shared/api/client';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { Price } from '../../../shared/components/Price';
 import { AddToCart } from '../../cart/components/AddToCart';
@@ -13,6 +11,7 @@ import { CategoryIcon } from '../components/CategoryIcon';
 import { SpecPanel } from '../components/SpecPanel';
 import { SpecTiles } from '../components/SpecTiles';
 import { StockBadge } from '../components/StockBadge';
+import { productDetailQuery } from '../lib/productDetailQuery';
 import { categoryLabel } from '../lib/productFilters';
 import { specEntries } from '../lib/specLabels';
 import { useRecordView } from '../hooks/useRecordView';
@@ -31,9 +30,9 @@ export function ProductDetailPage() {
   // Panel thông số đang mở: thông số vừa bấm và ô đã mở (đóng xong focus về ô đó)
   const [panel, setPanel] = useState<{ index: number; opener: HTMLElement } | null>(null);
 
+  // Cùng truy vấn với loader của route (router.tsx): loader đã bắt đầu tải thì dùng lại, không gọi lần hai
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.products.detail(productId!),
-    queryFn: () => api.get<Product>(`/products/${productId}`),
+    ...productDetailQuery(productId!),
     enabled: !!productId,
   });
   // Lượt xem cho gợi ý: chỉ khi đã tải được sản phẩm (404, lỗi thì không có data)
