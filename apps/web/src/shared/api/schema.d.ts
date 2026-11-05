@@ -664,7 +664,7 @@ export interface components {
      *     `PERSONALIZED` (Dành cho bạn), `ALSO_BOUGHT` (Thường mua kèm),
      *     `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016),
      *     `NEWEST` (danh sách hàng bán chạy nhưng cửa hàng chưa đủ đơn nên xếp theo hàng mới;
-     *     web dùng tiêu đề trung tính, không ghi "bán chạy").
+     *     web dùng tiêu đề trung tính "Có thể bạn quan tâm", không ghi "bán chạy").
      * @enum {string}
      */
     RecsSource: 'PERSONALIZED' | 'ALSO_BOUGHT' | 'BESTSELLER' | 'NEWEST';
