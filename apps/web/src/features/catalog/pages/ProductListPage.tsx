@@ -182,7 +182,10 @@ export function ProductListPage() {
               </div>
             )}
 
-            {loadingFirst && <p className={styles.message}>Đang tải sản phẩm…</p>}
+            {loadingFirst && (
+              // Giữ chỗ cao bằng màn hình: footer nằm dưới, sản phẩm về không đẩy trang (CLS)
+              <p className={`${styles.message} ${styles.loadingFirst}`}>Đang tải sản phẩm…</p>
+            )}
             {isError && !badCursor && (
               <p className={styles.message} role="alert">
                 Chưa tải được sản phẩm. Tải lại trang để thử lần nữa.

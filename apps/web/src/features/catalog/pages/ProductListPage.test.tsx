@@ -225,6 +225,17 @@ describe('ProductListPage', () => {
     expect(screen.queryByRole('navigation', { name: 'Phân trang' })).toBeNull();
   });
 
+  it('tải lần đầu: dòng "Đang tải sản phẩm…" giữ chỗ (footer không nhảy), có sản phẩm thì bỏ', async () => {
+    renderAt('/products');
+
+    const loading = screen.getByText('Đang tải sản phẩm…');
+    expect(loading.className).toMatch(/loadingFirst/);
+
+    // Có sản phẩm (nút thêm vào giỏ trên thẻ) thì dòng giữ chỗ không còn
+    await waitFor(() => expect(screen.queryByText('Đang tải sản phẩm…')).toBeNull());
+    expect(screen.getAllByRole('button', { name: /Thêm .* vào giỏ/ }).length).toBeGreaterThan(0);
+  });
+
   it('API lỗi: báo lỗi role="alert"', async () => {
     renderAt('/products?q=loi');
 
