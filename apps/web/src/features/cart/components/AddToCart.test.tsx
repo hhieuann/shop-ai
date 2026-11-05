@@ -7,6 +7,12 @@ import { ApiError } from '../../../shared/api/client';
 import type { Product } from '../../../shared/api/types';
 import { AddToCart } from './AddToCart';
 
+/** Hiệu ứng bay giả: chỉ ghi lại lần gọi */
+const flyToCart = vi.fn();
+vi.mock('../lib/flyToCart', () => ({
+  flyToCart: (...args: unknown[]) => flyToCart(...args),
+}));
+
 /** useCart giả: trạng thái của mutation thêm giỏ do test đặt, mutate gọi lại onSuccess khi ok */
 let state: { isPending: boolean; isSuccess: boolean; isError: boolean; error: unknown };
 const mutate = vi.fn();
@@ -60,6 +66,7 @@ const increase = () => screen.getByRole('button', { name: `Tăng số lượng $
 beforeEach(() => {
   state = { isPending: false, isSuccess: false, isError: false, error: null };
   mutate.mockClear();
+  flyToCart.mockClear();
 });
 afterEach(cleanup);
 
@@ -134,5 +141,18 @@ describe('AddToCart', () => {
     expect(screen.queryByText('Số lượng')).toBeNull();
     expect(screen.getByRole('button', { name: 'Hết hàng' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Thêm vào giỏ' })).toBeNull();
+  });
+
+  it('thêm thành công: ô bay xuất phát từ nút "Thêm vào giỏ", mang loại hàng', () => {
+    renderBox();
+    fireEvent.click(addButton());
+    expect(flyToCart).toHaveBeenCalledExactlyOnceWith(addButton(), 'gpu');
+  });
+
+  it('thêm lỗi: không có ô bay', () => {
+    state = { ...state, isError: true, error: conflict({ code: 'CART_FULL' }) };
+    renderBox();
+    fireEvent.click(addButton());
+    expect(flyToCart).not.toHaveBeenCalled();
   });
 });

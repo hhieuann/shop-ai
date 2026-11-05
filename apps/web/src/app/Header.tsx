@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
@@ -17,12 +17,19 @@ import {
   normalizeSearch,
   searchWithoutPaging,
 } from '../features/catalog/lib/productFilters';
+import { CartBadge } from '../features/cart/components/CartBadge';
+import { useCartCount } from '../features/cart/hooks/useCartCount';
+import { CART_TARGET_ATTR } from '../features/cart/lib/flyToCart';
+import { loadFlyToCart } from '../features/cart/lib/loadFlyToCart';
 import { DESKTOP_QUERY, useMediaQuery } from '../shared/hooks/useMediaQuery';
 import { useScrolledDown } from '../shared/hooks/useScrolledDown';
 import { AccountMenu } from './AccountMenu';
 import { CategoryMenuButton } from './CategoryMenuButton';
 import { Logo } from './Logo';
 import styles from './Header.module.css';
+
+// Ô bay chỉ cần sau khi khách bấm thêm vào giỏ: tải riêng, tải lỗi thì chỉ mất hiệu ứng
+const FlyToCart = lazy(loadFlyToCart);
 
 /** Hàng 2 của header: mua theo nhu cầu (design-system §9.1), đường dẫn là bộ lọc đã có */
 const NEEDS: { label: string; icon: LucideIcon; search: string }[] = [
@@ -49,6 +56,8 @@ export function Header({ collapseNeeds = false }: { collapseNeeds?: boolean }) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const onProducts = location.pathname === '/products';
+  // Số sản phẩm khác nhau trong giỏ (số dòng), cho nhãn trên icon giỏ và tên đọc của link giỏ
+  const cartCount = useCartCount();
   const urlQ = onProducts ? (searchParams.get('q') ?? '') : '';
 
   // Ô tìm kiếm theo URL: mở link /products?q=rtx thì ô hiện "rtx"; rời trang danh sách thì xoá
@@ -110,9 +119,19 @@ export function Header({ collapseNeeds = false }: { collapseNeeds?: boolean }) {
             <AccountMenu />
             {/* Giỏ hàng chỉ có icon, ngăn với nút tài khoản bằng một vạch dọc */}
             <span className={styles.divider} aria-hidden="true" />
-            <NavLink to="/cart" className={`${styles.action} ${styles.cart}`} aria-label="Giỏ hàng">
+            <NavLink
+              to="/cart"
+              className={`${styles.action} ${styles.cart}`}
+              aria-label={cartCount > 0 ? `Giỏ hàng, ${cartCount} sản phẩm` : 'Giỏ hàng'}
+              {...{ [CART_TARGET_ATTR]: '' }}
+            >
               <ShoppingCart size={30} aria-hidden="true" />
+              <CartBadge count={cartCount} />
             </NavLink>
+            {/* Ô bay khi thêm vào giỏ (design-system §9.25), vẽ ra body */}
+            <Suspense fallback={null}>
+              <FlyToCart />
+            </Suspense>
           </nav>
         </div>
       </header>
