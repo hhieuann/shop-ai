@@ -3,7 +3,11 @@ export default {
   extends: ['@commitlint/config-conventional'],
   // Merge commit do GitHub tạo từ tiêu đề PR, đuôi "(#số)"; tiêu đề đã được job "PR title" kiểm.
   // Không bỏ qua thì PR phát hành (gom mọi commit từ main) bị đỏ vì tiêu đề merge dài quá 100 ký tự.
-  ignores: [(message) => /^merge\([^)]+\): .+ \(#\d+\)$/.test(message.split('\n')[0] ?? '')],
+  // Commit của Dependabot cũng vậy: tiêu đề do bot đặt, có thể dài quá 100 ký tự (#272, #176).
+  ignores: [
+    (message) =>
+      /^(merge\([^)]+\)|chore\(deps(-dev)?\)): .+ \(#\d+\)$/.test(message.split('\n')[0] ?? ''),
+  ],
   rules: {
     'type-enum': [
       2,
