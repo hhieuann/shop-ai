@@ -1,6 +1,6 @@
 # Gợi ý mua kèm — cách hoạt động
 
-> Bản 0. Dựa theo `docs/team/nhan.md`, ADR-0004 (gợi ý chạy batch trước), ADR-0009
+> Bản 0, cập nhật chỉ số cuối và câu hỏi đã chốt ngày 05/11/2026. Dựa theo `docs/team/nhan.md`, ADR-0004 (gợi ý chạy batch trước), ADR-0009
 > (modular monolith, Hexagonal rút gọn — module `recommendation` là một Lambda
 > riêng, có bảng DynamoDB riêng) và ADR-0016 (tự xây mô hình, không dùng
 > Personalize). Các mục còn đánh dấu "giả định" ở cuối file là thật sự chưa có
@@ -78,10 +78,57 @@ rollback chỉ cần sửa đúng 1 item con trỏ, áp dụng cho mọi ngườ
 - **So sánh:** mô hình (luật mua kèm / item-based CF) so với baseline (hàng bán chạy) trên cùng tập test, cùng chỉ số.
 - **Giới hạn cần nêu trong báo cáo:** nếu dùng dữ liệu giả lập tự sinh (có cài sẵn quy luật), kết quả chỉ chứng minh pipeline chạy đúng, chưa chứng minh mô hình tốt hơn ngoài đời. Nếu kịp, đối chiếu thêm trên một bộ dữ liệu thật công khai.
 
-## 5. Thật sự chưa biết, cần hỏi (không phải do chưa đọc tài liệu)
+### 4.1. Chỉ số cuối (05/11/2026)
 
-- [ ] Ngưỡng `support`/`confidence` ở mục 2.1 — không ADR nào ghi số cụ thể, cần thử trên dữ liệu thật.
-- [ ] Trọng số `VIEW`/`ADD_TO_CART`/`PURCHASE` ở mục 2.2 — tương tự, cần thử nghiệm.
-- [ ] N ngày cho baseline "bán chạy" (ADR-0016 không ghi số ngày cụ thể).
-- [ ] Route API để web đọc `recs` (`GET /api/v1/recs/...` hay tương tự) — chưa có trong `contracts/openapi.yaml` (đã kiểm tra bản mới nhất sau `git pull` ngày 09/10/2026).
-- [ ] Câu hỏi 4 trong `docs/business/dynamodb-design.md` (Hoàng hỏi trực tiếp) về cách `ordering` báo cho `events` khi đơn `CONFIRMED` — xem đề xuất trong `events.md` mục 1, ảnh hưởng gián tiếp tới `recommendation` vì đó là nguồn dữ liệu `PURCHASE` cho cả luật mua kèm lẫn item-based CF.
+**Offline, dữ liệu giả lập trên danh mục thật (102 sản phẩm), 4 seed.** Chạy lại bằng
+`cd data && uv run data --out generated --seed <n>`, rồi `uv run data-eval --data generated` và
+`uv run data-eval-for-you --data generated`.
+
+"Thường mua kèm" (luật mua kèm, thiếu luật thì bù hàng bán chạy, như pipeline ghi bảng `recs`):
+
+| Seed | Baseline precision@10 | Mô hình precision@10 | Baseline hit rate@10 | Mô hình hit rate@10 | Baseline coverage | Mô hình coverage |
+|---|---|---|---|---|---|---|
+| 42 | 0.0300 | 0.0485 | 0.258 | 0.409 | 0.108 | 0.667 |
+| 1 | 0.0353 | 0.0576 | 0.311 | 0.463 | 0.108 | 0.628 |
+| 7 | 0.0367 | 0.0500 | 0.317 | 0.428 | 0.108 | 0.667 |
+| 2026 | 0.0293 | 0.0536 | 0.272 | 0.459 | 0.108 | 0.618 |
+
+"Dành cho bạn" (item-based CF, chỉ chấm người đã có lịch sử; người mới nhận hàng bán chạy):
+
+| Seed | Người được chấm | Baseline precision@10 | CF precision@10 | Baseline hit rate@10 | CF hit rate@10 | Baseline coverage | CF coverage |
+|---|---|---|---|---|---|---|---|
+| 42 | 84 | 0.0286 | 0.0488 | 0.238 | 0.381 | 0.157 | 0.853 |
+| 1 | 95 | 0.0421 | 0.0474 | 0.337 | 0.390 | 0.157 | 0.833 |
+| 7 | 99 | 0.0444 | 0.0525 | 0.384 | 0.424 | 0.177 | 0.873 |
+| 2026 | 78 | 0.0436 | 0.0538 | 0.359 | 0.436 | 0.137 | 0.833 |
+
+**Trên AWS (cổng chặn của job mỗi đêm, test là 30 ngày cuối):**
+
+| Môi trường, ngày | Loại | Mô hình precision@10 | Baseline precision@10 | Bật phiên bản |
+|---|---|---|---|---|
+| dev, 26/10 | Thường mua kèm | 0.074 | 0.032 | Có |
+| dev, 26/10 | Dành cho bạn | 0.056 | 0.035 | Có |
+| staging, 03/11 | Thường mua kèm | 0.0738 | 0.0319 | Có |
+| staging, 03/11 | Dành cho bạn | 0.0558 | 0.0346 | Có |
+
+**Kết luận:**
+
+- Cả hai mô hình cao hơn baseline hàng bán chạy ở mọi seed và cả trên dev, staging; coverage cao hơn
+  nhiều (baseline chỉ gợi ý khoảng 10–17% danh mục, mô hình 62–87%).
+- "Dành cho bạn" ở seed 1 chỉ hơn baseline một chút (0.0474 so với 0.0421); chỉ 78–99 người được chấm
+  mỗi seed nên số dao động nhiều.
+- **Giới hạn:** dữ liệu giả lập có cài sẵn quy luật mua kèm, nên kết quả chứng minh pipeline và mô hình
+  học đúng quy luật đó, chưa chứng minh mô hình tốt hơn với khách thật. Prod chỉ dùng sự kiện thật
+  (`SYNTHETIC=0`); khi chưa đủ dữ liệu, cổng chặn giữ phiên bản cũ hoặc hàng bán chạy.
+
+## 5. Câu hỏi đã chốt (05/11/2026)
+
+- [x] Ngưỡng luật mua kèm: cặp sản phẩm phải chung ít nhất 2 đơn, `confidence` tối thiểu 0,05
+  (`data/README.md`, chạy offline 21/10).
+- [x] Trọng số "Dành cho bạn": xem 1, thêm giỏ 3, mua 5; mỗi cặp (người dùng, sản phẩm) lấy trọng số lớn
+  nhất, không cộng dồn, để chặn spam (threat model E2, [poisoning-experiment.md](../security/poisoning-experiment.md)).
+- [x] Baseline hàng bán chạy: đếm đơn 30 ngày, ít đơn thì lùi 90 rồi 365 ngày, vẫn thiếu thì hàng mới
+  nhất (`basis` của con trỏ `ACTIVE#BESTSELLER`, chốt với An 22/10).
+- [x] Route API: `GET /api/v1/recs/also-bought`, `/for-you`, `/bestsellers` trong `contracts/openapi.yaml`.
+- [x] `ordering` báo cho `events`: tin SNS `order-confirmed` vào hàng đợi, Lambda ghi `PURCHASE` đúng một
+  lần (#252, events.md).
