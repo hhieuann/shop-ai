@@ -86,6 +86,64 @@ describe('PopularProducts', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toContain('/api/v1/recs/for-you?limit=10');
   });
 
+  it.each<{ name: string; status: SessionStatus }>([
+    { name: 'guest', status: 'guest' },
+    { name: 'signedIn', status: 'signedIn' },
+  ])('sourceNewest_showsNeutralTitle_$name', async ({ status }) => {
+    // Arrange: cửa hàng chưa đủ đơn nên danh sách xếp theo hàng mới (contracts/openapi.yaml RecsSource)
+    session = status;
+    response = () =>
+      new Response(JSON.stringify({ source: 'NEWEST', items: [product(1)] }), {
+        headers: { 'content-type': 'application/json' },
+      });
+
+    // Act
+    renderWidget();
+
+    // Assert
+    expect(await screen.findByRole('heading', { name: 'Có thể bạn quan tâm' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Đang được mua nhiều' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Dành cho bạn' })).not.toBeInTheDocument();
+  });
+
+  it('signedIn_sourceBestseller_keepsForYouTitle', async () => {
+    // Arrange: tài khoản chưa có lịch sử nhận hàng bán chạy (trang-chu.md §7)
+    session = 'signedIn';
+
+    // Act
+    renderWidget();
+
+    // Assert
+    expect(await screen.findByRole('heading', { name: 'Dành cho bạn' })).toBeInTheDocument();
+  });
+
+  it('apiPending_showsPlaceholderWithoutTitle', async () => {
+    // Arrange: API chưa trả nên chưa biết nguồn, chưa biết tiêu đề nào đúng
+    let respond: (value: Response) => void = () => {};
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          respond = resolve;
+        }),
+    );
+
+    // Act
+    renderWidget();
+
+    // Assert: không nháy tiêu đề, vẫn giữ chỗ để khối không đẩy trang
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.getByTestId('popular-placeholder')).toBeInTheDocument();
+
+    respond(
+      new Response(JSON.stringify({ source: 'NEWEST', items: [product(1)] }), {
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    expect(await screen.findByRole('heading', { name: 'Có thể bạn quan tâm' })).toBeInTheDocument();
+    expect(screen.queryByTestId('popular-placeholder')).not.toBeInTheDocument();
+  });
+
   it('sessionLoading_waitsBeforeCallingApi', () => {
     // Arrange
     session = 'loading';
