@@ -140,6 +140,16 @@ describe('WebStack', () => {
     template.hasResource('AWS::S3::Bucket', { DeletionPolicy: 'Retain' });
   });
 
+  it.each([dev, prod])('distribution_hasNoWebAcl_whenNoArnGiven_$name', (shopEnv) => {
+    // Act: stack web một mình không gắn WAF; prod gắn qua WafStack (waf-stack.test.ts), dev, staging không có
+    const template = synth(shopEnv);
+
+    // Assert
+    template.hasResourceProperties('AWS::CloudFront::Distribution', {
+      DistributionConfig: Match.objectLike({ WebACLId: Match.absent() }),
+    });
+  });
+
   it('stack_exposesWebUrl', () => {
     // Act
     const template = synth(dev);
