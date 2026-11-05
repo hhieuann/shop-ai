@@ -5,6 +5,16 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router';
 import { shouldRetry } from './shared/api/retry';
+// Font Inter tự host (design-system §3): 4 độ đậm đang dùng, dải chữ Latin và tiếng Việt.
+// Trình duyệt chỉ tải file của độ đậm và dải ký tự trang dùng tới (unicode-range); font-display: swap
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/vietnamese-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/vietnamese-500.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/vietnamese-600.css';
+import '@fontsource/inter/latin-700.css';
+import '@fontsource/inter/vietnamese-700.css';
 import './styles/tokens.css';
 import './styles/base.css';
 

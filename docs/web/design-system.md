@@ -98,7 +98,7 @@ Bảng màu chàm (chốt 11/10/2026). Cột "Tương phản" là tỉ lệ WCAG
 
 ## 3. Chữ
 
-Font **Inter** (`--font-sans`, dự phòng system-ui, -apple-system, Segoe UI, Roboto), tải kèm subset `vietnamese`, các độ đậm 400 / 500 / 600 / 700. Số liệu kỹ thuật có thể dùng `--font-mono`. `<html lang="vi">`. Cỡ chữ lấy theo trang tham khảo chính.
+Font **Inter** (`--font-sans`, dự phòng system-ui, -apple-system, Segoe UI, Roboto), **tự host** bằng gói `@fontsource/inter` (import trong `main.tsx`, đóng gói cùng web, không gọi máy chủ font bên ngoài): dải `latin` và `vietnamese`, các độ đậm 400 / 500 / 600 / 700, `font-display: swap`. Số liệu kỹ thuật có thể dùng `--font-mono`. `<html lang="vi">`. Cỡ chữ lấy theo trang tham khảo chính.
 
 | Vai trò | Cỡ / line-height / đậm | Dùng ở |
 |---|---|---|

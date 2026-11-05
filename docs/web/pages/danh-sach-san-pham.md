@@ -92,7 +92,7 @@ Select "Sắp xếp" ở thanh kết quả: **Mới nhất**, **Giá tăng dần
 
 | Trạng thái | Hiển thị |
 |---|---|
-| Tải lần đầu | trong cột kết quả: dòng "Đang tải sản phẩm…" `--fg-subdued`; cột lọc vẫn hiện |
+| Tải lần đầu | trong cột kết quả: dòng "Đang tải sản phẩm…" `--fg-subdued`, giữ chỗ cao `100vh` để footer nằm dưới màn hình, sản phẩm về không đẩy trang (CLS); cột lọc vẫn hiện |
 | Đổi bộ lọc, sắp xếp, trang | giữ kết quả cũ (`keepPreviousData`), lưới opacity .6 và `aria-busy="true"` tới khi có kết quả mới |
 | Lỗi | trong cột kết quả: "Chưa tải được sản phẩm. Tải lại trang để thử lần nữa." `role="alert"` |
 | Cursor hỏng (400) | tự về trang 1, không báo lỗi |
