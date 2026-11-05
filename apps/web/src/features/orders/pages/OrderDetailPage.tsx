@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
+import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
 import { CUSTOMER_CANCELLABLE, STATUS_LABEL, type Order } from '../types';
 import { formatVnd } from '../../../shared/lib/format';
 
@@ -11,11 +12,13 @@ export function OrderDetailPage() {
   const location = useLocation();
   const justCreated = Boolean(location.state?.justCreated);
   const queryClient = useQueryClient();
+  // Chưa đăng nhập thì sang /login, đăng nhập xong quay lại đúng đơn này (#316)
+  const session = useRequireSignIn();
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.orders.detail(orderId!),
     queryFn: () => api.get<Order>(`/orders/${orderId}`),
-    enabled: !!orderId,
+    enabled: !!orderId && session === 'signedIn',
   });
 
   const cancelOrder = useMutation({
@@ -29,7 +32,7 @@ export function OrderDetailPage() {
     onError: () => queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(orderId!) }),
   });
 
-  if (isLoading) return <p>Đang tải đơn hàng...</p>;
+  if (session !== 'signedIn' || isLoading) return <p>Đang tải đơn hàng...</p>;
   // 404 cũng là kết quả khi xem đơn của người khác (không lộ là đơn có tồn tại)
   if (error instanceof ApiError && error.status === 404) return <p>Không tìm thấy đơn hàng.</p>;
   if (error || !data) return <p>Không thể tải đơn hàng.</p>;

@@ -457,7 +457,9 @@ paths:
           description: |
             `OUT_OF_STOCK` có món hết hàng, không đủ số lượng hoặc ngừng bán, kèm `invalidItems` ·
             `PRICE_CHANGED` giá đã đổi, kèm `changedItems` · `ORDER_IN_PROGRESS` lần gửi trước
-            với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau
+            với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau ·
+            `TOO_MANY_OPEN_ORDERS` đang có 3 đơn PENDING hoặc CONFIRMED, không tạo đơn, không trừ kho
+            (ordering.md BR-14)
           content:
             application/problem+json:
               schema:
@@ -557,6 +559,137 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           description: '`CANNOT_CANCEL` đơn đã SHIPPED, DELIVERED hoặc đã CANCELLED'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  # ─── Events ────────────────────────────────────────────────────────────────
+  /api/v1/events:
+    post:
+      operationId: recordEvent
+      summary: Ghi một lượt xem hoặc thêm giỏ, làm dữ liệu cho gợi ý
+      description: |
+        Chỉ nhận `VIEW` và `ADD_TO_CART`. `PURCHASE` không nhận từ client: chỉ module `ordering`
+        tạo khi đơn `CONFIRMED` (events.md mục 1). Server lấy `userId` từ token và tự đặt thời gian,
+        không nhận từ body (events.md mục 3, 5); `userId` được ẩn danh bằng HMAC trước khi lưu
+        (events.md mục 2). Bắt buộc đăng nhập: không ghi lượt xem của khách vãng lai để giảm spam
+        và đầu độc gợi ý (threat model E2, nhóm chốt ngày 17/10/2026).
+        Server không kiểm `productId` có trong danh mục (module `events` không đọc bảng `products`,
+        ADR-0009); pipeline gợi ý bỏ qua mã không có trong danh mục.
+      tags: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInput'
+      responses:
+        '202':
+          description: Đã nhận sự kiện, không có body
+        '400':
+          description: |
+            Body sai: thiếu trường, `eventType` khác `VIEW` và `ADD_TO_CART` (kể cả `PURCHASE`),
+            hoặc có trường lạ như `userId`, `timestamp`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  # ─── Recommendation ────────────────────────────────────────────────────────
+  /api/v1/recs/also-bought:
+    get:
+      operationId: getAlsoBought
+      summary: Thường mua kèm một sản phẩm
+      description: |
+        Đọc bảng `recs` phiên bản đang bật (`ALSO_BOUGHT#<productId>`, dynamodb-design.md).
+        Sản phẩm chưa có dòng nào (mới, ít người mua) thì trả hàng bán chạy cùng loại, `source = BESTSELLER`
+        (ADR-0016). Không cần đăng nhập. Server bỏ hàng hết (`stock = 0`), hàng `INACTIVE`,
+        chính `productId` và các mã trong `exclude`.
+      security: []
+      tags: [recommendation]
+      parameters:
+        - $ref: '#/components/parameters/RecsProductId'
+        - $ref: '#/components/parameters/RecsExclude'
+        - $ref: '#/components/parameters/RecsLimit'
+      responses:
+        '200':
+          description: Danh sách gợi ý, có thể rỗng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecsResult'
+        '400':
+          description: Thiếu `productId`, `limit` ngoài 1–10 hoặc `exclude` quá 20 mã
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/recs/for-you:
+    get:
+      operationId: getForYou
+      summary: Dành cho bạn
+      description: |
+        Gợi ý theo lịch sử của người đang đăng nhập (`FOR_YOU#<userIdHash>`; server băm `userId`
+        lấy từ token bằng HMAC như module `events`, events.md mục 2). Người chưa có lịch sử thì trả hàng
+        bán chạy, `source = BESTSELLER`. Lọc như `also-bought`.
+      tags: [recommendation]
+      parameters:
+        - $ref: '#/components/parameters/RecsExclude'
+        - $ref: '#/components/parameters/RecsLimit'
+      responses:
+        '200':
+          description: Danh sách gợi ý, có thể rỗng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecsResult'
+        '400':
+          description: '`limit` ngoài 1–10 hoặc `exclude` quá 20 mã'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/recs/bestsellers:
+    get:
+      operationId: getBestsellers
+      summary: Đang được mua nhiều (cho khách chưa đăng nhập)
+      description: |
+        Hàng bán chạy, lọc theo loại nếu có `category` (recommendation.md mục 2.3). Không cần đăng nhập.
+        Lọc như `also-bought`.
+      security: []
+      tags: [recommendation]
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProductCategory'
+        - $ref: '#/components/parameters/RecsExclude'
+        - $ref: '#/components/parameters/RecsLimit'
+      responses:
+        '200':
+          description: Danh sách hàng bán chạy, có thể rỗng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecsResult'
+        '400':
+          description: '`category` sai, `limit` ngoài 1–10 hoặc `exclude` quá 20 mã'
           content:
             application/problem+json:
               schema:
@@ -898,7 +1031,7 @@ components:
           properties:
             code:
               type: string
-              enum: [OUT_OF_STOCK, PRICE_CHANGED, ORDER_IN_PROGRESS]
+              enum: [OUT_OF_STOCK, PRICE_CHANGED, ORDER_IN_PROGRESS, TOO_MANY_OPEN_ORDERS]
             invalidItems:
               type: array
               description: Món hết hàng, không đủ số lượng hoặc ngừng bán (khi OUT_OF_STOCK)
@@ -1039,6 +1172,84 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    # ─── Events ─────────────────────────────────────────────────────────────
+    EventInput:
+      type: object
+      description: Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy.
+      required: [productId, eventType]
+      additionalProperties: false
+      properties:
+        productId:
+          type: string
+        eventType:
+          type: string
+          enum: [VIEW, ADD_TO_CART]
+    # ─── Recommendation ─────────────────────────────────────────────────────
+    RecsSource:
+      type: string
+      description: |
+        Nguồn của danh sách, để web chọn tiêu đề widget:
+        `PERSONALIZED` (Dành cho bạn), `ALSO_BOUGHT` (Thường mua kèm),
+        `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016),
+        `NEWEST` (danh sách hàng bán chạy nhưng cửa hàng chưa đủ đơn nên xếp theo hàng mới;
+        web dùng tiêu đề trung tính, không ghi "bán chạy").
+      enum: [PERSONALIZED, ALSO_BOUGHT, BESTSELLER, NEWEST]
+
+    RecsResult:
+      type: object
+      required: [source, items]
+      properties:
+        source:
+          $ref: '#/components/schemas/RecsSource'
+        items:
+          type: array
+          description: Đã sắp theo thứ hạng gợi ý, tối đa `limit` món; có thể rỗng
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+      example:
+        source: ALSO_BOUGHT
+        items:
+          - productId: '01J9XKPQ0000000000000001'
+            name: 'ASUS TUF Gaming GeForce RTX 4070'
+            category: 'gpu'
+            brand: 'ASUS'
+            price: 15900000
+            stock: 12
+            status: 'ACTIVE'
+
+  parameters:
+    RecsProductId:
+      name: productId
+      in: query
+      required: true
+      description: Sản phẩm đang xem (trang chi tiết) hoặc món vừa thêm gần nhất (trang giỏ)
+      schema:
+        type: string
+    RecsExclude:
+      name: exclude
+      in: query
+      required: false
+      description: |
+        Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
+        (giỏ khách nằm trên trình duyệt nên server không biết).
+      style: form
+      explode: false
+      schema:
+        type: array
+        maxItems: 20
+        items:
+          type: string
+    RecsLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10
+        default: 6
 
   responses:
     Unauthorized:

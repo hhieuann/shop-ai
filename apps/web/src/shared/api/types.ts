@@ -34,6 +34,9 @@ export type CreateOrderRequest =
   operations['createOrder']['requestBody']['content']['application/json'];
 export type OrderProblem = Schemas['OrderProblem'];
 
+export type RecsSource = Schemas['RecsSource'];
+export type RecsResult = Schemas['RecsResult'];
+
 export type FieldError = NonNullable<Schemas['Problem']['errors']>[number];
 export type InvalidItem = NonNullable<OrderProblem['invalidItems']>[number];
 export type ChangedItem = NonNullable<OrderProblem['changedItems']>[number];

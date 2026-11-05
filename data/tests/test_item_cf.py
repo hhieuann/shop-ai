@@ -9,18 +9,18 @@ from data.model.item_cf import build_user_items, item_similarity, recommend_for_
 
 def test_diem_tuong_tac_lay_trong_so_lon_nhat_khong_cong_don():
     # Arrange: u1 xem gpu 50 lần (spam) và thêm giỏ 1 lần
-    events = [("u1", "gpu", "view")] * 50 + [("u1", "gpu", "add_to_cart")]
+    events = [("u1", "gpu", "VIEW")] * 50 + [("u1", "gpu", "ADD_TO_CART")]
 
     # Act
     user_items = build_user_items(events)
 
-    # Assert: điểm là 3 (add_to_cart), không phải 50 + 3
+    # Assert: điểm là 3 (ADD_TO_CART), không phải 50 + 3
     assert user_items == {"u1": {"gpu": 3.0}}
 
 
 def test_bo_qua_su_kien_khong_co_trong_so():
     # Arrange
-    events = [("u1", "gpu", "remove_from_cart"), ("u1", "psu", "la")]
+    events = [("u1", "gpu", "REMOVE_FROM_CART"), ("u1", "psu", "view")]
 
     # Act
     user_items = build_user_items(events)
@@ -97,3 +97,16 @@ def test_danh_gia_for_you_cung_du_lieu_cho_cung_ket_qua(tmp_path):
 
     # Assert
     assert first == second
+
+
+def test_cham_rieng_nguoi_moi_bang_baseline(tmp_path):
+    # Arrange
+    out = tmp_path / "gen"
+    generate(["--out", str(out), "--seed", "42", "--users", "300"])
+
+    # Act
+    report = evaluate_for_you(out)
+
+    # Assert: có người mới được chấm, và CF không chấm nhóm này
+    assert report["new_users_evaluated"] > 0
+    assert "baseline_new_users" in report["scores"]

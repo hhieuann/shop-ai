@@ -193,7 +193,12 @@ describe('ApiStack', () => {
         ]),
       },
     });
-    expect(JSON.stringify(template.toJSON())).not.toContain('dynamodb:BatchWriteItem');
+    // Chỉ xét role của Lambda seed: pipeline gợi ý có BatchWriteItem trên bảng recs của nó
+    const seedPolicies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
+      JSON.stringify(p.Properties.Roles).includes('SeedProductsFunction'),
+    );
+    expect(seedPolicies.length).toBeGreaterThan(0);
+    expect(JSON.stringify(seedPolicies)).not.toContain('dynamodb:BatchWriteItem');
   });
 
   it('httpApi_routesHealthToDedicatedFunctionWithoutDataAccess', () => {
@@ -299,6 +304,24 @@ describe('ApiStack', () => {
       .filter((p) => p.Properties.Roles.some((r) => r.Ref === roleRef))
       .flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((st) => st.Action));
     expect(actions.filter((a) => a.startsWith('cognito-idp:'))).toEqual(['cognito-idp:ListUsers']);
+  });
+
+  it.each([dev, prod])('preSignUp_listUsersOnlyOnUserPoolOfSameEnv_$name', (shopEnv) => {
+    // Arrange: dev, staging, prod chung một tài khoản (ADR-0013); ARN phải là userpool/* để tránh
+    // phụ thuộc vòng với trigger, nên giới hạn bằng tag env của user pool
+    const template = synth(shopEnv);
+
+    // Assert: ListUsers chỉ được trên user pool có tag env cùng môi trường
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: 'cognito-idp:ListUsers',
+            Condition: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
+          }),
+        ]),
+      },
+    });
   });
 
   it('e2eClient_existsOnlyOutsideProd_andUsesPasswordAuth', () => {

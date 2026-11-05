@@ -6,6 +6,7 @@ import {
   ComparisonOperator,
   Dashboard,
   GraphWidget,
+  MathExpression,
   Metric,
   Stats,
   TreatMissingData,
@@ -13,7 +14,9 @@ import {
 } from 'aws-cdk-lib/aws-cloudwatch';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
-import type { IFunction } from 'aws-cdk-lib/aws-lambda';
+import type { IFunction, Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
+import { FilterPattern, MetricFilter } from 'aws-cdk-lib/aws-logs';
+import type { IQueue } from 'aws-cdk-lib/aws-sqs';
 import { Subscription, SubscriptionProtocol, Topic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
@@ -25,10 +28,18 @@ export interface MonitoringProps {
   readonly shopEnv: ShopEnvironment;
   /** HTTP API cần canh 5xx và độ trễ */
   readonly httpApi: IHttpApi;
-  /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API */
-  readonly preSignUpFn: IFunction;
+  /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API. Cần log group để đếm lần từ chối */
+  readonly preSignUpFn: LambdaFunction;
   /** Lambda đứng sau API, theo tên module: vẽ lỗi và thời gian chạy của từng hàm trên dashboard */
   readonly apiFunctions: Readonly<Record<string, IFunction>>;
+  /** Lambda chạy nền (đọc SQS), theo tên: vẽ chung với Lambda API trên dashboard */
+  readonly workerFunctions?: Readonly<Record<string, IFunction>>;
+  /** Hàng đợi đơn của worker order-processor: tuổi tin cũ nhất cho runbook sqs-backlog */
+  readonly ordersQueue?: IQueue;
+  /** DLQ của hàng đợi đơn: có tin là có đơn worker xử lý lỗi quá 3 lần, còn kẹt ở PENDING */
+  readonly ordersDeadLetterQueue?: IQueue;
+  /** Lambda job gợi ý mỗi đêm: không có lần chạy thành công nào trong 26 giờ thì báo (chỉ prod) */
+  readonly recsPipelineFn?: IFunction;
   /**
    * Email nhận cảnh báo, truyền bằng `-c alarmEmail=...` (CI lấy từ secret ALARM_EMAIL).
    * Không ghi vào code vì repo public. Thiếu thì vẫn tạo topic, chỉ không có ai nhận.
@@ -124,23 +135,107 @@ export class Monitoring extends Construct {
         1,
         'api-5xx',
       );
-      // 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu
+      // 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu. Lưu lượng thưa thì p95 chỉ là
+      // vài request khởi động lạnh (staging 21/10), nên chu kỳ dưới 20 request tính là 0
       addAlarm(
         'ApiLatencyAlarm',
         'api-latency-p95',
-        props.httpApi.metricLatency({ period, statistic: Stats.p(95) }),
+        new MathExpression({
+          expression: 'IF(requests >= 20, p95, 0)',
+          usingMetrics: {
+            requests: props.httpApi.metricCount({ period, statistic: Stats.SUM }),
+            p95: props.httpApi.metricLatency({ period, statistic: Stats.p(95) }),
+          },
+          period,
+          label: 'p95 khi có từ 20 request',
+        }),
         1000,
         3,
         'api-latency',
       );
+      // Từ chối đăng ký (trùng hoặc sai luật username) cũng là ném lỗi nên vào Errors của Lambda (staging
+      // 21/10). Đếm riêng lần từ chối qua log rồi trừ ra; còn lại là lỗi thật: timeout, Cognito lỗi, code hỏng
+      const rejected = new MetricFilter(this, 'PreSignUpRejectedFilter', {
+        logGroup: props.preSignUpFn.logGroup,
+        metricNamespace: shopEnv.stackPrefix,
+        metricName: 'PreSignUpRejected',
+        filterPattern: FilterPattern.allTerms('Invoke Error', 'SignUpRejectedError'),
+        metricValue: '1',
+      });
       addAlarm(
         'PreSignUpErrorsAlarm',
         'presignup-errors',
-        props.preSignUpFn.metricErrors({ period, statistic: Stats.SUM }),
+        new MathExpression({
+          expression: 'FILL(errors, 0) - FILL(rejected, 0)',
+          usingMetrics: {
+            errors: props.preSignUpFn.metricErrors({ period, statistic: Stats.SUM }),
+            rejected: rejected.metric({ period, statistic: Stats.SUM }),
+          },
+          period,
+          label: 'Lỗi không phải từ chối đăng ký',
+        }),
         1,
         1,
         'lambda-errors',
       );
+      // Alarm mới chỉ tạo ở prod: dev, staging, prod chung tài khoản và hạn mức 10 alarm miễn phí
+      // (nhóm chốt 24/10/2026); ở dev, staging xem DLQ trên dashboard và console SQS
+      if (shopEnv.isProd && props.ordersDeadLetterQueue) {
+        addAlarm(
+          'OrdersDeadLetterAlarm',
+          'orders-dlq',
+          props.ordersDeadLetterQueue.metricApproximateNumberOfMessagesVisible({
+            period,
+            statistic: Stats.MAXIMUM,
+          }),
+          1,
+          1,
+          'dlq-orders',
+        );
+        // Đơn đã ghi mà không gửi được tin cho worker (ordering.md, luồng SQS bước 1): metric do
+        // Lambda ordering ghi bằng Powertools Metrics, namespace = tiền tố stack, dimension service
+        addAlarm(
+          'OrderEnqueueFailedAlarm',
+          'order-enqueue-failed',
+          new Metric({
+            namespace: shopEnv.stackPrefix,
+            metricName: 'OrderEnqueueFailed',
+            dimensionsMap: { service: 'ordering' },
+            period,
+            statistic: Stats.SUM,
+          }),
+          1,
+          1,
+          'dlq-orders',
+        );
+      }
+      // Job đêm chạy 1 lần mỗi ngày: đếm lần chạy KHÔNG lỗi theo từng giờ, 26 giờ liền bằng 0 thì báo.
+      // Bắt được cả lỗi (Invocations = Errors) lẫn không chạy (lịch hỏng, thiếu quyền gọi Lambda);
+      // giờ không có số liệu tính là 0 nhờ FILL. Chỉ prod, cùng lý do hạn mức alarm ở trên.
+      if (shopEnv.isProd && props.recsPipelineFn) {
+        const hourly = { period: Duration.hours(1), statistic: Stats.SUM };
+        const alarm = new Alarm(this, 'RecsPipelineNoSuccessAlarm', {
+          alarmName: `${shopEnv.stackPrefix}-recs-pipeline-no-success`,
+          alarmDescription: 'Xử lý theo docs/runbooks/recs-pipeline.md',
+          metric: new MathExpression({
+            expression: 'FILL(invocations, 0) - FILL(errors, 0)',
+            usingMetrics: {
+              invocations: props.recsPipelineFn.metricInvocations(hourly),
+              errors: props.recsPipelineFn.metricErrors(hourly),
+            },
+            period: Duration.hours(1),
+            label: 'Lần chạy thành công',
+          }),
+          threshold: 1,
+          evaluationPeriods: 26,
+          datapointsToAlarm: 26,
+          comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
+          treatMissingData: TreatMissingData.BREACHING,
+        });
+        alarm.addAlarmAction(new SnsAction(this.alarmTopic));
+        alarm.addOkAction(new SnsAction(this.alarmTopic));
+        alarms.push(alarm);
+      }
       // Giới hạn Lambda chạy cùng lúc tính chung cả tài khoản (không dimension), nên chỉ canh ở prod
       if (shopEnv.isProd) {
         addAlarm(
@@ -159,8 +254,8 @@ export class Monitoring extends Construct {
       }
 
       // Dashboard "Shop tổng quan": runbook mở trang này trước tiên
-      const { httpApi, preSignUpFn, apiFunctions } = props;
-      const fns = { ...apiFunctions, presignup: preSignUpFn };
+      const { httpApi, preSignUpFn, apiFunctions, workerFunctions } = props;
+      const fns = { ...apiFunctions, ...workerFunctions, presignup: preSignUpFn };
       const dashboard = new Dashboard(this, 'Dashboard', {
         dashboardName: `${shopEnv.stackPrefix}-overview`,
         defaultInterval: Duration.hours(3),
@@ -226,6 +321,41 @@ export class Monitoring extends Construct {
           width: 8,
         }),
       );
+      // Hàng đợi đơn ở mọi môi trường, không alarm (dev, staging không có alarm; runbook sqs-backlog)
+      const { ordersQueue, ordersDeadLetterQueue } = props;
+      if (ordersQueue && ordersDeadLetterQueue) {
+        dashboard.addWidgets(
+          new GraphWidget({
+            title: 'Hàng đợi đơn: tuổi tin cũ nhất (giây)',
+            left: [
+              ordersQueue.metricApproximateAgeOfOldestMessage({
+                period,
+                statistic: Stats.MAXIMUM,
+                label: 'tin cũ nhất',
+              }),
+            ],
+            width: 12,
+          }),
+          new GraphWidget({
+            title: 'Hàng đợi đơn: tin đang chờ và tin trong DLQ',
+            left: [
+              ordersQueue.metricApproximateNumberOfMessagesVisible({
+                period,
+                statistic: Stats.MAXIMUM,
+                label: 'đang chờ',
+              }),
+            ],
+            right: [
+              ordersDeadLetterQueue.metricApproximateNumberOfMessagesVisible({
+                period,
+                statistic: Stats.MAXIMUM,
+                label: 'DLQ',
+              }),
+            ],
+            width: 12,
+          }),
+        );
+      }
     }
 
     Tags.of(this).add('module', 'monitoring');

@@ -1,6 +1,6 @@
 # Thiết kế bảng DynamoDB
 
-Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tìm kiếm, giao dịch đặt hàng, huỷ đơn)
+Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tìm kiếm, giao dịch đặt hàng, huỷ đơn); 21/10/2026 (item bộ đếm `#OPEN`, bảng `order-idempotency` theo ADR-0017, tin `order-confirmed`); 24/10/2026 (đọc trước giao dịch, ghi giỏ có điều kiện `version`, item đánh dấu `#KEY#`, giao dịch n + 4)
 
 Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không làm ngược lại**.
 
@@ -146,27 +146,70 @@ createdAt       String   (ISO 8601 UTC)
 updatedAt       String   (ISO 8601 UTC)
 ```
 
+### Item bộ đếm đơn đang mở (ordering.md BR-14)
+
+Mỗi tài khoản có thêm **một item** trong bảng `orders`, cùng PK với đơn của người đó:
+
+```
+userId          String   PK
+orderId         String   SK, cố định "#OPEN"
+openOrders      Number   số đơn PENDING + CONFIRMED, 0..3
+```
+
+- `#` đứng trước mọi chữ số trong thứ tự chuỗi, còn ULID luôn bắt đầu bằng chữ số, nên Q2 (lịch sử đơn) dùng điều kiện khoá `userId = :u AND orderId >= "0"` để không lấy item bộ đếm.
+- Item này không có `status` nên không vào GSI `byStatus`. Nếu giữ GSI `byOrderId` thì mọi item bộ đếm cùng nằm dưới khoá `#OPEN` của GSI đó; truy vấn admin theo `orderId` thật không bị ảnh hưởng.
+- Không cần bảng mới, không cần đổi hạ tầng; role `ordering` vốn có quyền ghi bảng `orders`.
+
+### Item đánh dấu chống tạo đơn trùng (ordering.md BR-04)
+
+`makeIdempotentUseCase` (shared/idempotency.ts) xoá bản ghi Powertools khi use case ném lỗi; Lambda timeout thì bản ghi đang xử lý tự hết hạn. Nếu giao dịch đặt hàng **đã ghi xong** rồi mới lỗi, gửi lại cùng `Idempotency-Key` sẽ tạo đơn thứ hai và trừ kho lần hai. Vì vậy giao dịch ghi thêm một item đánh dấu, cùng PK với đơn:
+
+```
+userId          String   PK
+orderId         String   SK, "#KEY#<idempotencyKey>"
+refOrderId      String   orderId của đơn đã tạo
+payloadHash     String   băm nội dung request (món, số lượng, giá, địa chỉ)
+expiresAt       Number   epoch giây, 24 giờ sau khi tạo; bảng orders bật TTL trên thuộc tính này
+```
+
+- `#` (0x23) đứng trước `0`, nên lịch sử đơn (`orderId >= "0"`) không lấy item này; không có `status` nên không vào GSI `byStatus`.
+- Chỉ item đánh dấu có `expiresAt`, nên TTL không bao giờ xoá đơn thật hay item `#OPEN`.
+
 ### Giao dịch đặt hàng và huỷ đơn (ordering.md BR-08, BR-12)
+
+**Trước giao dịch** (quyền đọc theo ADR-0017, sửa 24/10):
+
+1. `BatchGetItem` bảng `products` (`productId, name, price, stock, status`) → domain kiểm từng món (`checkItems`); có lỗi thì trả 409, không ghi gì.
+2. `GetItem` bảng `carts` → danh sách còn lại = giỏ bỏ các dòng có `productId` đã đặt (bỏ cả dòng, BR-09), cùng `version` hiện tại.
 
 **Đặt hàng:** một `TransactWriteItems` gồm:
 
 | # | Bảng | Thao tác | Điều kiện |
 |---|---|---|---|
-| 1..n | `products` | `UpdateItem SET stock = stock - :qty` cho từng món | `stock >= :qty AND status = ACTIVE AND price = :expectedPrice` |
+| 1..n | `products` | `UpdateItem SET stock = stock - :qty` cho từng món | `stock >= :qty AND status = ACTIVE AND price = :expectedPrice`, `ReturnValuesOnConditionCheckFailure: ALL_OLD` |
 | n+1 | `orders` | `PutItem` đơn mới `PENDING` | `attribute_not_exists(orderId)` |
-| n+2 | `carts` | `UpdateItem` bỏ các món đã đặt khỏi `items` | — |
+| n+2 | `carts` | `UpdateItem SET items = :conLai, version = :moi, updatedAt = :now` (bỏ thao tác này khi người dùng chưa có giỏ) | `version = :v` |
+| n+3 | `orders` | `UpdateItem` item `#OPEN`: `SET openOrders = if_not_exists(openOrders, 0) + 1` | `attribute_not_exists(openOrders) OR openOrders < 3` (BR-14) |
+| n+4 | `orders` | `PutItem` item đánh dấu `#KEY#<idempotencyKey>` | `attribute_not_exists(orderId)`, `ReturnValuesOnConditionCheckFailure: ALL_OLD` |
 
-- Một điều kiện sai là cả giao dịch huỷ, không có gì thay đổi. Lỗi `TransactionCanceledException` cho biết món nào sai, để trả 409 `OUT_OF_STOCK` hoặc `PRICE_CHANGED` đúng món.
-- Giới hạn 100 thao tác mỗi giao dịch → một đơn tối đa 50 dòng (ordering.md BR-02) là an toàn.
+- Một điều kiện sai là cả giao dịch huỷ, không có gì thay đổi. `TransactionCanceledException` cho biết thao tác nào sai; xét theo thứ tự:
+  1. **n+4 sai:** đã có đơn cho khoá này. Cùng `payloadHash` → đọc đơn `refOrderId`, trả 200 và gửi lại message SQS (worker chống trùng theo `orderId`). Khác `payloadHash` → 422 `IDEMPOTENCY_KEY_REUSED`. Bỏ qua mọi lý do khác của cùng lần thử: chúng sai chính vì đơn cũ đã trừ kho, tăng bộ đếm.
+  2. **n+2 sai:** giỏ vừa đổi `version` → đọc lại giỏ, thử lại, tối đa 3 lần (như cart).
+  3. **1..n sai:** dựa vào `ALL_OLD` của món đó trả 409 `OUT_OF_STOCK` hoặc `PRICE_CHANGED` (có người mua hoặc đổi giá giữa bước đọc và giao dịch).
+  4. **n+3 sai:** 409 `TOO_MANY_OPEN_ORDERS`.
+- Giới hạn 100 thao tác mỗi giao dịch → một đơn tối đa 50 dòng (ordering.md BR-02) cộng 4 thao tác, tối đa 54, là an toàn.
+- IAM cho `ordering` `UpdateItem` trên `products` **không** có điều kiện `dynamodb:Attributes` (O7, ADR-0017): thử trên dev 25/10 thì điều kiện này chặn lệnh trừ kho vì `ConditionExpression` dùng `status`, `price`. Điều kiện của giao dịch giữ nguyên.
 
-**Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần.
+**Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn `PENDING` hoặc `CONFIRMED` thêm `UpdateItem` item `#OPEN`: `SET openOrders = openOrders - 1` với điều kiện `openOrders > 0`.
 
-> ✅ **Đã chốt 08/10 ([ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md)): hướng 1.** Role của `ordering` chỉ có `dynamodb:UpdateItem` trên `products` và `carts`, không `PutItem` hay `DeleteItem`; phần ghi nằm trong `modules/ordering/infra/` sau port. `cart` đọc `products` chỉ bằng `BatchGetItem`.
+**Chuyển `SHIPPED`:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = SHIPPED` (điều kiện `status = CONFIRMED`) và `UpdateItem` item `#OPEN` giảm 1 như trên.
+
+> ✅ **Đã chốt 08/10, sửa 24/10 ([ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md)): hướng 1.** Role của `ordering` trên `products`: `BatchGetItem` và `UpdateItem` chỉ cột `stock`; trên `carts`: `GetItem` và `UpdateItem`; không `PutItem` hay `DeleteItem`. Phần đọc, ghi nằm trong `modules/ordering/infra/` sau port. `cart` đọc `products` chỉ bằng `BatchGetItem`.
 
 ---
 ## Bảng `events` (module events)
 
-Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, cần An/Hoàng góp ý.
+Người viết: Nhân · Ngày: 09/10/2026 · Sửa 22/10/2026: khoá và thuộc tính theo code `modules/events`; GSI1 để sau · Sửa 25/10/2026: thuộc tính của `PURCHASE`.
 
 ### Truy vấn cần có
 
@@ -180,19 +223,24 @@ Người viết: Nhân · Ngày: 09/10/2026 — **đề xuất, chưa chốt**, 
 
 | Thuộc tính | Kiểu | Giá trị | Phục vụ |
 |---|---|---|---|
-| **PK** | String | `userIdHash` | Q1 — PutItem |
-| **SK** | String | `<timestamp ISO 8601>#<eventId>` | Sắp theo thời gian tự nhiên |
-| **GSI1-PK** | String | `itemId` | Q3 — Query trên GSI1 |
-| **GSI1-SK** | String | `timestamp` | Q3 — mới nhất trước |
+| **PK** | String | `userIdHash` | Q1 — PutItem có điều kiện `attribute_not_exists(eventKey)`, không ghi đè |
+| **SK** `eventKey` | String | `<timestamp ISO 8601>#<eventId>` | Sự kiện của một người sắp theo thời gian |
+| **TTL** | Number | `ttl` = thời điểm sự kiện + 90 ngày, giây kể từ 1970 | Tự xoá dữ liệu cũ, khớp luật xoá 90 ngày của bucket dữ liệu (góp ý ở #179) |
+
+GSI1 cho Q3 (`productId` + `timestamp`) chưa tạo; thêm khi làm phát hiện đầu độc gợi ý ở tuần 5.
 
 ### Schema thuộc tính
 
 ```
-userIdHash   String   PK   (HMAC, không phải userId thật)
-timestamp    String   SK component (ISO 8601 UTC, do server đặt)
-eventId      String   SK component (ULID)
-itemId       String
-eventType    String   (VIEW | ADD_TO_CART | PURCHASE)
+userIdHash   String   PK   (HMAC-SHA256 hex của Cognito sub, không phải userId thật)
+eventKey     String   SK   (<timestamp>#<eventId>)
+timestamp    String   ISO 8601 UTC, do server đặt
+eventId      String   ULID (CONTRIBUTING.md, chuẩn code); PURCHASE: <orderId>#<productId> để tin SQS giao lại không ghi trùng
+productId    String   cùng tên với API (contracts/openapi.yaml)
+eventType    String   VIEW | ADD_TO_CART | PURCHASE
+ttl          Number   giây kể từ 1970, DynamoDB TTL xoá sau 90 ngày
+orderId      String   chỉ PURCHASE, để pipeline gom món theo đơn
+quantity     Number   chỉ PURCHASE
 ```
 
 ### Vấn đề cần quyết định: Q2 có được Scan không?
@@ -217,7 +265,9 @@ nên con số quy mô ở đây là suy đoán — cần kiểm tra lại.)*
 ## Bảng `recs` (module recommendation)
 
 Người viết: Nhân · Ngày: 09/10/2026 · Sửa 14/10 theo đề xuất của An: con trỏ ACTIVE
-chung cho cả bảng thay vì mỗi anchor một con trỏ.
+chung cho cả bảng thay vì mỗi anchor một con trỏ · Sửa 25/10 (An, API gợi ý): con trỏ
+`ACTIVE#BESTSELLER`, cột `basis`, cột `productId` (thay `itemId`), 20 dòng mỗi anchor như nhóm
+chốt với Nhân 22/10.
 
 ### Truy vấn cần có
 
@@ -253,16 +303,19 @@ version.
 ### Schema thuộc tính
 
 ```
-# Item con trỏ (2 cái, một cho mỗi recType)
+# Item con trỏ (3 cái, một cho mỗi recType)
 pk              String   PK   ("META")
-sk              String   SK   ("ACTIVE#FOR_YOU" hoặc "ACTIVE#ALSO_BOUGHT")
+sk              String   SK   ("ACTIVE#FOR_YOU", "ACTIVE#ALSO_BOUGHT" hoặc "ACTIVE#BESTSELLER")
 activeVersion   Number
 updatedAt       String   (ISO 8601 UTC)
+basis           String   chỉ ở ACTIVE#BESTSELLER: PURCHASES_30D | PURCHASES_90D | PURCHASES_365D | NEWEST
+                         (đơn quá ít thì nới 30 → 90 → 365 ngày, vẫn ít thì xếp theo hàng mới;
+                         API trả source = NEWEST khi basis = NEWEST, contracts/openapi.yaml RecsSource)
 
-# Item dòng gợi ý (10 cái mỗi version mỗi anchor)
+# Item dòng gợi ý (20 cái mỗi version mỗi anchor, API lọc xong trả tối đa 10)
 pk              String   PK   (<recType>#<anchorId>)
-sk              String   SK   (<version>#<rank>, rank đệm 2 chữ số, ví dụ "7#01")
-itemId          String
+sk              String   SK   (<version>#<rank>, rank đệm 2 chữ số, ví dụ "20261027#01")
+productId       String
 score           Number
 source          String   (ASSOCIATION_RULE | ITEM_CF | BESTSELLER)
 generatedAt     String   (ISO 8601 UTC)
@@ -280,16 +333,19 @@ ttl             Number   (Unix epoch giây; DynamoDB TTL bắt buộc kiểu Num
 
 ---
 
-## Bảng `idempotency` (module ordering)
+## Bảng `order-idempotency` (module ordering)
+
+Theo [ADR-0017](../adr/0017-ngoai-le-bang-cheo-module-va-idempotency.md) mục 3: mỗi module cần idempotency có bảng riêng; `ordering` dùng `order-idempotency`, cùng schema với `cart-idempotency`. Cấu hình chung ở `services/api/src/shared/idempotency` (TTL 24 giờ, khoá gồm `userId` và header `Idempotency-Key`); module chỉ truyền tên bảng.
 
 | Thuộc tính | Kiểu | Giá trị |
 |---|---|---|
-| **PK** | String | `userId#idempotencyKey` |
-| `orderId` | String | ID đơn đã tạo |
-| `statusCode` | Number | HTTP status của lần tạo đầu |
-| `ttl` | Number | Epoch seconds, 24 giờ sau khi tạo |
+| **PK** `id` | String | Powertools tạo từ `userId` và `Idempotency-Key` |
+| `expiration` | Number | Epoch giây, 24 giờ sau lần ghi đầu; TTL của bảng đặt trên thuộc tính này |
+| `status`, `data`, `in_progress_expiration`, `validation` | | Powertools tự ghi: trạng thái xử lý, kết quả đã lưu (trả lại khi gọi lại cùng khoá), hạn của lần đang xử lý, mã băm nội dung request (khác nội dung → 422 `IDEMPOTENCY_KEY_REUSED`) |
 
-> Powertools Idempotency quản lý bảng này tự động.
+> Powertools Idempotency quản lý bảng này tự động; code không đọc, ghi trực tiếp. On-demand. Lambda `ordering` chỉ có quyền trên bảng này, không có quyền trên `cart-idempotency`.
+>
+> Worker `order-processor` cũng dùng Powertools Idempotency với khoá `orderId` cho bước gửi email và gửi tin `order-confirmed` (ordering.md, luồng SQS bước 2.2, 2.3). Bảng cho worker chốt khi code worker.
 
 ---
 
@@ -298,5 +354,5 @@ ttl             Number   (Unix epoch giây; DynamoDB TTL bắt buộc kiểu Num
 1. ~~**`carts`** — giới hạn 400KB~~ — đã giới hạn giỏ tối đa 50 dòng (khoảng 5 KB).
 2. **`orders` GSI `byOrderId`** — có cần không hay đủ khi admin luôn biết `userId`?
 3. **`products` GSI1-PK = `category#status`** — nếu thêm filter giá sau này thì cần thêm GSI hay dùng filter expression? (Với cache trong Lambda ở Q4, Q5, lọc giá cũng làm được trên mảng trong bộ nhớ.)
-4. ~~Bảng `events` (Nhân) — dùng chung hay bảng riêng?~~ **Đã trả lời 09/10:** bảng riêng (`events`, tên đã chốt sẵn ở ADR-0012). Về cách `ordering` báo cho `events` khi đơn `CONFIRMED`: đề xuất `order-processor` bắn thêm một bản tin SNS sau bước ghi `CONFIRMED` thành công (tận dụng topic SNS đang có sẵn để báo admin, thêm `events` làm subscriber thứ hai, hoặc tách topic riêng nếu An thấy hợp lý hơn). Lambda `events` subscribe topic này, ghi `PURCHASE` vào bảng `events`. **Chưa kiểm tra hướng này có khớp với cách Hoàng đã dựng SNS/SQS thật hay không** — cần xác nhận trước khi code. (Chi tiết: `docs/business/events.md`.)
-5. **Giao dịch đặt hàng** ghi vào `products` và `carts` — chọn hướng 1 hay 2 (xem mục "Giao dịch đặt hàng và huỷ đơn")?
+4. ~~Bảng `events` (Nhân) — dùng chung hay bảng riêng?~~ **Đã trả lời 09/10:** bảng riêng (`events`, tên đã chốt sẵn ở ADR-0012). Về cách `ordering` báo cho `events` khi đơn `CONFIRMED`: đề xuất `order-processor` bắn thêm một bản tin SNS sau bước ghi `CONFIRMED` thành công (tận dụng topic SNS đang có sẵn để báo admin, thêm `events` làm subscriber thứ hai, hoặc tách topic riêng nếu An thấy hợp lý hơn). Lambda `events` subscribe topic này, ghi `PURCHASE` vào bảng `events`. **Đã chốt 17/10 và 21/10/2026:** `order-processor` gửi tin vào SNS topic `order-confirmed` (An dựng, #211); chỉ SQS của `events` (có DLQ) nghe, không có email admin (chốt 24/10); `ordering` không ghi thẳng bảng `events`. Nội dung tin và cách chống gửi trùng: ordering.md, luồng SQS bước 2.3. (Chi tiết phía `events`: `docs/business/events.md`.)
+5. ~~**Giao dịch đặt hàng** ghi vào `products` và `carts` — chọn hướng 1 hay 2?~~ **Đã chốt 08/10 (ADR-0017): hướng 1**, xem mục "Giao dịch đặt hàng và huỷ đơn".

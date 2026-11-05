@@ -1,6 +1,6 @@
 # Runbook: API chậm (p95 cao)
 
-Alarm: `<tiền tố>-api-latency-p95` · Ngưỡng: p95 ≥ 1.000 ms trong 3 chu kỳ 5 phút liền · Mục tiêu bình thường: p95 ≤ 300 ms ([engineering-plan.md](../engineering-plan.md) mục 3) · Người trực: An
+Alarm: `<tiền tố>-api-latency-p95` · Ngưỡng: p95 ≥ 1.000 ms trong 3 chu kỳ 5 phút liền, chỉ tính chu kỳ có từ 20 request · Mục tiêu bình thường: p95 ≤ 300 ms ([engineering-plan.md](../engineering-plan.md) mục 3) · Người trực: An
 
 ## Dấu hiệu
 

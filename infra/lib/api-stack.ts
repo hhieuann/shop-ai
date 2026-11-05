@@ -31,14 +31,29 @@ import {
   UserPoolOperation,
 } from 'aws-cdk-lib/aws-cognito';
 import { AttributeType, BillingMode, ProjectionType, Table } from 'aws-cdk-lib/aws-dynamodb';
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { AnyPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Architecture, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import type { Bucket } from 'aws-cdk-lib/aws-s3';
+import type { Topic } from 'aws-cdk-lib/aws-sns';
+import { Queue, QueueEncryption } from 'aws-cdk-lib/aws-sqs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 import { Monitoring } from './monitoring.js';
+import { OrderConfirmed } from './order-confirmed.js';
+import { RecsPipeline } from './recs-pipeline.js';
+import { RecsTable } from './recs-table.js';
+import { TrainingData } from './training-data.js';
+
+/** Bước gửi thư của worker order-processor (#265); chỉ có khi deploy truyền `-c senderEmail` */
+interface OrderEmailInfra {
+  readonly userPool: UserPool;
+  readonly idempotency: Table;
+  readonly senderEmail: string;
+}
 
 const REPO_ROOT = path.join(import.meta.dirname, '..', '..');
 const API_SRC = path.join(REPO_ROOT, 'services', 'api', 'src');
@@ -54,6 +69,8 @@ const DEMO_PRODUCTS_FILE = path.join(
 
 /** Tên GSI, trùng với PRODUCTS_BY_CATEGORY_INDEX trong services/api/src/modules/catalog/infra/. */
 export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
+/** GSI đơn theo trạng thái cho admin (dynamodb-design.md, bảng orders, Q3). */
+export const ORDERS_BY_STATUS_INDEX = 'byStatus';
 
 /** Cách đóng gói chung cho các Lambda API: ESM cho Node 24, đóng gói cả AWS SDK. */
 const API_BUNDLING = {
@@ -81,6 +98,10 @@ export class ApiStack extends Stack {
   /** User pool và app client của web; stack web ghi id của chúng vào config.json. */
   public readonly userPool: UserPool;
   public readonly webClient: UserPoolClient;
+  /** Bucket dữ liệu huấn luyện đã ẩn danh của pipeline gợi ý mỗi đêm. */
+  public readonly trainingDataBucket: Bucket;
+  /** Bảng gợi ý; pipeline mỗi đêm của Nhân cấp quyền ghi, API gợi ý của An chỉ đọc. */
+  public readonly recsTable: Table;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
@@ -225,10 +246,60 @@ export class ApiStack extends Stack {
     });
 
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
-    const cartFn = this.addCart(shopEnv, removalPolicy, httpApi, products);
+    const { cartFn, carts } = this.addCart(shopEnv, removalPolicy, httpApi, products);
+
+    // Đặt hàng (ordering.md): mọi route cần đăng nhập
+    const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
+
+    // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
+    const { eventsFn, events } = this.addEvents(shopEnv, removalPolicy, httpApi);
 
     // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
     this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
+
+    // Dữ liệu huấn luyện cho pipeline gợi ý mỗi đêm (module recommendation)
+    this.trainingDataBucket = new TrainingData(this, 'TrainingData', { shopEnv }).bucket;
+    this.recsTable = new RecsTable(this, 'Recs', { shopEnv }).table;
+    new CfnOutput(this, 'RecsTableName', { value: this.recsTable.tableName });
+
+    // API gợi ý (recommendation.md): also-bought, bestsellers công khai; for-you cần đăng nhập
+    const recsFn = this.addRecommendation(
+      shopEnv,
+      removalPolicy,
+      httpApi,
+      products,
+      this.recsTable,
+    );
+
+    // Tin đơn đã xác nhận (ordering.md bước 2.3): ordering gửi, events nhận qua hàng đợi có DLQ
+    const orderConfirmed = new OrderConfirmed(this, 'OrderConfirmed');
+    new CfnOutput(this, 'OrderConfirmedTopicArn', { value: orderConfirmed.topic.topicArn });
+    new CfnOutput(this, 'EventsPurchaseQueueUrl', { value: orderConfirmed.eventsQueue.queueUrl });
+    // events.md mục 1: consumer ghi mỗi món của đơn đã xác nhận thành một PURCHASE
+    this.addPurchaseConsumer(shopEnv, removalPolicy, events, orderConfirmed.eventsQueue);
+
+    // Job gợi ý mỗi đêm (recommendation.md mục 3): đọc products, events, ghi bảng recs
+    const recsPipeline = new RecsPipeline(this, 'RecsPipeline', {
+      shopEnv,
+      removalPolicy,
+      recs: this.recsTable,
+      products,
+      events,
+    });
+    // Worker order-processor (ordering.md, luồng SQS): xác nhận đơn, gửi tin, gửi thư.
+    // Địa chỉ gửi SES truyền bằng -c senderEmail=... (#261); rỗng (máy local, CI của PR) thì
+    // worker không gửi thư
+    const senderEmail: unknown = this.node.tryGetContext('senderEmail');
+    const orderProcessorFn = this.addOrderProcessor(
+      shopEnv,
+      removalPolicy,
+      ordering.orders,
+      ordering.queue,
+      orderConfirmed.topic,
+      typeof senderEmail === 'string' && senderEmail !== ''
+        ? { userPool: auth.userPool, idempotency: ordering.orderIdempotency, senderEmail }
+        : undefined,
+    );
 
     // Giám sát: SNS topic nhận cảnh báo; email truyền bằng -c alarmEmail=..., không ghi vào repo public
     const alarmEmail: unknown = this.node.tryGetContext('alarmEmail');
@@ -236,7 +307,19 @@ export class ApiStack extends Stack {
       shopEnv,
       httpApi,
       preSignUpFn: auth.preSignUpFn,
-      apiFunctions: { catalog: catalogFn, cart: cartFn, account: accountFn, health: healthFn },
+      apiFunctions: {
+        catalog: catalogFn,
+        cart: cartFn,
+        ordering: ordering.fn,
+        events: eventsFn,
+        recommendation: recsFn,
+        account: accountFn,
+        health: healthFn,
+      },
+      workerFunctions: { 'order-processor': orderProcessorFn, 'recs-pipeline': recsPipeline.fn },
+      recsPipelineFn: recsPipeline.fn,
+      ordersQueue: ordering.queue,
+      ordersDeadLetterQueue: ordering.deadLetterQueue,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
     });
     new CfnOutput(this, 'ApiUrl', { value: httpApi.apiEndpoint });
@@ -364,7 +447,555 @@ export class ApiStack extends Stack {
     });
 
     new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
-    return cartFn;
+    return { cartFn, carts };
+  }
+
+  /**
+   * Module ordering (ordering.md; dynamodb-design.md, bảng orders): bảng orders, order-idempotency,
+   * hàng đợi đơn có DLQ và Lambda ordering.
+   * Quyền tối thiểu: orders GetItem, Query, PutItem, UpdateItem; order-idempotency như cart;
+   * trên bảng của module khác chỉ các quyền ghi ở ADR-0017 (#226): products BatchGetItem và
+   * UpdateItem (trừ, hoàn kho), carts GetItem và UpdateItem; chỉ gửi vào hàng đợi đơn.
+   * Mọi route gắn JWT authorizer của Cognito.
+   */
+  private addOrdering(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    products: Table,
+    carts: Table,
+  ) {
+    // Khoá userId + orderId (ULID). Cùng bảng có item bộ đếm `#OPEN` (BR-14) và item đánh dấu
+    // `#KEY#<idempotencyKey>` (chống tạo đơn trùng khi lỗi sau commit); chỉ item đánh dấu có
+    // `expiresAt` nên TTL không bao giờ xoá đơn thật.
+    const orders = new Table(this, 'OrdersTable', {
+      partitionKey: { name: 'userId', type: AttributeType.STRING },
+      sortKey: { name: 'orderId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiresAt',
+      // ADR-0012: orders bật point-in-time recovery (RPO ≤ 5 phút cho đơn hàng)
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      deletionProtection: shopEnv.isProd,
+      removalPolicy,
+    });
+    // Admin xem đơn theo trạng thái, mới nhất trước (Q3); item `#OPEN`, `#KEY#…` không có status nên không vào
+    orders.addGlobalSecondaryIndex({
+      indexName: ORDERS_BY_STATUS_INDEX,
+      partitionKey: { name: 'status', type: AttributeType.STRING },
+      sortKey: { name: 'orderId', type: AttributeType.STRING },
+      projectionType: ProjectionType.ALL,
+    });
+    // Chống tạo đơn hai lần (ADR-0017): schema Powertools Idempotency, khoá `id`, TTL `expiration`
+    const orderIdempotency = new Table(this, 'OrderIdempotencyTable', {
+      partitionKey: { name: 'id', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiration',
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    Validations.of(orderIdempotency).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-DDB3',
+      reason:
+        'Bản ghi chống tạo đơn hai lần chỉ sống 24 giờ; đơn đã ghi có item đánh dấu riêng trong bảng orders.',
+    });
+
+    // Hàng đợi đơn cho worker order-processor (ordering.md, luồng SQS); lỗi quá 3 lần thì vào DLQ
+    const deadLetterQueue = new Queue(this, 'OrdersDeadLetterQueue', {
+      encryption: QueueEncryption.SQS_MANAGED,
+      enforceSSL: true,
+      retentionPeriod: Duration.days(14),
+    });
+    Validations.of(deadLetterQueue).acknowledge({
+      id: 'AwsSolutions-SQS3',
+      reason: 'Đây chính là DLQ của hàng đợi đơn; DLQ không cần DLQ của riêng nó.',
+    });
+    const queue = new Queue(this, 'OrdersQueue', {
+      encryption: QueueEncryption.SQS_MANAGED,
+      enforceSSL: true,
+      // Gấp 6 lần timeout dự kiến của worker (10 giây) theo khuyến nghị cho Lambda đọc SQS
+      visibilityTimeout: Duration.seconds(60),
+      deadLetterQueue: { queue: deadLetterQueue, maxReceiveCount: 3 },
+    });
+
+    const fn = new NodejsFunction(this, 'OrderingFunction', {
+      entry: path.join(API_SRC, 'modules', 'ordering', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 512,
+      // Giao dịch đặt hàng tới 54 thao tác, có thử lại khi giỏ đổi version
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'OrderingLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        ORDERS_TABLE: orders.tableName,
+        ORDER_IDEMPOTENCY_TABLE: orderIdempotency.tableName,
+        PRODUCTS_TABLE: products.tableName,
+        CARTS_TABLE: carts.tableName,
+        ORDERS_QUEUE_URL: queue.queueUrl,
+        POWERTOOLS_SERVICE_NAME: 'ordering',
+        // Metric OrderEnqueueFailed tách theo môi trường (chung tài khoản, ADR-0013); alarm ở monitoring.ts dùng cùng namespace
+        POWERTOOLS_METRICS_NAMESPACE: shopEnv.stackPrefix,
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+        resources: [orders.tableArn],
+      }),
+    );
+    // Các thao tác Powertools Idempotency cần, chỉ trên bảng idempotency của chính ordering
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: [
+          'dynamodb:GetItem',
+          'dynamodb:PutItem',
+          'dynamodb:UpdateItem',
+          'dynamodb:DeleteItem',
+        ],
+        resources: [orderIdempotency.tableArn],
+      }),
+    );
+    // Ngoại lệ ADR-0017: đọc tên, giá, tồn kho, trạng thái để chụp vào đơn và kiểm lại (BR-03)
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
+    );
+    // Trừ, hoàn kho trong TransactWriteItems. Không có điều kiện dynamodb:Attributes (O7, ADR-0017):
+    // điều kiện đó tính cả status, price trong ConditionExpression nên IAM chặn lệnh trừ kho.
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [products.tableArn] }),
+    );
+    // Ngoại lệ ADR-0017: đọc giỏ rồi bỏ các món đã đặt, ghi có điều kiện version trong cùng giao dịch
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+        resources: [carts.tableArn],
+      }),
+    );
+    queue.grantSendMessages(fn);
+
+    Tags.of(orders).add('module', 'ordering');
+    Tags.of(orderIdempotency).add('module', 'ordering');
+    Tags.of(queue).add('module', 'ordering');
+    Tags.of(deadLetterQueue).add('module', 'ordering');
+    Tags.of(fn).add('module', 'ordering');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('OrderingIntegration', fn);
+    httpApi.addRoutes({
+      path: '/api/v1/orders',
+      methods: [HttpMethod.GET, HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/orders/{orderId}',
+      methods: [HttpMethod.GET, HttpMethod.DELETE],
+      integration,
+      authorizer: this.authorizer,
+    });
+
+    new CfnOutput(this, 'OrdersTableName', { value: orders.tableName });
+    new CfnOutput(this, 'OrdersQueueUrl', { value: queue.queueUrl });
+    return { fn, orders, orderIdempotency, queue, deadLetterQueue };
+  }
+
+  /**
+   * Module events: bảng events (khoá userIdHash + eventKey, TTL 90 ngày theo cột `ttl`) và Lambda events.
+   * Quyền tối thiểu: chỉ PutItem trên bảng events; chỉ đọc đúng tham số khoá HMAC
+   * `/shop/<env>/events/hmac-key` (SecureString An tạo bằng CLI, không nằm trong template, threat model E6).
+   * Route gắn JWT authorizer của Cognito (nhóm chốt 17/10/2026).
+   */
+  private addEvents(shopEnv: ShopEnvironment, removalPolicy: RemovalPolicy, httpApi: HttpApi) {
+    const events = new Table(this, 'EventsTable', {
+      partitionKey: { name: 'userIdHash', type: AttributeType.STRING },
+      sortKey: { name: 'eventKey', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
+      deletionProtection: shopEnv.isProd,
+      removalPolicy,
+    });
+    Validations.of(events).acknowledge({
+      id: 'AwsSolutions::AwsSolutions-DDB3',
+      reason:
+        'Theo ADR-0012 chỉ orders và products bật point-in-time recovery; sự kiện chỉ giữ 90 ngày để huấn luyện gợi ý.',
+    });
+    const hmacKeyParameter = `/shop/${shopEnv.name}/events/hmac-key`;
+
+    const eventsFn = new NodejsFunction(this, 'EventsFunction', {
+      entry: path.join(API_SRC, 'modules', 'events', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.seconds(5),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'EventsLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        EVENTS_TABLE: events.tableName,
+        HMAC_KEY_PARAMETER: hmacKeyParameter,
+        POWERTOOLS_SERVICE_NAME: 'events',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    eventsFn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:PutItem'], resources: [events.tableArn] }),
+    );
+    // SecureString mã hoá bằng khoá AWS quản lý aws/ssm: key policy đã cho dùng qua SSM, không cần kms:Decrypt
+    eventsFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: hmacKeyParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    Tags.of(events).add('module', 'events');
+    Tags.of(eventsFn).add('module', 'events');
+    Validations.of(eventsFn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    httpApi.addRoutes({
+      path: '/api/v1/events',
+      methods: [HttpMethod.POST],
+      integration: new HttpLambdaIntegration('EventsIntegration', eventsFn),
+      authorizer: this.authorizer,
+    });
+
+    new CfnOutput(this, 'EventsTableName', { value: events.tableName });
+    return { eventsFn, events };
+  }
+
+  /**
+   * Consumer `PURCHASE` của module events: Lambda riêng, đọc hàng đợi `order-confirmed` của events.
+   * Quyền tối thiểu: PutItem trên bảng events (khoá suy ra từ orderId + productId, có điều kiện
+   * không ghi đè, nên tin giao lại không thành lượt mua thứ hai); đọc đúng tham số khoá HMAC như
+   * Lambda API (threat model E6); nhận, xoá tin trên đúng hàng đợi này (SqsEventSource tự cấp).
+   * Tin lỗi được báo riêng từng tin (reportBatchItemFailures); sau 5 lần vào DLQ.
+   */
+  private addPurchaseConsumer(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    events: Table,
+    queue: Queue,
+  ) {
+    const hmacKeyParameter = `/shop/${shopEnv.name}/events/hmac-key`;
+    const fn = new NodejsFunction(this, 'EventsPurchaseFunction', {
+      entry: path.join(API_SRC, 'modules', 'events', 'purchaseLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      // Hàng đợi để visibility timeout 30 giây, tức 6 lần timeout này (order-confirmed.ts)
+      timeout: Duration.seconds(5),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'EventsPurchaseLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        EVENTS_TABLE: events.tableName,
+        HMAC_KEY_PARAMETER: hmacKeyParameter,
+        POWERTOOLS_SERVICE_NAME: 'events-purchase',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:PutItem'], resources: [events.tableArn] }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: hmacKeyParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    fn.addEventSource(new SqsEventSource(queue, { batchSize: 10, reportBatchItemFailures: true }));
+    Tags.of(fn).add('module', 'events');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+    return fn;
+  }
+
+  /**
+   * Worker order-processor của module ordering (ordering.md, luồng SQS; code ở
+   * services/api/src/modules/ordering/processorLambda.ts, #259): đọc hàng đợi đơn, xác nhận đơn
+   * `PENDING → CONFIRMED`, gửi tin `order-confirmed`. Lambda riêng, quyền riêng, tách khỏi Lambda API.
+   * Quyền tối thiểu: GetItem, UpdateItem trên orders; sns:Publish lên topic; đọc hàng đợi do event
+   * source tự cấp. Không có sqs:SendMessage, không quyền trên products, carts.
+   * Có `email` thì thêm bước gửi thư: bảng order-idempotency, `cognito-idp:ListUsers` trên user
+   * pool của môi trường, `ses:SendEmail` chỉ từ địa chỉ gửi.
+   */
+  private addOrderProcessor(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    orders: Table,
+    queue: Queue,
+    topic: Topic,
+    email: OrderEmailInfra | undefined,
+  ) {
+    const fn = new NodejsFunction(this, 'OrderProcessorFunction', {
+      entry: path.join(API_SRC, 'modules', 'ordering', 'processorLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      // Hàng đợi đơn để visibility timeout 60 giây, tức 6 lần timeout này (addOrdering)
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'OrderProcessorLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        ORDERS_TABLE: orders.tableName,
+        ORDER_CONFIRMED_TOPIC_ARN: topic.topicArn,
+        POWERTOOLS_SERVICE_NAME: 'order-processor',
+        // Metric OrderEmailRejected tách theo môi trường như ordering (chung tài khoản, ADR-0013)
+        POWERTOOLS_METRICS_NAMESPACE: shopEnv.stackPrefix,
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    // Đọc lại đơn (threat model O9) và xác nhận có điều kiện. Không đặt điều kiện dynamodb:Attributes:
+    // điều kiện đó tính cả thuộc tính trong ConditionExpression và chỉ thử được trên AWS (#253, #254)
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+        resources: [orders.tableArn],
+      }),
+    );
+    topic.grantPublish(fn);
+    // Threat model E9: chỉ role worker được gửi tin lên topic. Allow trong topic policy không chặn được
+    // principal cùng tài khoản đã có sns:Publish trong IAM policy, nên dùng Deny với mọi principal khác.
+    // SNS giao tin vào hàng đợi events không phải sns:Publish nên không bị ảnh hưởng.
+    topic.addToResourcePolicy(
+      new PolicyStatement({
+        effect: Effect.DENY,
+        principals: [new AnyPrincipal()],
+        actions: ['sns:Publish'],
+        resources: [topic.topicArn],
+        conditions: { ArnNotEquals: { 'aws:PrincipalArn': fn.role!.roleArn } },
+      }),
+    );
+    if (email) this.grantOrderEmail(fn, email);
+    // maxConcurrency 2 là mức thấp nhất AWS cho phép: giữ nhịp chậm cho SES sandbox (1 thư/giây) ở PR
+    // email và không chiếm Lambda chạy cùng lúc của cả tài khoản
+    fn.addEventSource(
+      new SqsEventSource(queue, { batchSize: 5, reportBatchItemFailures: true, maxConcurrency: 2 }),
+    );
+    Tags.of(fn).add('module', 'ordering');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+    return fn;
+  }
+
+  /**
+   * Bước gửi thư của worker (ordering.md bước 2.2, #265): đủ 3 biến `USER_POOL_ID`,
+   * `ORDER_IDEMPOTENCY_TABLE`, `SENDER_EMAIL` thì worker bật bước này (emailConfig.ts).
+   */
+  private grantOrderEmail(fn: NodejsFunction, email: OrderEmailInfra) {
+    fn.addEnvironment('USER_POOL_ID', email.userPool.userPoolId);
+    fn.addEnvironment('ORDER_IDEMPOTENCY_TABLE', email.idempotency.tableName);
+    fn.addEnvironment('SENDER_EMAIL', email.senderEmail);
+    // Thao tác Powertools Idempotency cần, chỉ trên bảng order-idempotency
+    // (khoá `<orderId>#<loại thư>`)
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: [
+          'dynamodb:GetItem',
+          'dynamodb:PutItem',
+          'dynamodb:UpdateItem',
+          'dynamodb:DeleteItem',
+        ],
+        resources: [email.idempotency.tableArn],
+      }),
+    );
+    // An chốt 25/10: email khách đọc bằng ListUsers lọc `sub`, chỉ trên user pool của môi trường
+    // này. IAM không giới hạn được theo `sub`, nên role đọc được email mọi khách trong pool
+    // (threat model O11)
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:ListUsers'],
+        resources: [email.userPool.userPoolArn],
+      }),
+    );
+    // Sandbox (cả 3 môi trường) SES kiểm quyền cả trên identity của địa chỉ nhận: chỉ ghi ARN địa
+    // chỉ gửi thì mọi thư bị AccessDenied. Nên mở identity/* của tài khoản, vùng này và khoá địa
+    // chỉ gửi bằng điều kiện ses:FromAddress. Không có ses:SendRawEmail, không configuration set.
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ses:SendEmail'],
+        resources: [this.formatArn({ service: 'ses', resource: 'identity', resourceName: '*' })],
+        conditions: { StringEquals: { 'ses:FromAddress': email.senderEmail } },
+      }),
+    );
+    Validations.of(fn).acknowledge({
+      // Tên ghi nhận chứa region và account thật; CI synth khi chưa biết account nên dùng chữ thay thế
+      id: `AwsSolutions-IAM5[Resource::arn:aws:ses:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:identity/*]`,
+      reason:
+        'Sandbox SES kiểm quyền cả địa chỉ nhận; ses:FromAddress chỉ cho gửi từ địa chỉ của shop.',
+    });
+  }
+
+  /**
+   * Module recommendation: Lambda API gợi ý, đọc bảng recs mà pipeline mỗi đêm ghi.
+   * Quyền tối thiểu: GetItem (con trỏ), Query (dòng gợi ý) trên recs; đọc products CHỈ bằng
+   * BatchGetItem trên ARN bảng, không gồm index (ADR-0017, sửa 24/10); chỉ đọc đúng tham số khoá HMAC
+   * của events để băm userId giống events (threat model E6).
+   * `also-bought`, `bestsellers` công khai; `for-you` gắn JWT authorizer của Cognito.
+   */
+  private addRecommendation(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    products: Table,
+    recs: Table,
+  ) {
+    const hmacKeyParameter = `/shop/${shopEnv.name}/events/hmac-key`;
+    const fn = new NodejsFunction(this, 'RecommendationFunction', {
+      entry: path.join(API_SRC, 'modules', 'recommendation', 'lambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.seconds(5),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'RecommendationLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        RECS_TABLE: recs.tableName,
+        PRODUCTS_TABLE: products.tableName,
+        HMAC_KEY_PARAMETER: hmacKeyParameter,
+        POWERTOOLS_SERVICE_NAME: 'recommendation',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+        resources: [recs.tableArn],
+      }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:BatchGetItem'], resources: [products.tableArn] }),
+    );
+    // SecureString mã hoá bằng khoá AWS quản lý aws/ssm: key policy đã cho dùng qua SSM, không cần kms:Decrypt
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: hmacKeyParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    Tags.of(fn).add('module', 'recommendation');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('RecommendationIntegration', fn);
+    const publicRoutes = [
+      ...httpApi.addRoutes({
+        path: '/api/v1/recs/also-bought',
+        methods: [HttpMethod.GET],
+        integration,
+      }),
+      ...httpApi.addRoutes({
+        path: '/api/v1/recs/bestsellers',
+        methods: [HttpMethod.GET],
+        integration,
+      }),
+    ];
+    for (const route of publicRoutes) {
+      Validations.of(route).acknowledge({
+        id: 'AwsSolutions::AwsSolutions-APIG4',
+        reason:
+          'Gợi ý mua kèm và hàng bán chạy là công khai như xem sản phẩm; chỉ for-you cần đăng nhập (ADR-0007).',
+      });
+    }
+    httpApi.addRoutes({
+      path: '/api/v1/recs/for-you',
+      methods: [HttpMethod.GET],
+      integration,
+      authorizer: this.authorizer,
+    });
+    return fn;
   }
 
   /** Lambda nhỏ không đọc dữ liệu (health, account): mặc định 128 MB, 3 giây; chỉ có quyền ghi log và X-Ray. */
@@ -444,7 +1075,9 @@ export class ApiStack extends Stack {
       // Cognito chờ trigger tối đa 5 giây; 128 MB quá ít CPU, khởi động lạnh có lần quá 3 giây (staging 21/10)
       { memorySize: 512, timeout: Duration.seconds(5) },
     );
-    // Không dùng userPool.userPoolArn: user pool đã trỏ tới Lambda này, trỏ ngược lại sẽ thành vòng
+    // Không dùng userPool.userPoolArn: user pool đã trỏ tới Lambda này, trỏ ngược lại sẽ thành vòng.
+    // userpool/* gồm cả user pool của môi trường khác (chung tài khoản, ADR-0013), nên chỉ cho pool có
+    // tag env cùng môi trường; tag do infra/bin/shop.ts gắn cho mọi tài nguyên
     preSignUpFn.addToRolePolicy(
       new PolicyStatement({
         actions: ['cognito-idp:ListUsers'],
@@ -455,13 +1088,14 @@ export class ApiStack extends Stack {
             resourceName: '*',
           }),
         ],
+        conditions: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
       }),
     );
     Validations.of(preSignUpFn).acknowledge({
       // Tên ghi nhận chứa region và account thật; CI synth khi chưa biết account nên dùng chữ thay thế
       id: `AwsSolutions-IAM5[Resource::arn:aws:cognito-idp:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:userpool/*]`,
       reason:
-        'Chỉ ListUsers (đọc) để kiểm trùng username; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
+        'Chỉ ListUsers (đọc) để kiểm trùng username, chỉ trên pool có tag env cùng môi trường; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
     });
     userPool.addTrigger(UserPoolOperation.PRE_SIGN_UP, preSignUpFn);
 

@@ -10,17 +10,18 @@ requires-python = ">=3.13"
 dependencies = []
 
 [project.scripts]
-data = "data.generator.synthetic:main"
+data = "data.generator.synthetic:cli"
 data-eval = "data.evaluate:cli"
 data-eval-for-you = "data.evaluate_for_you:cli"
+data-poison = "data.security.poisoning:cli"
 
 [build-system]
-requires = ["uv_build>=0.13.0,<0.14.0"]
+requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "mypy>=2.4.0",
     "pytest>=9.1.1",
-    "ruff>=0.17.0",
+    "ruff>=0.17.2",
 ]

@@ -206,6 +206,98 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/events': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Ghi một lượt xem hoặc thêm giỏ, làm dữ liệu cho gợi ý
+     * @description Chỉ nhận `VIEW` và `ADD_TO_CART`. `PURCHASE` không nhận từ client: chỉ module `ordering`
+     *     tạo khi đơn `CONFIRMED` (events.md mục 1). Server lấy `userId` từ token và tự đặt thời gian,
+     *     không nhận từ body (events.md mục 3, 5); `userId` được ẩn danh bằng HMAC trước khi lưu
+     *     (events.md mục 2). Bắt buộc đăng nhập: không ghi lượt xem của khách vãng lai để giảm spam
+     *     và đầu độc gợi ý (threat model E2, nhóm chốt ngày 17/10/2026).
+     *     Server không kiểm `productId` có trong danh mục (module `events` không đọc bảng `products`,
+     *     ADR-0009); pipeline gợi ý bỏ qua mã không có trong danh mục.
+     */
+    post: operations['recordEvent'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/recs/also-bought': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Thường mua kèm một sản phẩm
+     * @description Đọc bảng `recs` phiên bản đang bật (`ALSO_BOUGHT#<productId>`, dynamodb-design.md).
+     *     Sản phẩm chưa có dòng nào (mới, ít người mua) thì trả hàng bán chạy cùng loại, `source = BESTSELLER`
+     *     (ADR-0016). Không cần đăng nhập. Server bỏ hàng hết (`stock = 0`), hàng `INACTIVE`,
+     *     chính `productId` và các mã trong `exclude`.
+     */
+    get: operations['getAlsoBought'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/recs/for-you': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Dành cho bạn
+     * @description Gợi ý theo lịch sử của người đang đăng nhập (`FOR_YOU#<userIdHash>`; server băm `userId`
+     *     lấy từ token bằng HMAC như module `events`, events.md mục 2). Người chưa có lịch sử thì trả hàng
+     *     bán chạy, `source = BESTSELLER`. Lọc như `also-bought`.
+     */
+    get: operations['getForYou'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/recs/bestsellers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Đang được mua nhiều (cho khách chưa đăng nhập)
+     * @description Hàng bán chạy, lọc theo loại nếu có `category` (recommendation.md mục 2.3). Không cần đăng nhập.
+     *     Lọc như `also-bought`.
+     */
+    get: operations['getBestsellers'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -482,7 +574,7 @@ export interface components {
     };
     OrderProblem: components['schemas']['Problem'] & {
       /** @enum {string} */
-      code?: 'OUT_OF_STOCK' | 'PRICE_CHANGED' | 'ORDER_IN_PROGRESS';
+      code?: 'OUT_OF_STOCK' | 'PRICE_CHANGED' | 'ORDER_IN_PROGRESS' | 'TOO_MANY_OPEN_ORDERS';
       /** @description Món hết hàng, không đủ số lượng hoặc ngừng bán (khi OUT_OF_STOCK) */
       invalidItems?: {
         productId: string;
@@ -561,6 +653,42 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    /** @description Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy. */
+    EventInput: {
+      productId: string;
+      /** @enum {string} */
+      eventType: 'VIEW' | 'ADD_TO_CART';
+    };
+    /**
+     * @description Nguồn của danh sách, để web chọn tiêu đề widget:
+     *     `PERSONALIZED` (Dành cho bạn), `ALSO_BOUGHT` (Thường mua kèm),
+     *     `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016),
+     *     `NEWEST` (danh sách hàng bán chạy nhưng cửa hàng chưa đủ đơn nên xếp theo hàng mới;
+     *     web dùng tiêu đề trung tính, không ghi "bán chạy").
+     * @enum {string}
+     */
+    RecsSource: 'PERSONALIZED' | 'ALSO_BOUGHT' | 'BESTSELLER' | 'NEWEST';
+    /**
+     * @example {
+     *       "source": "ALSO_BOUGHT",
+     *       "items": [
+     *         {
+     *           "productId": "01J9XKPQ0000000000000001",
+     *           "name": "ASUS TUF Gaming GeForce RTX 4070",
+     *           "category": "gpu",
+     *           "brand": "ASUS",
+     *           "price": 15900000,
+     *           "stock": 12,
+     *           "status": "ACTIVE"
+     *         }
+     *       ]
+     *     }
+     */
+    RecsResult: {
+      source: components['schemas']['RecsSource'];
+      /** @description Đã sắp theo thứ hạng gợi ý, tối đa `limit` món; có thể rỗng */
+      items: components['schemas']['ProductSummary'][];
+    };
   };
   responses: {
     /**
@@ -589,7 +717,16 @@ export interface components {
       };
     };
   };
-  parameters: never;
+  parameters: {
+    /** @description Sản phẩm đang xem (trang chi tiết) hoặc món vừa thêm gần nhất (trang giỏ) */
+    RecsProductId: string;
+    /**
+     * @description Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
+     *     (giỏ khách nằm trên trình duyệt nên server không biết).
+     */
+    RecsExclude: string[];
+    RecsLimit: number;
+  };
   requestBodies: never;
   headers: never;
   pathItems: never;
@@ -1031,7 +1168,9 @@ export interface operations {
       /**
        * @description `OUT_OF_STOCK` có món hết hàng, không đủ số lượng hoặc ngừng bán, kèm `invalidItems` ·
        *     `PRICE_CHANGED` giá đã đổi, kèm `changedItems` · `ORDER_IN_PROGRESS` lần gửi trước
-       *     với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau
+       *     với cùng Idempotency-Key chưa xong, giữ nguyên khoá và thử lại sau ·
+       *     `TOO_MANY_OPEN_ORDERS` đang có 3 đơn PENDING hoặc CONFIRMED, không tạo đơn, không trừ kho
+       *     (ordering.md BR-14)
        */
       409: {
         headers: {
@@ -1102,6 +1241,157 @@ export interface operations {
       404: components['responses']['Problem'];
       /** @description `CANNOT_CANCEL` đơn đã SHIPPED, DELIVERED hoặc đã CANCELLED */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  recordEvent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EventInput'];
+      };
+    };
+    responses: {
+      /** @description Đã nhận sự kiện, không có body */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /**
+       * @description Body sai: thiếu trường, `eventType` khác `VIEW` và `ADD_TO_CART` (kể cả `PURCHASE`),
+       *     hoặc có trường lạ như `userId`, `timestamp`
+       */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      default: components['responses']['Problem'];
+    };
+  };
+  getAlsoBought: {
+    parameters: {
+      query: {
+        /** @description Sản phẩm đang xem (trang chi tiết) hoặc món vừa thêm gần nhất (trang giỏ) */
+        productId: components['parameters']['RecsProductId'];
+        /**
+         * @description Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
+         *     (giỏ khách nằm trên trình duyệt nên server không biết).
+         */
+        exclude?: components['parameters']['RecsExclude'];
+        limit?: components['parameters']['RecsLimit'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Danh sách gợi ý, có thể rỗng */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecsResult'];
+        };
+      };
+      /** @description Thiếu `productId`, `limit` ngoài 1–10 hoặc `exclude` quá 20 mã */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  getForYou: {
+    parameters: {
+      query?: {
+        /**
+         * @description Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
+         *     (giỏ khách nằm trên trình duyệt nên server không biết).
+         */
+        exclude?: components['parameters']['RecsExclude'];
+        limit?: components['parameters']['RecsLimit'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Danh sách gợi ý, có thể rỗng */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecsResult'];
+        };
+      };
+      /** @description `limit` ngoài 1–10 hoặc `exclude` quá 20 mã */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      default: components['responses']['Problem'];
+    };
+  };
+  getBestsellers: {
+    parameters: {
+      query?: {
+        category?: components['schemas']['ProductCategory'];
+        /**
+         * @description Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
+         *     (giỏ khách nằm trên trình duyệt nên server không biết).
+         */
+        exclude?: components['parameters']['RecsExclude'];
+        limit?: components['parameters']['RecsLimit'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Danh sách hàng bán chạy, có thể rỗng */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecsResult'];
+        };
+      };
+      /** @description `category` sai, `limit` ngoài 1–10 hoặc `exclude` quá 20 mã */
+      400: {
         headers: {
           [name: string]: unknown;
         };

@@ -2,6 +2,7 @@ import { App, Duration, Stack } from 'aws-cdk-lib';
 import { HttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { Code, Function as LambdaFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { describe, expect, it } from 'vitest';
 import type { ShopEnvironment } from '../lib/config.js';
 import { Monitoring } from '../lib/monitoring.js';
@@ -151,25 +152,83 @@ describe('Monitoring', () => {
     // Assert: 3 chu kỳ 5 phút liền để một lần khởi động lạnh không làm alarm kêu
     template.hasResourceProperties('AWS::CloudWatch::Alarm', {
       AlarmName: 'shop-dev-api-latency-p95',
-      MetricName: 'Latency',
-      ExtendedStatistic: 'p95',
-      Period: 300,
       EvaluationPeriods: 3,
       Threshold: 1000,
       TreatMissingData: 'notBreaching',
+      Metrics: Match.arrayWith([
+        Match.objectLike({
+          Id: 'p95',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ MetricName: 'Latency' }),
+            Period: 300,
+            Stat: 'p95',
+          }),
+        }),
+      ]),
     });
   });
 
-  it('preSignUpErrorsAlarm_firesOnFirstError', () => {
+  it('apiLatencyAlarm_ignoresPeriodsUnderTwentyRequests', () => {
     // Act
     const template = synth('test@example.com', dev);
 
-    // Assert: pre sign-up lỗi là không ai đăng ký được, và lỗi này không hiện ở 5xx của API
+    // Assert: lưu lượng thưa thì p95 chỉ là vài lần khởi động lạnh (staging 21/10)
+    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
+      AlarmName: 'shop-dev-api-latency-p95',
+      Metrics: Match.arrayWith([
+        Match.objectLike({ Expression: 'IF(requests >= 20, p95, 0)', ReturnData: true }),
+        Match.objectLike({
+          Id: 'requests',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ MetricName: 'Count' }),
+            Stat: 'Sum',
+          }),
+        }),
+      ]),
+    });
+  });
+
+  it('preSignUpErrorsAlarm_firesOnFirstErrorThatIsNotARejection', () => {
+    // Act
+    const template = synth('test@example.com', dev);
+
+    // Assert: pre sign-up lỗi là không ai đăng ký được, và lỗi này không hiện ở 5xx của API.
+    // Từ chối đăng ký (trùng username) cũng vào Errors nên trừ ra (staging 21/10)
     template.hasResourceProperties('AWS::CloudWatch::Alarm', {
       AlarmName: 'shop-dev-presignup-errors',
-      Namespace: 'AWS/Lambda',
-      MetricName: 'Errors',
       Threshold: 1,
+      Metrics: Match.arrayWith([
+        Match.objectLike({ Expression: 'FILL(errors, 0) - FILL(rejected, 0)', ReturnData: true }),
+        Match.objectLike({
+          Id: 'errors',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ Namespace: 'AWS/Lambda', MetricName: 'Errors' }),
+          }),
+        }),
+        Match.objectLike({
+          Id: 'rejected',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ Namespace: 'shop-dev', MetricName: 'PreSignUpRejected' }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  it('preSignUpRejectedFilter_countsOnlySignUpRejectedError', () => {
+    // Act
+    const template = synth('test@example.com', dev);
+
+    // Assert: dòng "Invoke Error" của runtime Node chứa errorType của lỗi ném ra
+    template.hasResourceProperties('AWS::Logs::MetricFilter', {
+      FilterPattern: '"Invoke Error" "SignUpRejectedError"',
+      MetricTransformations: [
+        Match.objectLike({
+          MetricNamespace: 'shop-dev',
+          MetricName: 'PreSignUpRejected',
+          MetricValue: '1',
+        }),
+      ],
     });
   });
 
@@ -239,5 +298,39 @@ describe('Monitoring', () => {
     expect(body).toContain('Latency');
     expect(body).toContain('\\"label\\":\\"catalog\\"'); // mỗi Lambda một đường, có nhãn tên module
     expect(body).toContain('ConcurrentExecutions'); // so với giới hạn 1.000 của tài khoản
+  });
+
+  it('dashboard_showsWorkerAndOrdersQueue_withoutNewAlarm_whenDev', () => {
+    // Arrange: như synth() nhưng thêm worker và hàng đợi đơn
+    const app = new App();
+    const stack = new Stack(app, 'TestStack', { env: { region: 'ap-southeast-1' } });
+    const fakeFunction = (id: string) =>
+      new LambdaFunction(stack, id, {
+        runtime: Runtime.NODEJS_24_X,
+        handler: 'index.handler',
+        code: Code.fromInline('exports.handler = async (e) => e;'),
+        timeout: Duration.seconds(3),
+      });
+    new Monitoring(stack, 'Monitoring', {
+      shopEnv: dev,
+      httpApi: new HttpApi(stack, 'Api'),
+      preSignUpFn: fakeFunction('PreSignUp'),
+      apiFunctions: { catalog: fakeFunction('Catalog') },
+      workerFunctions: { 'order-processor': fakeFunction('Worker') },
+      ordersQueue: new Queue(stack, 'OrdersQueue'),
+      ordersDeadLetterQueue: new Queue(stack, 'OrdersDlq'),
+    });
+
+    // Act
+    const template = Template.fromStack(stack);
+
+    // Assert: runbook sqs-backlog đọc các widget này; dev vẫn chỉ 3 alarm như trước
+    const body = JSON.stringify(
+      Object.values(template.findResources('AWS::CloudWatch::Dashboard'))[0],
+    );
+    expect(body).toContain('\\"label\\":\\"order-processor\\"');
+    expect(body).toContain('ApproximateAgeOfOldestMessage');
+    expect(body).toContain('\\"label\\":\\"DLQ\\"');
+    template.resourceCountIs('AWS::CloudWatch::Alarm', 3);
   });
 });

@@ -230,7 +230,7 @@ shop-ai/
 ├─ apps/web/                  React + Vite + TypeScript, TanStack Query, React Router
 ├─ services/api/src/modules/  catalog · cart · ordering · recommendation · events · admin
 ├─ services/api/src/shared/   logger, tracer, lỗi chuẩn, http, config, idempotency
-├─ services/workers/          order-processor (SQS) · cost-breaker (Scheduler)
+├─ services/workers/          cost-breaker (Scheduler); order-processor (SQS) ở module ordering
 ├─ data/                      Python: sinh dữ liệu · mô hình gợi ý · pipeline mỗi đêm · kiểm tra dữ liệu
 ├─ infra/                     CDK TypeScript: các stack + cấu hình theo môi trường
 ├─ contracts/openapi.yaml     nguồn sự thật của API

@@ -6,9 +6,9 @@
 > mỗi module một Lambda, một bảng DynamoDB riêng, **cấm import code module khác**,
 > chỉ nói chuyện qua port hoặc sự kiện SQS.
 >
-> **Route `/events` chưa tồn tại trong `contracts/openapi.yaml` tại thời điểm viết
-> tài liệu này** — đã kiểm tra trực tiếp, không phải suy đoán. Cần thêm vào contract
-> trước khi có code thật.
+> Cập nhật 22/10/2026: route `POST /api/v1/events` đã có trong contract (#174), code module
+> ở `services/api/src/modules/events` (#200), hạ tầng ở `infra/lib/api-stack.ts` (`addEvents`).
+> Cập nhật 25/10/2026: consumer `PURCHASE` (`purchaseLambda.ts`, `addPurchaseConsumer`).
 
 ## 1. Loại sự kiện
 
@@ -23,23 +23,27 @@
 API phải từ chối. Lý do: nếu cho phép, ai cũng tạo được sự kiện mua giả để đẩy sản
 phẩm lên gợi ý (xem threat model, mục đầu độc dữ liệu).
 
-**`PURCHASE` được tạo thế nào — đây là câu hỏi mở, chưa có đáp án, đang hỏi thẳng mình.**
-`docs/business/ordering.md` (Hoàng) mô tả luồng bất đồng bộ hiện tại: API tạo đơn
-`PENDING` → đẩy message `{orderId, userId, correlationId}` vào SQS → worker
-`order-processor` chuyển `PENDING → CONFIRMED` (ghi có điều kiện), gửi email qua SES,
-báo admin qua SNS. **Luồng này hiện không hề gọi tới module `events`.**
+**`PURCHASE` được tạo thế nào (nhóm chốt 17/10 và 21/10/2026):** worker `order-processor`
+của `ordering`, sau khi chuyển đơn sang `CONFIRMED`, gửi tin vào SNS topic `order-confirmed`
+(An dựng). Hàng đợi SQS của `events` (có DLQ) nghe topic này; consumer của `events` ghi mỗi
+món trong đơn thành một sự kiện `PURCHASE`. `ordering` không ghi thẳng bảng `events`, đúng
+ADR-0009. Nội dung tin: `{ orderId, userId, confirmedAt, items: [{ productId, quantity }] }`,
+không có `shippingAddress` (ordering.md, luồng SQS bước 2.3). Consumer dùng `confirmedAt`
+làm thời điểm sự kiện, băm `userId` như mục 2, và lưu thêm `orderId`, `quantity` để pipeline
+gom món theo đơn cho luật mua kèm.
 
-`docs/business/dynamodb-design.md` có mục "Câu hỏi cần An và Nhân góp ý", câu 4 ghi
-nguyên văn: *"Bảng `events` (Nhân) — dùng chung hay bảng riêng? Ảnh hưởng tới IAM role
-của module ordering."* — câu này hỏi trực tiếp mình, **chưa trả lời**.
+**Consumer `PURCHASE` (25/10/2026):** Lambda riêng `EventsPurchaseFunction` đọc hàng đợi SQS
+của `events` (raw message, không có envelope SNS), mỗi lần tối đa 10 tin.
 
-**Đề xuất (của mình, chưa chốt, cần mang ra hỏi An/Hoàng):** `order-processor` sau khi
-ghi `CONFIRMED` thành công thì bắn thêm một bản tin — tận dụng đúng cơ chế SNS đang có
-sẵn (worker đã gửi SNS báo admin ở cùng bước), thêm `events` làm một subscriber thứ hai
-của cùng topic hoặc một topic riêng. Lý do chọn hướng này thay vì gọi hàm trực tiếp:
-đúng tinh thần ADR-0009 (module không import lẫn nhau), và tái dùng hạ tầng nhắn tin đã
-có thay vì thêm cơ chế mới. **Chưa kiểm tra hướng này có khớp với cách Hoàng đã dựng
-SNS/SQS thật hay không** — cần hỏi trước khi code.
+- Mỗi sản phẩm trong đơn thành một dòng; cùng sản phẩm nhiều dòng thì cộng `quantity`.
+- `eventId` của `PURCHASE` là `<orderId>#<productId>`, không ngẫu nhiên. SQS có thể giao một tin
+  nhiều lần; cùng tin thì cùng khoá, PutItem có điều kiện `attribute_not_exists` chặn lần ghi thứ hai
+  và consumer coi như đã xong, không sinh lượt mua giả.
+- Tin không phải JSON hoặc sai schema (thiếu `orderId`, `items` rỗng, `quantity` không phải số
+  nguyên dương, `confirmedAt` không phải ISO 8601) thì báo lỗi riêng tin đó (`batchItemFailures`),
+  không ghi gì; sau 5 lần SQS chuyển vào DLQ, giữ 14 ngày để xem lại.
+- Ghi lỗi (DynamoDB, SSM) cũng báo lỗi riêng tin đó để SQS giao lại; tin khác trong lô vẫn ghi.
+- Log chỉ có `messageId`, `orderId` và số dòng ghi được, không có `userId` hay `userIdHash` (mục 5).
 
 ## 2. Ẩn danh `userId`
 
@@ -51,6 +55,9 @@ SNS/SQS thật hay không** — cần hỏi trước khi code.
   thấy `userIdHash`, còn `ordering` vẫn thấy `userId` thật.
 - Trước khi ghi, tính `HMAC(key, userId)` và lưu giá trị băm này làm `userIdHash`.
 - Khoá HMAC lưu ở SSM Parameter Store (SecureString), không hardcode trong code.
+- Cách băm (HMAC-SHA256, khoá dạng chuỗi UTF-8, đầu ra hex chữ thường 64 ký tự) nằm ở một chỗ:
+  `services/api/src/shared/userIdHash.ts`. Module `recommendation` dùng cùng hàm đó để tra
+  `FOR_YOU#<userIdHash>`, nên hai bên luôn ra cùng giá trị.
 - Hệ quả: nếu cần tra một user cụ thể (ví dụ phục vụ yêu cầu xoá dữ liệu), phải tính
   lại HMAC từ `userId` thật + khoá, chứ không tra ngược được từ `userIdHash`.
 
@@ -58,12 +65,12 @@ SNS/SQS thật hay không** — cần hỏi trước khi code.
 
 | Trường | Ghi chú |
 |---|---|
-| `eventId` | Sinh tự động |
+| `eventId` | ULID do server sinh; riêng `PURCHASE` là `<orderId>#<productId>` (mục 1) |
 | `userIdHash` | HMAC, không phải `userId` thật |
-| `itemId` | Sản phẩm liên quan |
+| `productId` | Sản phẩm liên quan, cùng tên với API |
 | `eventType` | `VIEW` \| `ADD_TO_CART` \| `PURCHASE` |
-| `timestamp` | **Do server đặt**, không nhận từ client (tránh client gửi giờ giả) |
-| `source` | Tuỳ chọn: web, mobile... |
+| `timestamp` | **Do server đặt**, không nhận từ client (tránh client gửi giờ giả); `PURCHASE` lấy `confirmedAt` của ordering |
+| `orderId`, `quantity` | Chỉ có ở `PURCHASE` |
 
 ## 4. Dùng để làm gì
 
@@ -78,7 +85,7 @@ SNS/SQS thật hay không** — cần hỏi trước khi code.
 
 ## 6. Thật sự chưa biết hoặc chưa trả lời (đã kiểm tra nguồn, không phải đoán)
 
-- [ ] **Câu hỏi 4 trong `dynamodb-design.md` đang chờ mình trả lời:** `events` dùng chung hay bảng riêng? (Tên bảng `events` đã chốt sẵn trong ADR-0012 — câu hỏi ở đây là về IAM/kết nối với `ordering`, không phải về tên bảng.) Mục trên là đề xuất của mình, cần mang ra bàn với An/Hoàng, không tự quyết một mình vì ảnh hưởng tới IAM role của `ordering`.
-- [ ] Route API cụ thể cho `VIEW`/`ADD_TO_CART` (đường dẫn, format request/response) — **đã kiểm tra `contracts/openapi.yaml` ngày 09/10/2026 (bản mới nhất, sau khi `git pull`), chưa có**. Cần thêm vào contract, nhiều khả năng do mình đề xuất vì là chủ module `events`.
-- [ ] Khoá chính/GSI của bảng `events` trên DynamoDB — ADR-0012 ghi "bảng chi tiết sẽ chốt khi có nghiệp vụ", tức **xác nhận chưa ai thiết kế**, không phải mình bỏ sót.
+- [x] Câu hỏi 4 trong `dynamodb-design.md`: bảng `events` riêng; `ordering` báo qua SNS topic `order-confirmed` (chốt 17/10 và 21/10/2026, mục 1).
+- [x] Route API cho `VIEW`/`ADD_TO_CART`: nhóm chốt ngày 17/10/2026 là `POST /api/v1/events`, bắt buộc đăng nhập, body `{ productId, eventType }`, trả 202. Xem `recordEvent` trong `contracts/openapi.yaml`.
+- [x] Khoá của bảng `events`: `userIdHash` + `eventKey`, TTL 90 ngày (dynamodb-design.md, #200). GSI theo `productId` làm ở tuần 5.
 - [ ] Khoá HMAC: có xoay khoá định kỳ không? Không ADR nào nhắc tới — nếu có xoay khoá, cần kế hoạch xử lý dữ liệu cũ.

@@ -1,6 +1,6 @@
 # Runbook: Lambda pre sign-up lỗi
 
-Alarm: `<tiền tố>-presignup-errors` · Ngưỡng: ≥ 1 lỗi trong 5 phút · Người trực: An
+Alarm: `<tiền tố>-presignup-errors` · Ngưỡng: ≥ 1 lỗi trong 5 phút, không tính lần từ chối đăng ký (`SignUpRejectedError`: trùng hoặc sai luật username) · Người trực: An
 
 Lambda pre sign-up do **Cognito** gọi mỗi lần có người đăng ký, để chặn trùng username. Nó lỗi thì **không ai đăng ký được**, và lỗi này **không hiện ở alarm 5xx** vì không đi qua API Gateway.
 

@@ -19,12 +19,20 @@ export interface ApiResponse {
   body: unknown;
 }
 
-/** Gọi /api/v1/...; trả status, header cần kiểm và body đã parse (null khi rỗng hoặc không phải JSON) */
+/**
+ * Gọi /api/v1/...; trả status, header cần kiểm và body đã parse (null khi rỗng hoặc không phải JSON).
+ * `headers` cho header riêng của từng API, vd. Idempotency-Key khi đặt hàng.
+ */
 export async function call(
   path: string,
-  { method = 'GET', token, body }: { method?: string; token?: string; body?: unknown } = {},
+  {
+    method = 'GET',
+    token,
+    body,
+    headers: extraHeaders,
+  }: { method?: string; token?: string; body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<ApiResponse> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...extraHeaders };
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
@@ -123,4 +131,29 @@ export interface CartItem {
 export interface Cart {
   items: CartItem[];
   totalAmount: number;
+}
+
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+
+export interface OrderSummary {
+  orderId: string;
+  status: OrderStatus;
+  totalAmount: number;
+  itemCount: number;
+  createdAt: string;
+}
+
+export interface OrderList {
+  items: OrderSummary[];
+  nextCursor?: string;
+}
+
+export interface Order {
+  orderId: string;
+  status: OrderStatus;
+  items: { productId: string; name: string; price: number; quantity: number }[];
+  totalAmount: number;
+  shippingFee: number;
+  shippingAddress: { fullName: string; phone: string; address: string; province: string };
+  paymentMethod: string;
 }

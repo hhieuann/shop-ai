@@ -1,0 +1,159 @@
+import type { EmailContent, OrderConfirmedEvent } from './domain/notification.js';
+import type { Order, OrderSummary, ProductSnapshot } from './domain/order.js';
+
+/**
+ * Thông tin sản phẩm mới nhất của module catalog (tên, giá, tồn kho, trạng thái).
+ * Ordering không import code của catalog (ADR-0009); adapter đọc bảng products bằng
+ * BatchGetItem, chỉ đọc (ADR-0017, sửa 24/10).
+ */
+export interface ProductCatalog {
+  /** Sản phẩm không còn trong catalog thì không có trong Map trả về */
+  findMany(productIds: readonly string[]): Promise<Map<string, ProductSnapshot>>;
+}
+
+/**
+ * Một dòng giỏ đúng như bảng carts của module cart lưu. Ordering không đọc nghĩa các trường,
+ * chỉ giữ nguyên để ghi lại các dòng chưa đặt (ADR-0017: cart đổi schema thì sửa cả ordering).
+ */
+export interface CartLineRecord {
+  readonly productId: string;
+  readonly quantity: number;
+  readonly addedPrice: number;
+  readonly addedAt: string;
+}
+
+/** Giỏ đọc từ bảng carts kèm phiên bản; `version` null khi người này chưa có giỏ */
+export interface StoredCart {
+  readonly lines: readonly CartLineRecord[];
+  readonly version: string | null;
+}
+
+/** Đọc giỏ của module cart (GetItem, ADR-0017) */
+export interface CartReader {
+  get(userId: string): Promise<StoredCart>;
+}
+
+/** Một lần ghi giao dịch đặt hàng (dynamodb-design.md, giao dịch đặt hàng, n + 4 thao tác) */
+export interface PlaceOrderCommand {
+  readonly order: Order;
+  readonly idempotencyKey: string;
+  readonly payloadHash: string;
+  /** Epoch giây hết hạn của item đánh dấu `#KEY#<idempotencyKey>` */
+  readonly markerExpiresAt: number;
+  /** Giỏ sau khi bỏ món đã đặt và phiên bản lúc đọc; null khi người này chưa có giỏ */
+  readonly cart: {
+    readonly remainingLines: readonly CartLineRecord[];
+    readonly expectedVersion: string;
+  } | null;
+}
+
+/** Kết quả ghi: đơn mới, hoặc item đánh dấu đã có (đơn đã tạo ở lần gọi trước với cùng khoá) */
+export type PlaceOrderResult =
+  | { readonly kind: 'created' }
+  | { readonly kind: 'existing'; readonly orderId: string; readonly payloadHash: string };
+
+/**
+ * Bảng orders của ordering. `place` ghi đơn, trừ kho, bỏ món khỏi giỏ, tăng bộ đếm `#OPEN` và
+ * ghi item đánh dấu trong một giao dịch. Lỗi nghiệp vụ: OutOfStockError, PriceChangedError,
+ * TooManyOpenOrdersError; giỏ đổi phiên bản giữa lúc đọc và ghi: CartChangedError.
+ */
+export interface OrderStore {
+  place(command: PlaceOrderCommand): Promise<PlaceOrderResult>;
+  get(userId: string, orderId: string): Promise<Order | null>;
+}
+
+/** Một trang lịch sử đơn; `hasMore` true khi sau đơn cuối trang còn đơn cũ hơn */
+export interface OrderHistoryPage {
+  readonly orders: readonly OrderSummary[];
+  readonly hasMore: boolean;
+}
+
+/**
+ * Lịch sử đơn của một người trong bảng orders, mới nhất trước (dynamodb-design.md, Q2).
+ * Không lẫn item `#OPEN`, `#KEY#…`; `afterOrderId` là đơn cuối của trang trước.
+ */
+export interface OrderHistory {
+  listByUser(
+    userId: string,
+    page: { readonly limit: number; readonly afterOrderId?: string },
+  ): Promise<OrderHistoryPage>;
+}
+
+/** Một lần ghi giao dịch huỷ đơn (dynamodb-design.md, huỷ đơn) */
+export interface CancelOrderCommand {
+  /** Đơn vừa đọc; trạng thái lúc ghi phải còn đúng `order.status` */
+  readonly order: Order;
+  readonly now: string;
+}
+
+/**
+ * Huỷ đơn trong bảng orders: đổi `CANCELLED`, hoàn kho từng món, giảm `#OPEN` khi đơn đang mở,
+ * trong một giao dịch (ordering.md BR-12). `statusChanged` khi trạng thái đã đổi kể từ lúc đọc.
+ */
+export interface OrderCancellation {
+  cancel(command: CancelOrderCommand): Promise<'cancelled' | 'statusChanged'>;
+}
+
+/**
+ * Worker xác nhận đơn (ordering.md bước 2.1): `PENDING → CONFIRMED` bằng ghi có điều kiện.
+ * `notPending` khi đơn đã đổi trạng thái (đã xác nhận ở lần giao trước, hoặc khách vừa huỷ).
+ */
+export interface OrderConfirmation {
+  confirm(command: {
+    readonly order: Order;
+    readonly now: string;
+  }): Promise<'confirmed' | 'notPending'>;
+}
+
+/** Gửi tin `order-confirmed` lên SNS (ordering.md bước 2.3); consumer events chống trùng theo đơn, món */
+export interface OrderEvents {
+  publishConfirmed(event: OrderConfirmedEvent): Promise<void>;
+}
+
+/** Email khách theo Cognito `sub` (An chốt 25/10); không lưu, không log. null khi không tìm thấy */
+export interface CustomerDirectory {
+  emailOf(userId: string): Promise<string | null>;
+}
+
+/** Lý do SES không gửi thư mà thử lại cũng vô ích: không vào DLQ, chỉ log warn + metric */
+export type EmailRejectedReason =
+  'not_verified' | 'throttled' | 'sending_disabled' | 'no_recipient';
+
+export type SendEmailResult =
+  | { readonly status: 'sent' }
+  | { readonly status: 'rejected'; readonly reason: EmailRejectedReason };
+
+/** Gửi thư qua SES. Lỗi tạm (mạng, 5xx) thì ném để SQS giao lại tin */
+export interface Mailer {
+  send(to: string, content: EmailContent): Promise<SendEmailResult>;
+}
+
+/** Metric của bước gửi thư; tách khỏi OrderMetrics để API ordering không phải hiện thực */
+export interface EmailMetrics {
+  emailRejected(reason: EmailRejectedReason): void;
+}
+
+/** Tin gửi worker order-processor (ordering.md, luồng SQS); không có dữ liệu cá nhân (O8) */
+export interface OrderMessage {
+  readonly orderId: string;
+  readonly userId: string;
+  readonly type: 'PLACED' | 'CANCELLED';
+  readonly correlationId: string;
+}
+
+export interface OrderQueue {
+  enqueue(message: OrderMessage): Promise<void>;
+}
+
+/** Metric nghiệp vụ; alarm `order-enqueue-failed` chỉ ở prod */
+export interface OrderMetrics {
+  enqueueFailed(): void;
+}
+
+/** Giỏ vừa bị request khác ghi (điều kiện `version` của giao dịch sai): đọc lại giỏ, thử lại */
+export class CartChangedError extends Error {
+  constructor(readonly userId: string) {
+    super(`Giỏ của ${userId} vừa đổi trong lúc đặt hàng`);
+    this.name = 'CartChangedError';
+  }
+}

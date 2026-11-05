@@ -123,10 +123,12 @@ export function AccountMenu() {
   const doSignOut = async () => {
     await signOut();
     // Đăng xuất là hết phiên trên trình duyệt này: giỏ khách rỗng, không để lại giỏ và đơn của
-    // người vừa dùng (account.md BR-09). Danh sách sản phẩm vẫn giữ trong bộ nhớ đệm.
+    // người vừa dùng (account.md BR-09). Gợi ý "Dành cho bạn" cũng là dữ liệu riêng của người đó.
+    // Danh sách sản phẩm vẫn giữ trong bộ nhớ đệm.
     clearCartSession(queryClient);
     clearCheckoutItems();
     queryClient.removeQueries({ queryKey: queryKeys.orders.all });
+    queryClient.removeQueries({ queryKey: queryKeys.recs.all });
     close(true);
     if (isSignedInOnly(location.pathname)) navigate('/', { replace: true });
   };

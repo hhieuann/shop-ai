@@ -2,17 +2,21 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
+import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
 import { STATUS_LABEL, type OrderSummary } from '../types';
 import { formatVnd } from '../../../shared/lib/format';
 
 // Bản tối thiểu để link /orders không còn ra 404; phân trang (nextCursor) làm ở tuần 4
 export function OrderListPage() {
+  // Chưa đăng nhập thì sang /login như /checkout, không gọi API rồi hiện lỗi (#316)
+  const session = useRequireSignIn();
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.orders.list(),
     queryFn: () => api.get<{ items: OrderSummary[]; nextCursor?: string }>('/orders'),
+    enabled: session === 'signedIn',
   });
 
-  if (isLoading) return <p>Đang tải đơn hàng...</p>;
+  if (session !== 'signedIn' || isLoading) return <p>Đang tải đơn hàng...</p>;
   if (isError) return <p>Không thể tải đơn hàng.</p>;
 
   const orders = data?.items ?? [];
