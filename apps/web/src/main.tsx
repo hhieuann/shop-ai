@@ -1,10 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from 'react-router-dom';
+import { queryClient } from './queryClient';
 import { router } from './router';
-import { shouldRetry } from './shared/api/retry';
 // Font Inter tự host (design-system §3): 4 độ đậm đang dùng, dải chữ Latin và tiếng Việt.
 // Trình duyệt chỉ tải file của độ đậm và dải ký tự trang dùng tới (unicode-range); font-display: swap
 import '@fontsource/inter/latin-400.css';
@@ -17,15 +17,6 @@ import '@fontsource/inter/latin-700.css';
 import '@fontsource/inter/vietnamese-700.css';
 import './styles/tokens.css';
 import './styles/base.css';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000, // 60 giây — phù hợp với cache CloudFront
-      retry: shouldRetry, // lỗi 4xx báo ngay, không gọi lại (shared/api/retry.ts)
-    },
-  },
-});
 
 // Nạp Cognito (Amplify) ở gói riêng, không chặn trang hiện lên. Có /config.json thì token.ts tự báo đăng nhập đã đổi.
 void import('./shared/auth/cognito').then(({ initAuth }) => initAuth());

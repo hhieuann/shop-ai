@@ -1,7 +1,12 @@
-/* Khung chờ đúng cỡ thẻ (design-system §9.12) */
+/*
+ * Khung chờ đúng cỡ thẻ (design-system §9.12): ô vuông theo bề rộng cột (như ô ảnh của ProductCard)
+ * cộng phần chữ 96px, từ 1280px là 80px (giá và nhãn cùng hàng). Cao bằng thẻ thật nên dữ liệu về
+ * không làm khối co lại, các khối bên dưới không bị kéo lên (CLS, #367)
+ */
 .skeleton {
-  height: 360px;
-  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl);
   background: linear-gradient(
     90deg,
     var(--bg-surface-pressed) 0%,
@@ -11,6 +16,19 @@
   );
   background-size: 300% 100%;
   animation: shimmer 1.6s linear infinite;
+}
+.skeleton::before {
+  content: '';
+  aspect-ratio: 1;
+}
+.skeleton::after {
+  content: '';
+  height: 96px;
+}
+@media (min-width: 1280px) {
+  .skeleton::after {
+    height: 80px;
+  }
 }
 @keyframes shimmer {
   from {

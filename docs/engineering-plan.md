@@ -47,13 +47,15 @@ Tài liệu đi kèm:
 | API đọc | p95 ≤ 300 ms ở 200 người ảo; ≤ 80 ms khi trúng cache CloudFront | k6, CloudWatch |
 | API ghi (đặt hàng) | p95 ≤ 800 ms; việc chậm như gửi email đẩy sang SQS | k6, X-Ray |
 | Khởi động lạnh | Init ≤ 800 ms với Node.js 24, arm64, gói code dưới 1 MB | CloudWatch Init Duration |
-| Web | Lighthouse Performance ≥ 90; LCP ≤ 2,5 s trên 4G; JS ban đầu ≤ 250 KB gzip | Lighthouse |
+| Web | Lighthouse Performance ≥ 90 (điện thoại và máy tính); LCP ≤ 2,5 s; CLS ≤ 0,1 ở mọi lần đo; JS ban đầu ≤ 250 KB gzip | Lighthouse CLI 13.6.0, cách đo dưới bảng |
 | Sẵn sàng | 99,5% trong giai đoạn demo; lỗi 5xx dưới 1% | CloudWatch |
 | Bảo mật | Không lỗ hổng High/Critical đang mở; luồng chính đạt OWASP ASVS mức 1 | Các lượt quét, checklist |
 | Chất lượng mã | Coverage ≥ 80% cho domain và application; 0 lỗi lint | Vitest, pytest |
 | Chi phí | Dưới $15 cả dự án; có chỉ số chi phí trên 1.000 đơn | Cost Explorer theo tag |
 | Phục hồi | RPO ≤ 5 phút, RTO ≤ 1 giờ cho dữ liệu đơn hàng | Diễn tập tuần 6 |
 | Vận hành | Mọi alarm có runbook; khắc phục sự cố dưới 1 giờ | Runbook, DORA |
+
+**Cách đo Lighthouse (chốt 05/11/2026, #346):** Lighthouse CLI 13.6.0, chế độ điện thoại mặc định (mô phỏng mạng chậm và CPU ×4) và chế độ máy tính, trình duyệt sạch không đăng nhập, đo trên dev CloudFront, tắt app khác trên máy đo. Trang chủ, danh sách, chi tiết, mỗi trang 5 lần, lấy trung vị cho Performance và LCP; CLS xét từng lần. Ghi commit đã đo. Mốc trên gắn với bản 13.6.0 (bản 12.8 cho điểm thấp hơn khoảng 10 điểm trên cùng trang); đổi bản Lighthouse thì đo lại cả develop.
 
 Các con số này sẽ chỉnh khi có nghiệp vụ, nhất là số người dùng và số đơn giả định cho demo **(chờ nghiệp vụ)**.
 
