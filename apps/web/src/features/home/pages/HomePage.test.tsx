@@ -99,8 +99,12 @@ describe('HomePage', () => {
 
   it('4 khối sản phẩm theo thứ tự, khối gợi ý "Đang được mua nhiều" đứng đầu; khối thường có link Xem tất cả', async () => {
     renderHome();
-    // Khối gợi ý hiện sau khi biết khách chưa đăng nhập
-    await screen.findByRole('heading', { level: 2, name: 'Đang được mua nhiều' });
+    // Tiêu đề khối gợi ý hiện sau khi có dữ liệu API (#333); tìm theo role trên cả trang chậm trên CI
+    await screen.findByRole(
+      'heading',
+      { level: 2, name: 'Đang được mua nhiều' },
+      { timeout: 5000 },
+    );
     const titles = screen
       .getAllByRole('heading', { level: 2 })
       .map((h) => h.textContent)
@@ -113,7 +117,7 @@ describe('HomePage', () => {
       '/products?category=laptop',
     );
     expect(await within(laptop).findAllByRole('article')).toHaveLength(12);
-  });
+  }, 15_000);
 
   it('khách chưa đăng nhập: link Tạo tài khoản mang state.from là trang chủ', async () => {
     const user = userEvent.setup();
