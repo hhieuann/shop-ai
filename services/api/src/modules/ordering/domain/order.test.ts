@@ -5,7 +5,10 @@ import {
   canCancel,
   checkItems,
   isOpen,
+  ORDER_STATUSES,
+  previousStatus,
   toSummary,
+  type OrderStatus,
   type ProductSnapshot,
   type RequestedItem,
   type ShippingAddress,
@@ -231,5 +234,24 @@ describe('trạng thái đơn', () => {
   ] as const)('canCancel_%s_customer%s_admin%s', (status, customer, admin) => {
     expect(canCancel(status, 'customer')).toBe(customer);
     expect(canCancel(status, 'admin')).toBe(admin);
+  });
+});
+
+describe('admin chuyển trạng thái (BR-15)', () => {
+  it.each<['SHIPPED' | 'DELIVERED', OrderStatus]>([
+    ['SHIPPED', 'CONFIRMED'],
+    ['DELIVERED', 'SHIPPED'],
+  ])('previousStatus_%s_onlyFrom_%s', (to, from) => {
+    // Chỉ đi tiếp một bước: đúng một trạng thái nguồn, mọi trạng thái khác đều sai
+    expect(previousStatus(to)).toBe(from);
+    const others = ORDER_STATUSES.filter((status) => status !== from);
+    expect(others).not.toContain(previousStatus(to));
+  });
+
+  it('previousStatus_neverFromCancelledOrPending', () => {
+    // Đơn đã huỷ hoặc chưa xác nhận không bao giờ được admin chuyển tiếp
+    const sources = (['SHIPPED', 'DELIVERED'] as const).map(previousStatus);
+    expect(sources).not.toContain('CANCELLED');
+    expect(sources).not.toContain('PENDING');
   });
 });

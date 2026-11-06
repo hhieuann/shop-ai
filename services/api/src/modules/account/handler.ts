@@ -1,4 +1,5 @@
 import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
+import { parseGroups } from '../../shared/auth/claims.js';
 import { json, problem, type HttpResult } from '../../shared/http/response.js';
 
 /** Người đang đăng nhập, lấy từ token mà JWT authorizer của HTTP API đã kiểm chữ ký và hạn dùng. */
@@ -7,16 +8,6 @@ export interface Me {
   /** Có khi web gửi ID token; access token của Cognito không chứa email */
   readonly email?: string;
   readonly groups: string[];
-}
-
-/** HTTP API đưa claim mảng `cognito:groups` sang dạng chuỗi "[admin customer]". */
-function parseGroups(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw.map(String);
-  if (typeof raw !== 'string') return [];
-  return raw
-    .replace(/^\[|\]$/g, '')
-    .split(/[\s,]+/)
-    .filter(Boolean);
 }
 
 /** GET /api/v1/me. Không đọc dữ liệu: mọi thông tin đã nằm trong token. */

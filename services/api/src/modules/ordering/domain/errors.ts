@@ -75,3 +75,26 @@ export class CannotCancelError extends ConflictError {
     super(`Đơn ${orderId} không huỷ được ở trạng thái hiện tại`, { code: 'CANNOT_CANCEL' });
   }
 }
+
+/** BR-15: admin chuyển sai bước, đi ngược, hoặc đơn vừa bị đổi → 409 kèm trạng thái hiện tại. */
+export class InvalidStatusTransitionError extends ConflictError {
+  constructor(
+    readonly orderId: string,
+    readonly currentStatus: string,
+  ) {
+    super(`Đơn ${orderId} đang ở trạng thái ${currentStatus}, không chuyển được`, {
+      code: 'INVALID_STATUS_TRANSITION',
+      extensions: { currentStatus },
+    });
+  }
+}
+
+/**
+ * Admin tìm đơn qua index `byStatus` mà không thấy → 404. Index cập nhật trễ, nên đơn vừa đổi
+ * trạng thái có thể chưa có ở đó: câu báo gợi ý thử lại sau.
+ */
+export class AdminOrderNotFoundError extends NotFoundError {
+  constructor(readonly orderId: string) {
+    super(`Không tìm thấy đơn ${orderId}. Nếu đơn vừa đổi trạng thái, thử lại sau ít giây.`);
+  }
+}

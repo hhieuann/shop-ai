@@ -26,9 +26,14 @@ import {
   toSummary,
   type Order,
   type OrderItem,
+  type OrderStatus,
 } from '../domain/order.js';
 import {
   CartChangedError,
+  type AdminOrderPage,
+  type AdminOrderRecord,
+  type AdminOrders,
+  type AdvanceStatusCommand,
   type CancelOrderCommand,
   type OrderCancellation,
   type OrderConfirmation,
@@ -43,6 +48,10 @@ import {
 export const OPEN_COUNTER_SK = '#OPEN';
 /** Tiền tố SK của item đánh dấu chống tạo đơn trùng (dynamodb-design.md) */
 export const MARKER_SK_PREFIX = '#KEY#';
+/** GSI đơn theo trạng thái (infra/lib/api-stack.ts, ORDERS_BY_STATUS_INDEX; dynamodb-design.md Q3) */
+export const BY_STATUS_INDEX = 'byStatus';
+/** Cột admin đọc từ index: index chiếu ALL nên có cả địa chỉ, chỉ lấy đúng các cột này (O8) */
+const ADMIN_PROJECTION = 'orderId, userId, #status, #items, totalAmount, createdAt';
 
 const orderSchema = z.object({
   orderId: z.string(),
@@ -78,6 +87,9 @@ const historySchema = orderSchema.pick({
   createdAt: true,
 });
 
+/** Cột admin đọc từ index `byStatus`: như lịch sử đơn, thêm `userId` để ghi theo khoá chính */
+const adminSchema = historySchema.extend({ userId: z.string() });
+
 export interface DynamoOrderStoreOptions {
   /** Hai giao dịch cùng đụng một item (vd. 2 request song song tới `#OPEN`) thì thử lại từng này lần */
   readonly maxConflictRetries?: number;
@@ -92,7 +104,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * `place` ghi một TransactWriteItems n + 4 thao tác trên products, orders, carts (ADR-0017).
  */
 export class DynamoOrderStore
-  implements OrderStore, OrderHistory, OrderCancellation, OrderConfirmation
+  implements OrderStore, OrderHistory, OrderCancellation, OrderConfirmation, AdminOrders
 {
   private readonly maxConflictRetries: number;
   private readonly baseDelayMs: number;
@@ -142,6 +154,109 @@ export class DynamoOrderStore
     );
     const orders = Items.slice(0, limit).map((item) => toSummary(historySchema.parse(item)));
     return { orders, hasMore: Items.length > limit };
+  }
+
+  /**
+   * Admin xem đơn theo trạng thái, mới nhất trước. Trang sau dùng `orderId < đơn cuối trang trước`
+   * thay vì ExclusiveStartKey, nên cursor chỉ cần orderId, không mang userId của khách.
+   */
+  async listByStatus(
+    status: OrderStatus,
+    { limit, beforeOrderId }: { readonly limit: number; readonly beforeOrderId?: string },
+  ): Promise<AdminOrderPage> {
+    const { Items = [] } = await this.db.send(
+      new QueryCommand({
+        TableName: this.tables.orders,
+        IndexName: BY_STATUS_INDEX,
+        KeyConditionExpression: beforeOrderId
+          ? '#status = :status AND orderId < :before'
+          : '#status = :status',
+        ExpressionAttributeNames: { '#status': 'status', '#items': 'items' },
+        ExpressionAttributeValues: {
+          ':status': status,
+          ...(beforeOrderId ? { ':before': beforeOrderId } : {}),
+        },
+        ProjectionExpression: ADMIN_PROJECTION,
+        ScanIndexForward: false,
+        Limit: limit + 1,
+      }),
+    );
+    const orders = Items.slice(0, limit).map((item) => toSummary(adminSchema.parse(item)));
+    return { orders, hasMore: Items.length > limit };
+  }
+
+  /** Tìm một đơn trong phân vùng `status` của index; index cập nhật trễ nên có thể đã cũ */
+  async findInStatus(status: OrderStatus, orderId: string): Promise<AdminOrderRecord | null> {
+    const { Items = [] } = await this.db.send(
+      new QueryCommand({
+        TableName: this.tables.orders,
+        IndexName: BY_STATUS_INDEX,
+        KeyConditionExpression: '#status = :status AND orderId = :orderId',
+        ExpressionAttributeNames: { '#status': 'status', '#items': 'items' },
+        ExpressionAttributeValues: { ':status': status, ':orderId': orderId },
+        ProjectionExpression: ADMIN_PROJECTION,
+      }),
+    );
+    const [item] = Items;
+    if (!item) return null;
+    const record = adminSchema.parse(item);
+    return { ...toSummary(record), userId: record.userId };
+  }
+
+  /**
+   * Thứ tự: 0 đơn (điều kiện `status = from`) · (`#OPEN` khi sang `SHIPPED`, BR-14).
+   * Điều kiện trên bảng chính chặn việc ghi theo kết quả đã cũ của index.
+   */
+  async advance({
+    userId,
+    orderId,
+    from,
+    to,
+    now,
+  }: AdvanceStatusCommand): Promise<'advanced' | 'statusChanged'> {
+    const updateOrder = {
+      Update: {
+        TableName: this.tables.orders,
+        Key: { userId, orderId },
+        UpdateExpression: 'SET #status = :to, updatedAt = :now',
+        ConditionExpression: '#status = :from',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ':to': to, ':from': from, ':now': now },
+      },
+    };
+    const decrementOpen =
+      to === 'SHIPPED'
+        ? [
+            {
+              Update: {
+                TableName: this.tables.orders,
+                Key: { userId, orderId: OPEN_COUNTER_SK },
+                UpdateExpression: 'SET openOrders = openOrders - :one',
+                ConditionExpression: 'openOrders > :zero',
+                ExpressionAttributeValues: { ':one': 1, ':zero': 0 },
+              },
+            },
+          ]
+        : [];
+
+    for (let attempt = 0; ; attempt++) {
+      if (attempt > 0) await sleep(this.baseDelayMs * 2 ** (attempt - 1));
+      try {
+        await this.db.send(
+          new TransactWriteCommand({ TransactItems: [updateOrder, ...decrementOpen] }),
+        );
+        return 'advanced';
+      } catch (error) {
+        if (!(error instanceof TransactionCanceledException)) throw error;
+        const reasons = error.CancellationReasons ?? [];
+        if (reasons[0]?.Code === 'ConditionalCheckFailed') return 'statusChanged';
+        const conflict = reasons.some((r) => r.Code === 'TransactionConflict');
+        const conditionFailed = reasons.some((r) => r.Code === 'ConditionalCheckFailed');
+        if (conflict && !conditionFailed && attempt < this.maxConflictRetries) continue;
+        // `#OPEN` đã về 0 khi đơn còn CONFIRMED: dữ liệu hỏng, để handler trả 500 như huỷ đơn
+        throw error;
+      }
+    }
   }
 
   /** Worker xác nhận đơn: chỉ đổi khi đơn còn `PENDING` (khách có thể vừa huỷ) */
