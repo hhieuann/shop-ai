@@ -9,6 +9,15 @@ Job chạy lúc 02:00 giờ Việt Nam (EventBridge Scheduler), đọc bảng `p
 - Email "ALARM: shop-prd-recs-pipeline-no-success".
 - Con trỏ `META` / `ACTIVE#ALSO_BOUGHT` có `updatedAt` cũ hơn 1 ngày.
 
+## Báo nhầm đã biết
+
+- **Lần deploy đầu (hoặc tạo lại alarm):** alarm chuyển ALARM ngay vì 26 giờ trước chưa có lần chạy nào (giờ không có số liệu tính là 0, cố ý để bắt cả lỗi lịch không gọi Lambda). Chạy job bằng tay một lần (mục Giảm thiểu); alarm tự về OK.
+- **Về OK chậm:** alarm tính theo khung 1 giờ, chỉ đánh giá khi khung kết thúc, cộng thêm độ trễ. Lần deploy v0.2.0: job chạy 12:46, khung 12:00–13:00 kết thúc lúc 13:00, alarm về OK lúc 13:46. Chưa đổi ngay thì đợi tới khoảng 1 giờ sau khi khung kết thúc rồi mới xem kỹ.
+
+## Sau lần deploy đầu ở môi trường mới
+
+Bảng `recs` trống nên khối gợi ý không hiện tới 02:00 đêm đó. Chạy job bằng tay một lần ngay sau deploy (Lambda → **Test** với sự kiện `{}`), rồi kiểm `GET /api/v1/recs/bestsellers` có món và trang chủ hiện khối gợi ý. Prod chưa có đơn nên bestsellers ra `NEWEST`; khối vẫn hiện, tiêu đề trung tính (#333).
+
 ## Kiểm tra nhanh
 
 1. Lambda → hàm `…RecsPipelineFunction…` → **Monitor**: có Invocations đêm qua không, có Errors không.
