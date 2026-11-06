@@ -416,3 +416,92 @@ describe('ApiStack · worker order-processor', () => {
     });
   });
 });
+
+/** Các statement IAM của role Lambda admin đơn hàng (#381) */
+function adminStatements(template: Template): Statement[] {
+  const policies = Object.values(template.findResources('AWS::IAM::Policy')).filter((p) =>
+    JSON.stringify(p.Properties.Roles).includes('OrderAdminFunctionServiceRole'),
+  );
+  return policies.flatMap((p) => p.Properties.PolicyDocument.Statement as Statement[]);
+}
+
+describe('ApiStack · API admin đơn hàng (ordering.md BR-15)', () => {
+  it('adminFunction_runsAdminEntry_withOrdersTableOnly', () => {
+    // Act
+    const template = synth(staging);
+
+    // Assert: tên bảng lấy từ stack, không có bảng hay hàng đợi khác
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      MemorySize: 256,
+      Timeout: 10,
+      Architectures: ['arm64'],
+      TracingConfig: { Mode: 'Active' },
+      Environment: {
+        Variables: Match.objectLike({
+          ORDERS_TABLE: { Ref: Match.stringLikeRegexp('^OrdersTable') },
+          POWERTOOLS_SERVICE_NAME: 'ordering-admin',
+          PRODUCTS_TABLE: Match.absent(),
+          CARTS_TABLE: Match.absent(),
+          ORDERS_QUEUE_URL: Match.absent(),
+        }),
+      },
+    });
+  });
+
+  it('adminFunction_queriesOnlyByStatusIndex_andUpdatesOnlyOrdersTable', () => {
+    // Act
+    const statements = adminStatements(synth(staging));
+    const dynamo = statements.filter((s) => JSON.stringify(s.Action).includes('dynamodb:'));
+
+    // Assert: Query chỉ trên index byStatus; GetItem, UpdateItem (phần tử Update của
+    // TransactWriteItems) chỉ trên bảng orders; không điều kiện dynamodb:Attributes (#253, #254)
+    expect(dynamo).toHaveLength(2);
+    const query = dynamo.find((s) => s.Action === 'dynamodb:Query');
+    expect(JSON.stringify(query?.Resource)).toMatch(/OrdersTable.*\/index\/byStatus/);
+    const write = dynamo.find((s) => Array.isArray(s.Action));
+    expect(write?.Action).toEqual(['dynamodb:GetItem', 'dynamodb:UpdateItem']);
+    expect(write?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^OrdersTable/), 'Arn'],
+    });
+    for (const s of dynamo) expect(s.Condition).toBeUndefined();
+
+    // Verify: không đụng bảng khác, không ghi mới hay xoá đơn, không quét, không SQS, SNS
+    const all = JSON.stringify(statements);
+    for (const forbidden of [
+      'ProductsTable',
+      'CartsTable',
+      'Idempotency',
+      'dynamodb:PutItem',
+      'dynamodb:DeleteItem',
+      'dynamodb:Scan',
+      'sqs:',
+      'sns:',
+    ]) {
+      expect(all).not.toContain(forbidden);
+    }
+  });
+
+  it('adminRoutes_requireCognitoJwt_andPointToAdminIntegration', () => {
+    // Act
+    const routes = Object.values(synth(staging).findResources('AWS::ApiGatewayV2::Route'));
+
+    // Assert: không token thì authorizer trả 401 trước khi tới Lambda (threat model L6, O3)
+    for (const routeKey of ['GET /api/v1/admin/orders', 'PATCH /api/v1/admin/orders/{orderId}']) {
+      const route = routes.find((r) => r.Properties.RouteKey === routeKey);
+      expect(route?.Properties.AuthorizationType).toBe('JWT');
+      expect(JSON.stringify(route?.Properties.Target)).toContain('OrderAdminIntegration');
+    }
+  });
+
+  it('adminFunction_existsInProd', () => {
+    // Act
+    const template = synth(prod);
+
+    // Assert: admin chuyển trạng thái giao hàng ở mọi môi trường
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Environment: {
+        Variables: Match.objectLike({ POWERTOOLS_SERVICE_NAME: 'ordering-admin' }),
+      },
+    });
+  });
+});

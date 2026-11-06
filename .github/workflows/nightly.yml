@@ -35,7 +35,12 @@ jobs:
           API_URL: ${{ vars.STAGING_URL }}
         # unsupported_method: CloudFront tự trả 405 cho TRACE không kèm header Allow, request không tới API.
         # content_type_conformance: API Gateway từ chối URL hỏng trước Lambda, trả JSON thay vì problem+json.
-        run: uvx schemathesis==4.33.1 run contracts/openapi.yaml --url "$API_URL" --exclude-checks unsupported_method,content_type_conformance
+        # /api/v1/admin: contract trên develop đã có API admin (#380) nhưng staging chưa có route tới khi
+        # tách release 10/11; bỏ dòng exclude này sau đó (An, 06/11).
+        run: >-
+          uvx schemathesis==4.33.1 run contracts/openapi.yaml --url "$API_URL"
+          --exclude-checks unsupported_method,content_type_conformance
+          --exclude-path-regex '^/api/v1/admin'
 
   audit:
     name: Audit thư viện
