@@ -41,3 +41,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Cache của Schemathesis khi chạy trên máy
+.schemathesis/

@@ -33,7 +33,8 @@ jobs:
       - name: Fuzz API theo OpenAPI
         env:
           API_URL: ${{ vars.STAGING_URL }}
-        run: uvx schemathesis run contracts/openapi.yaml --url "$API_URL"
+        # unsupported_method: CloudFront tự trả 405 cho TRACE không kèm header Allow, request không tới API
+        run: uvx schemathesis==4.33.1 run contracts/openapi.yaml --url "$API_URL" --exclude-checks unsupported_method
 
   audit:
     name: Audit thư viện

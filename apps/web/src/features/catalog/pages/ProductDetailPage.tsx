@@ -39,8 +39,11 @@ export function ProductDetailPage() {
   useRecordView(data?.productId);
 
   if (isLoading) return <DetailSkeleton />;
-  // INACTIVE, không có hoặc productId sai dạng đều là 404 (catalog BR-04); không thử lại (retry.ts)
-  if (error instanceof ApiError && error.status === 404) return <NotFound />;
+  // INACTIVE hoặc không có: 404 (catalog BR-04). productId sai dạng: 400, với khách cũng là không có
+  // sản phẩm này (link gõ sai). Cả hai không thử lại (retry.ts)
+  if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
+    return <NotFound />;
+  }
   if (error) {
     return (
       <p role="alert" className={styles.message}>

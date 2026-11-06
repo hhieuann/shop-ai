@@ -302,6 +302,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** @description Mã sản phẩm. Sai dạng thì API trả 400; đúng dạng mà không có sản phẩm thì 404. */
+    ProductId: string;
+    /** @description Con trỏ phân trang lấy từ response trước. Rỗng hoặc quá dài thì API trả 400. */
+    PageCursor: string;
     /** @enum {string} */
     ProductCategory:
       | 'laptop'
@@ -719,12 +723,12 @@ export interface components {
   };
   parameters: {
     /** @description Sản phẩm đang xem (trang chi tiết) hoặc món vừa thêm gần nhất (trang giỏ) */
-    RecsProductId: string;
+    RecsProductId: components['schemas']['ProductId'];
     /**
      * @description Mã sản phẩm đã có trong giỏ, phân cách bằng dấu phẩy, tối đa 20. Web tự gửi
      *     (giỏ khách nằm trên trình duyệt nên server không biết).
      */
-    RecsExclude: string[];
+    RecsExclude: components['schemas']['ProductId'][];
     RecsLimit: number;
   };
   requestBodies: never;
@@ -798,7 +802,7 @@ export interface operations {
         /** @description Số sản phẩm mỗi trang (mặc định 20, tối đa 50) */
         limit?: number;
         /** @description Con trỏ phân trang từ response trước */
-        cursor?: string;
+        cursor?: components['schemas']['PageCursor'];
       };
       header?: never;
       path?: never;
@@ -890,7 +894,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        productId: string;
+        productId: components['schemas']['ProductId'];
       };
       cookie?: never;
     };
@@ -905,6 +909,7 @@ export interface operations {
           'application/json': components['schemas']['Product'];
         };
       };
+      400: components['responses']['Problem'];
       404: components['responses']['Problem'];
       default: components['responses']['Problem'];
     };
@@ -1030,7 +1035,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        productId: string;
+        productId: components['schemas']['ProductId'];
       };
       cookie?: never;
     };
@@ -1071,7 +1076,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        productId: string;
+        productId: components['schemas']['ProductId'];
       };
       cookie?: never;
     };
@@ -1095,7 +1100,7 @@ export interface operations {
     parameters: {
       query?: {
         limit?: number;
-        cursor?: string;
+        cursor?: components['schemas']['PageCursor'];
       };
       header?: never;
       path?: never;
