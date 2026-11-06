@@ -150,6 +150,74 @@ describe('WebStack', () => {
     });
   });
 
+  it('responseHeaders_setSecurityHeaders_fromThreatModelL4', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert
+    template.hasResourceProperties('AWS::CloudFront::ResponseHeadersPolicy', {
+      ResponseHeadersPolicyConfig: Match.objectLike({
+        SecurityHeadersConfig: {
+          ContentSecurityPolicy: {
+            ContentSecurityPolicy: Match.stringLikeRegexp(
+              "default-src 'self'.*connect-src 'self' https://cognito-idp\\.ap-southeast-1\\.amazonaws\\.com.*frame-ancestors 'none'",
+            ),
+            Override: true,
+          },
+          ContentTypeOptions: { Override: true },
+          FrameOptions: { FrameOption: 'DENY', Override: true },
+          ReferrerPolicy: { ReferrerPolicy: 'strict-origin-when-cross-origin', Override: true },
+          StrictTransportSecurity: {
+            AccessControlMaxAgeSec: 31_536_000,
+            IncludeSubdomains: true,
+            Override: true,
+          },
+        },
+        CustomHeadersConfig: {
+          Items: [Match.objectLike({ Header: 'Permissions-Policy', Override: true })],
+        },
+        RemoveHeadersConfig: { Items: [{ Header: 'Server' }] },
+      }),
+    });
+  });
+
+  it('responseHeaders_cspHasNoUnsafeDirectives', () => {
+    // Arrange: bản build không có script, style inline; CSP lỏng hơn thì mất tác dụng chống XSS (L4)
+    const template = synth(dev);
+
+    // Act
+    const [policy] = Object.values(
+      template.findResources('AWS::CloudFront::ResponseHeadersPolicy'),
+    );
+    const csp = JSON.stringify(policy);
+
+    // Assert
+    expect(csp).not.toContain('unsafe-inline');
+    expect(csp).not.toContain('unsafe-eval');
+  });
+
+  it('responseHeaders_appliedToEveryBehavior', () => {
+    // Act
+    const template = synth(dev);
+    const [distribution] = Object.values(
+      template.findResources('AWS::CloudFront::Distribution'),
+    ) as {
+      Properties: {
+        DistributionConfig: {
+          DefaultCacheBehavior: Record<string, unknown>;
+          CacheBehaviors: Record<string, unknown>[];
+        };
+      };
+    }[];
+    const config = distribution!.Properties.DistributionConfig;
+
+    // Assert: web, /api/v1/products* và /api/* đều có header
+    for (const behavior of [config.DefaultCacheBehavior, ...config.CacheBehaviors]) {
+      expect(behavior.ResponseHeadersPolicyId).toBeDefined();
+    }
+    expect(config.CacheBehaviors).toHaveLength(2);
+  });
+
   it('stack_exposesWebUrl', () => {
     // Act
     const template = synth(dev);
