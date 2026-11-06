@@ -1,0 +1,247 @@
+/* Quản trị đơn hàng (docs/web/pages/admin-don-hang.md) */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) var(--space-800);
+}
+.title {
+  margin: var(--space-100) 0 var(--space-50);
+  color: var(--fg-heading);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 700;
+}
+.lead {
+  margin: 0 0 var(--space-300);
+  color: var(--fg-muted);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.message {
+  margin: var(--space-300) 0;
+  color: var(--fg-subdued);
+}
+
+/* Tab trạng thái: hình chip (design-system §6) */
+.tabs {
+  display: flex;
+  gap: var(--space-100);
+  margin-bottom: var(--space-200);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 var(--space-200);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  color: var(--fg-heading);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.tab:hover {
+  background: var(--bg-primary-tint);
+}
+.tab[aria-current='page'] {
+  /* Viền 2px, bớt 1px padding để chữ không nhảy */
+  padding: 0 calc(var(--space-200) - 1px);
+  border: 2px solid var(--border-primary);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+}
+
+/* Bảng đơn trong khối trắng bo 16 */
+.block {
+  padding: var(--space-100) var(--space-300);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-surface);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.table th {
+  padding: var(--space-150) var(--space-100);
+  border-bottom: 1px solid var(--border-divider);
+  color: var(--fg-muted);
+  font-weight: 600;
+  text-align: left;
+}
+.table td {
+  padding: 14px var(--space-100);
+  border-bottom: 1px solid var(--border-divider);
+  vertical-align: middle;
+}
+.row:last-child td {
+  border-bottom: 0;
+}
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.id {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg-default);
+  overflow-wrap: anywhere;
+}
+.unit {
+  display: none;
+}
+.action {
+  text-align: right;
+}
+.dialogTotal {
+  color: var(--fg-price);
+}
+
+/* Nhãn trạng thái đơn (design-system §9.7) */
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-100);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.CONFIRMED {
+  background: var(--bg-primary-tint);
+  color: var(--fg-primary);
+}
+.SHIPPED {
+  background: var(--bg-accent-tint);
+  color: var(--fg-accent);
+}
+
+/* Nút phụ cỡ sm (design-system §9.3) */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: var(--space-50) var(--space-150);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  font: inherit;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.button:hover {
+  background: var(--bg-surface-pressed);
+}
+
+/* Rỗng, không có quyền (design-system §9.12) */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-150);
+  padding: var(--space-500) var(--space-200);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-surface);
+  text-align: center;
+}
+.emptyText {
+  margin: 0;
+  color: var(--fg-default);
+}
+.emptyLink {
+  color: var(--fg-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.emptyLink:hover {
+  color: var(--fg-primary-hover);
+  text-decoration: underline;
+}
+
+/*
+ * Điện thoại: mỗi dòng bảng thành một thẻ trắng bo 12 (vẫn là bảng với trình đọc màn hình).
+ * Hàng 1 mã đơn (đủ 26 ký tự), hàng 2 ngày + nhãn, hàng 3 số món + tổng tiền, cuối là nút rộng hết thẻ.
+ */
+@media (max-width: 767px) {
+  .tab {
+    flex: 1;
+  }
+  .block {
+    padding: 0;
+    background: none;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table tbody {
+    display: grid;
+    gap: var(--space-150);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'id id'
+      'date status'
+      'count total'
+      'action action';
+    column-gap: var(--space-100);
+    row-gap: var(--space-50);
+    padding: var(--space-200);
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+  }
+  .table td {
+    padding: 0;
+    border: 0;
+  }
+  .table .num {
+    text-align: left;
+  }
+  .id {
+    grid-area: id;
+  }
+  .status {
+    grid-area: status;
+    justify-self: end;
+  }
+  .date,
+  .count {
+    color: var(--fg-muted);
+  }
+  .date {
+    grid-area: date;
+  }
+  .count {
+    grid-area: count;
+  }
+  .unit {
+    display: inline;
+  }
+  .table .total {
+    grid-area: total;
+    text-align: right;
+  }
+  .action {
+    grid-area: action;
+    margin-top: var(--space-100);
+  }
+  .button {
+    width: 100%;
+  }
+}
