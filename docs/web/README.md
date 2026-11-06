@@ -24,10 +24,11 @@ Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao 
 | [pages/gio-hang.md](pages/gio-hang.md) | Giỏ hàng `/cart` |
 | [pages/dat-hang.md](pages/dat-hang.md) | Đặt hàng `/checkout` |
 | [pages/dang-nhap.md](pages/dang-nhap.md) | Đăng nhập `/login`, tạo tài khoản `/register` (An làm) |
+| [pages/admin-don-hang.md](pages/admin-don-hang.md) | Quản trị đơn hàng `/admin` (bản rc.1, chốt 06/11/2026: hai tab Chờ giao, Đang giao; chuyển trạng thái có hỏi lại) |
 | [man-hinh-du-kien.md](man-hinh-du-kien.md) | Màn hình dự án cần nhưng chưa có spec trang: component dùng lại, bố cục đề xuất, mức tin cậy |
 | [ngoai-pham-vi.md](ngoai-pham-vi.md) | Tính năng cửa hàng điện tử thường có nhưng dự án **không làm**, kèm lý do |
 
-Trang **chưa có** spec riêng (sẽ thêm vào `pages/` khi làm): lịch sử đơn `/orders` và chi tiết đơn `/orders/:id`, các trang admin. Trước khi có spec, các trang này dùng component trong `design-system.md` và nghiệp vụ trong `docs/business/`.
+Trang **chưa có** spec riêng (sẽ thêm vào `pages/` khi làm): lịch sử đơn `/orders` và chi tiết đơn `/orders/:id`, các trang admin khác (thêm sản phẩm, huỷ đơn). Trước khi có spec, các trang này dùng component trong `design-system.md` và nghiệp vụ trong `docs/business/`.
 
 ## Nguồn sự thật
 
