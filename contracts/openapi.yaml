@@ -642,7 +642,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/OrderId'
       requestBody:
         required: true
         content:

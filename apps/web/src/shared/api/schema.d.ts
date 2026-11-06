@@ -1374,7 +1374,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        orderId: string;
+        orderId: components['schemas']['OrderId'];
       };
       cookie?: never;
     };
