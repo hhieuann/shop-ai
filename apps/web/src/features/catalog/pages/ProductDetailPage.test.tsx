@@ -191,6 +191,13 @@ describe('ProductDetailPage', () => {
     expect(fetchMock.mock.calls.filter(([url]) => !url.includes('/recs/'))).toHaveLength(1);
   });
 
+  it('400 (mã sản phẩm sai dạng, vd. link có ký tự lạ): hiện như không tìm thấy', async () => {
+    reply = () => json({ status: 400, title: 'Bad Request' }, 400);
+    renderPage();
+    expect(await screen.findByText('Sản phẩm không tồn tại hoặc đã bị gỡ.')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('lỗi tải khác: báo bằng role="alert"', async () => {
     reply = () => json({ status: 500, title: 'Error' }, 500);
     renderPage({ retry: false });
