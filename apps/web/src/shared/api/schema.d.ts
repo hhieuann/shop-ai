@@ -206,6 +206,52 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/orders': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Admin xem đơn theo trạng thái, mới nhất trước
+     * @description Chỉ người thuộc nhóm `admin` của Cognito (claim `cognito:groups` trong access token);
+     *     người khác nhận 403 (threat model L6, O3). Đọc index `byStatus` của bảng `orders`.
+     *     Danh sách **không** trả địa chỉ giao hàng, họ tên, SĐT, `userId` (O8).
+     */
+    get: operations['listAdminOrders'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/orders/{orderId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Admin chuyển đơn sang trạng thái giao hàng tiếp theo
+     * @description Chỉ nhóm `admin` của Cognito. Chỉ đi tiếp một bước: `CONFIRMED` → `SHIPPED`,
+     *     `SHIPPED` → `DELIVERED` (ordering.md BR-15). Sang `SHIPPED` thì giảm số đơn đang mở của
+     *     khách trong cùng giao dịch (BR-14). Không có admin huỷ đơn ở bản này.
+     *     Trả tóm tắt đơn, không trả địa chỉ giao hàng, họ tên, SĐT, `userId`: API admin không bao giờ
+     *     trả các trường này (O8).
+     */
+    patch: operations['updateOrderStatus'];
+    trace?: never;
+  };
   '/api/v1/events': {
     parameters: {
       query?: never;
@@ -657,6 +703,26 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    /**
+     * @description Đơn trong danh sách admin. Không có địa chỉ giao hàng, họ tên, SĐT, `userId` (threat model O8);
+     *     index `byStatus` có đủ các trường này nên backend phải lọc bỏ.
+     */
+    AdminOrderSummary: {
+      /** @description ULID */
+      orderId: string;
+      status: components['schemas']['OrderStatus'];
+      /** @description Tổng tiền (VND) */
+      totalAmount: number;
+      /** @description Số loại sản phẩm trong đơn */
+      itemCount: number;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminOrderProblem: components['schemas']['Problem'] & {
+      /** @enum {string} */
+      code?: 'INVALID_STATUS_TRANSITION';
+      currentStatus?: components['schemas']['OrderStatus'];
+    };
     /** @description Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy. */
     EventInput: {
       productId: string;
@@ -709,6 +775,18 @@ export interface components {
           /** @example Unauthorized */
           message: string;
         };
+      };
+    };
+    /**
+     * @description `FORBIDDEN` đã đăng nhập nhưng không thuộc nhóm được phép (vd. API admin cần nhóm `admin`
+     *     của Cognito). Lambda trả, theo RFC 9457.
+     */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/problem+json': components['schemas']['Problem'];
       };
     };
     /** @description Lỗi */
@@ -1251,6 +1329,96 @@ export interface operations {
         };
         content: {
           'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  listAdminOrders: {
+    parameters: {
+      query: {
+        /** @description Trạng thái cần xem; rc.1 chỉ cần đơn chờ giao và đang giao */
+        status: 'CONFIRMED' | 'SHIPPED';
+        limit?: number;
+        cursor?: components['schemas']['PageCursor'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Danh sách đơn ở trạng thái đã chọn */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: components['schemas']['AdminOrderSummary'][];
+            nextCursor?: string;
+          };
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      default: components['responses']['Problem'];
+    };
+  };
+  updateOrderStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          status: 'SHIPPED' | 'DELIVERED';
+        };
+      };
+    };
+    responses: {
+      /** @description Tóm tắt đơn sau khi chuyển trạng thái (không có địa chỉ, O8) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminOrderSummary'];
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      /**
+       * @description Không có đơn, hoặc đơn vừa đổi trạng thái mà index `byStatus` chưa cập nhật kịp
+       *     (tra `userId` qua index). Body ghi thử lại sau ít giây.
+       */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      /**
+       * @description `INVALID_STATUS_TRANSITION` chuyển sai bước, đi ngược, hoặc đơn vừa được đổi trạng thái
+       *     bởi người khác; kèm `currentStatus` là trạng thái hiện tại của đơn
+       */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['AdminOrderProblem'];
         };
       };
       default: components['responses']['Problem'];
