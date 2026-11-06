@@ -23,6 +23,8 @@ export class ApiError extends Error {
   readonly invalidItems: InvalidItem[];
   readonly changedItems: ChangedItem[];
   readonly maxAddable?: number;
+  /** Trạng thái hiện tại của đơn khi admin chuyển sai bước (409 INVALID_STATUS_TRANSITION) */
+  readonly currentStatus?: string;
 
   constructor(status: number, problem: Record<string, unknown>, fallbackTitle: string) {
     const title = typeof problem.title === 'string' ? problem.title : fallbackTitle;
@@ -37,6 +39,8 @@ export class ApiError extends Error {
     this.invalidItems = asArray<InvalidItem>(problem.invalidItems);
     this.changedItems = asArray<ChangedItem>(problem.changedItems);
     this.maxAddable = typeof problem.maxAddable === 'number' ? problem.maxAddable : undefined;
+    this.currentStatus =
+      typeof problem.currentStatus === 'string' ? problem.currentStatus : undefined;
   }
 }
 
@@ -75,6 +79,9 @@ export const api = {
 
   put: <T>(path: string, body: unknown, init?: Omit<RequestInit, 'method' | 'body'>) =>
     request<T>(path, { ...init, method: 'PUT', body: JSON.stringify(body) }),
+
+  patch: <T>(path: string, body: unknown, init?: Omit<RequestInit, 'method' | 'body'>) =>
+    request<T>(path, { ...init, method: 'PATCH', body: JSON.stringify(body) }),
 
   delete: <T>(path: string, init?: Omit<RequestInit, 'method'>) =>
     request<T>(path, { ...init, method: 'DELETE' }),
