@@ -40,7 +40,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: cdk deploy shop-prd (canary cho ordering)
+      - name: cdk deploy shop-prd
         env:
           ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
           # Địa chỉ gửi SES chung cho mọi môi trường (một tài khoản, một vùng); thiếu thì worker không gửi email
