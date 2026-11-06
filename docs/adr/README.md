@@ -14,7 +14,7 @@ Mỗi quyết định kiến trúc quan trọng được ghi thành một file: 
 | [0011](0011-monorepo-openapi.md) | Monorepo pnpm; OpenAPI là nguồn sự thật của API | Chấp nhận |
 | [0012](0012-dynamodb-moi-module-mot-bang.md) | DynamoDB mỗi module một bảng | Chấp nhận |
 | [0013](0013-moi-truong-chung-tai-khoan.md) | dev, staging, prod chung tài khoản demo, tách bằng stack | Chấp nhận |
-| [0014](0014-canary-ordering.md) | Deploy Lambda ordering kiểu canary bằng CodeDeploy | Đề xuất |
+| [0014](0014-canary-ordering.md) | Deploy Lambda ordering kiểu canary bằng CodeDeploy | Hoãn (06/11/2026) |
 | [0015](0015-repo-public.md) | Repo public | Chấp nhận |
 | [0016](0016-tu-xay-mo-hinh-goi-y.md) | Tự xây mô hình gợi ý trên Lambda + DynamoDB, không dùng Personalize | Chấp nhận |
 | [0017](0017-ngoai-le-bang-cheo-module-va-idempotency.md) | Ngoại lệ có ghi lại: `cart`, `recommendation` đọc `products`; `ordering` đọc `products`, `carts` và ghi trong một giao dịch (chỉ cột `stock` của `products`); pipeline gợi ý Scan `products` chỉ đọc; bảng idempotency riêng từng module (sửa 24/10) | Chấp nhận |
