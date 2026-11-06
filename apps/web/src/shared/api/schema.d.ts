@@ -350,6 +350,8 @@ export interface components {
   schemas: {
     /** @description Mã sản phẩm. Sai dạng thì API trả 400; đúng dạng mà không có sản phẩm thì 404. */
     ProductId: string;
+    /** @description Mã đơn hàng. Sai dạng hoặc không phải đơn của mình đều trả 404. */
+    OrderId: string;
     /** @description Con trỏ phân trang lấy từ response trước. Rỗng hoặc quá dài thì API trả 400. */
     PageCursor: string;
     /** @enum {string} */
@@ -1280,7 +1282,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        orderId: string;
+        orderId: components['schemas']['OrderId'];
       };
       cookie?: never;
     };
@@ -1305,7 +1307,7 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        orderId: string;
+        orderId: components['schemas']['OrderId'];
       };
       cookie?: never;
     };

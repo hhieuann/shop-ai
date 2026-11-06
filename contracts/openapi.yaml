@@ -523,7 +523,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/OrderId'
       responses:
         '200':
           description: Chi tiết đơn hàng
@@ -547,7 +547,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/OrderId'
       responses:
         '200':
           description: Đơn đã bị huỷ
@@ -829,6 +829,10 @@ components:
     ProductId:
       type: string
       description: Mã sản phẩm. Sai dạng thì API trả 400; đúng dạng mà không có sản phẩm thì 404.
+      pattern: '^[A-Za-z0-9-]{1,64}$'
+    OrderId:
+      type: string
+      description: Mã đơn hàng. Sai dạng hoặc không phải đơn của mình đều trả 404.
       pattern: '^[A-Za-z0-9-]{1,64}$'
     PageCursor:
       type: string
