@@ -12,9 +12,9 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 | Pipeline (`.github/`) | 4 workflow, vai trò OIDC, biến môi trường, `DEPLOY_ENABLED` |
 | Nền tảng code (`services/api/src/shared/`) | Logger, tracer, lỗi chuẩn RFC 9457, helper HTTP, cấu hình, helper idempotency. Phần cả nhóm dùng chung |
 | Gợi ý trên web (`modules/recommendation`) | API `GET /api/v1/recs` đọc bảng `recs` của phiên bản đang bật, lọc hàng hết và hàng đã trong giỏ; hai widget "Dành cho bạn" và "Thường mua kèm" |
-| Giám sát | Dashboard, alarm, X-Ray; runbook `api-5xx`, `lambda-throttle`, `canary-rollback`, `cost-spike` |
+| Giám sát | Dashboard, alarm, X-Ray; runbook `api-5xx`, `lambda-throttle`, `cost-spike` |
 | Chi phí | Worker `cost-breaker`; xem Cost Explorer mỗi thứ Hai; chỉ số chi phí trên 1.000 đơn |
-| Đo đạc | Bản EC2 đối chứng bằng Docker Compose; k6; canary cho `ordering`; diễn tập khôi phục |
+| Đo đạc | Bản EC2 đối chứng bằng Docker Compose; k6; diễn tập khôi phục (canary cho `ordering` hoãn, ADR-0014) |
 | Phát hành | Tách nhánh `release/*`, gắn tag `v*`, chạy checklist phát hành ([git-flow.md](../git-flow.md) mục 4.4) |
 
 ## Việc của trưởng nhóm
@@ -49,7 +49,7 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 | 3 · 13–19/10 | Staging; app client và người dùng cho E2E; smoke test; tách `release/v0.1.0` (16/10), tag `v0.1.0` (19/10); demo sprint 1 | `v0.1.0` chạy trên prod |
 | 4 · 20–26/10 | Module recommendation và 2 widget; dashboard, alarm, runbook | Widget hiện gợi ý từ bảng `recs` trên dev |
 | 5 · 27/10–02/11 | Worker `cost-breaker`; gắn rule WAF Nhân viết; X-Ray; tách `release/v0.2.0` (30/10), tag `v0.2.0` (02/11) | `v0.2.0` trên prod; alarm nào cũng có runbook |
-| 6 · 03–09/11 | EC2 đối chứng và k6 ở 50/200/1.000 người ảo; canary cho ordering; diễn tập point-in-time recovery; chi phí trên 1.000 đơn; tách `release/v1.0.0` (06/11), tag `v1.0.0-rc.1` (09/11) | Có đủ số liệu cho báo cáo |
+| 6 · 03–09/11 | EC2 đối chứng và k6 ở 50/200/1.000 người ảo; diễn tập point-in-time recovery; chi phí trên 1.000 đơn; tách `release/v1.0.0` (06/11), tag `v1.0.0-rc.1` (09/11) | Có đủ số liệu cho báo cáo |
 | 7–8 · 10–23/11 | Viết chính phần Proposal 8 mục; điều phối nhóm tự vẽ sơ đồ kiến trúc; ghép workshop nhóm và viết các chương của mình; tập demo 2 lần; tag `v1.0.0` (23/11) | Báo cáo đầy đủ; `v1.0.0` trên prod |
 | 24–29/11 | Nộp workshop trên portal; chuẩn bị dọn tài nguyên | Đã nộp trước 29/11 |
 
@@ -64,7 +64,6 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 | CloudWatch: metric, alarm, dashboard | Lab [000008](https://000008.awsstudygroup.com/) | Tuần 4 |
 | Docker Compose | Lab [000015](https://000015.awsstudygroup.com/) | Tuần 6 |
 | k6 | [Tài liệu k6](https://grafana.com/docs/k6/latest/) | Tuần 6 |
-| Deploy canary cho Lambda | Tài liệu AWS CodeDeploy cho Lambda | Tuần 6 |
 
 ## Workshop và blog
 
@@ -94,4 +93,4 @@ Bạn làm cho cả nhóm **đưa được code lên cloud an toàn, rẻ và đ
 
 - **Hướng nghề:** Cloud, DevOps hoặc Platform engineer, vẫn giữ nền fullstack. Dự án cho bạn đủ chất liệu thật: hạ tầng bằng code, CI/CD an toàn, giám sát, quản lý chi phí, dẫn nhóm.
 - **Chứng chỉ:** Cloud Practitioner (học khoá Skill Builder sau khi xong lab, như bạn đã định) → **Solutions Architect – Associate** làm mục tiêu chính sau OJT → DevOps Engineer – Professional khi có thêm kinh nghiệm.
-- **Dòng CV gợi ý:** "Trưởng nhóm 3 người xây nền tảng e-commerce serverless trên AWS (CDK, Lambda, DynamoDB, CloudFront, Cognito); dựng CI/CD GitHub Actions bằng OIDC không dùng access key; deploy canary và rollback tự động; chi phí vận hành dưới $X/tháng; chịu được Y người dùng đồng thời." Thay X, Y bằng số đo được ở tuần 6.
+- **Dòng CV gợi ý:** "Trưởng nhóm 3 người xây nền tảng e-commerce serverless trên AWS (CDK, Lambda, DynamoDB, CloudFront, Cognito); dựng CI/CD GitHub Actions bằng OIDC không dùng access key; tự quay về khi deploy lỗi; chi phí vận hành dưới $X/tháng; chịu được Y người dùng đồng thời." Thay X, Y bằng số đo được ở tuần 6.
