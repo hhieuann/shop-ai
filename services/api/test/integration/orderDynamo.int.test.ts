@@ -6,7 +6,9 @@ import {
   placeOrder,
   type PlaceOrderDeps,
 } from '../../src/modules/ordering/application/placeOrder.js';
+import { advanceOrderStatus } from '../../src/modules/ordering/application/advanceOrderStatus.js';
 import { cancelOrder } from '../../src/modules/ordering/application/cancelOrder.js';
+import { listAdminOrders } from '../../src/modules/ordering/application/listAdminOrders.js';
 import { getOrder } from '../../src/modules/ordering/application/getOrder.js';
 import { processOrderMessage } from '../../src/modules/ordering/application/processOrderMessage.js';
 import {
@@ -14,6 +16,7 @@ import {
   type SendOrderEmailDeps,
 } from '../../src/modules/ordering/application/sendOrderEmail.js';
 import {
+  InvalidStatusTransitionError,
   OrderNotFoundError,
   OutOfStockError,
   PriceChangedError,
@@ -522,6 +525,154 @@ describe('DynamoOrderStore.cancel', () => {
     );
     expect(Item).toBeUndefined();
     expect(await orderStatus(userId, order.orderId)).toBe('PENDING');
+  });
+});
+
+describe('admin chuyển trạng thái (BR-15) với bảng orders thật', () => {
+  const LATER = '2026-11-06T08:00:00.000Z';
+  const adminDeps = () => ({ admin: store, orders: store, now: () => LATER });
+
+  /** Đơn đã đặt và đã được worker xác nhận */
+  async function confirmedOrder(userId = randomUUID()) {
+    const cmd = command(userId, await seedProduct(5));
+    await store.place(cmd);
+    await store.confirm({ order: cmd.order, now: NOW });
+    return cmd.order;
+  }
+
+  it('advance_shipsAndDecrementsOpen_inOneTransaction', async () => {
+    // Arrange: khách có 1 đơn đang mở
+    const order = await confirmedOrder();
+    expect(await openOrders(order.userId)).toBe(1);
+
+    // Act
+    const summary = await advanceOrderStatus(adminDeps(), {
+      adminId: 'admin-1',
+      orderId: order.orderId,
+      to: 'SHIPPED',
+    });
+
+    // Assert
+    expect(summary).toEqual({
+      orderId: order.orderId,
+      status: 'SHIPPED',
+      totalAmount: order.totalAmount,
+      itemCount: 1,
+      createdAt: order.createdAt,
+    });
+    expect(await store.get(order.userId, order.orderId)).toMatchObject({
+      status: 'SHIPPED',
+      updatedAt: LATER,
+    });
+    expect(await openOrders(order.userId)).toBe(0);
+  });
+
+  it('advance_deliversWithoutTouchingOpen', async () => {
+    // Arrange
+    const order = await confirmedOrder();
+    await advanceOrderStatus(adminDeps(), {
+      adminId: 'admin-1',
+      orderId: order.orderId,
+      to: 'SHIPPED',
+    });
+
+    // Act
+    await advanceOrderStatus(adminDeps(), {
+      adminId: 'admin-1',
+      orderId: order.orderId,
+      to: 'DELIVERED',
+    });
+
+    // Assert
+    expect((await store.get(order.userId, order.orderId))?.status).toBe('DELIVERED');
+    expect(await openOrders(order.userId)).toBe(0);
+  });
+
+  it('advance_lets_customerOrderAgain_whenHadThreeOpenOrders', async () => {
+    // Arrange: 3 đơn đang mở, đơn thứ 4 bị chặn (BR-14)
+    const userId = randomUUID();
+    const first = await confirmedOrder(userId);
+    await confirmedOrder(userId);
+    await confirmedOrder(userId);
+    const fourth = command(userId, await seedProduct(5));
+    await expect(store.place(fourth)).rejects.toBeInstanceOf(TooManyOpenOrdersError);
+
+    // Act
+    await advanceOrderStatus(adminDeps(), {
+      adminId: 'admin-1',
+      orderId: first.orderId,
+      to: 'SHIPPED',
+    });
+
+    // Assert
+    expect(await store.place(fourth)).toEqual({ kind: 'created' });
+  });
+
+  it('advance_returnsStatusChanged_andWritesNothing_whenCancelledAfterIndexRead', async () => {
+    // Arrange: admin đã tìm thấy đơn CONFIRMED, rồi khách huỷ trước khi admin ghi
+    const order = await confirmedOrder();
+    const found = await store.findInStatus('CONFIRMED', order.orderId);
+    await store.cancel({ order: { ...order, status: 'CONFIRMED' }, now: LATER });
+    expect(await openOrders(order.userId)).toBe(0);
+
+    // Act
+    const result = await store.advance({
+      userId: found!.userId,
+      orderId: order.orderId,
+      from: 'CONFIRMED',
+      to: 'SHIPPED',
+      now: LATER,
+    });
+
+    // Assert: điều kiện chặn, đơn vẫn huỷ, `#OPEN` không bị trừ lần hai
+    expect(result).toBe('statusChanged');
+    expect((await store.get(order.userId, order.orderId))?.status).toBe('CANCELLED');
+    expect(await openOrders(order.userId)).toBe(0);
+  });
+
+  it('advanceOrderStatus_throws409Cancelled_whenOrderCancelled', async () => {
+    // Arrange
+    const order = await confirmedOrder();
+    await store.cancel({ order: { ...order, status: 'CONFIRMED' }, now: LATER });
+
+    // Act
+    const error = await advanceOrderStatus(adminDeps(), {
+      adminId: 'admin-1',
+      orderId: order.orderId,
+      to: 'SHIPPED',
+    }).catch((e: unknown) => e);
+
+    // Assert
+    expect(error).toBeInstanceOf(InvalidStatusTransitionError);
+    expect((error as InvalidStatusTransitionError).extensions).toEqual({
+      currentStatus: 'CANCELLED',
+    });
+  });
+
+  it('listByStatus_returnsNewestFirstWithoutAddress_andPagesByCursor', async () => {
+    // Arrange: 3 đơn CONFIRMED mới; bảng dùng chung với test khác nên chỉ xét đơn của test này
+    const orders = [await confirmedOrder(), await confirmedOrder(), await confirmedOrder()];
+    const ids = new Set(orders.map((o) => o.orderId));
+
+    // Act: đọc hết các trang, mỗi trang 2 đơn
+    const seen: { orderId: string }[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await listAdminOrders(
+        { admin: store },
+        { status: 'CONFIRMED', limit: 2, cursor },
+      );
+      seen.push(...page.items);
+      cursor = page.nextCursor;
+    } while (cursor);
+
+    // Assert
+    const mine = seen.filter((item) => ids.has(item.orderId));
+    expect(mine).toHaveLength(3);
+    expect(new Set(seen.map((item) => item.orderId)).size).toBe(seen.length);
+    const allIds = seen.map((item) => item.orderId);
+    expect(allIds).toEqual([...allIds].sort().reverse());
+    expect(JSON.stringify(seen)).not.toMatch(/shippingAddress|userId|phone/);
   });
 });
 

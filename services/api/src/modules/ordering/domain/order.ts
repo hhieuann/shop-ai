@@ -173,3 +173,32 @@ export function cancellableStatuses(role: 'customer' | 'admin'): readonly OrderS
 export function canCancel(status: OrderStatus, role: 'customer' | 'admin'): boolean {
   return cancellableStatuses(role).includes(status);
 }
+
+/** Trạng thái admin được chuyển tới (BR-15); rc.1 chưa có admin huỷ đơn */
+export type AdminTargetStatus = 'SHIPPED' | 'DELIVERED';
+
+/** Trạng thái admin xem được trong danh sách (contract listAdminOrders) */
+export type AdminListStatus = 'CONFIRMED' | 'SHIPPED';
+
+/** BR-15: mỗi trạng thái đích chỉ có đúng một trạng thái liền trước, chỉ đi tiếp một bước */
+const PREVIOUS_STATUS: Readonly<Record<AdminTargetStatus, OrderStatus>> = {
+  SHIPPED: 'CONFIRMED',
+  DELIVERED: 'SHIPPED',
+};
+
+/**
+ * Trạng thái đơn phải đang có để admin chuyển sang `to`. Đơn ở mọi trạng thái khác (sai bước,
+ * đi ngược, đã huỷ) thì không chuyển được.
+ */
+export function previousStatus(to: AdminTargetStatus): OrderStatus {
+  return PREVIOUS_STATUS[to];
+}
+
+/** Mọi trạng thái của đơn, để tìm đơn khi không thấy ở trạng thái liền trước */
+export const ORDER_STATUSES: readonly OrderStatus[] = [
+  'PENDING',
+  'CONFIRMED',
+  'SHIPPED',
+  'DELIVERED',
+  'CANCELLED',
+];
