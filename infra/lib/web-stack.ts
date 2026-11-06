@@ -20,8 +20,11 @@ import {
   Function as CloudFrontFunction,
   FunctionCode,
   FunctionEventType,
+  HeadersFrameOption,
+  HeadersReferrerPolicy,
   OriginRequestPolicy,
   PriceClass,
+  ResponseHeadersPolicy,
   ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { HttpOrigin, S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
@@ -91,6 +94,51 @@ export class WebStack extends Stack {
       enableAcceptEncodingBrotli: true,
     });
 
+    // Header bảo mật (threat model L4). Bản build không có script, style inline và font tự host, nên CSP
+    // không cần 'unsafe-inline'; web gọi Cognito trực tiếp nên connect-src phải có cognito-idp.
+    // img-src mở https: vì imageUrl của sản phẩm do admin nhập, có thể ở tên miền khác.
+    const securityHeaders = new ResponseHeadersPolicy(this, 'SecurityHeaders', {
+      comment: `shop-ai header bảo mật (${shopEnv.name})`,
+      securityHeadersBehavior: {
+        contentSecurityPolicy: {
+          contentSecurityPolicy: [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self'",
+            "img-src 'self' data: https:",
+            "font-src 'self'",
+            `connect-src 'self' https://cognito-idp.${this.region}.amazonaws.com`,
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'",
+          ].join('; '),
+          override: true,
+        },
+        contentTypeOptions: { override: true },
+        frameOptions: { frameOption: HeadersFrameOption.DENY, override: true },
+        referrerPolicy: {
+          referrerPolicy: HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+          override: true,
+        },
+        strictTransportSecurity: {
+          accessControlMaxAge: Duration.days(365),
+          includeSubdomains: true,
+          override: true,
+        },
+      },
+      customHeadersBehavior: {
+        customHeaders: [
+          {
+            header: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+            override: true,
+          },
+        ],
+      },
+      removeHeaders: ['Server'],
+    });
+
     const distribution = new Distribution(this, 'Distribution', {
       comment: `shop-ai web (${shopEnv.name})`,
       webAclId: webAclArn,
@@ -101,6 +149,7 @@ export class WebStack extends Stack {
         origin: S3BucketOrigin.withOriginAccessControl(bucket),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        responseHeadersPolicy: securityHeaders,
         functionAssociations: [
           { function: spaRewrite, eventType: FunctionEventType.VIEWER_REQUEST },
         ],
@@ -113,6 +162,7 @@ export class WebStack extends Stack {
           allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
           cachePolicy: productsCache,
           originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: securityHeaders,
         },
         '/api/*': {
           origin: apiOrigin,
@@ -121,6 +171,7 @@ export class WebStack extends Stack {
           cachePolicy: CachePolicy.CACHING_DISABLED,
           // Chuyển query, header (trừ Host) và cookie sang API; Host phải là tên miền của API Gateway
           originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: securityHeaders,
         },
       },
     });
