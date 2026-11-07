@@ -1,6 +1,7 @@
 import { App, Duration, Stack } from 'aws-cdk-lib';
 import { HttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import { Match, Template } from 'aws-cdk-lib/assertions';
+import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { Code, Function as LambdaFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { describe, expect, it } from 'vitest';
@@ -332,5 +333,54 @@ describe('Monitoring', () => {
     expect(body).toContain('ApproximateAgeOfOldestMessage');
     expect(body).toContain('\\"label\\":\\"DLQ\\"');
     template.resourceCountIs('AWS::CloudWatch::Alarm', 3);
+  });
+
+  it.each([dev, prod])('dashboard_showsDynamoThrottlePerTable_withoutNewAlarm_%#', (shopEnv) => {
+    // Arrange: như synth() nhưng thêm 2 bảng on-demand
+    const build = (withTables: boolean) => {
+      const app = new App();
+      const stack = new Stack(app, 'TestStack', { env: { region: 'ap-southeast-1' } });
+      const fakeFunction = (id: string) =>
+        new LambdaFunction(stack, id, {
+          runtime: Runtime.NODEJS_24_X,
+          handler: 'index.handler',
+          code: Code.fromInline('exports.handler = async (e) => e;'),
+          timeout: Duration.seconds(3),
+        });
+      const table = (id: string) =>
+        new Table(stack, id, {
+          partitionKey: { name: 'id', type: AttributeType.STRING },
+          billingMode: BillingMode.PAY_PER_REQUEST,
+        });
+      new Monitoring(stack, 'Monitoring', {
+        shopEnv,
+        httpApi: new HttpApi(stack, 'Api'),
+        preSignUpFn: fakeFunction('PreSignUp'),
+        apiFunctions: { catalog: fakeFunction('Catalog') },
+        ...(withTables
+          ? { tables: { orders: table('OrdersTable'), carts: table('CartsTable') } }
+          : {}),
+      });
+      return Template.fromStack(stack);
+    };
+
+    // Act
+    const template = build(true);
+    const without = build(false);
+
+    // Assert: runbook dynamodb-throttle đọc biểu đồ này; tên bảng lấy từ tài nguyên (Ref), không ghi cứng
+    const body = JSON.stringify(
+      Object.values(template.findResources('AWS::CloudWatch::Dashboard'))[0],
+    );
+    expect(body).toContain('DynamoDB: request bị throttle theo bảng');
+    expect(body).toContain('ReadThrottleEvents');
+    expect(body).toContain('WriteThrottleEvents');
+    expect(body).toMatch(/"Ref":"OrdersTable[0-9A-F]+"/);
+    expect(body).toMatch(/"Ref":"CartsTable[0-9A-F]+"/);
+    expect(body).toContain('\\"label\\":\\"orders đọc\\"');
+    // Verify: không thêm alarm nào (đã hết 10 alarm miễn phí, #252)
+    expect(Object.keys(template.findResources('AWS::CloudWatch::Alarm'))).toHaveLength(
+      Object.keys(without.findResources('AWS::CloudWatch::Alarm')).length,
+    );
   });
 });
