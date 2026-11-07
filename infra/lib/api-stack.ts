@@ -246,7 +246,12 @@ export class ApiStack extends Stack {
     });
 
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
-    const { cartFn, carts } = this.addCart(shopEnv, removalPolicy, httpApi, products);
+    const { cartFn, carts, cartIdempotency } = this.addCart(
+      shopEnv,
+      removalPolicy,
+      httpApi,
+      products,
+    );
 
     // Đặt hàng (ordering.md): mọi route cần đăng nhập
     const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
@@ -320,6 +325,15 @@ export class ApiStack extends Stack {
       },
       workerFunctions: { 'order-processor': orderProcessorFn, 'recs-pipeline': recsPipeline.fn },
       recsPipelineFn: recsPipeline.fn,
+      tables: {
+        products,
+        carts,
+        'cart-idempotency': cartIdempotency,
+        orders: ordering.orders,
+        'order-idempotency': ordering.orderIdempotency,
+        events,
+        recs: this.recsTable,
+      },
       ordersQueue: ordering.queue,
       ordersDeadLetterQueue: ordering.deadLetterQueue,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
@@ -449,7 +463,7 @@ export class ApiStack extends Stack {
     });
 
     new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
-    return { cartFn, carts };
+    return { cartFn, carts, cartIdempotency };
   }
 
   /**
