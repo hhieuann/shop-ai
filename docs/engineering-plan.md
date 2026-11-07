@@ -382,8 +382,8 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 | API 5xx trên 1% trong 5 phút | Email qua SNS | `runbooks/api-5xx.md` |
 | Lambda bị throttle | Email | `runbooks/lambda-throttle.md` |
 | DLQ đơn hàng có message | Email | `runbooks/dlq-orders.md` |
-| Message SQS cũ nhất quá 5 phút | Email | `runbooks/sqs-backlog.md` |
-| DynamoDB bị throttle | Email | `runbooks/dynamodb-throttle.md` |
+| Message SQS cũ nhất quá 5 phút | Xem dashboard (không có alarm: đã hết 10 alarm miễn phí, #252) | `runbooks/sqs-backlog.md` |
+| DynamoDB bị throttle | Xem biểu đồ throttle theo bảng trên dashboard (không có alarm, như trên) | `runbooks/dynamodb-throttle.md` |
 | Chi phí vượt $5, $10, $20 | Email từ Budgets | `runbooks/cost-spike.md` |
 | Pipeline gợi ý đêm qua lỗi hoặc không chạy | Email; web vẫn đọc phiên bản cũ | `runbooks/recs-pipeline.md` |
 
