@@ -246,7 +246,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx` | 📝 |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
 | `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
-| `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
+| `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin; nút xác nhận kiểu `primary`, kiểu `danger` thêm khi làm lại nút Huỷ đơn) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
@@ -475,8 +475,8 @@ Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, n�
 | warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT` | `alert` |
 | danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL` | `alert` |
 
-### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, 📝; ví dụ "Huỷ đơn")
-Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger).
+### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, sau này "Huỷ đơn")
+Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger). Trang admin dùng nút xác nhận `primary` ("Chuyển sang Đang giao"). Dưới 640px hai nút xếp dọc rộng hết hộp, nút xác nhận ở trên. Đang xử lý: nút xác nhận đổi chữ "Đang …" (§9.3), Esc và nút phụ không đóng hộp; lỗi hiện bằng `Alert` ngay trên hàng nút.
 
 ### 9.15 Tóm tắt đơn (`OrderSummary`, ✅; giỏ hàng, đặt hàng)
 Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, bo 16px, padding 24px (<640: 16px).

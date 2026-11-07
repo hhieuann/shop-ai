@@ -85,6 +85,13 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
+        path: 'admin',
+        lazy: async () => ({
+          Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
+        }),
+      },
+      {
         path: '*',
         element: <NotFoundPage />,
       },
