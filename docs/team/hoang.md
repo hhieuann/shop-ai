@@ -10,32 +10,40 @@ Bạn mới làm cloud, nên lộ trình dưới đây đi từ nền tảng lê
 
 | Khu vực | Việc cụ thể |
 |---|---|
-| API bán hàng | `catalog`: liệt kê theo loại, chi tiết, lọc. `cart`: thêm, sửa, xoá. `ordering`: `POST /api/v1/orders` có `Idempotency-Key`, lịch sử đơn. `admin`: thêm sản phẩm, xem đơn theo trạng thái |
-| Xử lý đơn chạy nền | Worker `order-processor`: nhận đơn từ SQS, gửi email xác nhận qua SES, gửi tin `order-confirmed` qua SNS cho module `events`. Nhận trùng message thì không gửi email hai lần |
-| Thiết kế dữ liệu | Bảng `products`, `carts`, `orders`, `idempotency`: khoá và index đi từ các truy vấn cần có |
+| API bán hàng | `catalog`: liệt kê theo loại, chi tiết, lọc. `cart`: thêm, sửa, xoá, gộp giỏ khách. `ordering`: `POST /api/v1/orders` có `Idempotency-Key`, lịch sử đơn, huỷ đơn. Admin (bản rc.1): xem đơn theo trạng thái và chuyển `SHIPPED`, `DELIVERED` (ordering.md BR-15); thêm sản phẩm, admin huỷ đơn để sau rc.1 |
+| Xử lý đơn chạy nền | Worker `order-processor`: nhận đơn từ SQS, xác nhận đơn, gửi tin `order-confirmed` qua SNS (chỉ hàng đợi của module `events` nghe), gửi email xác nhận và email huỷ qua SES. Nhận trùng message thì không gửi email hai lần |
+| Thiết kế dữ liệu | Bảng `products`, `carts`, `orders`, `cart-idempotency`, `order-idempotency`: khoá và index đi từ các truy vấn cần có |
 | Hợp đồng API | Các endpoint trên trong `contracts/openapi.yaml`, viết trước code |
 | Giao diện web | Trang danh sách, chi tiết, giỏ, đặt hàng, lịch sử đơn, admin. An làm hai widget gợi ý và phần đăng nhập |
 | E2E | E2E API bằng Vitest + fetch, chạy sau mỗi lần deploy ([hands-on-testing-guide.md](../hands-on-testing-guide.md) mục 6, [ADR-0018](../adr/0018-e2e-api-bang-vitest.md)) |
-| Runbook | `dlq-orders`, `sqs-backlog`, `dynamodb-throttle` |
+| Runbook | `dlq-orders`, `sqs-backlog`, `dynamodb-throttle` (đã có cả ba) |
 
-## Tuần này (đến hết 05/10)
+## Tình trạng (08/11)
 
-- [x] Bật xác thực hai bước (MFA) cho tài khoản GitHub
-- [x] Cài Node 24, pnpm 12, Docker Desktop, AWS CLI v2, Postman. Clone repo, chạy `pnpm install` và `docker compose up -d`
-- [x] Đọc [git-flow.md](../git-flow.md), [hands-on-testing-guide.md](../hands-on-testing-guide.md), [ADR-0009](../adr/0009-layer-hexagonal-rut-gon.md)
-- [x] Review PR #3 và #4 (đã approve ngày 01/10)
-- [x] Lab nền tảng nếu chưa làm: [000002 IAM](https://000002.awsstudygroup.com/), [000057 S3](https://000057.awsstudygroup.com/). Sau đó [000060 DynamoDB](https://000060.awsstudygroup.com/)
-- [x] Cùng nhóm viết nghiệp vụ catalog, giỏ hàng, đặt hàng vào `docs/business/` trước 05/10 (PR #15)
-- [x] OpenAPI bản 0 cho catalog và cart (PR #19, gồm cả ordering)
-- [x] Khung web: Vite + React + TypeScript + React Router + TanStack Query, chạy trên mock Prism (PR #21)
-- [x] Thiết kế bảng `products`, `carts`, `orders`: viết bảng truy vấn cần có, rồi chọn khoá; mở PR để An và Nhân góp ý (PR #17)
-- [x] Dự buổi đi qua module mẫu của An
+Đã xong, theo PR chính:
+
+- [x] Nghiệp vụ, thiết kế bảng, OpenAPI bản 0, khung web (PR #15, #17, #19, #21)
+- [x] Catalog và 104 sản phẩm demo tự nạp khi deploy (PR #22, #29, #31, #44, #60)
+- [x] Giỏ hàng, giỏ khách vãng lai và gộp giỏ khi đăng nhập (PR #56, #58, #94, #97)
+- [x] Giao diện chàm: header, trang chủ, danh sách, giỏ, đặt hàng (PR #121, #123, #125, #144–#158)
+- [x] E2E API bằng Vitest chạy sau mỗi lần deploy (PR #164, #257)
+- [x] Đặt hàng có `Idempotency-Key`, tối đa 3 đơn đang mở, xem và huỷ đơn (PR #233, #242, #247, #248, #255, #256)
+- [x] Worker `order-processor`: xác nhận đơn, tin `order-confirmed`, email SES (PR #259, #263, #265, #284)
+- [x] Trang chi tiết sản phẩm làm lại, web gửi sự kiện xem hàng và thêm giỏ (PR #330, #331, #332, #338, #340, #341, #344, #345, #347)
+- [x] Hiệu năng trên điện thoại đạt mốc Lighthouse 90 theo cách đo mới; số trên icon giỏ và hiệu ứng thêm vào giỏ (PR #355, #362, #369)
+- [x] Admin chuyển đơn sang `SHIPPED`, `DELIVERED`: API, hạ tầng, màn hình `/admin` (PR #385, #387, #389)
+- [x] Runbook `dlq-orders`, `sqs-backlog`, `dynamodb-throttle` (PR #234, #263, #391)
+
+Còn lại:
+
+- [ ] Nghiệm thu `v1.0.0-rc.1` trên staging ngày 10–11/11: R1, R2, R3 (đặt, xem, huỷ đơn; đơn thứ 4; khối gợi ý) và P1 (Lighthouse), theo [releases/v1.0.0-rc.1.md](../releases/v1.0.0-rc.1.md)
+- [ ] Chương workshop và blog (tuần 7–8)
 
 ## Lộ trình 8 tuần
 
 | Tuần | Việc | Xong khi |
 |---|---|---|
-| 1 · 29/09–05/10 | Danh sách tuần này | Web chạy trên mock; OpenAPI bản 0 và thiết kế bảng đã merge |
+| 1 · 29/09–05/10 | Nghiệp vụ, OpenAPI bản 0, thiết kế bảng, khung web | Web chạy trên mock; OpenAPI bản 0 và thiết kế bảng đã merge |
 | 2 · 06–12/10 | Module `catalog` theo khuôn module mẫu; script nạp khoảng 100 sản phẩm; trang danh sách và chi tiết | Xem được sản phẩm thật trên dev |
 | 3 · 13–19/10 | Module `cart` và trang giỏ; E2E API bản 1 (đăng nhập, catalog, giỏ, ca lỗi) chạy trong CI; cùng nhóm nghiệm thu `v0.1.0` trên staging | E2E xanh; `v0.1.0` phát hành |
 | 4 · 20–26/10 | Module `ordering` với `Idempotency-Key`; worker `order-processor` qua SQS, email qua SES, tin `order-confirmed` qua SNS; trang lịch sử đơn | Đặt hàng trọn luồng trên dev, nhận được email |
