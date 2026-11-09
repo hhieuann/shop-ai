@@ -32,10 +32,13 @@ aws dynamodb restore-table-to-point-in-time --region ap-southeast-1 \
   --use-latest-restorable-time --billing-mode-override PAY_PER_REQUEST \
   --query 'TableDescription.TableStatus'
 
-# 3. Chờ bảng mới ACTIVE, ghi giờ xong: hiệu hai mốc là thời gian khôi phục
+# 3. Chờ bảng mới ACTIVE, ghi giờ xong: hiệu hai mốc là thời gian khôi phục.
+#    Waiter chỉ chờ tối đa khoảng 8 phút; báo hết giờ thì chạy lại lệnh wait, chưa phải lỗi.
 aws dynamodb wait table-exists --region ap-southeast-1 --table-name "$DST"
 date -u +%FT%TZ
 ```
+
+Khôi phục mất vài phút tới hơn 10 phút **kể cả khi bảng chỉ vài KB**: thời gian chủ yếu là AWS dựng bảng, không tỉ lệ với dữ liệu.
 
 4. So bảng mới với bảng cũ (số item quét được, không ghi dữ liệu khách vào ghi chú):
 
@@ -56,6 +59,19 @@ date -u +%FT%TZ
    ```
 
 6. Ghi vào checklist rc.1 (P3): thời điểm khôi phục, thời gian từ bước 2 tới bước 3, số item hai bảng. RTO thật gồm cả thời gian chép dữ liệu về (mục dưới), nên ghi rõ đây mới là phần khôi phục.
+
+### Lần diễn tập 09/11/2026 (An)
+
+| Mục | Kết quả |
+|---|---|
+| Bảng nguồn | `shop-stg-api-OrdersTable315BB997-…`, 23 item, khoảng 9 KB, PITR từ 03/11 |
+| Khôi phục về | 01:32:14 UTC (muộn nhất có thể lúc chạy), bắt đầu 01:37:13 UTC |
+| ACTIVE | Sau 01:40:20 và trước 01:46:53 UTC: **3–10 phút** |
+| So sánh | 23 = 23 item; `byStatus` ACTIVE |
+| Bảng mới thiếu | TTL `DISABLED`, PITR `DISABLED`, deletion protection tắt, đúng như bảng ở trên |
+| Dọn | `delete-table` xong, `list-tables` không còn bảng `pitr-drill` |
+
+Phần khôi phục nằm rất xa trong RTO 1 giờ. Bước chép về bảng cũ chưa đo.
 
 ## Sự cố thật trên prod
 
