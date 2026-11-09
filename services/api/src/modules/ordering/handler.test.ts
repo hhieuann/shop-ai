@@ -54,6 +54,7 @@ const SUMMARY = {
   status: ORDER.status,
   totalAmount: ORDER.totalAmount,
   itemCount: 1,
+  firstItemName: ORDER.items[0]!.name,
   createdAt: ORDER.createdAt,
 };
 

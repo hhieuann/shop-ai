@@ -13,12 +13,12 @@ import { logger } from '../../shared/logger.js';
 import type { AdvanceOrderStatusInput } from './application/advanceOrderStatus.js';
 import type { ListAdminOrdersInput, ListAdminOrdersOutput } from './application/listAdminOrders.js';
 import { MAX_PAGE_SIZE } from './domain/history.js';
-import type { OrderSummary } from './domain/order.js';
+import type { AdminOrderSummary } from './domain/order.js';
 
 /** Use case của API admin đơn hàng. Lambda admin (PR hạ tầng) truyền bản thật, test truyền mock. */
 export interface AdminOrderUseCases {
   listAdminOrders(input: ListAdminOrdersInput): Promise<ListAdminOrdersOutput>;
-  advanceOrderStatus(input: AdvanceOrderStatusInput): Promise<OrderSummary>;
+  advanceOrderStatus(input: AdvanceOrderStatusInput): Promise<AdminOrderSummary>;
 }
 
 type Route = (
