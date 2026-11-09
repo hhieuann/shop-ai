@@ -397,7 +397,7 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 
 ### Sao lưu và phục hồi
 
-- **Đơn hàng, sản phẩm:** point-in-time recovery; RPO ≤ 5 phút; khôi phục sang bảng mới rồi trỏ lại, RTO ≤ 1 giờ
+- **Đơn hàng, sản phẩm:** point-in-time recovery; RPO ≤ 5 phút; khôi phục sang bảng mới rồi chép các item cần lại về bảng cũ, RTO ≤ 1 giờ ([runbooks/pitr-restore.md](runbooks/pitr-restore.md))
 - **Bucket dữ liệu:** bật versioning
 - **Hạ tầng:** dựng lại toàn bộ bằng CDK dưới 30 phút
 - **Gợi ý:** quay về phiên bản trước bằng con trỏ
