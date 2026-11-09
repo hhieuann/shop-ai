@@ -1,8 +1,8 @@
 # Màn hình dự kiến
 
-Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 13/10/2026 (trang danh sách mới)
+Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 09/11/2026 (đơn hàng chuyển sang spec trang)
 
-Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đơn hàng, đăng nhập nhiều bước, trạng thái rỗng, lỗi, 404, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
+Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đăng nhập nhiều bước, trạng thái rỗng, lỗi, 404, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
 
 ## Quy tắc
 
@@ -25,10 +25,10 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 
 | # | Màn hình | Confidence | Spec trang |
 |---|---|---|---|
-| 1 | Lịch sử đơn `/orders` | MEDIUM | chưa có |
-| 2 | Chi tiết đơn `/orders/:orderId` | MEDIUM | chưa có |
-| 3 | Hộp thoại xác nhận huỷ đơn | MEDIUM | design-system §9.14 |
-| 4 | Sau khi đặt hàng thành công | MEDIUM | chưa có |
+| 1 | Lịch sử đơn `/orders` | đã chốt | [don-hang.md](pages/don-hang.md) mục 3 |
+| 2 | Chi tiết đơn `/orders/:orderId` | đã chốt | [don-hang.md](pages/don-hang.md) mục 4 |
+| 3 | Hộp thoại xác nhận huỷ đơn | đã chốt | [don-hang.md](pages/don-hang.md) mục 4.5, design-system §9.14 |
+| 4 | Sau khi đặt hàng thành công | đã chốt | [don-hang.md](pages/don-hang.md) mục 5 |
 | 5 | Nút và menu tài khoản trên header | HIGH / MEDIUM | design-system §9.17 |
 | 6 | Nhập mã xác nhận email | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.3 |
 | 7 | Nhập mã MFA của admin | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.1 |
@@ -48,122 +48,9 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 
 ---
 
-## 1. Lịch sử đơn `/orders`
+## 1–4. Đơn hàng: lịch sử đơn, chi tiết đơn, hộp thoại huỷ đơn, sau khi đặt hàng
 
-Confidence: MEDIUM
-
-Dữ liệu (đã có): `GET /api/v1/orders` trả `OrderSummary` gồm `orderId`, `status`, `totalAmount`, `itemCount`, `createdAt`; phân trang bằng `cursor`. **Không có tên món hay ảnh.**
-
-Reuse:
-- Khung hẹp 1280px và tiêu đề trang như giỏ hàng (design-system §5, gio-hang.md §2).
-- Khối danh sách có các dòng ngăn bằng viền (gio-hang.md §2).
-- `Badge` trạng thái đơn (design-system §9.7), `Price md`, `Button secondary md` "Xem thêm", `EmptyState`.
-
-Patterns:
-- Cả dòng bấm được nhờ `::after` phủ kín, chỉ một link thật (như `ProductCard`, design-system §9.9).
-- Một hàng tiêu đề trang: `<h1>` 24/32/600.
-
-Bố cục và tương tác:
-```
-H1 Đơn hàng của tôi
-┌ Khối danh sách (bo 16px) ───────────────────────────────────────┐
-│ Đơn 01JA8…X4  [Đang giao]                         12.480.000₫  › │
-│ Đặt lúc 14:32, 06/10/2026 · 3 sản phẩm                            │
-├──────────────────────────────────────────────────────────────────┤
-│ Đơn 01J9Z…7Q  [Đã giao]                            8.490.000₫  › │
-└──────────────────────────────────────────────────────────────────┘
-                         [ Xem thêm đơn ]
-```
-- Dòng: padding 16px 24px (<640: 16px), lưới `minmax(0,1fr) auto auto`, gap 16px. Cột 1: dòng trên là link "Đơn {orderId}" 16/24/500 (mã `--font-mono`, cắt `…` khi hẹp) + `Badge` trạng thái cách 8px; dòng dưới 12/18 `--fg-subdued` "Đặt lúc {giờ}, {ngày} · {itemCount} sản phẩm". Cột 2: `Price md` tổng. Cột 3: icon `ChevronRight` 20px `--fg-subdued`.
-- Hover cả dòng: nền `--bg-surface-raised`. Focus: viền focus quanh dòng.
-- Mới nhất ở trên. Còn `nextCursor` → nút `secondary md` "Xem thêm đơn", cách khối 24px.
-- Rỗng: `EmptyState` "Bạn chưa có đơn hàng nào." + nút `primary md` "Mua sắm ngay" → `/products`.
-- Chưa đăng nhập → `/login` với `from: '/orders'`.
-
-Assumptions:
-- Hiện **đầy đủ** `orderId` như code hiện tại (chỉ cắt bằng CSS khi thiếu chỗ), không tự đặt mã ngắn.
-- Ngày giờ theo giờ Việt Nam, dạng `HH:mm, dd/MM/yyyy`.
-- Không lọc theo trạng thái (nghiệp vụ không có).
-
-Alternatives: thẻ riêng cho từng đơn có viền và cách nhau 24px; không chọn vì giỏ hàng Black Magic đã dùng một khối có dòng ngăn, giữ một kiểu danh sách cho cả hai trang. Bảng nhiều cột: hợp với admin hơn, khó đọc trên điện thoại.
-
-Do not introduce: ảnh món trong dòng (API không có), thanh tìm đơn, bộ lọc, theo dõi vận chuyển, nút "Mua lại".
-
-## 2. Chi tiết đơn `/orders/:orderId`
-
-Confidence: MEDIUM (riêng thanh tiến trình trạng thái: LOW)
-
-Dữ liệu (đã có): `Order` gồm `items[{productId, name, price, quantity}]`, `totalAmount`, `shippingFee` (luôn 0), `status`, `shippingAddress{fullName, phone, address, province}`, `paymentMethod` (COD), `createdAt`, `updatedAt`.
-
-Reuse: bố cục hai cột 360px (design-system §5), khối 16px như `CheckoutStep` không đánh số (dat-hang.md §3.1), `OrderSummary` (§9.15), `Badge`, `Alert`, `Button danger`, `ConfirmDialog` (§9.14).
-
-Patterns: tiêu đề trang + một hàng phụ; nội dung chia khối có `<h2>`; khối tóm tắt cột phải.
-
-Bố cục và tương tác:
-```
-‹ Đơn hàng của tôi
-H1 Đơn 01JA8…X4   [Đang giao]
-Đặt lúc 14:32, 06/10/2026
-┌ Trạng thái ──────────────────────────────┐ ┌ Thanh toán ─────────────┐
-│ ●──────●──────●──────○                    │ │ Tạm tính       …₫       │
-│ Chờ xác nhận  Đã xác nhận  Đang giao  Đã giao│ │ Phí vận chuyển Miễn phí │
-└──────────────────────────────────────────┘ │ Tổng cộng      …₫       │
-┌ Sản phẩm (3) ────────────────────────────┐ │ COD · trả khi nhận hàng │
-│ Tên món A                 × 1   8.490.000₫│ │ [ Huỷ đơn ] (danger)    │
-└──────────────────────────────────────────┘ └─────────────────────────┘
-┌ Giao tới ────────────────────────────────┐
-│ Nguyễn Văn A · 0912 345 678              │
-│ 12 Lê Lợi, P. Bến Nghé, TP. Hồ Chí Minh  │
-└──────────────────────────────────────────┘
-```
-- Link quay lại "‹ Đơn hàng của tôi" (ghost, như breadcrumb rút gọn ở chi-tiet-san-pham.md §3.1).
-- Khối **Trạng thái**: 4 bước `PENDING → CONFIRMED → SHIPPED → DELIVERED`. Bước đã qua và bước hiện tại: chấm 12px `--bg-primary`, vạch nối 4px `--bg-primary`; bước hiện tại thêm vòng 2px `--focus-ring`; bước chưa tới: chấm và vạch `--border-default`. Nhãn 12/18 dưới chấm, bước hiện tại đậm 500 `--fg-default`. Đơn `CANCELLED`: không vẽ thanh, thay bằng `Alert danger` "Đơn đã huỷ lúc {updatedAt}." Dưới 640px thanh chuyển thành danh sách dọc.
-- Khối **Sản phẩm**: `<ul>`, mỗi món tên (link tới trang sản phẩm) 14/20, "× {số lượng}" 12/18 `--fg-subdued`, thành tiền 14/20/600 phải. Giá là **giá lúc đặt** (snapshot).
-- Khối **Giao tới**: 3 dòng 14/20; tên đậm 500.
-- Cột phải `OrderSummary` tiêu đề "Thanh toán". Nút "Huỷ đơn" (`danger lg` rộng 100%) **chỉ hiện** khi `PENDING` hoặc `CONFIRMED` (ordering BR-10); bấm mở `ConfirmDialog` (mục 3). Không có nút `primary` nào trên trang này.
-- Lỗi `CANNOT_CANCEL` (đơn vừa chuyển sang đang giao) → `Alert danger` "Đơn đã được giao cho đơn vị vận chuyển, không huỷ được nữa." và tải lại đơn.
-
-Assumptions:
-- Thanh tiến trình là LOW: design-system chưa có component này, phải làm mới. Nếu thấy rối thì thay bằng một `Badge` lớn cạnh tiêu đề (đã có sẵn).
-- API không trả thời điểm của từng bước, nên thanh không ghi giờ cho từng bước.
-
-Alternatives: chỉ dùng `Badge` lớn cạnh tiêu đề thay cho thanh tiến trình (an toàn hơn, ít thông tin hơn); đặt nút "Huỷ đơn" ở hàng tiêu đề thay vì cột phải.
-
-Do not introduce: theo dõi vận chuyển, hoá đơn, in đơn, "Mua lại", liên hệ hỗ trợ, đổi trả.
-
-## 3. Hộp thoại xác nhận huỷ đơn
-
-Confidence: MEDIUM
-
-Reuse: `ConfirmDialog` đúng như design-system §9.14 (rộng tối đa 480px, bo 16px, padding 24px, `--shadow-lg`, `::backdrop` `--scrim`).
-
-Patterns: một hành động nguy hiểm thì hỏi lại; hai nút căn phải.
-
-Bố cục và tương tác:
-- Tiêu đề "Huỷ đơn này?" 20/28/600. Nội dung 14/20 `--fg-muted`: "Đơn {orderId} sẽ bị huỷ và không khôi phục được." Hàng nút: "Giữ đơn" (secondary, nhận focus đầu tiên) + "Huỷ đơn" (danger). Đang huỷ: "Đang huỷ…", hai nút vô hiệu, Esc không đóng.
-- Thành công: đóng hộp, khối Trạng thái đổi sang "Đã huỷ", `Alert success` "Đã huỷ đơn." (`role="status"`).
-
-Assumptions: hộp thoại bo **16px** như §9.14 để khớp khối lớn; không thêm biến thể bo khác.
-
-Alternatives: hỏi lại ngay trong trang (nút đổi thành "Bấm lần nữa để huỷ") thay vì hộp thoại; không chọn vì dễ bấm nhầm hai lần liên tiếp và khó hiểu với trình đọc màn hình.
-
-Do not introduce: ô chọn lý do huỷ, ô ghi chú.
-
-## 4. Sau khi đặt hàng thành công
-
-Confidence: MEDIUM
-
-Reuse: trang chi tiết đơn (mục 2) + `Alert success`.
-
-Bố cục và tương tác:
-- Không làm trang "Cảm ơn" riêng. Đầu trang chi tiết đơn có `Alert success`: dòng 1 đậm 500 "Đặt hàng thành công!"; dòng 2 "Email xác nhận sẽ được gửi trong ít phút. Thanh toán khi nhận hàng." Focus chuyển vào Alert. Thông báo mất khi tải lại trang (state không còn).
-- Đơn vừa tạo đang `PENDING`; thanh trạng thái ở bước đầu.
-
-Assumptions: email do worker gửi sau vài giây (ordering, luồng SQS), nên câu chữ không hứa "đã gửi".
-
-Alternatives: trang "Cảm ơn" riêng `/orders/:id/success` giống trang xác nhận đơn thường gặp ở cửa hàng online ; không chọn vì thêm một trang và code hiện có đã đi thẳng tới chi tiết đơn.
-
-Do not introduce: pháo giấy, gợi ý mua thêm trong thông báo, nút chia sẻ.
+Đã chốt 09/11/2026, chuyển sang [pages/don-hang.md](pages/don-hang.md): lịch sử đơn (mục 3), chi tiết đơn (mục 4), hộp thoại huỷ đơn (mục 4.5), thông báo sau khi đặt hàng thành công (mục 5). Khác phương án cũ ở đây: đơn được gọi theo **tên món đầu** ("… và N sản phẩm khác", cần thêm trường `firstItemName` vào danh sách đơn), mã đơn chuyển thành dòng chữ mờ bên dưới; chi tiết đơn có thanh 4 bước trạng thái (design-system §9.26).
 
 ## 5. Nút và menu tài khoản trên header
 

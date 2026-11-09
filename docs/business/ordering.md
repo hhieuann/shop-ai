@@ -172,5 +172,5 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 ## Màn hình liên quan
 
 - `/checkout` — trang đặt hàng: địa chỉ giao hàng, tóm tắt đơn, dòng "Phí vận chuyển: Miễn phí", nút "Xác nhận đặt hàng". Nhận 409 `PRICE_CHANGED` thì hiện giá mới và yêu cầu xác nhận lại. Nhận 409 `TOO_MANY_OPEN_ORDERS` thì hiện "Bạn đang có 3 đơn chưa giao. Huỷ bớt đơn hoặc chờ đơn được giao rồi đặt tiếp." kèm link "Xem đơn hàng" → `/orders`.
-- `/orders` — lịch sử đơn: danh sách đơn kèm trạng thái.
-- `/orders/:orderId` — chi tiết đơn; nút "Huỷ đơn" khi đơn còn `PENDING` hoặc `CONFIRMED`.
+- `/orders` — lịch sử đơn: danh sách đơn kèm trạng thái; mỗi đơn gọi theo tên món đầu tiên ("… và N sản phẩm khác"), mã đơn là dòng phụ. Spec: `docs/web/pages/don-hang.md`.
+- `/orders/:orderId` — chi tiết đơn; nút "Huỷ đơn" khi đơn còn `PENDING` hoặc `CONFIRMED`, bấm thì hỏi lại trước khi huỷ.

@@ -9,12 +9,12 @@ Bố cục: các khối có số thứ tự bên trái, khối tóm tắt bên p
 - Phải đăng nhập (BR-01). Vào từ nút "Đặt hàng" ở giỏ; danh sách món đã tick đi theo `location.state` và được lưu `sessionStorage` để F5 không mất.
 - Mỗi món chỉ có `productId`, `name`, `price`, `quantity` (không có ảnh).
 - Gửi `POST /api/v1/orders` với `items[{productId, quantity, expectedPrice}]`, `shippingAddress{fullName, phone, address, province}` và header `Idempotency-Key` (BR-04; code đã xử lý giữ/đổi key).
-- Thành công → `/orders/{orderId}` (`replace`), trang đơn hiện `Alert success`.
+- Thành công → `/orders/{orderId}` (`replace`) với `state.justCreated`; trang chi tiết đơn hiện `Alert success` ([don-hang.md](don-hang.md) mục 5).
 - Phí vận chuyển luôn "Miễn phí"; tổng = tổng (giá × số lượng); COD (BR-05, BR-06).
 
 ## 2. Bố cục
 
-Hiện trang dùng header đầy đủ như các trang khác. Link "Quay lại giỏ hàng" (icon `ArrowLeft` 16px, chữ 14/20/500 `--fg-primary`) nằm trên tiêu đề, cách 12px. Dự kiến chuyển sang `FocusLayout` (design-system §9.16: header thu gọn, không có ô tìm kiếm và hàng chip) ở mục 8.
+Trang dùng `FocusLayout` (design-system §9.16): thanh `MiniHeader` 64px (<640: 56px) chỉ có logo và một link "Quay lại giỏ hàng" bên phải (icon `ArrowLeft` 20px); không ô tìm kiếm, không hàng chip, không nút tài khoản, không dính. Footer giữ nguyên. Link quay lại nằm trên thanh này nên **không** đặt thêm link trên tiêu đề nữa. Khách đang điền địa chỉ ít bị kéo đi chỗ khác; muốn quay ra thì chỉ có hai đường: logo (về trang chủ) và link quay lại giỏ.
 
 ```
 H1 Đặt hàng                                         
@@ -34,7 +34,7 @@ H1 Đặt hàng
 
 | Phần | Giá trị |
 |---|---|
-| Khung | rộng tối đa **1280px**, căn giữa, lề `--gutter`; cách hàng chip của header 32px (16px của `<main>` + 16px của trang) |
+| Khung | rộng tối đa **1280px**, căn giữa, lề `--gutter`; cách `MiniHeader` 32px (16px của `<main>` + 16px của trang) |
 | Tiêu đề | `<h1>` 24/32/600 "Đặt hàng", cách nội dung 24px |
 | Lưới (≥960) | `grid-template-columns: minmax(0,1fr) 360px; gap:24px; align-items:start` (design-system §5) |
 | Cột trái | các khối bước xếp dọc, cách nhau 16px |
@@ -60,7 +60,7 @@ H1 Đặt hàng
 - Kiểm tra khi bấm xác nhận (giữ câu chữ trong code: "Vui lòng nhập họ tên", "Số điện thoại không hợp lệ"…); sau lần bấm đầu thì kiểm lại từng ô khi rời ô. Có lỗi → focus vào ô lỗi đầu tiên.
 
 ### 3.3 ② Thanh toán
-Một ô cố định (không phải lựa chọn, vì chỉ có COD): nền `--bg-surface-raised`, viền `--border-default`, bo 8px, padding `12px 16px`, gap 12px. Icon `Banknote` 24px `--fg-success` + hai dòng: "Thanh toán khi nhận hàng (COD)" 16/24/500; "Trả tiền mặt cho shipper đúng số tiền ở mục Tổng cộng, không phát sinh thêm." 14/20 `--fg-subdued`. Không dùng emoji 💵 như code hiện tại.
+Một ô cố định (không phải lựa chọn, vì chỉ có COD): nền `--bg-surface-raised`, viền `--border-default`, bo 8px, padding `12px 16px`, gap 12px. Icon `Banknote` 24px `--fg-success` + hai dòng: "Thanh toán khi nhận hàng (COD)" 16/24/500; "Trả tiền mặt cho shipper đúng số tiền ở mục Tổng cộng, không phát sinh thêm." 14/20 `--fg-subdued`.
 
 ### 3.4 Đơn hàng (cột phải)
 `OrderSummary` (design-system §9.15):
@@ -81,6 +81,7 @@ Nút nằm trong khối tóm tắt (cạnh con số tổng) để khách thấy 
 | `PRICE_CHANGED` | `Alert warning`: "Giá đã thay đổi. Tóm tắt đơn đã cập nhật giá mới, vui lòng kiểm tra rồi bấm xác nhận lại." + danh sách "Tên: giá cũ → giá mới"; các món đổi giá có nhãn "Giá mới"; tổng cập nhật |
 | `OUT_OF_STOCK` | `Alert danger` + danh sách món và số còn lại + link "Quay lại giỏ hàng để điều chỉnh" |
 | `ORDER_IN_PROGRESS` | `Alert warning` "Đơn của bạn đang được xử lý. Vui lòng đợi vài giây rồi bấm lại; bạn sẽ không bị đặt trùng." |
+| `TOO_MANY_OPEN_ORDERS` (BR-14) | `Alert warning` "Bạn đang có 3 đơn chưa giao. Huỷ bớt đơn hoặc chờ đơn được giao rồi đặt tiếp." + link "Xem đơn hàng" → `/orders`. Nút xác nhận vẫn bấm được (khách huỷ bớt đơn ở tab khác rồi quay lại) |
 | Lỗi mạng | `Alert danger` "Không kết nối được máy chủ. Bấm đặt hàng lại sẽ không tạo đơn trùng." |
 | Đang gửi | nút "Đang đặt hàng…", các ô vẫn xem được nhưng `readOnly` |
 
@@ -104,4 +105,3 @@ Sau khi `Alert` xuất hiện, chuyển focus tới nó (`tabIndex={-1}`).
 
 ## 8. Việc còn lại
 - Tỉnh / Thành phố đang là ô chữ tự do. Đổi thành select cần danh sách tỉnh thành chuẩn (sau sáp nhập 2025) và sửa OpenAPI; chưa có trong nghiệp vụ, giữ ô chữ.
-- Thêm `FocusLayout` vào router cho `/checkout` (header thu gọn).
