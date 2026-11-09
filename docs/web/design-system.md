@@ -1,12 +1,12 @@
 # Design system: Black Magic
 
-Người viết: Hoàng · Cập nhật: 03/11/2026 (bản chốt trang chi tiết sản phẩm) · Áp dụng cho `apps/web`
+Người viết: Hoàng · Cập nhật: 09/11/2026 (bản chốt trang đơn hàng) · Áp dụng cho `apps/web`
 
 Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien.md](giao-dien.md), mục lục ở [README.md](README.md).
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, **code chưa đổi**: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, **code chưa đổi**: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -98,7 +98,7 @@ Bảng màu chàm (chốt 11/10/2026). Cột "Tương phản" là tỉ lệ WCAG
 
 ## 3. Chữ
 
-Font **Inter** (`--font-sans`, dự phòng system-ui, -apple-system, Segoe UI, Roboto), **tự host** bằng gói `@fontsource/inter` (import trong `main.tsx`, đóng gói cùng web, không gọi máy chủ font bên ngoài): dải `latin` và `vietnamese`, các độ đậm 400 / 500 / 600 / 700, `font-display: swap`. Số liệu kỹ thuật có thể dùng `--font-mono`. `<html lang="vi">`. Cỡ chữ lấy theo trang tham khảo chính.
+Font **Inter** (`--font-sans`, dự phòng system-ui, -apple-system, Segoe UI, Roboto), **tự host** bằng gói `@fontsource/inter` (import trong `main.tsx`, đóng gói cùng web, không gọi máy chủ font bên ngoài): dải `latin` và `vietnamese`, các độ đậm 400 / 500 / 600 / 700, `font-display: swap`. Số liệu kỹ thuật có thể dùng `--font-mono`; mã đơn (ULID 26 ký tự) dùng `--font-mono` 12px, hiện đủ. `<html lang="vi">`. Cỡ chữ lấy theo trang tham khảo chính.
 
 | Vai trò | Cỡ / line-height / đậm | Dùng ở |
 |---|---|---|
@@ -246,7 +246,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx` | 📝 |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
 | `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
-| `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin; nút xác nhận kiểu `primary`, kiểu `danger` thêm khi làm lại nút Huỷ đơn) |
+| `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
@@ -260,6 +260,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `SpecPanel` (panel thông số mở từ bên phải) | `features/catalog/components/SpecPanel.tsx`; câu giải thích ở `features/catalog/lib/specHelp.ts`, thứ tự ô `SPEC_ORDER` ở `specLabels.ts` | ✅ (trang chi tiết, §9.24) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
+| `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | 📝 (chi tiết đơn, §9.26) |
+| `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | 📝 (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
 | `CategoryMenu` (13 loại hàng: cột trái trang chủ, bảng thả xuống, ngăn kéo) | nên đặt `app/CategoryMenu.tsx` | 📝 |
 
@@ -471,12 +473,15 @@ Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelled
 Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, nền `*-tint` tương ứng, chữ 14/20 `--fg-default`, icon lucide 20px màu trạng thái bên trái (`CircleCheck`, `TriangleAlert`, `CircleX`). Lưới 3 cột `20px | chữ | nút`: icon thẳng hàng với dòng chữ đầu. Có nút đi kèm (prop `action`, vd. "Gộp vào giỏ"): máy tính đặt sát mép phải, icon, chữ, nút cùng nằm giữa theo chiều cao; điện thoại (<640) nút xuống dòng dưới chữ, thẳng lề trái với chữ.
 | Loại | Ví dụ trong nghiệp vụ | Vai trò ARIA |
 |---|---|---|
-| success | "Đã thêm vào giỏ", "Đặt hàng thành công! Email xác nhận sẽ được gửi trong ít phút." | `status` |
-| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT` | `alert` |
+| success | "Đã thêm vào giỏ", "Đặt hàng thành công!" (chi tiết đơn ngay sau khi đặt), "Đã huỷ đơn." | `status` |
+| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT`, `TOO_MANY_OPEN_ORDERS` (kèm link "Xem đơn hàng") | `alert` |
 | danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL` | `alert` |
 
-### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, sau này "Huỷ đơn")
+### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, huỷ đơn)
 Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger). Trang admin dùng nút xác nhận `primary` ("Chuyển sang Đang giao"). Dưới 640px hai nút xếp dọc rộng hết hộp, nút xác nhận ở trên. Đang xử lý: nút xác nhận đổi chữ "Đang …" (§9.3), Esc và nút phụ không đóng hộp; lỗi hiện bằng `Alert` ngay trên hàng nút.
+- Nút xác nhận theo prop `tone`: `primary` (mặc định, admin) hoặc `danger` (việc không hoàn tác được: "Huỷ đơn", màu như `Button danger` §9.3). Nút phụ đứng trước trong DOM nên `showModal` focus nó trước: bấm Enter nhầm thì chỉ đóng hộp.
+- Đóng hộp thì trang trả focus về nút đã mở hộp; nếu nút đó biến mất (đơn đã huỷ) thì về `<h1>` (`tabIndex={-1}`).
+- Hộp huỷ đơn của khách: [pages/don-hang.md](pages/don-hang.md) mục 4.5.
 
 ### 9.15 Tóm tắt đơn (`OrderSummary`, ✅; giỏ hàng, đặt hàng)
 Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, bo 16px, padding 24px (<640: 16px).
@@ -652,7 +657,7 @@ Hình dạng: nút phụ `md` rộng hết thẻ, cao 40px, bo 8px, viền `--bo
 
 Lỗi hiện **trên chính nút**, không thêm dòng chữ dưới nút, để giá và nút của các thẻ cùng hàng không lệch nhau. Vùng `aria-live` và `role="alert"` đặt một lần ở cấp trang, không lặp trong từng thẻ. Cách làm: `LiveAnnouncerProvider` bọc trang, nút gọi `useAnnounce()`; không có provider thì nút vẫn chạy nhưng không đọc gì.
 
-### 9.24 Ô thông số (`SpecTiles`) và panel thông số (`SpecPanel`) (📝; trang chi tiết)
+### 9.24 Ô thông số (`SpecTiles`) và panel thông số (`SpecPanel`) (✅; trang chi tiết)
 Chốt 03/11/2026 theo trang tham khảo phụ (khối ô thông số, bấm ô mở ngăn kéo bên phải). Thay bảng sọc `SpecTable` của bản cũ.
 
 **Dữ liệu dùng chung cho cả hai:** danh sách dòng `{ key, label, value }` lấy từ `specs` bằng hàm hiện có trong `specLabels.ts` (nhãn có dấu, giá trị theo `specValue`), mở rộng để trả kèm `key` và **xếp theo `SPEC_ORDER` của loại hàng**; khoá không có trong bảng xếp sau, theo thứ tự API trả. Không dựa vào thứ tự khoá của API (Map DynamoDB không giữ thứ tự).
@@ -716,6 +721,21 @@ Chốt 05/11/2026 (#356, thay #185). Thêm vào giỏ **thành công** từ hộ
 | Số trên giỏ | trong lúc bay nhãn giữ số cũ; tới nơi thì hiện số mới và nhãn nảy `scale(1 → 1,25 → 1)` 200ms. Thêm lại món đã có thì số không đổi, chỉ nảy |
 | Bấm nhiều lần | mỗi lần một ô |
 | Không bay | `prefers-reduced-motion: reduce`, icon giỏ không thấy trên màn hình (bị panel thông số phủ, không có trong trang), hoặc phần hiệu ứng (`FlyToCart`, tải riêng sau gói JS đầu tiên) chưa tải xong hay tải lỗi: không có ô bay, không nảy, số đổi ngay. Tải lỗi không làm sập trang |
+
+### 9.26 Thanh trạng thái đơn (`OrderStatusSteps`, 📝; chi tiết đơn)
+Chốt 09/11/2026 ([pages/don-hang.md](pages/don-hang.md) mục 4.1). `<ol>` 4 bước theo máy trạng thái đơn (`docs/business/ordering.md`): Chờ xác nhận → Đã xác nhận → Đang giao → Đã giao. Bước trước bước hiện tại là "xong", bước hiện tại có `aria-current="step"`. Đơn `CANCELLED` **không** dùng thanh này (API không lưu đơn bị huỷ ở bước nào).
+
+| Phần | Số đo (≥640, nằm ngang) |
+|---|---|
+| Lưới | `grid-template-columns: repeat(4, minmax(0,1fr))`; mỗi bước căn giữa, gap 8px, padding ngang 4px |
+| Chấm | tròn 14px, `aria-hidden`. Chưa tới: nền `--bg-surface`, viền trong 2px `--border-default`. Xong: nền `--bg-primary`. Hiện tại: nền `--bg-primary` + vòng ngoài 4px `--bg-primary-tint-2` |
+| Vạch nối | cao 4px, bo 2px, từ tâm bước trước tới tâm bước này, ngang tâm chấm; chưa tới `--border-divider`, đã tới (bước xong hoặc hiện tại) `--bg-primary` |
+| Nhãn | 14/20/500: chưa tới `--fg-subdued`, xong `--fg-default`, hiện tại 600 `--fg-primary` |
+| Giờ | 12/18 `--fg-subdued`, dưới nhãn; chỉ bước đầu (`createdAt`) và bước hiện tại (`updatedAt`) có giờ; giữ chỗ 18px để các nhãn thẳng hàng |
+
+<640 (dọc): mỗi bước một hàng, lưới `14px minmax(0,1fr)`, gap cột 12px, cách nhau 16px; chấm ở cột trái lệch xuống 3px, nhãn và giờ bên phải căn trái; vạch nối dọc rộng 4px đi từ dưới chấm này tới chấm sau.
+
+Không có hiệu ứng chạy; trạng thái chỉ đổi khi tải lại dữ liệu.
 
 ## 10. Token sẽ thêm khi cần
 
