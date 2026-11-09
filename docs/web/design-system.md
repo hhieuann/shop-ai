@@ -239,13 +239,13 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `ProductCard` | `features/catalog/components/ProductCard.tsx` | ✅ |
 | `StockBadge` | `features/catalog/components/StockBadge.tsx` | ✅ |
 | `CategoryIcon` | `features/catalog/components/CategoryIcon.tsx` | ✅ |
-| `Button` (biến thể, cỡ, đang tải) | nên đặt `shared/components/Button.tsx` | 📝 |
+| `Button` (biến thể, cỡ, đang tải) | `shared/components/Button.tsx`; `buttonClass()` ở `shared/components/buttonClass.ts` cho `<Link>` trông như nút | ✅ (hộp xác nhận; trang cũ vẫn dùng class nút riêng) |
 | `Field` (nhãn + ô nhập + lỗi/gợi ý) | `shared/components/Field.tsx` | ✅ (ô nhập; select chưa có) |
 | `Checkbox` | `shared/components/Checkbox.tsx` | ✅ |
 | `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng, trang chi tiết) |
-| `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx` | 📝 |
+| `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx`; nhãn trạng thái đơn `OrderStatusBadge` ở `features/orders/components/OrderStatusBadge.tsx` | ✅ |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
-| `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
+| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (giỏ hàng và trang danh sách chưa chuyển sang, vẫn tự viết khối rỗng) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
@@ -261,7 +261,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
 | `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | 📝 (chi tiết đơn, §9.26) |
-| `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | 📝 (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
+| `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | ✅ (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
 | `CategoryMenu` (13 loại hàng: cột trái trang chủ, bảng thả xuống, ngăn kéo) | nên đặt `app/CategoryMenu.tsx` | 📝 |
 
@@ -331,7 +331,7 @@ Hàng chip 13 loại hàng trên nền chàm của bản trước **bỏ**: 13 l
 - Dòng cuối: viền trên 1px `--border-on-chrome-subtle`, padding trên 20px, chữ 12/16/500 `--fg-on-chrome-muted`: "© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo."
 - Link gạch chân khi hover; viền focus trắng. Không có mạng xã hội, tổng đài, showroom, chứng nhận (không có trong phạm vi).
 
-### 9.3 Nút (`Button`, 📝)
+### 9.3 Nút (`Button`, ✅)
 Hình dạng chung: `display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid; border-radius:8px`, chữ 14/20 **600** một dòng (nút `lg`: 16/24/600). Nút trên header có kiểu riêng (§9.1, bo 10px). (`base.css` hiện cho mọi `<button>` kiểu nút phụ, chữ 400; khi tách component `Button` thì dùng 600.)
 
 | Cỡ | Chiều cao tối thiểu | Padding | Dùng cho |
@@ -381,7 +381,7 @@ Form cụ thể ở [pages/dat-hang.md](pages/dat-hang.md) và [pages/dang-nhap.
 ### 9.6 Bộ chọn số lượng (`QuantityStepper`, ✅; trang chi tiết và giỏ hàng)
 `[−] [số] [+]` liền nhau, cao 40px: hai nút vuông 40×40 kiểu nút phụ (bo `8px 0 0 8px` và `0 8px 8px 0`), ô giữa rộng 48px, chữ 14/20/600 `tabular-nums`, căn giữa, viền trên và dưới `--border-default`. Giới hạn **1 … min(99, tồn kho)** (cart BR-03): tới biên thì nút tương ứng vô hiệu. Nhãn nút: "Giảm số lượng {tên}", "Tăng số lượng {tên}". Server trả `QUANTITY_LIMIT` → dòng `Alert` cảnh báo "Chỉ thêm được tối đa {maxAddable} sản phẩm nữa".
 
-### 9.7 Nhãn (`Badge` 📝 / `StockBadge` ✅)
+### 9.7 Nhãn (`Badge` ✅ / `StockBadge` ✅)
 Hình dạng chung (giống `StockBadge`): `display:inline-block; padding:2px 8px; border-radius:4px`, chữ 12/18/500, không xuống dòng.
 
 | Biến thể | Nền | Chữ |
