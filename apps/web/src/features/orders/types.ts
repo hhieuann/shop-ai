@@ -20,5 +20,16 @@ export const STATUS_TONE: Record<OrderStatus, BadgeTone> = {
   CANCELLED: 'danger',
 };
 
+/** Ô ghi chú dưới thanh trạng thái ở trang chi tiết đơn (pages/don-hang.md mục 4.1); đơn huỷ không có */
+export const STATUS_NOTE: Record<Exclude<OrderStatus, 'CANCELLED'>, string> = {
+  PENDING:
+    'Hệ thống đang xác nhận đơn, thường chỉ mất vài giây. Email xác nhận sẽ được gửi khi đơn được xác nhận.',
+  CONFIRMED:
+    'Đơn đã được xác nhận và đang chờ giao cho đơn vị vận chuyển. Bạn vẫn huỷ được đơn ở bước này.',
+  SHIPPED:
+    'Đơn đã giao cho đơn vị vận chuyển. Shipper sẽ gọi số điện thoại bên dưới trước khi giao.',
+  DELIVERED: 'Đơn đã giao thành công.',
+};
+
 /** ordering.md BR-10: khách tự huỷ được khi đơn chưa giao cho vận chuyển */
 export const CUSTOMER_CANCELLABLE: readonly OrderStatus[] = ['PENDING', 'CONFIRMED'];
