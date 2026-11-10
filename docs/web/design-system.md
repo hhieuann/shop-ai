@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, **code chưa đổi**: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -260,7 +260,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `SpecPanel` (panel thông số mở từ bên phải) | `features/catalog/components/SpecPanel.tsx`; câu giải thích ở `features/catalog/lib/specHelp.ts`, thứ tự ô `SPEC_ORDER` ở `specLabels.ts` | ✅ (trang chi tiết, §9.24) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/MiniHeader.tsx`; `RootLayout` vẽ `MiniHeader` thay `Header` khi route có `handle.chrome = 'focus'` (kèm `handle.back`) | ✅ (đặt hàng; đăng nhập, tạo tài khoản chưa dùng) |
-| `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | 📝 (chi tiết đơn, §9.26) |
+| `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | ✅ (chi tiết đơn, §9.26) |
 | `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | ✅ (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
 | `CategoryMenu` (13 loại hàng: cột trái trang chủ, bảng thả xuống, ngăn kéo) | nên đặt `app/CategoryMenu.tsx` | 📝 |
@@ -722,7 +722,7 @@ Chốt 05/11/2026 (#356, thay #185). Thêm vào giỏ **thành công** từ hộ
 | Bấm nhiều lần | mỗi lần một ô |
 | Không bay | `prefers-reduced-motion: reduce`, icon giỏ không thấy trên màn hình (bị panel thông số phủ, không có trong trang), hoặc phần hiệu ứng (`FlyToCart`, tải riêng sau gói JS đầu tiên) chưa tải xong hay tải lỗi: không có ô bay, không nảy, số đổi ngay. Tải lỗi không làm sập trang |
 
-### 9.26 Thanh trạng thái đơn (`OrderStatusSteps`, 📝; chi tiết đơn)
+### 9.26 Thanh trạng thái đơn (`OrderStatusSteps`, ✅; chi tiết đơn)
 Chốt 09/11/2026 ([pages/don-hang.md](pages/don-hang.md) mục 4.1). `<ol>` 4 bước theo máy trạng thái đơn (`docs/business/ordering.md`): Chờ xác nhận → Đã xác nhận → Đang giao → Đã giao. Bước trước bước hiện tại là "xong", bước hiện tại có `aria-current="step"`. Đơn `CANCELLED` **không** dùng thanh này (API không lưu đơn bị huỷ ở bước nào).
 
 | Phần | Số đo (≥640, nằm ngang) |
