@@ -681,6 +681,11 @@ export interface components {
       totalAmount: number;
       /** @description Số loại sản phẩm trong đơn */
       itemCount: number;
+      /**
+       * @description Tên món đầu tiên của đơn (thứ tự lúc đặt), để web đặt tên đơn
+       * @example Laptop ASUS TUF Gaming A15 FA507NV
+       */
+      firstItemName: string;
       /** Format: date-time */
       createdAt: string;
     };
