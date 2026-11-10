@@ -54,6 +54,11 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'checkout',
+        // Bố cục tập trung: khách đang điền địa chỉ chỉ có logo và link quay lại giỏ (dat-hang.md §2)
+        handle: {
+          chrome: 'focus',
+          back: { to: '/cart', label: 'Quay lại giỏ hàng' },
+        } satisfies RouteHandle,
         lazy: async () => ({
           Component: (await import('./features/orders/pages/CheckoutPage')).CheckoutPage,
         }),

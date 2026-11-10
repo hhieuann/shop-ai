@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Banknote, ShoppingCart } from 'lucide-react';
+import { Banknote, ShoppingCart } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
@@ -188,10 +188,6 @@ export function CheckoutPage() {
 
   return (
     <div className={styles.page}>
-      <Link to="/cart" className={styles.back}>
-        <ArrowLeft size={16} aria-hidden="true" />
-        Quay lại giỏ hàng
-      </Link>
       <h1 className={styles.title}>Đặt hàng</h1>
 
       <div className={styles.layout}>
