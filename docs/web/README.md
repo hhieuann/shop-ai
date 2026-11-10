@@ -10,7 +10,7 @@ Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao 
 | Một trang cụ thể | [design-system.md](design-system.md) + đúng file trang trong [`pages/`](pages/) |
 | Nhờ AI code giao diện | Đưa AI: README này + `design-system.md` + file trang cần làm. **Không** đưa file trang khác |
 | Định thêm tính năng mới | [ngoai-pham-vi.md](ngoai-pham-vi.md) (đã có trong danh sách không làm chưa?) |
-| Làm màn hình chưa có spec (admin, 404, trạng thái rỗng) | [man-hinh-du-kien.md](man-hinh-du-kien.md) |
+| Làm màn hình chưa có spec (admin khác, trạng thái rỗng) | [man-hinh-du-kien.md](man-hinh-du-kien.md) |
 
 ## Các file
 
@@ -26,10 +26,11 @@ Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao 
 | [pages/don-hang.md](pages/don-hang.md) | Đơn hàng của tôi `/orders`, chi tiết đơn `/orders/:orderId`, hộp thoại huỷ đơn (bản chốt 09/11/2026: đơn gọi theo tên món đầu, thanh 4 bước trạng thái) |
 | [pages/dang-nhap.md](pages/dang-nhap.md) | Đăng nhập `/login`, tạo tài khoản `/register` (An làm) |
 | [pages/admin-don-hang.md](pages/admin-don-hang.md) | Quản trị đơn hàng `/admin` (bản rc.1, chốt 06/11/2026: hai tab Chờ giao, Đang giao; chuyển trạng thái có hỏi lại) |
+| [pages/khong-tim-thay.md](pages/khong-tim-thay.md) | Không tìm thấy trang, route `*` (bản chốt 10/11/2026: khối rỗng có tiêu đề, nút về trang chủ và xem sản phẩm, header đầy đủ) |
 | [man-hinh-du-kien.md](man-hinh-du-kien.md) | Màn hình dự án cần nhưng chưa có spec trang: component dùng lại, bố cục đề xuất, mức tin cậy |
 | [ngoai-pham-vi.md](ngoai-pham-vi.md) | Tính năng cửa hàng điện tử thường có nhưng dự án **không làm**, kèm lý do |
 
-Trang **chưa có** spec riêng (sẽ thêm vào `pages/` khi làm): 404, các trang admin khác (thêm sản phẩm, huỷ đơn). Trước khi có spec, các trang này dùng component trong `design-system.md` và nghiệp vụ trong `docs/business/`.
+Trang **chưa có** spec riêng (sẽ thêm vào `pages/` khi làm): các trang admin khác (thêm sản phẩm, huỷ đơn; API chưa có). Trước khi có spec, các trang này dùng component trong `design-system.md` và nghiệp vụ trong `docs/business/`.
 
 ## Nguồn sự thật
 
