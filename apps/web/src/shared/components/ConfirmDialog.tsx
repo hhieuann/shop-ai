@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { Button } from './Button';
 import styles from './ConfirmDialog.module.css';
 
 interface ConfirmDialogProps {
@@ -10,6 +11,11 @@ interface ConfirmDialogProps {
   /** Chữ nút chính lúc đang xử lý, vd. "Đang chuyển…" (design-system §9.3) */
   busyLabel: string;
   busy?: boolean;
+  /**
+   * Kiểu nút xác nhận (§9.14): `primary` (mặc định, trang admin) hoặc `danger` cho việc không
+   * hoàn tác được (huỷ đơn)
+   */
+  tone?: 'primary' | 'danger';
   /** Thông báo lỗi (thường là `Alert`) hiện trên hàng nút */
   error?: ReactNode;
   onConfirm: () => void;
@@ -29,6 +35,7 @@ export function ConfirmDialog({
   cancelLabel,
   busyLabel,
   busy = false,
+  tone = 'primary',
   error,
   onConfirm,
   onClose,
@@ -63,18 +70,13 @@ export function ConfirmDialog({
       </div>
       {error && <div className={styles.error}>{error}</div>}
       <div className={styles.actions}>
-        <button type="button" className={styles.secondary} onClick={onClose} disabled={busy}>
+        {/* Nút phụ đứng trước trong DOM nên showModal focus nó trước: Enter nhầm chỉ đóng hộp */}
+        <Button className={styles.action} onClick={onClose} disabled={busy}>
           {cancelLabel}
-        </button>
-        <button
-          type="button"
-          className={styles.primary}
-          onClick={onConfirm}
-          aria-busy={busy}
-          disabled={busy}
-        >
+        </Button>
+        <Button className={styles.action} variant={tone} onClick={onConfirm} busy={busy}>
           {busy ? busyLabel : confirmLabel}
-        </button>
+        </Button>
       </div>
     </dialog>
   );

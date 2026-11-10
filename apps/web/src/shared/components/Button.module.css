@@ -1,0 +1,98 @@
+/* Nút (docs/web/design-system.md §9.3). Dùng cho cả <button> lẫn <Link> qua buttonClass() */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+  border: 1px solid;
+  border-radius: var(--radius-lg);
+  font: inherit;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+/* <a> có gạch chân khi hover (base.css): nút thì không */
+.button:hover {
+  text-decoration: none;
+}
+
+/* Cỡ */
+.sm {
+  min-height: 32px;
+  padding: var(--space-50) var(--space-150);
+}
+.md {
+  min-height: 40px;
+  padding: var(--space-100) var(--space-200);
+}
+.lg {
+  min-height: 48px;
+  padding: var(--space-100) var(--space-300);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+}
+.block {
+  width: 100%;
+}
+
+/* Biến thể; mỗi :hover ghi lại màu chữ vì a:hover của base.css đổi màu link */
+.primary,
+.primary:hover {
+  border-color: var(--bg-primary);
+  background: var(--bg-primary);
+  color: var(--fg-on-primary);
+}
+.primary:hover:not(:disabled) {
+  border-color: var(--bg-primary-hover);
+  background: var(--bg-primary-hover);
+}
+.primary:active:not(:disabled) {
+  background: var(--bg-primary-pressed);
+}
+
+.secondary,
+.secondary:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+}
+.secondary:hover:not(:disabled),
+.secondary:active:not(:disabled) {
+  background: var(--bg-surface-pressed);
+}
+
+.ghost,
+.ghost:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg-primary);
+}
+.ghost:hover:not(:disabled) {
+  background: var(--bg-transparent-hover);
+}
+.ghost:active:not(:disabled) {
+  background: var(--bg-transparent-pressed);
+}
+
+.danger,
+.danger:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface-raised);
+  color: var(--fg-danger);
+}
+.danger:hover:not(:disabled),
+.danger[aria-busy='true'] {
+  background: var(--bg-danger-tint);
+}
+
+/* Không bấm được: base.css đổi chữ sang --fg-disabled. Đang xử lý (aria-busy) thì con trỏ chờ */
+.button:disabled {
+  cursor: not-allowed;
+}
+.button[aria-busy='true'] {
+  cursor: progress;
+}

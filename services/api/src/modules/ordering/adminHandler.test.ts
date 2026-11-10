@@ -6,7 +6,7 @@ import {
   InvalidOrderCursorError,
   InvalidStatusTransitionError,
 } from './domain/errors.js';
-import type { OrderSummary } from './domain/order.js';
+import type { AdminOrderSummary } from './domain/order.js';
 
 const LIST = 'GET /api/v1/admin/orders';
 const UPDATE = 'PATCH /api/v1/admin/orders/{orderId}';
@@ -15,7 +15,7 @@ const ORDER_ID = '01K8GQ5Z3XM2T9V4B6N8P0R2S4';
 /** Claim nhóm như HTTP API thật gửi tới Lambda: mảng bị đổi thành chuỗi */
 const ADMIN_CLAIMS = { 'cognito:groups': '[admin]' };
 
-const SUMMARY: OrderSummary = {
+const SUMMARY: AdminOrderSummary = {
   orderId: ORDER_ID,
   status: 'SHIPPED',
   totalAmount: 15_900_000,
@@ -166,7 +166,7 @@ describe('admin handler · PATCH /api/v1/admin/orders/{orderId}', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers).toMatchObject({ 'cache-control': 'no-store' });
     expect(parseBody(res)).toEqual(SUMMARY);
-    expect(res.body).not.toMatch(/shippingAddress|userId/);
+    expect(res.body).not.toMatch(/shippingAddress|userId|firstItemName/);
     // Verify
     expect(uc.advanceOrderStatus).toHaveBeenCalledWith({
       adminId: ADMIN,
