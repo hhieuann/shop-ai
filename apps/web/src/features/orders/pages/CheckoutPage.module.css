@@ -4,13 +4,6 @@
   margin: 0 auto;
   padding-top: var(--space-200);
 }
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-50);
-  margin-bottom: var(--space-150);
-  font-weight: 500;
-}
 .title {
   margin-bottom: var(--space-300);
   font-size: var(--text-title-md);

@@ -259,7 +259,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `SpecTiles` (ô thông số, chia đều theo hàng) | `features/catalog/components/SpecTiles.tsx`; phép chia cột ở `features/catalog/lib/specGrid.ts` | ✅ (trang chi tiết, §9.24; thay `SpecTable`) |
 | `SpecPanel` (panel thông số mở từ bên phải) | `features/catalog/components/SpecPanel.tsx`; câu giải thích ở `features/catalog/lib/specHelp.ts`, thứ tự ô `SPEC_ORDER` ở `specLabels.ts` | ✅ (trang chi tiết, §9.24) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
-| `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
+| `FocusLayout` + `MiniHeader` | `app/MiniHeader.tsx`; `RootLayout` vẽ `MiniHeader` thay `Header` khi route có `handle.chrome = 'focus'` (kèm `handle.back`) | ✅ (đặt hàng; đăng nhập, tạo tài khoản chưa dùng) |
 | `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | 📝 (chi tiết đơn, §9.26) |
 | `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | ✅ (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
@@ -492,7 +492,7 @@ Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, b
 - Không có dòng tạm tính (giỏ rỗng) thì bỏ luôn đường kẻ, dòng Tổng cộng nằm ngay dưới tiêu đề.
 - Không có dòng giảm giá, thuế, mã khuyến mãi, điểm thưởng, thanh toán trực tuyến.
 
-### 9.16 Bố cục tập trung (`FocusLayout` + `MiniHeader`, 📝; đặt hàng, đăng nhập, tạo tài khoản)
+### 9.16 Bố cục tập trung (`FocusLayout` + `MiniHeader`, ✅ đặt hàng; đăng nhập, tạo tài khoản chưa dùng)
 Thay `RootLayout` ở những trang khách cần tập trung hoàn tất một việc: bỏ ô tìm kiếm, nút Danh mục, hàng 2 và các nút bên phải.
 - `MiniHeader`: nền `--bg-chrome`, **không dính**, **không có nút tài khoản** (§9.17), cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (ô 40px + chữ "Black Magic" 20/28/700; <640 chỉ ô logo), là link về `/`; phải là **một** link 14/20/500 `--fg-on-chrome` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `--bg-chrome-hover`. Không có đường kẻ ở đáy.
 - Vẫn có link "Bỏ qua tới nội dung chính", `<main id="main">` và `Footer`.
