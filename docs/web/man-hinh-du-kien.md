@@ -1,8 +1,8 @@
 # Màn hình dự kiến
 
-Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 09/11/2026 (đơn hàng chuyển sang spec trang)
+Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 10/11/2026 (trang 404 chuyển sang spec trang)
 
-Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đăng nhập nhiều bước, trạng thái rỗng, lỗi, 404, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
+Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đăng nhập nhiều bước, trạng thái rỗng, lỗi, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
 
 ## Quy tắc
 
@@ -38,7 +38,7 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 | 11 | Sản phẩm hết hàng ở trang chi tiết | MEDIUM | [chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) §4 |
 | 12 | Phản hồi sau khi bấm "Thêm vào giỏ" | LOW | [chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) §3.4 |
 | 13 | Khung chờ khi tải | HIGH | design-system §9.12 |
-| 14 | Trang 404 | LOW | chưa có |
+| 14 | Trang 404 | đã chốt | [khong-tim-thay.md](pages/khong-tim-thay.md) |
 | 15 | Giao diện điện thoại | MEDIUM | mục Responsive của từng trang |
 | 16 | Khung trang admin | LOW | chưa có |
 | 17 | Admin: danh sách sản phẩm | LOW | chưa có |
@@ -173,17 +173,7 @@ Alternatives: vòng xoay (spinner) nhỏ thay cho khung chờ; không chọn vì
 
 ## 14. Trang 404
 
-Confidence: LOW
-
-Reuse: `RootLayout` (header đầy đủ để khách tìm tiếp), `EmptyState`.
-
-Bố cục và tương tác: `EmptyState` giữa trang, icon `SearchX` 48px, `<h1>` 24/32/600 "Không tìm thấy trang", câu "Đường dẫn có thể đã sai hoặc trang đã bị gỡ.", nút `primary md` "Về trang chủ" + link "Xem tất cả sản phẩm".
-
-Assumptions: router đã có `NotFoundPage` cho đường dẫn lạ; trang dùng `RootLayout` như mọi trang khách.
-
-Alternatives: chỉ một dòng chữ và link về trang chủ, không dùng `EmptyState`; hoặc hiện thêm dải "Hàng mới về".
-
-Do not introduce: hình minh hoạ lớn, trò chơi, ô tìm kiếm riêng (header đã có).
+Đã chốt 10/11/2026, chuyển sang [pages/khong-tim-thay.md](pages/khong-tim-thay.md). Giữ phương án ở đây (header đầy đủ, khối rỗng, icon `SearchX`, nút "Về trang chủ" và "Xem tất cả sản phẩm"); câu giải thích thêm gợi ý dùng ô tìm kiếm.
 
 ## 15. Giao diện điện thoại
 

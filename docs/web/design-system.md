@@ -1,12 +1,12 @@
 # Design system: Black Magic
 
-Người viết: Hoàng · Cập nhật: 09/11/2026 (bản chốt trang đơn hàng) · Áp dụng cho `apps/web`
+Người viết: Hoàng · Cập nhật: 10/11/2026 (bản chốt trang 404, hộp xác nhận tự trả focus) · Áp dụng cho `apps/web`
 
 Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien.md](giao-dien.md), mục lục ở [README.md](README.md).
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -245,7 +245,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng, trang chi tiết) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx`; nhãn trạng thái đơn `OrderStatusBadge` ở `features/orders/components/OrderStatusBadge.tsx` | ✅ |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
-| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (giỏ hàng và trang danh sách chưa chuyển sang, vẫn tự viết khối rỗng) |
+| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (giỏ hàng và trang danh sách chưa chuyển sang, vẫn tự viết khối rỗng); thêm prop `title`, `className` cho trang 404 (§9.12) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
@@ -465,7 +465,7 @@ Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelled
 | Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (ô vuông theo bề rộng cột cộng phần chữ 96px, từ 1280px là 80px; bo 12px như thẻ), gradient `#EEEEEE → #F5F5F5` chạy 1,6s, `aria-hidden` |
 | Đang tải (trang) | dòng "Đang tải …" màu `--fg-subdued` |
 | Đang tải lại với bộ lọc mới | giữ kết quả cũ, lưới opacity .6, `aria-busy="true"` |
-| Rỗng (`EmptyState`) | khung `--bg-surface`, viền `--border-divider`, **bo 16px**, padding `40px 16px`, chữ căn giữa; một câu giải thích + một link/nút đi tiếp |
+| Rỗng (`EmptyState`) | khung `--bg-surface`, viền `--border-divider`, **bo 16px**, padding `40px 16px`, chữ căn giữa; một câu giải thích + một link/nút đi tiếp. Tuỳ chọn `title`: tiêu đề 24/32/600 `--fg-heading` (<640: 20/28) giữa icon và câu (icon cách 12px, câu cách 8px), cấp `h1` khi khối là nội dung chính của trang (trang 404), mặc định `h2`. Nhiều nút trong `action`: hàng flex căn giữa, gap 12px, xuống dòng được; <640 xếp dọc rộng 100%. Trang 404 dùng padding `56px 24px` (<640: `40px 16px`) và nút cách câu 24px ([pages/khong-tim-thay.md](pages/khong-tim-thay.md)) |
 | Lỗi tải | dòng chữ `--fg-subdued` "Chưa tải được … Tải lại trang để thử lần nữa.", `role="alert"` |
 | Lỗi nghiệp vụ (`Alert`) | xem 9.13 |
 
@@ -480,7 +480,8 @@ Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, n�
 ### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, huỷ đơn)
 Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger). Trang admin dùng nút xác nhận `primary` ("Chuyển sang Đang giao"). Dưới 640px hai nút xếp dọc rộng hết hộp, nút xác nhận ở trên. Đang xử lý: nút xác nhận đổi chữ "Đang …" (§9.3), Esc và nút phụ không đóng hộp; lỗi hiện bằng `Alert` ngay trên hàng nút.
 - Nút xác nhận theo prop `tone`: `primary` (mặc định, admin) hoặc `danger` (việc không hoàn tác được: "Huỷ đơn", màu như `Button danger` §9.3). Nút phụ đứng trước trong DOM nên `showModal` focus nó trước: bấm Enter nhầm thì chỉ đóng hộp.
-- Đóng hộp thì trang trả focus về nút đã mở hộp; nếu nút đó biến mất (đơn đã huỷ) thì về `<h1>` (`tabIndex={-1}`).
+- **Trả focus do component lo** (sửa 10/11/2026): lúc mở, `ConfirmDialog` nhớ phần tử đang có focus (nút đã mở hộp). Lúc đóng (component bị gỡ), nếu focus đang lạc (về `<body>`) và nút đó còn trên trang thì focus về nút đó. Trang không phải tự trả focus khi khách bấm nút phụ hay Esc.
+- Trang chỉ tự chuyển focus khi nút đã mở hộp biến mất hoặc nội dung đổi hẳn (đơn đã huỷ, đơn admin đã chuyển tab): focus `<h1>` (`tabIndex={-1}`). Component không giành lại focus nếu trang đã đặt focus chỗ khác.
 - Hộp huỷ đơn của khách: [pages/don-hang.md](pages/don-hang.md) mục 4.5.
 
 ### 9.15 Tóm tắt đơn (`OrderSummary`, ✅; giỏ hàng, đặt hàng)
