@@ -1,9 +1,11 @@
-/* Trạng thái rỗng (docs/web/design-system.md §9.12) */
+/* Trạng thái rỗng (docs/web/design-system.md §9.12).
+   Trang cần bản khác (trang 404) đặt qua className hai biến cục bộ của component (không phải token):
+   --empty-padding (khoảng đệm khối), --empty-action-gap (khoảng từ câu tới hàng nút) */
 .empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-500) var(--space-200);
+  padding: var(--empty-padding, var(--space-500) var(--space-200));
   background: var(--bg-surface);
   border: 1px solid var(--border-divider);
   border-radius: var(--radius-2xl);
@@ -14,6 +16,14 @@
   margin-bottom: var(--space-150);
   color: var(--fg-icon-soft);
 }
+/* Tiêu đề tuỳ chọn (trang 404): 24/32/600, câu giải thích cách 8px */
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 600;
+}
 .message {
   margin: 0;
   max-width: 480px;
@@ -21,6 +31,28 @@
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
 }
+.afterTitle {
+  margin-top: var(--space-100);
+}
+/* Một hoặc nhiều nút: hàng căn giữa, xuống dòng được */
 .action {
-  margin-top: var(--space-200);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-150);
+  margin-top: var(--empty-action-gap, var(--space-200));
+}
+@media (max-width: 639px) {
+  .title {
+    font-size: var(--text-title-sm);
+    line-height: var(--leading-title-sm);
+  }
+  /* Từ 2 nút thì xếp dọc rộng hết khối; 1 nút giữ bề rộng như cũ (/orders rỗng) */
+  .action:has(> :nth-child(2)) {
+    flex-direction: column;
+    align-self: stretch;
+  }
+  .action:has(> :nth-child(2)) > * {
+    width: 100%;
+  }
 }
