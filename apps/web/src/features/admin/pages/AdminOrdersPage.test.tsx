@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -225,12 +225,40 @@ describe('AdminOrdersPage · chuyển trạng thái', () => {
     );
   });
 
-  it('cancel_closesDialog_withoutPatching', async () => {
+  it('cancel_closesDialog_withoutPatching_andReturnsFocusToRowButton', async () => {
+    // Arrange
     const { user, dialog } = await openDialog();
 
+    // Act
     await user.click(within(dialog).getByRole('button', { name: 'Để sau' }));
 
+    // Assert: focus về đúng nút đã mở hộp, không rơi về body (#425)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: `Chuyển sang Đang giao: đơn ${ORDER.orderId}` }),
+      ).toHaveFocus(),
+    );
+    // Verify
+    expect(calls('PATCH')).toHaveLength(0);
+  });
+
+  it('esc_closesDialog_andReturnsFocusToRowButton', async () => {
+    // Arrange: focus đang ở nút trong hộp như khi dùng bàn phím
+    const { dialog } = await openDialog();
+    within(dialog).getByRole('button', { name: 'Để sau' }).focus();
+
+    // Act: Esc trên <dialog> gốc phát sự kiện cancel
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
+
+    // Assert
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: `Chuyển sang Đang giao: đơn ${ORDER.orderId}` }),
+      ).toHaveFocus(),
+    );
+    // Verify
     expect(calls('PATCH')).toHaveLength(0);
   });
 

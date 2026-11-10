@@ -168,7 +168,8 @@ function AdminOrders() {
       api.patch<AdminOrderSummary>(`/admin/orders/${order.orderId}`, { status: tab.next }),
     onSuccess: (order) => {
       setTarget(null);
-      // Đợi hộp thoại đóng xong (trình duyệt trả focus về nút đã mở hộp) rồi mới đưa focus lên tiêu đề
+      // Dòng vừa chuyển rời danh sách nên nút đã mở hộp không còn: đưa focus lên tiêu đề
+      // (ConfirmDialog chỉ trả focus khi nút đó còn trên trang)
       requestAnimationFrame(() => headingRef.current?.focus());
       announce.polite(`Đã chuyển đơn ${order.orderId.slice(-8)} sang ${tab.done}.`);
       void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
