@@ -107,10 +107,12 @@ function renderPage(state?: unknown) {
 
 const cancelButton = () => screen.queryByRole('button', { name: 'Huỷ đơn' });
 
-/** Mở trang đơn PENDING rồi bấm "Huỷ đơn" */
+/** Mở trang đơn PENDING rồi bấm "Huỷ đơn" (nút có focus như khi bấm trên Chrome, Edge hoặc bàn phím) */
 async function openDialog() {
   renderPage();
-  fireEvent.click(await screen.findByRole('button', { name: 'Huỷ đơn' }));
+  const button = await screen.findByRole('button', { name: 'Huỷ đơn' });
+  button.focus();
+  fireEvent.click(button);
   return screen.getByRole('dialog');
 }
 
@@ -197,6 +199,21 @@ describe('Chi tiết đơn /orders/:orderId (pages/don-hang.md mục 4)', () => 
     // Assert: hộp đóng, nút "Huỷ đơn" vẫn còn
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(cancelButton()).toBeInTheDocument();
+    await waitFor(() => expect(cancelButton()).toHaveFocus());
+    // Verify
+    expect(calls('DELETE')).toHaveLength(0);
+  });
+
+  it('cancel_esc_closesDialog_andReturnsFocusToCancelButton', async () => {
+    // Arrange: focus đang ở nút trong hộp
+    const dialog = await openDialog();
+    within(dialog).getByRole('button', { name: 'Giữ đơn' }).focus();
+
+    // Act: Esc trên <dialog> gốc phát sự kiện cancel
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
+
+    // Assert: ConfirmDialog tự trả focus, trang không phải vá (#425)
+    expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(cancelButton()).toHaveFocus());
     // Verify
     expect(calls('DELETE')).toHaveLength(0);

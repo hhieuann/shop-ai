@@ -6,6 +6,7 @@ import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
 import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
 import { Alert } from '../../../shared/components/Alert';
+import { Button } from '../../../shared/components/Button';
 import { buttonClass } from '../../../shared/components/buttonClass';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { EmptyState } from '../../../shared/components/EmptyState';
@@ -55,7 +56,6 @@ export function OrderDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data, isPending, error } = useQuery({
     queryKey: queryKeys.orders.detail(orderId!),
@@ -236,18 +236,17 @@ export function OrderDetailPage() {
           </p>
           {cancellable && (
             <>
-              {/* Nút gốc dùng buttonClass (cần ref để trả focus khi đóng hộp thoại) */}
-              <button
-                ref={cancelButtonRef}
-                type="button"
-                className={buttonClass({ variant: 'danger', size: 'lg', block: true })}
+              <Button
+                variant="danger"
+                size="lg"
+                block
                 onClick={() => {
                   cancelOrder.reset();
                   setConfirming(true);
                 }}
               >
                 Huỷ đơn
-              </button>
+              </Button>
               <p className={styles.hint}>Huỷ được khi đơn chưa giao cho đơn vị vận chuyển.</p>
             </>
           )}
@@ -268,11 +267,7 @@ export function OrderDetailPage() {
             ) : undefined
           }
           onConfirm={() => cancelOrder.mutate()}
-          onClose={() => {
-            setConfirming(false);
-            // Hộp bị gỡ khỏi trang nên trình duyệt không tự trả focus: đưa về nút mở hộp
-            requestAnimationFrame(() => cancelButtonRef.current?.focus());
-          }}
+          onClose={() => setConfirming(false)}
         >
           Đơn “{title}” sẽ bị huỷ và không khôi phục được. Muốn mua lại thì bạn đặt đơn mới.
         </ConfirmDialog>
