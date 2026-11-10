@@ -1244,7 +1244,7 @@ components:
     OrderSummary:
       type: object
       description: Thông tin rút gọn cho danh sách đơn hàng
-      required: [orderId, status, totalAmount, itemCount, createdAt]
+      required: [orderId, status, totalAmount, itemCount, firstItemName, createdAt]
       properties:
         orderId:
           type: string
@@ -1257,6 +1257,10 @@ components:
         itemCount:
           type: integer
           description: Số loại sản phẩm trong đơn
+        firstItemName:
+          type: string
+          description: Tên món đầu tiên của đơn (thứ tự lúc đặt), để web đặt tên đơn
+          example: 'Laptop ASUS TUF Gaming A15 FA507NV'
         createdAt:
           type: string
           format: date-time

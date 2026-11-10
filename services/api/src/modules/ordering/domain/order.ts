@@ -75,8 +75,16 @@ export interface OrderSummary {
   readonly totalAmount: number;
   /** Số loại sản phẩm trong đơn */
   readonly itemCount: number;
+  /** Tên món đầu tiên (thứ tự lúc đặt), để web gọi tên đơn: "… và N sản phẩm khác" */
+  readonly firstItemName: string;
   readonly createdAt: string;
 }
+
+/**
+ * Khớp schema AdminOrderSummary: như OrderSummary nhưng không có tên món. API admin chỉ trả các
+ * trường này (contract đặt additionalProperties: false), use case admin chép từng trường ra.
+ */
+export type AdminOrderSummary = Omit<OrderSummary, 'firstItemName'>;
 
 /**
  * BR-03, BR-07: kiểm lại từng món, không tin dữ liệu từ client.
@@ -156,6 +164,8 @@ export function toSummary(
     status: order.status,
     totalAmount: order.totalAmount,
     itemCount: order.items.length,
+    // Đơn luôn có ít nhất 1 món (POST /orders minItems 1); chuỗi rỗng chỉ để dữ liệu hỏng không làm lỗi trang
+    firstItemName: order.items[0]?.name ?? '',
     createdAt: order.createdAt,
   };
 }

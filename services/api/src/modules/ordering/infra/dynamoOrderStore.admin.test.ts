@@ -49,6 +49,7 @@ describe('DynamoOrderStore · đọc index byStatus cho admin (O8)', () => {
         status: 'CONFIRMED',
         totalAmount: 15_900_000,
         itemCount: 1,
+        firstItemName: 'ASUS TUF RTX 4070',
         createdAt: '2026-10-25T03:00:00.000Z',
       },
     ]);
