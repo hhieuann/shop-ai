@@ -1,6 +1,7 @@
 import { Outlet, useMatches } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { MiniHeader, type MiniHeaderBack } from './MiniHeader';
 import styles from './RootLayout.module.css';
 
 /** Thông tin route khai báo trong router.tsx (`handle`) để đổi khung chung của trang */
@@ -20,6 +21,14 @@ export interface RouteHandle {
    * padding của Breadcrumb là toàn bộ khoảng cách, pages/chi-tiet-san-pham.md §2).
    */
   flushTop?: boolean;
+  /**
+   * 'focus': bố cục tập trung (design-system §9.16), vẽ `MiniHeader` thay header đầy đủ: chỉ logo
+   * và một link quay lại, không ô tìm kiếm, Danh mục, hàng 2, tài khoản, giỏ (trang đặt hàng).
+   * Mặc định: header đầy đủ.
+   */
+  chrome?: 'focus';
+  /** Link quay lại bên phải `MiniHeader` khi `chrome` là 'focus', vd. về giỏ hàng */
+  back?: MiniHeaderBack;
 }
 
 export function RootLayout() {
@@ -27,9 +36,10 @@ export function RootLayout() {
   const plain = handles.some((h) => h?.surface === 'plain');
   const collapseNeeds = handles.some((h) => h?.headerNeeds === 'collapse');
   const flushTop = handles.some((h) => h?.flushTop);
+  const focus = handles.find((h) => h?.chrome === 'focus');
   return (
     <div className={`${styles.shell} ${plain ? styles.plain : ''}`}>
-      <Header collapseNeeds={collapseNeeds} />
+      {focus ? <MiniHeader back={focus.back} /> : <Header collapseNeeds={collapseNeeds} />}
       <main id="main" className={`${styles.main} ${flushTop ? styles.flushTop : ''}`}>
         <Outlet />
       </main>
