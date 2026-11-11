@@ -18,6 +18,13 @@
 .lg {
   height: 48px;
 }
+/* Có nút trong ô (prop trailing): khung bọc riêng ô, chừa 48px bên phải cho nút 40px cách mép 4px */
+.control {
+  position: relative;
+}
+.withTrailing {
+  padding-right: 48px;
+}
 .input[aria-invalid='true'] {
   border-color: var(--fg-danger);
 }
