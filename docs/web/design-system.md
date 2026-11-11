@@ -384,8 +384,8 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 | Ô đang sáng | ô trống đầu tiên (đủ 6 số thì ô cuối), chỉ khi ô nhập đang focus: viền `--border-primary` + viền focus 2px (`outline-offset: 2px`) như ô nhập thường; ô trống có vạch nháy 2×24px `--fg-default` (nháy 1s; `prefers-reduced-motion` thì đứng yên) |
 | Lỗi | 6 ô viền `--fg-danger`; ô đang sáng vẫn có viền focus chàm |
 | Chỉ đọc (đang gửi) | số `--fg-muted`, nền `--bg-surface-raised`, không ô nào sáng |
-| Ô nhập thật | **một** `<input>` phủ kín 6 ô (`position: absolute; inset: 0`), chữ, nền, viền, con trỏ đều trong suốt (`color` và `caret-color: transparent`, không dùng `display: none` hay `opacity: 0`), `outline: none` vì viền focus đã vẽ ở ô đang sáng, chữ 16px để iOS không phóng to; `inputMode="numeric"`, `autocomplete="one-time-code"`, `maxLength`, `pattern="[0-9]*"`, `aria-invalid`, `aria-describedby` trỏ dòng lỗi. Con trỏ luôn ở cuối (chặn chọn giữa chừng). 6 ô là `aria-hidden` |
-| Nhập | bỏ ký tự không phải số, cắt còn 6; dán hoặc tự điền điền một lượt; đủ 6 số gọi `onComplete` một lần |
+| Ô nhập thật | **một** `<input>` phủ kín 6 ô (`position: absolute; inset: 0`), chữ, nền, viền, con trỏ đều trong suốt (`color` và `caret-color: transparent`, không dùng `display: none` hay `opacity: 0`), `outline: none` vì viền focus đã vẽ ở ô đang sáng, chữ 16px để iOS không phóng to; `inputMode="numeric"`, `autocomplete="one-time-code"`, `pattern="[0-9]*"`, `aria-invalid`, `aria-describedby` trỏ dòng lỗi. Con trỏ luôn ở cuối (chặn chọn giữa chừng). 6 ô là `aria-hidden`. **Không đặt `maxLength`** (11/11/2026): trình duyệt cắt chữ dán theo `maxLength` trước khi lọc số, nên dán "123 456" chỉ còn 5 số, "Mã: 123456" còn 2 số; độ dài do `onChange` cắt |
+| Nhập | `onChange` bỏ ký tự không phải số rồi cắt còn đủ số ô (6); dán hoặc tự điền điền một lượt; đủ 6 số gọi `onComplete` một lần |
 
 Form cụ thể ở [pages/dat-hang.md](pages/dat-hang.md) và [pages/dang-nhap.md](pages/dang-nhap.md).
 

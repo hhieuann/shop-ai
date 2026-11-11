@@ -90,7 +90,7 @@ Username là tên hiển thị trên nút tài khoản ở header (design-system
 |---|---|
 | Tiêu đề | "Xác nhận email" |
 | Dòng phụ | "Nhập mã 6 số vừa gửi tới **{email}**." (email đậm 500 `--fg-default`) |
-| Ô mã | `OtpInput` (design-system §9.4): nhãn "Mã xác nhận" phía trên, **6 ô vuông** chia đều bề ngang form, gap 8px, cao 56px (<640: gap 6px, cao 52px); mỗi ô một số 24/32/600 `tabular-nums` căn giữa. Bên dưới là **một** ô nhập thật (`inputMode="numeric"`, `autocomplete="one-time-code"`, `maxLength=6`) nên dán mã, tự điền mã từ email hoặc SMS vẫn chạy. Chưa focus thì không ô nào sáng; mở bước này focus vẫn vào `<h1>` như mục 6 |
+| Ô mã | `OtpInput` (design-system §9.4): nhãn "Mã xác nhận" phía trên, **6 ô vuông** chia đều bề ngang form, gap 8px, cao 56px (<640: gap 6px, cao 52px); mỗi ô một số 24/32/600 `tabular-nums` căn giữa. Bên dưới là **một** ô nhập thật (`inputMode="numeric"`, `autocomplete="one-time-code"`, không đặt `maxLength`: ô tự lọc số rồi cắt còn 6, vì trình duyệt cắt chữ dán theo `maxLength` trước khi lọc nên dán "123 456" sẽ mất số) nên dán mã, tự điền mã từ email hoặc SMS vẫn chạy. Chưa focus thì không ô nào sáng; mở bước này focus vẫn vào `<h1>` như mục 6 |
 | Nút | "Xác nhận" → "Đang xác nhận…" |
 | Gửi lại | nút `ghost md` căn giữa dưới nút chính: "Gửi lại mã"; đang gửi thì vô hiệu ("Đang gửi…"); gửi xong `Alert success` "Đã gửi mã mới.", xoá các số đã gõ và focus lại ô đầu |
 
