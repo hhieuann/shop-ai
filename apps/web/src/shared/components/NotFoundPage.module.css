@@ -1,0 +1,19 @@
+/* Trang 404 (docs/web/pages/khong-tim-thay.md mục 2, 4) */
+
+/* Khung 1280px như giỏ hàng, đơn hàng; <main> đã có 16px, thêm 16px để khối cách header 32px */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-top: var(--space-200);
+}
+
+/* EmptyState bản trang: padding 56px 24px (56px không có token), nút cách câu 24px */
+.block {
+  --empty-padding: 56px var(--space-300);
+  --empty-action-gap: var(--space-300);
+}
+@media (max-width: 639px) {
+  .block {
+    --empty-padding: var(--space-500) var(--space-200);
+  }
+}
