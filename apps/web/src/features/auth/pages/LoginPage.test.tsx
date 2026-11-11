@@ -102,13 +102,35 @@ describe('LoginPage', () => {
     // Act
     const user = await fillAndSubmit('admin@example.com', 'Abcdef1!');
     expect(await screen.findByRole('heading', { name: 'Xác thực hai lớp' })).toBeInTheDocument();
+    // Gõ đủ 6 số là tự gửi, không bấm "Xác nhận"
     await user.type(screen.getByLabelText('Mã xác thực'), '123456');
-    await user.click(screen.getByRole('button', { name: 'Xác nhận' }));
 
     // Assert
     await waitFor(() => expect(continueAfterSignIn).toHaveBeenCalledTimes(1));
     expect(confirmSignIn).toHaveBeenCalledWith({ challengeResponse: '123456' });
     expect(screen.queryByRole('button', { name: 'Gửi lại mã' })).not.toBeInTheDocument();
+    // Verify
+    expect(confirmSignIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('confirm_asksForSixDigits_whenTotpCodeShort', async () => {
+    // Arrange
+    vi.mocked(signIn).mockResolvedValue({
+      isSignedIn: false,
+      nextStep: { signInStep: 'CONFIRM_SIGN_IN_WITH_TOTP_CODE' },
+    } as never);
+    renderLogin();
+    const user = await fillAndSubmit('admin@example.com', 'Abcdef1!');
+    await screen.findByRole('heading', { name: 'Xác thực hai lớp' });
+
+    // Act
+    await user.type(screen.getByLabelText('Mã xác thực'), '123');
+    await user.click(screen.getByRole('button', { name: 'Xác nhận' }));
+
+    // Assert
+    expect(await screen.findByText('Nhập đủ 6 số trong ứng dụng xác thực.')).toBeInTheDocument();
+    // Verify
+    expect(confirmSignIn).not.toHaveBeenCalled();
   });
 
   it('submit_switchesToConfirmEmailAndResendsCode_whenAccountNotConfirmed', async () => {
