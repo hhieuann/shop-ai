@@ -27,6 +27,10 @@ interface ConfirmDialogProps {
  * Hộp thoại xác nhận (design-system §9.14): `<dialog>` gốc của trình duyệt mở bằng showModal nên tự
  * giữ focus trong hộp, Esc để đóng, nền sau là `::backdrop`. Component có mặt thì hộp mở; muốn đóng
  * thì trang bỏ component đi. Nút chính đặt cuối hàng (điện thoại xếp lên trên).
+ *
+ * Đóng hộp thì component tự trả focus về phần tử đã có focus lúc mở (nút đã mở hộp), nếu focus đang
+ * lạc về `<body>` và phần tử đó còn trên trang. Trang chỉ tự chuyển focus khi nút đó biến mất hoặc nội
+ * dung đổi hẳn (vd. focus `<h1>`); khi đó component không giành lại.
  */
 export function ConfirmDialog({
   title,
@@ -46,8 +50,20 @@ export function ConfirmDialog({
 
   useEffect(() => {
     const dialog = ref.current;
+    // Nhớ nút đã mở hộp. Safari, Firefox trên macOS không focus nút khi bấm chuột nên có thể là <body>:
+    // khi đó không có gì để trả
+    const active = document.activeElement;
+    const opener = active instanceof HTMLElement && active !== document.body ? active : null;
     if (dialog && !dialog.open) dialog.showModal();
-    return () => dialog?.close();
+    return () => {
+      dialog?.close();
+      // React gỡ <dialog> khỏi trang trước khi chạy cleanup nên close() không trả được focus: tự trả ở
+      // khung hình sau, chỉ khi focus đang lạc (trang chưa chủ động đặt focus chỗ khác)
+      requestAnimationFrame(() => {
+        const lost = document.activeElement === null || document.activeElement === document.body;
+        if (lost && opener?.isConnected) opener.focus();
+      });
+    };
   }, []);
 
   return (
