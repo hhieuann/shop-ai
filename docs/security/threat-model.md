@@ -1,6 +1,6 @@
 # Threat model bản 0 (STRIDE)
 
-Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10, 25/10, 26/10, 27/10, 03/11 và 05/11/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
+Người viết: Nhân · Ngày: 16/10/2026, cập nhật 21/10, 22/10, 25/10, 26/10, 27/10, 03/11, 05/11 và 11/11/2026 · Trạng thái: **bản 0, đã có góp ý của nhóm ngày 17/10**
 
 Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới ADR-0017,
 `docs/business/` (account, cart, ordering, events, recommendation),
@@ -9,6 +9,8 @@ Dựa trên nhánh `develop` tại commit `c3e6118` (16/10/2026): ADR-0005 tới
 Cập nhật 21/10/2026: các quyết định nhóm chốt ngày 17/10, contract `POST /api/v1/events` (#174),
 bucket dữ liệu huấn luyện (#179) và kết quả review trust policy OIDC (#180, dòng C6).
 Cập nhật 22/10/2026: O6, O8, B6 theo ordering.md (#192, #194).
+Cập nhật 11/11/2026: quên mật khẩu (account.md BR-13, #438): L2, L8, L9 mới; L1, L3, L8 bỏ WAF vì
+đăng nhập, đăng ký, quên mật khẩu gọi thẳng `cognito-idp`, không đi qua CloudFront.
 
 Cột **Trạng thái**:
 
@@ -24,7 +26,7 @@ tính khả năng xảy ra. Cần cả nhóm xem lại.
 
 Ba luồng theo `docs/team/nhan.md`:
 
-1. **Đăng nhập**: đăng ký, xác nhận email, đăng nhập, phiên, đăng xuất (module `account`, Cognito).
+1. **Đăng nhập**: đăng ký, xác nhận email, đăng nhập, quên mật khẩu, phiên, đăng xuất (module `account`, Cognito).
 2. **Đặt hàng**: tạo đơn, xem đơn, huỷ đơn, worker xác nhận đơn (module `ordering`, SQS, SES, SNS).
 3. **Ghi sự kiện**: `VIEW`, `ADD_TO_CART` từ web, `PURCHASE` từ `ordering` (module `events`).
 
@@ -76,7 +78,7 @@ Trình duyệt ──────────> CloudFront ──> HTTP API ─�
 | Mã | Ranh giới | Cần kiểm soát ở đây |
 |---|---|---|
 | B1 | Trình duyệt vào CloudFront và API | Không tin dữ liệu từ client, kể cả giá, số lượng, `userId` trong body |
-| B2 | Trình duyệt với Cognito | Mật khẩu, mã xác nhận, token đi qua đây |
+| B2 | Trình duyệt với Cognito | Mật khẩu, mã xác nhận, mã đặt lại mật khẩu, token đi qua đây. Không qua CloudFront nên WAF không áp dụng |
 | B3 | Lambda với DynamoDB | Quyền IAM của từng module chỉ chạm đúng bảng của mình |
 | B4 | Internet vào thẳng API Gateway | Request không đi qua WAF (ADR-0006) |
 | B5 | API với SQS và worker | Ai được gửi message, worker tin nội dung message tới đâu |
@@ -90,14 +92,15 @@ Viết tắt: **S** giả mạo, **T** sửa dữ liệu, **R** chối bỏ, **I
 
 | # | STRIDE | Mối đe doạ | Mức | Cách giảm thiểu | Trạng thái |
 |---|---|---|---|---|---|
-| L1 | S | Dò mật khẩu, credential stuffing | Vừa | Cognito tạm khoá khi thử dồn dập (account.md BR-12); chính sách mật khẩu (BR-04); WAF giới hạn tốc độ | Đã có (Cognito) · Theo thiết kế (WAF, ADR-0006) |
-| L2 | I | Dò email đã đăng ký qua trang đăng nhập | Thấp | `preventUserExistenceErrors: true` (`api-stack.ts`); thông báo chung (BR-07) | Đã có |
-| L3 | I | Dò email qua trang đăng ký ("Email này đã có tài khoản.") | Thấp | Chấp nhận có chủ ý để đăng ký dễ dùng; WAF giới hạn tốc độ | Chấp nhận (17/10) |
+| L1 | S | Dò mật khẩu, credential stuffing | Vừa | Cognito tạm khoá khi thử dồn dập (account.md BR-12); chính sách mật khẩu (BR-04). WAF không chặn được: web gọi thẳng `cognito-idp`, không đi qua CloudFront (B2) | Đã có (Cognito) |
+| L2 | I | Dò email đã đăng ký qua trang đăng nhập hoặc trang quên mật khẩu | Thấp | `preventUserExistenceErrors: true` (`api-stack.ts`); thông báo chung (BR-07). Quên mật khẩu: Cognito trả kết quả như đã gửi mã cho cả email chưa có tài khoản (thử trên dev 11/11: 200, không có thư), web luôn sang bước nhập mã với cùng câu chữ (BR-13) | Đã có · Theo thiết kế (trang quên mật khẩu, #439) |
+| L3 | I | Dò email qua trang đăng ký ("Email này đã có tài khoản.") | Thấp | Chấp nhận có chủ ý để đăng ký dễ dùng; giới hạn tần suất sẵn của Cognito theo từng tài khoản. WAF không chặn được: web gọi thẳng `cognito-idp` (B2) | Chấp nhận (17/10) |
 | L4 | S, I | XSS đọc token: cookie do Amplify ghi bằng JavaScript nên không `HttpOnly`, script lạ đọc được refresh token 30 ngày | Vừa | React tự escape; **response headers policy ở CloudFront: CSP không `unsafe-inline`, `X-Content-Type-Options`, `X-Frame-Options`, HSTS, `Permissions-Policy`, bỏ header `Server`** (`web-stack.ts`, #299; font đã tự host nên CSP không cần Google Fonts). ZAP baseline vào dev 27/10 (10:37–10:38, `-m 5`, không active scan): 0 FAIL, 12 WARN, 56 PASS. Mức Vừa: thiếu CSP (10038), `X-Frame-Options` (10020). Mức Thấp: thiếu `X-Content-Type-Options` (10021), HSTS (10035), `Permissions-Policy` (10063); header `Server: AmazonS3` (10036) không có số phiên bản, xoá bằng `removeHeaders` nếu tiện. Cách sửa: `ResponseHeadersPolicy` trong `web-stack.ts` bật `securityHeadersBehavior` (CSP, `frameOptions: DENY`, `contentTypeOptions`, HSTS, `referrerPolicy`) và `customHeadersBehavior` cho `Permissions-Policy`. CSP phải cho `connect-src` tới `cognito-idp.ap-southeast-1.amazonaws.com` và cho font Google (`fonts.googleapis.com`, `fonts.gstatic.com`), thiếu là hỏng đăng nhập hoặc font. Chấp nhận, không áp dụng: SRI (90003) vì script đều cùng domain, cảnh báo đến từ link CSS Google Fonts (`apps/web/index.html`) mà CSS này đổi theo trình duyệt nên không gắn `integrity` được, muốn hết thì tự host font; COEP (90004) vì `require-corp` chặn Google Fonts và web không cần COEP | Có trong code (#299), cần kiểm lại bằng ZAP sau deploy dev · cookie vẫn không `HttpOnly` |
 | L5 | E | Chiếm tài khoản admin chỉ bằng mật khẩu | Cao | Nhóm `admin` bắt buộc MFA (ADR-0007, account.md BR-10). Chốt 06/11: **bật TOTP cho tài khoản admin theo quy trình**, An bật bằng tay ở staging rồi prod khi thêm người vào nhóm `admin`; chưa ép bằng code vì user pool để `Mfa.OPTIONAL` (khách tuỳ chọn MFA) và web chưa có màn hình bật MFA (#183) | Chấp nhận (06/11): TOTP bật theo quy trình, chưa ép bằng code |
 | L6 | E | Khách tự thêm mình vào nhóm `admin` | Cao | Chỉ An thêm bằng tay trên Cognito (BR-02); backend kiểm `cognito:groups` trong JWT đã ký. API admin (`GET /api/v1/admin/orders`, `PATCH /api/v1/admin/orders/{orderId}`, ordering.md BR-15): không token 401, không thuộc nhóm `admin` 403; E2E kiểm cả hai trên dev | Theo thiết kế, E2E 401/403 ở PR API admin |
 | L7 | S | App client E2E nhận mật khẩu gửi thẳng (`USER_PASSWORD_AUTH`) bị dùng để dò mật khẩu | Thấp | Chỉ tạo ở dev và staging (`if (!shopEnv.isProd)` trong `api-stack.ts`) | Đã có |
-| L8 | D | Spam đăng ký làm hết hạn mức gửi email của user pool, khách thật không nhận được mã | Vừa | Chốt 17/10: giữ email mặc định của Cognito, không chuyển sang SES. Hạn mức khoảng 50 thư mỗi ngày cho cả user pool (`docs/releases/v0.1.0.md`). WAF giới hạn tốc độ; theo dõi lỗi gửi mã | Chấp nhận (17/10) · Theo thiết kế (WAF) |
+| L8 | D | Spam đăng ký hoặc spam "Gửi mã" ở trang quên mật khẩu làm hết hạn mức gửi email của user pool, khách thật không nhận được mã; spam quên mật khẩu còn làm phiền chủ email | Vừa | Chốt 17/10: giữ email mặc định của Cognito, không chuyển sang SES. Hạn mức khoảng 50 thư mỗi ngày cho cả user pool, mã đăng ký và mã đặt lại mật khẩu dùng chung (`docs/releases/v0.1.0.md`). Giới hạn tần suất sẵn của Cognito theo từng tài khoản (`LimitExceededException`, account.md BR-12). WAF không chặn được: web gọi thẳng `cognito-idp` (B2). Theo dõi lỗi gửi mã | Chấp nhận (17/10, 11/11) |
+| L9 | S | Kẻ đã đăng nhập bằng mật khẩu bị lộ vẫn dùng tiếp phiên sau khi chủ tài khoản đặt lại mật khẩu. Thử trên dev 11/11: `ConfirmForgotPassword` trả 200, refresh token cấp trước đó vẫn làm mới được (200), tức Cognito không tự thu hồi phiên cũ; refresh token còn hạn tới 30 ngày | Vừa | Trigger Post confirmation: khi `triggerSource` là `PostConfirmation_ConfirmForgotPassword` thì gọi `AdminUserGlobalSignOut` để thu hồi mọi refresh token; `PostConfirmation_ConfirmSignUp` bỏ qua. Quyền IAM chỉ trên user pool đó; có test cho cả hai `triggerSource`. Access token đã cấp vẫn dùng được tới khi hết hạn (tối đa 1 giờ), vì JWT authorizer chỉ kiểm chữ ký | Theo thiết kế (11/11): PR infra riêng (Nhân), thử lại trên dev thì sang Đã có |
 
 ### 4.2. Đặt hàng
 
@@ -154,6 +157,7 @@ Mỗi dòng **Đề xuất** sẽ thành một issue riêng, ghi rõ mức và c
 - [x] O7: đã thử điều kiện `dynamodb:Attributes` cho role `ordering`, IAM chặn giao dịch trừ kho nên bỏ, chấp nhận rủi ro (ADR-0017) (Hoàng)
 - [x] O8: tin SNS và log không có `shippingAddress` (Hoàng xác nhận 03/11, nghiệm thu S6)
 - [ ] O9: worker không tin nội dung message
+- [ ] L9: trigger Post confirmation gọi `AdminUserGlobalSignOut` khi đặt lại mật khẩu, PR infra riêng, thử lại trên dev (Nhân)
 - [ ] C1: chọn cách xử lý việc gọi thẳng `execute-api` (An, tuần 5)
 - [x] C6: xác nhận đã tắt "Allow administrators to bypass" của environment `production`; An sửa câu "giới hạn bằng tên stack" trong ADR-0013 cho đúng thực tế (#180)
 - [x] E2: thí nghiệm đầu độc gợi ý (27/10, poisoning-experiment.md); còn rule WAF ở v1.0.0-rc.1
