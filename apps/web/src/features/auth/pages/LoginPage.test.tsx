@@ -137,3 +137,33 @@ describe('LoginPage', () => {
     expect(await screen.findByTestId('register')).toBeInTheDocument();
   });
 });
+
+describe('LoginPage · bàn phím (#432)', () => {
+  it('tab_goesFromPasswordStraightToSubmit_skippingShowPasswordButton', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderLogin();
+    screen.getByLabelText('Email').focus();
+
+    // Act + Assert: Email → Mật khẩu → nút "Đăng nhập", không dừng ở nút con mắt
+    await user.tab();
+    expect(screen.getByLabelText('Mật khẩu')).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Đăng nhập' })).toHaveFocus();
+  });
+
+  it('enterInPassword_submitsForm', async () => {
+    // Arrange
+    vi.mocked(signIn).mockResolvedValue({ isSignedIn: true, nextStep: { signInStep: 'DONE' } });
+    const user = userEvent.setup();
+    renderLogin();
+    await user.type(screen.getByLabelText('Email'), 'an@example.com');
+
+    // Act: gõ mật khẩu rồi Enter ngay trong ô
+    await user.type(screen.getByLabelText('Mật khẩu'), 'Abcdef1!{Enter}');
+
+    // Verify
+    await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
+    expect(signIn).toHaveBeenCalledWith({ username: 'an@example.com', password: 'Abcdef1!' });
+  });
+});

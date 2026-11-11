@@ -134,3 +134,20 @@ describe('RegisterPage', () => {
     expect(await screen.findByText('Username này đã có người dùng.')).toBeInTheDocument();
   });
 });
+
+describe('RegisterPage · bàn phím (#432)', () => {
+  it('tab_visitsAllFieldsThenSubmit_skippingBothShowPasswordButtons', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderRegister();
+    screen.getByLabelText('Username').focus();
+
+    // Act + Assert: Username → Email → Mật khẩu → Nhập lại → "Tạo tài khoản"
+    for (const label of ['Email', 'Mật khẩu', 'Nhập lại mật khẩu']) {
+      await user.tab();
+      expect(screen.getByLabelText(label)).toHaveFocus();
+    }
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Tạo tài khoản' })).toHaveFocus();
+  });
+});
