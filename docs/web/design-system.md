@@ -1,12 +1,12 @@
 # Design system: Black Magic
 
-Người viết: Hoàng · Cập nhật: 10/11/2026 (bản chốt trang 404, hộp xác nhận tự trả focus) · Áp dụng cho `apps/web`
+Người viết: Hoàng · Cập nhật: 10/11/2026 (bản chốt trang 404, hộp xác nhận tự trả focus; nút con mắt bỏ khỏi thứ tự Tab, ô mã 6 ô; 11/11: icon mắt nhắm, mắt mở) · Áp dụng cho `apps/web`
 
 Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien.md](giao-dien.md), mục lục ở [README.md](README.md).
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -240,7 +240,9 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `StockBadge` | `features/catalog/components/StockBadge.tsx` | ✅ |
 | `CategoryIcon` | `features/catalog/components/CategoryIcon.tsx` | ✅ |
 | `Button` (biến thể, cỡ, đang tải) | `shared/components/Button.tsx`; `buttonClass()` ở `shared/components/buttonClass.ts` cho `<Link>` trông như nút | ✅ (hộp xác nhận; trang cũ vẫn dùng class nút riêng) |
-| `Field` (nhãn + ô nhập + lỗi/gợi ý) | `shared/components/Field.tsx` | ✅ (ô nhập; select chưa có) |
+| `Field` (nhãn + ô nhập + lỗi/gợi ý) | `shared/components/Field.tsx` | ✅ (ô nhập; select chưa có); thêm prop `trailing` cho nút trong ô (§9.4) |
+| `PasswordField` (ô mật khẩu có nút con mắt) | `shared/components/PasswordField.tsx` | ✅ (đăng nhập, tạo tài khoản); nút con mắt bỏ khỏi thứ tự Tab, gắn vào ô qua `trailing` (§9.4) |
+| `OtpInput` (mã 6 số, 6 ô) | `shared/components/OtpInput.tsx` | 📝 (thay ô mã trong `features/auth/components/CodeStep.tsx`, §9.4) |
 | `Checkbox` | `shared/components/Checkbox.tsx` | ✅ |
 | `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng, trang chi tiết) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx`; nhãn trạng thái đơn `OrderStatusBadge` ở `features/orders/components/OrderStatusBadge.tsx` | ✅ |
@@ -369,7 +371,21 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 - **Cỡ 48px** dùng cho form đặt hàng, đăng nhập, tạo tài khoản; 40px cho bộ lọc và chỗ khác.
 - Dòng lỗi có icon `CircleAlert` 16px cùng màu đứng trước chữ, gap 4px.
 - Luôn đặt `autocomplete` đúng nghĩa (`name`, `tel`, `email`, `username`, `current-password`, `new-password`, `one-time-code`…).
-- **Ô mật khẩu (`PasswordField`)**: như ô nhập, `padding-right: 48px`; trong ô, sát phải cách 4px, nút `ghost` vuông 40×40 icon `Eye` / `EyeOff` 20px màu `--fg-subdued`, `aria-label` "Hiện mật khẩu" / "Ẩn mật khẩu", `aria-pressed`. Bấm chỉ đổi `type` giữa `password` và `text`, focus vẫn ở ô.
+- **Nút trong ô (`Field` prop `trailing`)**: ô nhập nằm trong một khung `position: relative` chỉ bọc ô (không bọc nhãn, lỗi, gợi ý); nút đặt `position: absolute`, sát phải cách 4px, **căn giữa theo chiều cao ô** (`top: 50%; translate: 0 -50%`). Có `trailing` thì ô thêm `padding-right: 48px`. Không đặt vị trí nút theo chiều cao nhãn.
+- **Ô mật khẩu (`PasswordField`)**: `Field` với `trailing` là nút `ghost` vuông 40×40, bo `--radius-md`, icon 20px màu `--fg-subdued` theo trạng thái mật khẩu: đang ẩn → `EyeClosed` (mắt nhắm), đang hiện → `Eye` (mắt mở) (11/11/2026; không dùng `EyeOff` mắt gạch chéo), hover nền `--bg-transparent-hover`; `aria-label` "Hiện mật khẩu" / "Ẩn mật khẩu", `aria-pressed`. Bấm chỉ đổi `type` giữa `password` và `text`, focus vẫn ở ô (`mousedown` chặn mặc định). **`tabIndex={-1}`** (10/11/2026): Tab từ ô mật khẩu đi thẳng tới nút gửi form; chuột, chạm, trình đọc màn hình vẫn bấm được.
+
+**Ô mã (`OtpInput`)**: mã số độ dài cố định (mặc định 6) vẽ thành từng ô.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Bố cục | nhãn như `Field` (14/20/500, cách 4px); 6 ô `grid-template-columns: repeat(6, minmax(0, 1fr))`, gap 8px (<640: 6px), chia đều bề ngang form; dòng lỗi như `Field`, cách 4px |
+| Một ô | cao 56px (<640: 52px), bo 8px, viền 1px `--border-input`, nền `--bg-surface-raised`; số 24/32/600 `tabular-nums` `--fg-default` căn giữa |
+| Đã có số | viền `--border-default`, nền `--bg-surface` |
+| Ô đang sáng | ô trống đầu tiên (đủ 6 số thì ô cuối), chỉ khi ô nhập đang focus: viền `--border-primary` + viền focus 2px (`outline-offset: 2px`) như ô nhập thường; ô trống có vạch nháy 2×24px `--fg-default` (nháy 1s; `prefers-reduced-motion` thì đứng yên) |
+| Lỗi | 6 ô viền `--fg-danger`; ô đang sáng vẫn có viền focus chàm |
+| Chỉ đọc (đang gửi) | số `--fg-muted`, nền `--bg-surface-raised`, không ô nào sáng |
+| Ô nhập thật | **một** `<input>` phủ kín 6 ô (`position: absolute; inset: 0`), chữ, nền, viền, con trỏ đều trong suốt (`color` và `caret-color: transparent`, không dùng `display: none` hay `opacity: 0`), `outline: none` vì viền focus đã vẽ ở ô đang sáng, chữ 16px để iOS không phóng to; `inputMode="numeric"`, `autocomplete="one-time-code"`, `pattern="[0-9]*"`, `aria-invalid`, `aria-describedby` trỏ dòng lỗi. Con trỏ luôn ở cuối (chặn chọn giữa chừng). 6 ô là `aria-hidden`. **Không đặt `maxLength`** (11/11/2026): trình duyệt cắt chữ dán theo `maxLength` trước khi lọc số, nên dán "123 456" chỉ còn 5 số, "Mã: 123456" còn 2 số; độ dài do `onChange` cắt |
+| Nhập | `onChange` bỏ ký tự không phải số rồi cắt còn đủ số ô (6); dán hoặc tự điền điền một lượt; đủ 6 số gọi `onComplete` một lần |
 
 Form cụ thể ở [pages/dat-hang.md](pages/dat-hang.md) và [pages/dang-nhap.md](pages/dang-nhap.md).
 

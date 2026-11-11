@@ -75,13 +75,13 @@ Do not introduce: ảnh đại diện, trang hồ sơ, cài đặt, yêu thích,
 
 Confidence: MEDIUM
 
-Reuse: thẻ và `FocusLayout` của dang-nhap.md §2, `Field` 48px, `Button primary lg`, `Button ghost md`.
+Reuse: thẻ và `FocusLayout` của dang-nhap.md §2, `OtpInput` (design-system §9.4), `Button primary lg`, `Button ghost md`.
 
-Bố cục và tương tác: như dang-nhap.md §3.3 (tiêu đề, một ô mã 6 số, nút "Xác nhận", nút ghost "Gửi lại mã" bên dưới, căn giữa).
+Bố cục và tương tác: như dang-nhap.md §3.3 (tiêu đề, 6 ô mã, đủ 6 số thì tự gửi, nút "Xác nhận", nút ghost "Gửi lại mã" bên dưới, căn giữa).
 
-Assumptions: Cognito gửi mã 6 số qua email (cần An xác nhận). Một ô thay vì 6 ô riêng vì dùng lại được `Field` có sẵn và dán mã dễ hơn.
+Assumptions: Cognito gửi mã 6 số qua email (An đã xác nhận 08/10/2026). Đổi từ một ô sang 6 ô theo góp ý của nhóm (10/11/2026); bên dưới vẫn là một ô nhập thật nên dán và tự điền mã không đổi.
 
-Alternatives: 6 ô nhập tách riêng cho từng số; trang riêng `/register/verify` thay vì đổi bước trong cùng trang.
+Alternatives: 6 `<input>` riêng cho từng số (bỏ vì phải tự xử lý dán, tự điền, trình đọc màn hình đọc 6 ô); trang riêng `/register/verify` thay vì đổi bước trong cùng trang.
 
 ## 7. Nhập mã MFA của admin
 

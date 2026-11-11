@@ -1,6 +1,6 @@
 # Giao diện web: Black Magic
 
-Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 10/11/2026 (bản chốt trang 404)
+Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 10/11/2026 (bản chốt trang 404; ô mật khẩu và ô mã 6 ô)
 
 Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví dụ widget gợi ý, trang đăng nhập) đọc mục 1, 2 và 6 là đủ.
 
@@ -65,7 +65,7 @@ Font **Inter** (có dấu tiếng Việt), dự phòng system-ui, Segoe UI, Robo
 | `StoryBlock` | `shared/components/StoryBlock.tsx` | Một khối có tiêu đề (khối sản phẩm) |
 | `Carousel` | `shared/components/Carousel.tsx` | Dải thẻ sản phẩm có nút mũi tên |
 | `ProductCard`, `StockBadge`, `CategoryIcon` | `features/catalog/components/` | Thẻ sản phẩm, nhãn tồn kho, icon loại hàng |
-| `Field`, `PasswordField`, `Checkbox`, `QuantityStepper`, `Alert`, `OrderSummary` | `shared/components/` | Form, giỏ hàng, đặt hàng |
+| `Field`, `PasswordField`, `OtpInput` (chưa có), `Checkbox`, `QuantityStepper`, `Alert`, `OrderSummary` | `shared/components/` | Form, giỏ hàng, đặt hàng, đăng nhập |
 | `ProductListCard`, `AddToCartButton`, `FilterPanel`, `FilterSheet`, `CursorPager`, `Breadcrumb`, `Radio` | `features/catalog/`, `features/cart/`, `shared/components/` | Trang danh sách (design-system §9.5, §9.19–§9.23) |
 | `SpecTiles`, `SpecPanel` (chưa có) | `features/catalog/components/` | Ô thông số và panel thông số của trang chi tiết (design-system §9.24) |
 
