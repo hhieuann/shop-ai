@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, CircleAlert, ShoppingCart } from 'lucide-react';
+import type { ProductCategory } from '../../../shared/api/types';
 import { useAnnounce } from '../../../shared/hooks/useAnnounce';
 import { useCart, type CartAddable } from '../hooks/useCart';
 import { addErrorMessage, addErrorShortLabel } from '../lib/addErrorMessage';
+import { flyToCart } from '../lib/flyToCart';
 import styles from './AddToCartButton.module.css';
 
 /** Thời gian giữ trạng thái trên nút rồi về bình thường (design-system §9.23) */
@@ -17,11 +19,17 @@ type State = { kind: 'idle' } | { kind: 'added' } | { kind: 'error'; label: stri
  * Kết quả hiện trên chính nút; câu đọc cho trình đọc màn hình đi qua useAnnounce
  * (vùng thông báo đặt một lần ở cấp trang).
  */
-export function AddToCartButton({ product }: { product: CartAddable }) {
+export function AddToCartButton({
+  product,
+}: {
+  /** Có loại hàng thì ô bay mang icon loại đó (thẻ trang danh sách truyền ProductSummary) */
+  product: CartAddable & { category?: ProductCategory };
+}) {
   const { add } = useCart();
   const announce = useAnnounce();
   const [state, setState] = useState<State>({ kind: 'idle' });
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -50,6 +58,7 @@ export function AddToCartButton({ product }: { product: CartAddable }) {
       {
         onSuccess: () => {
           showFor({ kind: 'added' }, ADDED_MS);
+          flyToCart(buttonRef.current, product.category);
           announce.polite(`Đã thêm ${product.name} vào giỏ.`);
         },
         onError: (error) => {
@@ -70,6 +79,7 @@ export function AddToCartButton({ product }: { product: CartAddable }) {
 
   return (
     <button
+      ref={buttonRef}
       type="button"
       className={`${styles.button} ${tone}`}
       onClick={handleClick}

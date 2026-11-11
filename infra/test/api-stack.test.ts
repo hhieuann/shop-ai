@@ -461,4 +461,40 @@ describe('ApiStack', () => {
       Environment: { Variables: Match.objectLike({ POWERTOOLS_SERVICE_NAME: 'account-signup' }) },
     });
   });
+
+  it('dashboard_showsThrottleOfEveryTableInStack', () => {
+    // Act
+    const template = synth(dev);
+    const body = JSON.stringify(
+      Object.values(template.findResources('AWS::CloudWatch::Dashboard'))[0],
+    );
+
+    // Assert: mọi bảng DynamoDB của stack đều có đường throttle (runbook dynamodb-throttle)
+    const tableIds = Object.keys(template.findResources('AWS::DynamoDB::Table'));
+    expect(tableIds.length).toBeGreaterThanOrEqual(7);
+    for (const id of tableIds) expect(body).toContain(`"Ref":"${id}"`);
+  });
+
+  it.each([dev, prod])('dashboard_hasAtMost50Metrics_toStayFree_%#', (shopEnv) => {
+    // Act
+    const metrics = dashboardMetricCount(synth(shopEnv));
+
+    // Assert: 3 dashboard đầu tiên của tài khoản miễn phí nếu mỗi cái tối đa 50 metric; quá thì tính
+    // tiền. Dev, staging, prod dùng đúng 3 dashboard (monitoring.ts), nên mỗi cái phải giữ dưới mức này
+    expect(metrics).toBeLessThanOrEqual(50);
+  });
 });
+
+/**
+ * Số metric trên dashboard của stack: dựng lại DashboardBody (Fn::Join, chỗ Ref thay bằng chữ giả)
+ * rồi đếm phần tử `metrics` của từng widget. Biểu đồ trạng thái alarm không có metric nên không tính.
+ */
+function dashboardMetricCount(template: Template): number {
+  const [dashboard] = Object.values(template.findResources('AWS::CloudWatch::Dashboard'));
+  const [, parts] = dashboard?.Properties.DashboardBody['Fn::Join'] as [string, unknown[]];
+  const body = parts.map((part) => (typeof part === 'string' ? part : 'REF')).join('');
+  const { widgets } = JSON.parse(body) as {
+    widgets: { properties: { metrics?: unknown[] } }[];
+  };
+  return widgets.reduce((sum, widget) => sum + (widget.properties.metrics?.length ?? 0), 0);
+}

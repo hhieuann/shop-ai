@@ -21,7 +21,7 @@ Tài liệu đi kèm:
 | 2 | Thiết kế | Tuần 1–2 | Layer, API, dữ liệu, bảo mật, ADR |
 | 3 | Xây dựng | Tuần 2–6 | Sprint 2 tuần, git flow, review, chuẩn code |
 | 4 | Kiểm thử | Mọi tuần | Unit, integration, E2E và các cổng chất lượng |
-| 5 | Triển khai | Từ tuần 2 | dev và staging tự động, prod có duyệt, canary, rollback |
+| 5 | Triển khai | Từ tuần 2 | dev và staging tự động, prod có duyệt, rollback (canary hoãn, ADR-0014) |
 | 6 | Vận hành | Từ tuần 4 | Log, trace, alarm, runbook, chi phí |
 | 7 | Đóng dự án | Tuần 7–8 | Báo cáo FCAJ, demo, dọn dẹp, retro |
 
@@ -47,13 +47,15 @@ Tài liệu đi kèm:
 | API đọc | p95 ≤ 300 ms ở 200 người ảo; ≤ 80 ms khi trúng cache CloudFront | k6, CloudWatch |
 | API ghi (đặt hàng) | p95 ≤ 800 ms; việc chậm như gửi email đẩy sang SQS | k6, X-Ray |
 | Khởi động lạnh | Init ≤ 800 ms với Node.js 24, arm64, gói code dưới 1 MB | CloudWatch Init Duration |
-| Web | Lighthouse Performance ≥ 90; LCP ≤ 2,5 s trên 4G; JS ban đầu ≤ 250 KB gzip | Lighthouse |
+| Web | Lighthouse Performance ≥ 90 (điện thoại và máy tính); LCP ≤ 2,5 s; CLS ≤ 0,1 ở mọi lần đo; JS ban đầu ≤ 250 KB gzip | Lighthouse CLI 13.6.0, cách đo dưới bảng |
 | Sẵn sàng | 99,5% trong giai đoạn demo; lỗi 5xx dưới 1% | CloudWatch |
 | Bảo mật | Không lỗ hổng High/Critical đang mở; luồng chính đạt OWASP ASVS mức 1 | Các lượt quét, checklist |
 | Chất lượng mã | Coverage ≥ 80% cho domain và application; 0 lỗi lint | Vitest, pytest |
 | Chi phí | Dưới $15 cả dự án; có chỉ số chi phí trên 1.000 đơn | Cost Explorer theo tag |
 | Phục hồi | RPO ≤ 5 phút, RTO ≤ 1 giờ cho dữ liệu đơn hàng | Diễn tập tuần 6 |
 | Vận hành | Mọi alarm có runbook; khắc phục sự cố dưới 1 giờ | Runbook, DORA |
+
+**Cách đo Lighthouse (chốt 05/11/2026, #346):** Lighthouse CLI 13.6.0, chế độ điện thoại mặc định (mô phỏng mạng chậm và CPU ×4) và chế độ máy tính, trình duyệt sạch không đăng nhập, đo trên dev CloudFront, tắt app khác trên máy đo. Trang chủ, danh sách, chi tiết, mỗi trang 5 lần, lấy trung vị cho Performance và LCP; CLS xét từng lần. Ghi commit đã đo. Mốc trên gắn với bản 13.6.0 (bản 12.8 cho điểm thấp hơn khoảng 10 điểm trên cùng trang); đổi bản Lighthouse thì đo lại cả develop.
 
 Các con số này sẽ chỉnh khi có nghiệp vụ, nhất là số người dùng và số đơn giả định cho demo **(chờ nghiệp vụ)**.
 
@@ -283,7 +285,7 @@ Cách viết test chi tiết: [hands-on-testing-guide.md](hands-on-testing-guide
 | Lên dev | Deploy xanh, smoke xanh, E2E xanh |
 | Tách release | Mọi story trong sprint đã Done trên dev |
 | Merge release vào main | UAT xong trên staging, E2E xanh, không High/Critical đang mở, runbook cập nhật |
-| Lên prod | Người khác An bấm Approve, canary không kêu alarm, smoke xanh |
+| Lên prod | Người khác An bấm Approve, deploy xanh, smoke xanh |
 
 ## 9. CI/CD và triển khai
 
@@ -298,7 +300,7 @@ flowchart TB
   G --> H["PR release → main"]
   H --> I["An gắn tag vX.Y.Z"]
   I --> J{"Người khác An duyệt<br/>environment production"}
-  J --> K["deploy-prod.yml<br/>canary cho ordering, smoke"]
+  J --> K["deploy-prod.yml<br/>cdk deploy, smoke"]
   K --> L["GitHub Release tự sinh ghi chú"]
 ```
 
@@ -319,7 +321,7 @@ dev, staging và prod chung tài khoản demo vì Free plan không có AWS Organ
 |---|---|---|
 | `pr.yml` | Mỗi PR vào `develop`, `main`, `release/*` | Tiêu đề PR, commitlint cho từng commit, định dạng, lint, type, luật layer, unit, integration, build, gitleaks, audit thư viện, test Python, `cdk synth` + cdk-nag, `cdk diff` vào phần Summary |
 | `deploy.yml` | Push `develop` (→ dev) hoặc `release/*` (→ staging) | Build, OIDC, `cdk deploy`, smoke, E2E API (Vitest), Playwright nếu có |
-| `deploy-prod.yml` | Tag `v*` | Chờ duyệt environment production, `cdk deploy` prod (canary cho ordering), smoke, tạo GitHub Release |
+| `deploy-prod.yml` | Tag `v*` | Chờ duyệt environment production, `cdk deploy` prod, smoke, tạo GitHub Release |
 | `nightly.yml` | 2:00 mỗi đêm | OWASP ZAP và Schemathesis vào staging, audit thư viện, k6 kịch bản nhỏ |
 
 Mọi workflow deploy chỉ chạy khi biến `DEPLOY_ENABLED=true`. An bật biến này sau khi làm xong phần OIDC trong [infra/README.md](../infra/README.md).
@@ -330,8 +332,7 @@ Mọi workflow deploy chỉ chạy khi biến `DEPLOY_ENABLED=true`. An bật bi
 
 | Thành phần | Cách deploy | Quay lui |
 |---|---|---|
-| Lambda catalog, cart, recommendation, events | Deploy thẳng qua alias `live` | Đẩy lại tag trước qua workflow, khoảng 5 phút |
-| Lambda ordering | Canary bằng CodeDeploy: 10% lưu lượng trong 5 phút; lỗi quá 1% thì dừng (ADR-014) | Tự động quay về bản cũ |
+| Mọi Lambda | Deploy thẳng bằng `cdk deploy`, không có alias; canary cho ordering đã hoãn (ADR-0014) | CloudFormation tự quay về khi deploy lỗi; bản đã lên mà có lỗi thì sửa rồi gắn tag mới |
 | Web (S3 + CloudFront) | Upload file mới (tên có hash) trước, `index.html` sau cùng, rồi invalidate `/index.html` | Deploy lại bản build của tag trước |
 | Hạ tầng | `cdk diff` đã review trong PR; CloudFormation tạo change set | CloudFormation tự rollback khi lỗi; bảng dữ liệu prod để RETAIN |
 | Dữ liệu gợi ý | Ghi phiên bản mới, đánh giá, rồi mới đổi con trỏ ACTIVE | Đổi con trỏ về phiên bản cũ, tức thì |
@@ -348,7 +349,7 @@ Mọi workflow deploy chỉ chạy khi biến `DEPLOY_ENABLED=true`. An bật bi
 
 **Trong và sau deploy**
 
-- Người duyệt bấm Approve, theo dõi canary tới khi xong
+- Người duyệt bấm Approve, theo dõi deploy tới khi xong
 - Smoke test; xem dashboard 30 phút
 - Kiểm tra GitHub Release; merge release ngược về `develop`; cập nhật worklog
 
@@ -381,9 +382,8 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 | API 5xx trên 1% trong 5 phút | Email qua SNS | `runbooks/api-5xx.md` |
 | Lambda bị throttle | Email | `runbooks/lambda-throttle.md` |
 | DLQ đơn hàng có message | Email | `runbooks/dlq-orders.md` |
-| Message SQS cũ nhất quá 5 phút | Email | `runbooks/sqs-backlog.md` |
-| DynamoDB bị throttle | Email | `runbooks/dynamodb-throttle.md` |
-| Canary ordering báo lỗi | CodeDeploy tự rollback | `runbooks/canary-rollback.md` |
+| Message SQS cũ nhất quá 5 phút | Xem dashboard (không có alarm: đã hết 10 alarm miễn phí, #252) | `runbooks/sqs-backlog.md` |
+| DynamoDB bị throttle | Xem biểu đồ throttle theo bảng trên dashboard (không có alarm, như trên) | `runbooks/dynamodb-throttle.md` |
 | Chi phí vượt $5, $10, $20 | Email từ Budgets | `runbooks/cost-spike.md` |
 | Pipeline gợi ý đêm qua lỗi hoặc không chạy | Email; web vẫn đọc phiên bản cũ | `runbooks/recs-pipeline.md` |
 
@@ -397,7 +397,7 @@ Dashboard "Shop tổng quan": API p95/p99, 4xx/5xx theo route; lỗi, throttle, 
 
 ### Sao lưu và phục hồi
 
-- **Đơn hàng, sản phẩm:** point-in-time recovery; RPO ≤ 5 phút; khôi phục sang bảng mới rồi trỏ lại, RTO ≤ 1 giờ
+- **Đơn hàng, sản phẩm:** point-in-time recovery; RPO ≤ 5 phút; khôi phục sang bảng mới rồi chép các item cần lại về bảng cũ, RTO ≤ 1 giờ ([runbooks/pitr-restore.md](runbooks/pitr-restore.md))
 - **Bucket dữ liệu:** bật versioning
 - **Hạ tầng:** dựng lại toàn bộ bằng CDK dưới 30 phút
 - **Gợi ý:** quay về phiên bản trước bằng con trỏ
@@ -448,7 +448,7 @@ Lấy số từ lịch sử GitHub Actions và trình bày ở mỗi buổi demo
 | Sprint 0 | 29/09–05/10 | Repo, CI, CDK bootstrap, OIDC, OpenAPI bản 0, threat model bản 0, budgets, module mẫu, chốt nghiệp vụ | — | — |
 | Sprint 1 | 06/10–19/10 | Catalog, đăng nhập, giỏ hàng, API sự kiện, baseline offline, dev tự động | `release/v0.1.0` ngày 16/10 | `v0.1.0` ngày 19/10 |
 | Sprint 2 | 20/10–02/11 | Đặt hàng qua SQS và SES, API và widget gợi ý, pipeline batch, admin, WAF, dashboard, test bảo mật | `release/v0.2.0` ngày 30/10 | `v0.2.0` ngày 02/11 |
-| Hardening | 03/11–09/11 | Load test, diễn tập phục hồi, canary cho ordering, tối ưu hiệu năng | `release/v1.0.0` ngày 06/11 | `v1.0.0-rc.1` ngày 09/11 |
+| Hardening | 03/11–09/11 | Load test, diễn tập phục hồi, tối ưu hiệu năng (canary hoãn, ADR-0014) | `release/v1.0.0` ngày 06/11 | `v1.0.0-rc.1` ngày 09/11 |
 | Release | 10/11–23/11 | Báo cáo FCAJ, workshop, tập demo; chỉ sửa lỗi trên `release/v1.0.0` | — | `v1.0.0` ngày 23/11 |
 | Dự phòng | 24/11–29/11 | Xử lý việc trễ; nộp workshop trên portal FCAJ | — | — |
 

@@ -129,6 +129,7 @@ export function AccountMenu() {
     clearCheckoutItems();
     queryClient.removeQueries({ queryKey: queryKeys.orders.all });
     queryClient.removeQueries({ queryKey: queryKeys.recs.all });
+    queryClient.removeQueries({ queryKey: queryKeys.admin.all });
     close(true);
     if (isSignedInOnly(location.pathname)) navigate('/', { replace: true });
   };

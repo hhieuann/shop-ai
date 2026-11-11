@@ -1,0 +1,88 @@
+/* Hộp thoại xác nhận (docs/web/design-system.md §9.14) */
+.dialog {
+  width: 480px;
+  max-width: calc(100% - 32px);
+  padding: var(--space-300);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-2xl);
+  background: var(--bg-surface);
+  color: var(--fg-default);
+  box-shadow: var(--shadow-lg);
+}
+.dialog::backdrop {
+  background: var(--scrim);
+}
+.title {
+  margin: 0 0 var(--space-100);
+  color: var(--fg-heading);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+  font-weight: 600;
+}
+.body {
+  color: var(--fg-muted);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.error {
+  margin-top: var(--space-200);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-100);
+  margin-top: var(--space-300);
+}
+/* Nút cỡ md (§9.3): phụ và chính */
+.secondary,
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: var(--space-100) var(--space-200);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font: inherit;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.secondary {
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+}
+.secondary:hover:not(:disabled) {
+  background: var(--bg-surface-pressed);
+}
+.primary {
+  border-color: var(--bg-primary);
+  background: var(--bg-primary);
+  color: var(--fg-on-primary);
+}
+.primary:hover:not(:disabled) {
+  border-color: var(--bg-primary-hover);
+  background: var(--bg-primary-hover);
+}
+.primary:active:not(:disabled) {
+  background: var(--bg-primary-pressed);
+}
+.secondary:disabled {
+  color: var(--fg-disabled);
+  cursor: not-allowed;
+}
+.primary:disabled {
+  cursor: progress;
+}
+@media (max-width: 639px) {
+  .actions {
+    flex-direction: column-reverse;
+  }
+  .secondary,
+  .primary {
+    width: 100%;
+  }
+}

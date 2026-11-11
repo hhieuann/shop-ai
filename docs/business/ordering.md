@@ -2,7 +2,7 @@
 
 - Module: ordering
 - Vai trò: khách hàng đã đăng nhập; admin (huỷ đơn, chuyển trạng thái giao hàng)
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker); 25/10/2026 (tin `order-confirmed` không bọc Idempotency)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker); 25/10/2026 (tin `order-confirmed` không bọc Idempotency); 06/11/2026 (admin chuyển `SHIPPED`, `DELIVERED`, BR-15)
 
 ## Luồng đặt hàng (checkout flow)
 
@@ -67,6 +67,15 @@ Là khách hàng, tôi muốn tick chọn các sản phẩm trong giỏ mà tôi
 - BR-12: **Huỷ đơn thì hoàn tồn kho**: cộng lại `stock` cho mọi món trong đơn. Đổi trạng thái và cộng kho nằm trong một giao dịch, có điều kiện trạng thái hiện tại, nên bấm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn đang mở (`PENDING`, `CONFIRMED`) thì giảm `openOrders` trong cùng giao dịch (BR-14); huỷ đơn `SHIPPED` thì không, vì lúc chuyển `SHIPPED` đã giảm rồi.
 - BR-13: Huỷ đơn thì gửi email báo cho khách. API huỷ đơn không gửi email trực tiếp: sau giao dịch huỷ, đẩy message `{ orderId, userId, type: "CANCELLED", correlationId }` vào cùng hàng đợi để worker `order-processor` gửi (luồng SQS).
 
+### Admin chuyển trạng thái giao hàng (chốt 06/11/2026, bản `v1.0.0-rc.1`)
+
+- BR-15: Chỉ người thuộc nhóm `admin` của Cognito được chuyển trạng thái giao hàng, kiểm ở backend (threat model L6, O3). Chỉ đi tiếp một bước: `CONFIRMED` → `SHIPPED`, `SHIPPED` → `DELIVERED`. Chuyển sai bước, đi ngược, hoặc đơn vừa bị đổi trạng thái → 409 `INVALID_STATUS_TRANSITION` kèm trạng thái hiện tại; không có đơn → 404.
+  - Bảng `orders` có khoá `userId` + `orderId`, nên backend tra `userId` qua index `byStatus`. Index có thể trễ, nên lệnh ghi vẫn có điều kiện `status` = trạng thái nguồn.
+  - Chuyển sang `SHIPPED` thì giảm `openOrders` trong cùng giao dịch (BR-14); sang `DELIVERED` thì không.
+  - Ghi log `adminId`, `orderId`, trạng thái cũ và mới; không ghi địa chỉ.
+  - Danh sách đơn cho admin lọc theo trạng thái, không trả địa chỉ giao hàng, họ tên, SĐT (O8).
+  - Bản `v1.0.0-rc.1` **chưa có** admin huỷ đơn (BR-11 làm sau).
+
 ## Máy trạng thái đơn hàng
 
 ```
@@ -79,8 +88,8 @@ PENDING ──► CONFIRMED ──► SHIPPED ──► DELIVERED
 |---|---|---|
 | `PENDING` | Hệ thống | Ngay khi tạo đơn thành công |
 | `CONFIRMED` | Worker (SQS) | Worker nhận message và xác nhận đơn |
-| `SHIPPED` | Admin | Đã giao cho đơn vị vận chuyển. Giảm `openOrders` trong cùng giao dịch đổi trạng thái (BR-14) |
-| `DELIVERED` | Admin | Khách đã nhận hàng |
+| `SHIPPED` | Admin (từ `CONFIRMED`, BR-15) | Đã giao cho đơn vị vận chuyển. Giảm `openOrders` trong cùng giao dịch đổi trạng thái (BR-14) |
+| `DELIVERED` | Admin (từ `SHIPPED`, BR-15) | Khách đã nhận hàng |
 | `CANCELLED` | Khách (từ `PENDING`, `CONFIRMED`) hoặc admin (từ `PENDING`, `CONFIRMED`, `SHIPPED`) | Xem BR-10, BR-11 |
 
 MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 3 lần vẫn ở `PENDING`; admin xử lý theo runbook `dlq-orders.md` (chạy lại message, hoặc huỷ đơn để hoàn kho).
@@ -155,9 +164,13 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 - Given đơn được xác nhận, Then topic `order-confirmed` nhận đúng 1 tin có `orderId`, `userId`, `confirmedAt`, `items`, không có `shippingAddress`.
 - Given `GET /api/v1/orders`, Then chỉ trả đơn của người đang đăng nhập.
 - Given đơn của người khác, When `GET /api/v1/orders/{orderId}`, Then trả 404.
+- Given đơn `CONFIRMED`, When admin chuyển `SHIPPED`, Then đơn `SHIPPED`, `openOrders` của khách giảm 1, khách không còn huỷ được. Chuyển tiếp `DELIVERED` thì `openOrders` không đổi.
+- Given đơn `PENDING`, `DELIVERED` hoặc `CANCELLED`, When admin chuyển `SHIPPED`, Then trả 409 `INVALID_STATUS_TRANSITION`, đơn không đổi.
+- Given không có token hoặc tài khoản không thuộc nhóm `admin`, When gọi API admin, Then trả 401 hoặc 403, đơn không đổi.
+- Given `GET /api/v1/admin/orders?status=CONFIRMED`, Then không đơn nào có địa chỉ giao hàng.
 
 ## Màn hình liên quan
 
 - `/checkout` — trang đặt hàng: địa chỉ giao hàng, tóm tắt đơn, dòng "Phí vận chuyển: Miễn phí", nút "Xác nhận đặt hàng". Nhận 409 `PRICE_CHANGED` thì hiện giá mới và yêu cầu xác nhận lại. Nhận 409 `TOO_MANY_OPEN_ORDERS` thì hiện "Bạn đang có 3 đơn chưa giao. Huỷ bớt đơn hoặc chờ đơn được giao rồi đặt tiếp." kèm link "Xem đơn hàng" → `/orders`.
-- `/orders` — lịch sử đơn: danh sách đơn kèm trạng thái.
-- `/orders/:orderId` — chi tiết đơn; nút "Huỷ đơn" khi đơn còn `PENDING` hoặc `CONFIRMED`.
+- `/orders` — lịch sử đơn: danh sách đơn kèm trạng thái; mỗi đơn gọi theo tên món đầu tiên ("… và N sản phẩm khác"), mã đơn là dòng phụ. Spec: `docs/web/pages/don-hang.md`.
+- `/orders/:orderId` — chi tiết đơn; nút "Huỷ đơn" khi đơn còn `PENDING` hoặc `CONFIRMED`, bấm thì hỏi lại trước khi huỷ.

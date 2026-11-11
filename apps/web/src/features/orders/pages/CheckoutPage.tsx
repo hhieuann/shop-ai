@@ -354,10 +354,12 @@ function CheckoutStep({
   );
 }
 
-/** Giá đổi, đơn đang xử lý: cảnh báo; còn lại là lỗi */
+/** Giá đổi, đơn đang xử lý, đang có 3 đơn chưa giao: cảnh báo; còn lại là lỗi */
 function alertTone(error: unknown): 'warning' | 'danger' {
   return error instanceof ApiError &&
-    (error.code === 'PRICE_CHANGED' || error.code === 'ORDER_IN_PROGRESS')
+    (error.code === 'PRICE_CHANGED' ||
+      error.code === 'ORDER_IN_PROGRESS' ||
+      error.code === 'TOO_MANY_OPEN_ORDERS')
     ? 'warning'
     : 'danger';
 }

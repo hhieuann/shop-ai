@@ -4,7 +4,6 @@
 }
 .list {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-50);
   margin: 0;
@@ -16,9 +15,19 @@
 }
 .item {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--space-50);
+}
+/* Chỉ mục cuối (tên trang hiện tại) co lại và cắt một dòng với "…" */
+.item:last-child {
+  flex-shrink: 1;
   min-width: 0;
+}
+.current {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .separator {
   flex-shrink: 0;
@@ -31,6 +40,34 @@
 .link:hover {
   color: var(--fg-primary-hover);
   text-decoration: underline;
+}
+/* Bản rút gọn dưới 640px: chỉ link "‹ {loại}" (trang chi tiết) */
+.back {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  color: var(--fg-primary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.back:hover {
+  color: var(--fg-primary-hover);
+  text-decoration: underline;
+}
+.withBack .back {
+  display: inline-flex;
+}
+.withBack .list {
+  display: none;
+}
+@media (min-width: 640px) {
+  .withBack .back {
+    display: none;
+  }
+  .withBack .list {
+    display: flex;
+  }
 }
 @media (min-width: 1280px) {
   .nav {

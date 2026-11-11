@@ -1,12 +1,12 @@
 # Design system: Black Magic
 
-Người viết: Hoàng · Cập nhật: 13/10/2026 (bản chốt trang danh sách sản phẩm) · Áp dụng cho `apps/web`
+Người viết: Hoàng · Cập nhật: 09/11/2026 (bản chốt trang đơn hàng) · Áp dụng cho `apps/web`
 
 Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien.md](giao-dien.md), mục lục ở [README.md](README.md).
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, **code chưa đổi**: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -98,7 +98,7 @@ Bảng màu chàm (chốt 11/10/2026). Cột "Tương phản" là tỉ lệ WCAG
 
 ## 3. Chữ
 
-Font **Inter** (`--font-sans`, dự phòng system-ui, -apple-system, Segoe UI, Roboto), tải kèm subset `vietnamese`, các độ đậm 400 / 500 / 600 / 700. Số liệu kỹ thuật có thể dùng `--font-mono`. `<html lang="vi">`. Cỡ chữ lấy theo trang tham khảo chính.
+Font **Inter** (`--font-sans`, dự phòng system-ui, -apple-system, Segoe UI, Roboto), **tự host** bằng gói `@fontsource/inter` (import trong `main.tsx`, đóng gói cùng web, không gọi máy chủ font bên ngoài): dải `latin` và `vietnamese`, các độ đậm 400 / 500 / 600 / 700, `font-display: swap`. Số liệu kỹ thuật có thể dùng `--font-mono`; mã đơn (ULID 26 ký tự) dùng `--font-mono` 12px, hiện đủ. `<html lang="vi">`. Cỡ chữ lấy theo trang tham khảo chính.
 
 | Vai trò | Cỡ / line-height / đậm | Dùng ở |
 |---|---|---|
@@ -180,7 +180,7 @@ Các dải cuộn ngang đang ẩn thanh cuộn (`Carousel`, hàng chip) **giữ
 | Breakpoint | **640**, **768** (lưới thẻ 2 cột → dải cuộn), **960** (bố cục hai cột của trang con), **1280** (header đầy đủ 2 hàng, menu danh mục trái ở trang chủ), **1600** (7 thẻ mỗi hàng) |
 | Màn kiểm thử | 1920px, 1366px, 390px |
 | Khung hẹp | Giỏ hàng, đặt hàng: rộng tối đa **1280px**, căn giữa |
-| Bố cục hai cột (≥960) | Trang chi tiết, giỏ hàng, đặt hàng: `grid-template-columns: minmax(0,1fr) 360px; gap:24px; align-items:start` |
+| Bố cục hai cột (≥960) | Trang chi tiết, giỏ hàng, đặt hàng: `grid-template-columns: minmax(0,1fr) 360px; gap:24px; align-items:start` (trang chi tiết viết 360px bằng `--pdp-aside`, §10) |
 | Khoảng cách giữa các khối sản phẩm | mỗi khối có padding trên 24px (điện thoại 20px), dưới 4px; tiêu đề cách hàng thẻ 16px |
 
 Quy tắc:
@@ -242,20 +242,26 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `Button` (biến thể, cỡ, đang tải) | nên đặt `shared/components/Button.tsx` | 📝 |
 | `Field` (nhãn + ô nhập + lỗi/gợi ý) | `shared/components/Field.tsx` | ✅ (ô nhập; select chưa có) |
 | `Checkbox` | `shared/components/Checkbox.tsx` | ✅ |
-| `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng; trang chi tiết chưa dùng) |
+| `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng, trang chi tiết) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx` | 📝 |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
 | `EmptyState` | `shared/components/EmptyState.tsx` | 📝 (đang viết trong trang danh sách) |
-| `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | 📝 |
+| `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
+| `CartBadge` (nhãn số trên icon giỏ) | `features/cart/components/CartBadge.tsx`; số lấy từ `features/cart/hooks/useCartCount.ts` | ✅ (header, §9.1) |
+| `FlyToCart` (hiệu ứng thêm vào giỏ) | `features/cart/components/FlyToCart.tsx`; gọi `flyToCart()` trong `features/cart/lib/flyToCart.ts` | ✅ (§9.25) |
 | `LiveAnnouncerProvider` + `useAnnounce` (vùng thông báo cho trình đọc màn hình, đặt một lần ở cấp trang) | `shared/components/LiveAnnouncer.tsx`, `shared/hooks/useAnnounce.ts` | ✅ (§9.23) |
 | `FilterPanel`, `FilterSheet` | `features/catalog/components/` (nhóm lọc dùng chung `CategoryFilter`) | ✅ (trang danh sách, §9.20) |
 | `CursorPager` | `shared/components/CursorPager.tsx` | ✅ (trang danh sách, §9.21) |
+| `SpecTiles` (ô thông số, chia đều theo hàng) | `features/catalog/components/SpecTiles.tsx`; phép chia cột ở `features/catalog/lib/specGrid.ts` | ✅ (trang chi tiết, §9.24; thay `SpecTable`) |
+| `SpecPanel` (panel thông số mở từ bên phải) | `features/catalog/components/SpecPanel.tsx`; câu giải thích ở `features/catalog/lib/specHelp.ts`, thứ tự ô `SPEC_ORDER` ở `specLabels.ts` | ✅ (trang chi tiết, §9.24) |
 | `OrderSummary` (khối tóm tắt tiền) | `shared/components/OrderSummary.tsx` | ✅ (giỏ hàng, đặt hàng) |
 | `FocusLayout` + `MiniHeader` | `app/FocusLayout.tsx` | 📝 (đặt hàng, đăng nhập, tạo tài khoản) |
+| `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | 📝 (chi tiết đơn, §9.26) |
+| `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | 📝 (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
 | `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
 | `CategoryMenu` (13 loại hàng: cột trái trang chủ, bảng thả xuống, ngăn kéo) | nên đặt `app/CategoryMenu.tsx` | 📝 |
 
@@ -274,7 +280,7 @@ Hai hàng, dính đầu trang (`position: sticky; top: 0; z-index: 210`). Hàng 
 | Đơn hàng | đầu nhóm nút bên phải; `NavLink` cao 44px, padding `0 10px`, bo 10px, icon `Package` 28 + nhãn 16/24/500, gap 8px; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn |
 | Đăng nhập | nút mở menu tài khoản, cùng kích thước với Đơn hàng: icon `User` 28 + nhãn + `ChevronDown` 16 (§9.17) |
 | Vạch ngăn | 1px × 28px `--border-on-chrome`, cách hai bên 6px |
-| Giỏ hàng | chỉ icon `ShoppingCart` 30 trong ô 48×44, bo 10px, `aria-label="Giỏ hàng"`; hover nền `--bg-chrome-hover`; trang hiện tại có vạch trắng 2px dưới icon |
+| Giỏ hàng | chỉ icon `ShoppingCart` 30 trong ô 48×44, bo 10px, `aria-label="Giỏ hàng"` (có món: "Giỏ hàng, N sản phẩm"); hover nền `--bg-chrome-hover`; trang hiện tại có vạch trắng 2px dưới icon. **Nhãn số** (`CartBadge`): N = số sản phẩm khác nhau trong giỏ (số dòng, tối đa 50, không phải tổng số lượng), lấy bằng `useCartCount` (khách vãng lai đếm giỏ trên trình duyệt, đã đăng nhập dùng chung cache `GET /api/v1/cart`); 0 hoặc giỏ đang tải, lỗi thì không có nhãn. Nhãn tròn ở góc trên phải icon, cao 18px và rộng tối thiểu 18px tính cả viền, padding ngang 5px, bo `--radius-full`, chữ 11px đậm 700 `tabular-nums` (line-height 14px, căn giữa trong viền), nền `--bg-deal`, chữ `--fg-on-deal`, viền 2px `--bg-chrome`; giống nhau máy tính và điện thoại; `aria-hidden` (số đọc qua `aria-label` của link), không nằm trong vùng `aria-live`. Icon giỏ có thuộc tính `data-cart-target` làm đích cho hiệu ứng §9.25 |
 | Hàng 2 | cao **56px**, nền `--bg-surface`, `--shadow-sm`; `<nav aria-label="Mua theo nhu cầu">` gồm **6 link xếp thành một cụm căn giữa**, cách nhau **24px** (`justify-content: center; gap: 24px`). Mỗi link cao 42px, padding `10px 12px`, bo 8px, icon 20 `--fg-primary` + chữ 16/22/600 `--fg-heading`, gap 8px; hover nền `--bg-primary-tint`; link của trang đang xem: nền `--bg-primary-tint-2`, chữ `--fg-primary` |
 
 Sáu link hàng 2 (nhóm khách theo project-plan, đường dẫn là bộ lọc đã có):
@@ -300,6 +306,18 @@ Sáu link hàng 2 (nhóm khách theo project-plan, đường dẫn là bộ lọ
 | Hàng 2 (6 link) | **không hiện** |
 
 Ghi chú điện thoại: trang tham khảo chỉ có nút menu, logo, giỏ. Black Magic cần thêm đường tới **Đơn hàng** trên điện thoại: đặt link "Đơn hàng" (icon `Package`) ở đầu `CategoryMenu` dạng ngăn kéo, trên 13 loại hàng (§9.18). Không thêm nút thứ tư vào hàng 1 để logo còn chỗ.
+
+**Hàng 2 thu lại khi cuộn** (chốt 03/11/2026; **chỉ trang chi tiết sản phẩm, chỉ ≥1280**; các trang khác giữ hai hàng cùng dính):
+
+| Thứ | Giá trị |
+|---|---|
+| Ở đầu trang (`scrollY = 0`) | đủ hai hàng như bảng trên |
+| Đã cuộn xuống (`scrollY > 0`) | hàng 2 ẩn trong **200ms** (`--dur-base`, `--ease-standard`); hàng 1 vẫn dính `top: 0` và có thêm `--shadow-sm` ở mép dưới (trước đó bóng nằm ở hàng 2) |
+| Cuộn lên tới đầu trang | hàng 2 hiện lại, cũng 200ms; không hiện lại giữa chừng khi mới cuộn ngược lên |
+| Khi đã ẩn | hàng 2 có `inert` (Tab và trình đọc màn hình bỏ qua); `prefers-reduced-motion: reduce` thì ẩn/hiện ngay |
+| Bật cho trang nào | qua `handle` của route trong `router.tsx` (vd. `{ headerNeeds: 'collapse' }`), không so `pathname` trong `Header` |
+
+Bắt buộc: **nội dung trang không được nhảy** khi hàng 2 ẩn/hiện, và không được chớp tắt khi trang chỉ cuộn được vài pixel. Vì vậy **không** làm bằng cách co chiều cao của header dính trong luồng trang (`grid-template-rows: 1fr → 0fr`, `display: none`, `height: 0`): header đang dính mà ngắn đi 56px thì toàn bộ nội dung bên dưới bị kéo lên 56px, và ở trang ngắn việc đó có thể đưa `scrollY` về 0 rồi hiện lại liên tục. Cách nên làm: trên trang này chỉ **hàng 1** dính; hàng 2 nằm ngay dưới trong luồng trang và **cuộn đi cùng nội dung** (không dính), đồng thời mờ dần (`opacity` 1 → 0, có thể kèm `translateY(-8px)`) trong 200ms khi `scrollY > 0`. Muốn hàng 1 dính được khi đứng riêng thì phần tử dính không được nằm trong một khối chỉ cao bằng header (`position: sticky` chỉ dính trong khối cha); ví dụ: tách hàng 2 ra ngoài khối dính, hoặc cho khối bọc hai hàng `display: contents` trên trang này (khối bọc là `<div>`, không phải `<header>`, để không mất landmark). Theo dõi `scrollY` bằng một listener `scroll` `passive` (hoặc `IntersectionObserver` trên một mốc 1px ở đầu trang), không đọc layout trong vòng lặp.
 
 Gõ từ khoá rồi Enter → `/products?q=…` (bỏ khoảng trắng hai đầu, rỗng thì về `/products`). Ô tìm kiếm hiện lại từ khoá đang có trên URL.
 
@@ -444,7 +462,7 @@ Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelled
 ### 9.12 Trạng thái tải, rỗng, lỗi
 | Trạng thái | Cách hiển thị |
 |---|---|
-| Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (cao 360px, bo 8px), gradient `#EEEEEE → #F5F5F5` chạy 1,6s, `aria-hidden` |
+| Đang tải lần đầu (dải sản phẩm) | khung chờ đúng kích thước thẻ (ô vuông theo bề rộng cột cộng phần chữ 96px, từ 1280px là 80px; bo 12px như thẻ), gradient `#EEEEEE → #F5F5F5` chạy 1,6s, `aria-hidden` |
 | Đang tải (trang) | dòng "Đang tải …" màu `--fg-subdued` |
 | Đang tải lại với bộ lọc mới | giữ kết quả cũ, lưới opacity .6, `aria-busy="true"` |
 | Rỗng (`EmptyState`) | khung `--bg-surface`, viền `--border-divider`, **bo 16px**, padding `40px 16px`, chữ căn giữa; một câu giải thích + một link/nút đi tiếp |
@@ -455,12 +473,15 @@ Chốt 11/10/2026 (bản mẫu 9): **không có khung**. `<section aria-labelled
 Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, nền `*-tint` tương ứng, chữ 14/20 `--fg-default`, icon lucide 20px màu trạng thái bên trái (`CircleCheck`, `TriangleAlert`, `CircleX`). Lưới 3 cột `20px | chữ | nút`: icon thẳng hàng với dòng chữ đầu. Có nút đi kèm (prop `action`, vd. "Gộp vào giỏ"): máy tính đặt sát mép phải, icon, chữ, nút cùng nằm giữa theo chiều cao; điện thoại (<640) nút xuống dòng dưới chữ, thẳng lề trái với chữ.
 | Loại | Ví dụ trong nghiệp vụ | Vai trò ARIA |
 |---|---|---|
-| success | "Đã thêm vào giỏ", "Đặt hàng thành công! Email xác nhận sẽ được gửi trong ít phút." | `status` |
-| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT` | `alert` |
+| success | "Đã thêm vào giỏ", "Đặt hàng thành công!" (chi tiết đơn ngay sau khi đặt), "Đã huỷ đơn." | `status` |
+| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT`, `TOO_MANY_OPEN_ORDERS` (kèm link "Xem đơn hàng") | `alert` |
 | danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL` | `alert` |
 
-### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, 📝; ví dụ "Huỷ đơn")
-Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger).
+### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, huỷ đơn)
+Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger). Trang admin dùng nút xác nhận `primary` ("Chuyển sang Đang giao"). Dưới 640px hai nút xếp dọc rộng hết hộp, nút xác nhận ở trên. Đang xử lý: nút xác nhận đổi chữ "Đang …" (§9.3), Esc và nút phụ không đóng hộp; lỗi hiện bằng `Alert` ngay trên hàng nút.
+- Nút xác nhận theo prop `tone`: `primary` (mặc định, admin) hoặc `danger` (việc không hoàn tác được: "Huỷ đơn", màu như `Button danger` §9.3). Nút phụ đứng trước trong DOM nên `showModal` focus nó trước: bấm Enter nhầm thì chỉ đóng hộp.
+- Đóng hộp thì trang trả focus về nút đã mở hộp; nếu nút đó biến mất (đơn đã huỷ) thì về `<h1>` (`tabIndex={-1}`).
+- Hộp huỷ đơn của khách: [pages/don-hang.md](pages/don-hang.md) mục 4.5.
 
 ### 9.15 Tóm tắt đơn (`OrderSummary`, ✅; giỏ hàng, đặt hàng)
 Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, bo 16px, padding 24px (<640: 16px).
@@ -619,7 +640,7 @@ Chốt 13/10/2026: API trả `nextCursor`, không trả tổng số (catalog BR-
 Không hiện số trang tổng hay các nút 1 2 3 (cần tổng số từ API, xem thiết kế 3).
 
 ### 9.22 Đường dẫn (`Breadcrumb`, ✅)
-`<nav aria-label="Đường dẫn">` + `<ol>`, chữ 14/20 `--fg-muted`; giữa các mục là `ChevronRight` 16 `--fg-subdued` (`aria-hidden`), gap 4px; link `--fg-primary` 500, gạch chân khi rê chuột; mục cuối là trang hiện tại (`aria-current="page"`, không phải link). Padding `16px 0 12px` (<1280: `12px 0 8px`). Dùng ở trang danh sách ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)) và trang chi tiết (pages/chi-tiet-san-pham.md §3.1) khi làm lại.
+`<nav aria-label="Đường dẫn">` + `<ol>`, chữ 14/20 `--fg-muted`; giữa các mục là `ChevronRight` 16 `--fg-subdued` (`aria-hidden`), gap 4px; link `--fg-primary` 500, gạch chân khi rê chuột; mục cuối là trang hiện tại (`aria-current="page"`, không phải link). Padding `16px 0 12px` (<1280: `12px 0 8px`). Dùng ở trang danh sách ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)) và trang chi tiết (pages/chi-tiet-san-pham.md §3.1) khi làm lại. Dưới 640px trang chi tiết chỉ cần một link quay lại "‹ {tên loại}" (icon `ChevronLeft` 16, chữ 14/20/500 `--fg-primary`, gap 2px) trong cùng `<nav>`: thêm một biến thể gọn cho component (vd. prop `compactBelow640`) hoặc trang tự render, miễn chỉ có một `<nav aria-label="Đường dẫn">`.
 
 ### 9.23 Nút thêm vào giỏ trên thẻ (`AddToCartButton`, ✅)
 Nút gọn trong `ProductListCard`: thêm **đúng 1** sản phẩm qua `useCart().add` (khách chưa đăng nhập thì vào giỏ khách trên trình duyệt, cart BR-01; đã đăng nhập thì `POST /api/v1/cart/items`). Không chuyển trang, không mở giỏ. Trang chi tiết vẫn dùng `AddToCart` có bộ chọn số lượng.
@@ -636,6 +657,86 @@ Hình dạng: nút phụ `md` rộng hết thẻ, cao 40px, bo 8px, viền `--bo
 
 Lỗi hiện **trên chính nút**, không thêm dòng chữ dưới nút, để giá và nút của các thẻ cùng hàng không lệch nhau. Vùng `aria-live` và `role="alert"` đặt một lần ở cấp trang, không lặp trong từng thẻ. Cách làm: `LiveAnnouncerProvider` bọc trang, nút gọi `useAnnounce()`; không có provider thì nút vẫn chạy nhưng không đọc gì.
 
+### 9.24 Ô thông số (`SpecTiles`) và panel thông số (`SpecPanel`) (✅; trang chi tiết)
+Chốt 03/11/2026 theo trang tham khảo phụ (khối ô thông số, bấm ô mở ngăn kéo bên phải). Thay bảng sọc `SpecTable` của bản cũ.
+
+**Dữ liệu dùng chung cho cả hai:** danh sách dòng `{ key, label, value }` lấy từ `specs` bằng hàm hiện có trong `specLabels.ts` (nhãn có dấu, giá trị theo `specValue`), mở rộng để trả kèm `key` và **xếp theo `SPEC_ORDER` của loại hàng**; khoá không có trong bảng xếp sau, theo thứ tự API trả. Không dựa vào thứ tự khoá của API (Map DynamoDB không giữ thứ tự).
+
+| Loại | Thứ tự (`SPEC_ORDER`) |
+|---|---|
+| laptop | `cpu`, `chip`, `gpu`, `ram`, `ssd`, `man_hinh`, `trong_luong` |
+| cpu | `socket`, `nhan_luong`, `xung_toi_da`, `tdp` |
+| gpu | `vram`, `nguon_de_xuat`, `cong_cap`, `kich_thuoc` |
+| ram | `loai`, `dung_luong`, `bus`, `rgb` |
+| storage | `dung_luong`, `chuan`, `ket_noi`, `doc`, `ghi`, `toc_do` |
+| mainboard | `socket`, `chipset`, `ram`, `kich_thuoc`, `wifi` |
+| psu | `cong_suat`, `chuan`, `modular`, `cong_16pin` |
+| cooling | `loai`, `socket`, `tdp_toi_da`, `radiator`, `kich_thuoc`, `so_luong`, `khoi_luong` |
+| keyboard | `layout`, `loai`, `switch`, `ket_noi`, `hot_swap` |
+| mouse | `cam_bien`, `dpi`, `ket_noi`, `trong_luong`, `pin` |
+| monitor | `kich_thuoc`, `do_phan_giai`, `tan_so`, `tam_nen`, `mau`, `ket_noi`, `trong_luong` |
+| headset | `ket_noi`, `mic`, `chong_on`, `pin`, `trong_luong` |
+| accessory | `loai`, `kich_thuoc`, `kich_thuoc_toi_da`, `cong`, `chuan`, `chieu_dai`, `quat` |
+
+(Bảng phủ đủ 49 khoá có trong bộ dữ liệu demo, theo từng loại.)
+
+**`SpecTiles`:**
+
+| Phần | Giá trị |
+|---|---|
+| Danh sách | `<ul>` `display: grid; grid-template-columns: repeat(var(--spec-cols), minmax(0,1fr)); gap: 8px`, không bullet |
+| Số cột | tính bằng JS từ bề rộng `<ul>` (`ResizeObserver`), đặt vào `--spec-cols`: `maxCols = max(1, floor((w + 8) / (min + 8)))` với `min` = `--spec-tile-min` (đọc từ CSS); `cols = min(n, maxCols)`; `rows = ceil(n / cols)`; `cols = ceil(n / rows)`. Hàm thuần `balancedColumns(count, width, minTile, gap)` ở `specGrid.ts` để test. Chưa đo được (render lần đầu, môi trường test) thì mặc định 2 cột |
+| Ô | `<button type="button" aria-haspopup="dialog">` rộng hết ô lưới, cao tối thiểu 56px, padding 12px, gap 12px, nền `--bg-subtle`, không viền, bo `--radius-lg`, căn trái; nền đổi trong 150ms |
+| Trong ô | cột chữ (`flex: 1; min-width: 0`): nhãn 12/18 `--fg-muted`, giá trị 14/20/600 `--fg-default` một dòng (`text-overflow: ellipsis`, có `title` = giá trị); bên phải `ChevronRight` 18 `--fg-subdued` (`aria-hidden`) |
+| Hover | nền `--bg-primary-tint`, mũi tên `--fg-primary` |
+| Focus | viền focus chung (§6) |
+| <640 | `--spec-tile-min` 150px (thực tế 2 cột ở 390px), padding `10px 12px`, gap 8px, ẩn mũi tên |
+
+**`SpecPanel`** (portal vào `document.body`, như `FilterSheet`):
+
+| Phần | Giá trị |
+|---|---|
+| Vùng tối | `position: fixed; inset: 0`, nền `--scrim`, mờ dần 200ms (`--dur-base`); bấm vào thì đóng |
+| Khung | `role="dialog" aria-modal="true" aria-labelledby`; `position: fixed`, sát phải, `top: 0; bottom: 0`, rộng `--spec-panel-width` (50% màn, tối thiểu 560px); nền `--bg-surface`, viền trái 1px `--border-divider`, `--shadow-lg`; cùng vùng tối nằm trên header (`z-index` 300 như `FilterSheet`); trượt từ phải (`transform: translateX(100%)` → `none`) trong 200ms `--ease-standard` |
+| Đầu | padding `24px 24px 16px`, viền dưới 1px `--border-divider`; `<h2>` "Thông số kỹ thuật" 20/28/600 `--fg-heading`; nút đóng 40×40 bo `--radius-btn`, icon `X` 24, `aria-label="Đóng"`, hover nền `--bg-subtle` |
+| Thân | lưới `184px | minmax(0,1fr)`, chiếm phần còn lại, mỗi cột cuộn riêng (`.scroll-area`) |
+| Mục lục | `<nav aria-label="Các thông số">`, padding `16px 0 16px 24px`; mỗi mục là `<button>` rộng hết, căn trái, padding `8px 12px`, chữ 14/20/500 `--fg-heading`, vạch trái 2px `--border-divider`; hover chữ `--fg-primary`; mục đang xem `aria-current="true"`: vạch `--bg-primary`, chữ `--fg-primary` 600. Bấm mục → cuộn thân tới phần đó |
+| Nội dung | padding `16px 24px 32px`; mỗi thông số một `<section aria-labelledby>`, padding `8px 0 24px`, phần sau có viền trên 1px `--border-divider` và padding trên 24px. Tiêu đề `<h3>` 16/24/600 `--fg-heading`; cách 12px là ô giá trị: nền `--bg-surface-raised`, viền 1px `--border-divider`, bo 8px, padding `12px 16px`, `flex; justify-content: space-between; gap: 12px`: giá trị 16/24/600 `--fg-default` (`overflow-wrap: anywhere`) + `Badge primary` "Sản phẩm này"; cách 12px là câu giải thích 14/22 `--fg-muted`, rộng tối đa 72 ký tự (không có câu: "Chưa có phần giải thích cho thông số này." `--fg-subdued`). Cuối danh sách có khoảng trống đủ để phần cuối cùng cũng cuộn lên được đầu thân |
+| Mở | từ ô thứ i: cuộn ngay (không trượt) tới phần i, đánh dấu mục i, focus nút đóng |
+| Theo dõi khi cuộn | `IntersectionObserver` trên các phần (root là thân panel, `rootMargin: 0px 0px -60% 0px`): phần trên cùng đang thấy thành mục đang xem. Ngay sau khi bấm mục hay mở panel thì tạm bỏ qua kết quả theo dõi khoảng 400ms để mục vừa chọn không bị đổi |
+| Đóng | nút đóng, Esc, bấm vùng tối; trượt ra 200ms rồi gỡ khỏi DOM; trả focus về ô đã mở |
+| Trong lúc mở | khoá cuộn trang nền (`html { overflow: hidden }` như `FilterSheet`), giữ focus trong panel (`trapTabKey`) |
+| <640 | rộng `--spec-panel-width` = `calc(100vw - 32px)`; đầu padding `16px 16px 12px`; thân một cột: mục lục thành hàng tab cuộn ngang (padding `12px 16px 0`, viền dưới `--border-divider`, ẩn thanh cuộn, mỗi tab padding `8px 10px`, vạch **dưới** 2px thay vạch trái, tab đang xem cuộn vào tầm nhìn); nội dung padding `8px 16px 24px` |
+| Giảm chuyển động | `prefers-reduced-motion: reduce` (đã tắt chung trong `base.css`): mở/đóng ngay |
+
+**Câu giải thích** (`specHelp.ts`): object `Record<string, string>`, khoá `"<loại>.<khoá>"` cho nghĩa riêng theo loại hàng, `"<khoá>"` cho nghĩa chung; tra `loại.khoá` trước rồi `khoá`. Mỗi câu chỉ nói thông số đó là gì và đơn vị ghi thế nào; **không** khuyên nên chọn mức nào, **không** nói linh kiện nào lắp hay chạy được với nhau (catalog BR-06), không nhắc hãng hay sản phẩm cụ thể. Câu không phụ thuộc giá trị của sản phẩm.
+
+### 9.25 Hiệu ứng thêm vào giỏ (`FlyToCart`, ✅)
+Chốt 05/11/2026 (#356, thay #185). Thêm vào giỏ **thành công** từ hộp mua trang chi tiết (`AddToCart`) hoặc nút trên thẻ (`AddToCartButton`, §9.23) thì một ô bay từ nút vừa bấm tới icon giỏ trên header (§9.1). Thêm lỗi thì không bay, số không đổi. Câu "Đã thêm … vào giỏ." giữ như cũ.
+
+| Phần | Số đo |
+|---|---|
+| Ô bay | tròn 40px, nền `--bg-primary`, giữa là `CategoryIcon` 20px của loại hàng, màu `--fg-on-primary` (không có loại hàng thì `ShoppingCart`); `position: fixed`, gắn vào `body` (portal), `pointer-events: none`, `aria-hidden` |
+| Đường bay | từ tâm nút tới tâm icon giỏ (đánh dấu `data-cart-target`, đọc vị trí bằng `getBoundingClientRect` lúc bấm); đường cong: trục ngang chạy theo `--ease-standard`, trục dọc theo `ease-in`; 600ms; nhỏ dần còn 16px, mờ dần ở 20% cuối. Web Animations API |
+| Số trên giỏ | trong lúc bay nhãn giữ số cũ; tới nơi thì hiện số mới và nhãn nảy `scale(1 → 1,25 → 1)` 200ms. Thêm lại món đã có thì số không đổi, chỉ nảy |
+| Bấm nhiều lần | mỗi lần một ô |
+| Không bay | `prefers-reduced-motion: reduce`, icon giỏ không thấy trên màn hình (bị panel thông số phủ, không có trong trang), hoặc phần hiệu ứng (`FlyToCart`, tải riêng sau gói JS đầu tiên) chưa tải xong hay tải lỗi: không có ô bay, không nảy, số đổi ngay. Tải lỗi không làm sập trang |
+
+### 9.26 Thanh trạng thái đơn (`OrderStatusSteps`, 📝; chi tiết đơn)
+Chốt 09/11/2026 ([pages/don-hang.md](pages/don-hang.md) mục 4.1). `<ol>` 4 bước theo máy trạng thái đơn (`docs/business/ordering.md`): Chờ xác nhận → Đã xác nhận → Đang giao → Đã giao. Bước trước bước hiện tại là "xong", bước hiện tại có `aria-current="step"`. Đơn `CANCELLED` **không** dùng thanh này (API không lưu đơn bị huỷ ở bước nào).
+
+| Phần | Số đo (≥640, nằm ngang) |
+|---|---|
+| Lưới | `grid-template-columns: repeat(4, minmax(0,1fr))`; mỗi bước căn giữa, gap 8px, padding ngang 4px |
+| Chấm | tròn 14px, `aria-hidden`. Chưa tới: nền `--bg-surface`, viền trong 2px `--border-default`. Xong: nền `--bg-primary`. Hiện tại: nền `--bg-primary` + vòng ngoài 4px `--bg-primary-tint-2` |
+| Vạch nối | cao 4px, bo 2px, từ tâm bước trước tới tâm bước này, ngang tâm chấm; chưa tới `--border-divider`, đã tới (bước xong hoặc hiện tại) `--bg-primary` |
+| Nhãn | 14/20/500: chưa tới `--fg-subdued`, xong `--fg-default`, hiện tại 600 `--fg-primary` |
+| Giờ | 12/18 `--fg-subdued`, dưới nhãn; chỉ bước đầu (`createdAt`) và bước hiện tại (`updatedAt`) có giờ; giữ chỗ 18px để các nhãn thẳng hàng |
+
+<640 (dọc): mỗi bước một hàng, lưới `14px minmax(0,1fr)`, gap cột 12px, cách nhau 16px; chấm ở cột trái lệch xuống 3px, nhãn và giờ bên phải căn trái; vạch nối dọc rộng 4px đi từ dưới chấm này tới chấm sau.
+
+Không có hiệu ứng chạy; trạng thái chỉ đổi khi tải lại dữ liệu.
+
 ## 10. Token sẽ thêm khi cần
 
 **Đã đưa vào `tokens.css` (đổi giao diện 11/10/2026):**
@@ -645,5 +746,14 @@ Lỗi hiện **trên chính nút**, không thêm dòng chữ dưới nút, để
 - `--radius-xl` đổi 16 → 12px. Chỗ đang bo 16px giữ nguyên bằng `--radius-2xl`; thẻ sản phẩm, menu danh mục, hero, ô thông tin chuyển sang `--radius-xl` khi làm lại các component đó.
 
 **Đã đưa vào `tokens.css` khi làm trang danh sách (chốt 13/10/2026):** `--scrollbar-size` 10px, `--scrollbar-thumb` `#D4D4D4`, `--scrollbar-thumb-area-hover` `#A3A3A3`, `--scrollbar-thumb-hover` `#737373`, `--scrollbar-track` `transparent` (§4 Thanh cuộn). Giá trị trỏ vào token màu đã có (`--border-default`, `--fg-icon-soft`, `--fg-subdued`), không thêm màu mới.
+
+**Thêm khi làm trang chi tiết sản phẩm (chốt 03/11/2026)**, đặt trong `tokens.css` nhóm "Trang chi tiết sản phẩm", thêm cùng PR với chỗ dùng đầu tiên. Chỉ là kích thước bố cục, **không thêm màu, cỡ chữ, bóng hay thời gian mới** (panel dùng `--scrim`, `--shadow-lg`, `--dur-base`):
+
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `--pdp-aside` | 360px | Cột hộp mua của trang chi tiết (§5) |
+| `--pdp-media-max` | 560px | Bề rộng tối đa ô ảnh trong khối sản phẩm |
+| `--spec-tile-min` | 220px (<640: 150px) | Bề rộng tối thiểu một ô thông số; JS chia cột đọc giá trị này (§9.24) |
+| `--spec-panel-width` | `max(50vw, 560px)` (<640: `calc(100vw - 32px)`) | Bề rộng panel thông số |
 
 Cần token mới khác thì ghi vào đây (tên, giá trị, khi nào dùng) trước, rồi thêm vào `tokens.css` trong cùng PR với chỗ dùng đầu tiên.

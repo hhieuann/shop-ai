@@ -1,5 +1,11 @@
 import type { EmailContent, OrderConfirmedEvent } from './domain/notification.js';
-import type { Order, OrderSummary, ProductSnapshot } from './domain/order.js';
+import type {
+  AdminTargetStatus,
+  Order,
+  OrderStatus,
+  OrderSummary,
+  ProductSnapshot,
+} from './domain/order.js';
 
 /**
  * Thông tin sản phẩm mới nhất của module catalog (tên, giá, tồn kho, trạng thái).
@@ -103,6 +109,46 @@ export interface OrderConfirmation {
     readonly order: Order;
     readonly now: string;
   }): Promise<'confirmed' | 'notPending'>;
+}
+
+/** Đơn admin tìm thấy qua index `byStatus`: tóm tắt kèm `userId` để ghi theo khoá chính */
+export interface AdminOrderRecord extends OrderSummary {
+  readonly userId: string;
+}
+
+/** Một trang đơn theo trạng thái cho admin; `hasMore` true khi sau đơn cuối trang còn đơn cũ hơn */
+export interface AdminOrderPage {
+  readonly orders: readonly OrderSummary[];
+  readonly hasMore: boolean;
+}
+
+/** Một lần admin chuyển trạng thái (ordering.md BR-15) */
+export interface AdvanceStatusCommand {
+  readonly userId: string;
+  readonly orderId: string;
+  /** Trạng thái lúc tìm thấy; ghi chỉ thành khi đơn còn đúng trạng thái này */
+  readonly from: OrderStatus;
+  readonly to: AdminTargetStatus;
+  readonly now: string;
+}
+
+/**
+ * Đơn theo trạng thái cho admin, đọc index `byStatus` (dynamodb-design.md, Q3). Không đọc
+ * `shippingAddress` (threat model O8). Index cập nhật trễ, nên kết quả tìm có thể đã cũ.
+ */
+export interface AdminOrders {
+  /** Mới nhất trước; `beforeOrderId` là đơn cuối của trang trước */
+  listByStatus(
+    status: OrderStatus,
+    page: { readonly limit: number; readonly beforeOrderId?: string },
+  ): Promise<AdminOrderPage>;
+  /** Tìm đơn `orderId` trong phân vùng `status` của index; không thấy thì null */
+  findInStatus(status: OrderStatus, orderId: string): Promise<AdminOrderRecord | null>;
+  /**
+   * Đổi trạng thái có điều kiện `status = from`; sang `SHIPPED` thì giảm `#OPEN` cùng giao dịch
+   * (BR-14). `statusChanged` khi trạng thái đã đổi kể từ lúc tìm.
+   */
+  advance(command: AdvanceStatusCommand): Promise<'advanced' | 'statusChanged'>;
 }
 
 /** Gửi tin `order-confirmed` lên SNS (ordering.md bước 2.3); consumer events chống trùng theo đơn, món */

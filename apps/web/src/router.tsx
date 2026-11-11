@@ -1,13 +1,15 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { RootLayout, type RouteHandle } from './app/RootLayout';
+import { productDetailQuery } from './features/catalog/lib/productDetailQuery';
+import { queryClient } from './queryClient';
 import { NotFoundPage } from './shared/components/NotFoundPage';
 
 /**
  * Mỗi trang là một file JS riêng, chỉ tải khi người dùng mở trang đó (apps/web/README.md:
  * "Chia code theo trang", JS ban đầu ≤ 250 KB gzip). Khách chỉ xem hàng thì không phải tải
- * code giỏ hàng hay checkout.
+ * code giỏ hàng hay checkout. Danh sách route tách riêng để test dựng router trong bộ nhớ.
  */
-export const router = createBrowserRouter([
+export const routes: RouteObject[] = [
   {
     path: '/',
     element: <RootLayout />,
@@ -31,6 +33,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'products/:productId',
+        // Từ 1280px hàng 2 header thu lại khi cuộn (§3.8); breadcrumb sát header (§2)
+        handle: { headerNeeds: 'collapse', flushTop: true } satisfies RouteHandle,
+        // Tải dữ liệu sản phẩm song song với code trang (lazy), không chờ (#367): tên sản phẩm (LCP)
+        // hiện sớm hơn. prefetchQuery không ném lỗi; 404 hay lỗi API để trang tự báo như cũ
+        loader: ({ params }) => {
+          if (params.productId)
+            void queryClient.prefetchQuery(productDetailQuery(params.productId));
+          return null;
+        },
         lazy: async () => ({
           Component: (await import('./features/catalog/pages/ProductDetailPage')).ProductDetailPage,
         }),
@@ -74,9 +85,18 @@ export const router = createBrowserRouter([
         }),
       },
       {
+        // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
+        path: 'admin',
+        lazy: async () => ({
+          Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
+        }),
+      },
+      {
         path: '*',
         element: <NotFoundPage />,
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);

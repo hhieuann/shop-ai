@@ -9,6 +9,7 @@
 > Cập nhật 22/10/2026: route `POST /api/v1/events` đã có trong contract (#174), code module
 > ở `services/api/src/modules/events` (#200), hạ tầng ở `infra/lib/api-stack.ts` (`addEvents`).
 > Cập nhật 25/10/2026: consumer `PURCHASE` (`purchaseLambda.ts`, `addPurchaseConsumer`).
+> Cập nhật 04/11/2026: web gửi `VIEW` và `ADD_TO_CART` (#306, `apps/web/src/shared/api/events.ts`).
 
 ## 1. Loại sự kiện
 
@@ -17,6 +18,12 @@
 | `VIEW` | Client (trình duyệt) | API, khi user mở trang sản phẩm |
 | `ADD_TO_CART` | Client | API, khi user bấm thêm vào giỏ |
 | `PURCHASE` | **Chỉ** module `ordering` | Nội bộ, khi đơn chuyển trạng thái `confirmed` |
+
+**Web gửi từ đâu (04/11/2026, #306):** `VIEW` khi trang chi tiết tải được sản phẩm, mỗi sản phẩm
+một lần (`useRecordView`); `ADD_TO_CART` sau khi thêm giỏ thành công qua `useCart().add`, nên tính cả
+hộp mua trang chi tiết, nút thêm trên thẻ trang danh sách và "Thường mua kèm". Chỉ gửi khi đã đăng
+nhập; gộp giỏ lúc đăng nhập và đổi số lượng trong trang giỏ không phải `ADD_TO_CART`. Gửi rồi quên
+(`keepalive`), lỗi thì bỏ qua, không thử lại.
 
 **Quy tắc bắt buộc:** API ghi sự kiện công khai **chỉ nhận** `VIEW` và `ADD_TO_CART`.
 `PURCHASE` không bao giờ được nhận trực tiếp từ client — nếu client tự gửi `PURCHASE`,

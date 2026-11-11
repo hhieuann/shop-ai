@@ -28,6 +28,17 @@ export type OrderStatus = Schemas['OrderStatus'];
 export type OrderItem = Schemas['OrderItem'];
 export type OrderSummary = Schemas['OrderSummary'];
 export type Order = Schemas['Order'];
+
+/** API admin đơn hàng (ordering.md BR-15): tóm tắt đơn, không có địa chỉ (O8) */
+export type AdminOrderSummary = Schemas['AdminOrderSummary'];
+export type AdminOrderList =
+  operations['listAdminOrders']['responses'][200]['content']['application/json'];
+/** Trạng thái admin xem được: CONFIRMED (chờ giao), SHIPPED (đang giao) */
+export type AdminListStatus = operations['listAdminOrders']['parameters']['query']['status'];
+/** Trạng thái admin chuyển tới: SHIPPED, DELIVERED */
+export type AdminTargetStatus = NonNullable<
+  operations['updateOrderStatus']['requestBody']
+>['content']['application/json']['status'];
 export type OrderListResponse =
   operations['listOrders']['responses'][200]['content']['application/json'];
 export type CreateOrderRequest =
@@ -36,6 +47,9 @@ export type OrderProblem = Schemas['OrderProblem'];
 
 export type RecsSource = Schemas['RecsSource'];
 export type RecsResult = Schemas['RecsResult'];
+
+export type EventInput = Schemas['EventInput'];
+export type EventType = EventInput['eventType'];
 
 export type FieldError = NonNullable<Schemas['Problem']['errors']>[number];
 export type InvalidItem = NonNullable<OrderProblem['invalidItems']>[number];

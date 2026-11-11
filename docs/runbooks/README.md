@@ -9,11 +9,12 @@ Mỗi alarm có một runbook: khi alarm kêu thì làm gì, theo thứ tự. Vi
 | [`lambda-errors.md`](lambda-errors.md) | `<tiền tố>-presignup-errors`: Lambda pre sign-up lỗi | An |
 | [`lambda-throttle.md`](lambda-throttle.md) | `shop-prd-lambda-throttles`: Lambda bị throttle (chỉ prod) | An |
 | [`recs-pipeline.md`](recs-pipeline.md) | `shop-prd-recs-pipeline-no-success`: job gợi ý mỗi đêm 26 giờ không chạy thành công (chỉ prod) | Nhân |
+| [`waf.md`](waf.md) | Không có alarm: khách báo bị chặn, kiểm sau deploy prod có đổi WAF, chuyển core rule set sang chặn, dọn stack `shop-prd-waf` | Nhân |
 | [`dlq-orders.md`](dlq-orders.md) | `shop-prd-orders-dlq`: DLQ đơn hàng có ≥ 1 tin (chỉ prod) | Hoàng |
 | [`sqs-backlog.md`](sqs-backlog.md) | Không có alarm (đã hết 10 alarm miễn phí): xem widget tuổi tin cũ nhất của hàng đợi đơn trên dashboard, quá 5 phút là tồn đọng | Hoàng |
-| `dynamodb-throttle.md` | DynamoDB bị throttle | Hoàng |
-| `canary-rollback.md` | Canary ordering báo lỗi | An |
-| `cost-spike.md` | Chi phí vượt $5, $10, $20 | An |
+| [`dynamodb-throttle.md`](dynamodb-throttle.md) | Không có alarm (đã hết 10 alarm miễn phí): xem biểu đồ "DynamoDB: request bị throttle theo bảng" trên dashboard, đường nào khác 0 là có bảng bị throttle | Hoàng |
+| [`cost-spike.md`](cost-spike.md) | Email AWS Budgets: `FCAJ-Monthly-20USD` vượt 25%, 50%, 85%, 100% (khoảng $5, $10, $17, $20) hoặc `FCAJ-ZeroSpend` (hết credit) | An |
+| [`pitr-restore.md`](pitr-restore.md) | Không có alarm: dữ liệu `orders`, `products` bị xoá hoặc ghi sai; diễn tập P3 | An |
 | `recs-pipeline.md` | Pipeline gợi ý đêm qua lỗi hoặc không chạy | Nhân |
 
 ## Mẫu

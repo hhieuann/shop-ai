@@ -20,8 +20,11 @@ import {
   Function as CloudFrontFunction,
   FunctionCode,
   FunctionEventType,
+  HeadersFrameOption,
+  HeadersReferrerPolicy,
   OriginRequestPolicy,
   PriceClass,
+  ResponseHeadersPolicy,
   ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { HttpOrigin, S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
@@ -39,17 +42,19 @@ export interface WebStackProps extends StackProps {
   /** Cognito của stack api; web đọc qua /config.json lúc chạy. */
   readonly userPoolId: string;
   readonly userPoolClientId: string;
+  /** Web ACL của WafStack (us-east-1); chỉ prod có (ADR-0006, cập nhật 29/10/2026). */
+  readonly webAclArn?: string;
 }
 
 /**
  * Web của shop theo ADR-0006: một CloudFront cho mỗi môi trường.
  * `/` đọc bucket S3 riêng tư qua Origin Access Control; `/api/*` sang API Gateway, cùng tên miền nên không có CORS.
- * WAF và gói CloudFront Free làm ở bước sau.
+ * WAF chỉ gắn ở prod, trả theo dùng (ADR-0006, cập nhật 29/10/2026); dev, staging không có WAF.
  */
 export class WebStack extends Stack {
   constructor(scope: Construct, id: string, props: WebStackProps) {
     super(scope, id, props);
-    const { shopEnv, httpApi, webDistPath, userPoolId, userPoolClientId } = props;
+    const { shopEnv, httpApi, webDistPath, userPoolId, userPoolClientId, webAclArn } = props;
 
     const bucket = new Bucket(this, 'WebBucket', {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
@@ -89,8 +94,54 @@ export class WebStack extends Stack {
       enableAcceptEncodingBrotli: true,
     });
 
+    // Header bảo mật (threat model L4). Bản build không có script, style inline và font tự host, nên CSP
+    // không cần 'unsafe-inline'; web gọi Cognito trực tiếp nên connect-src phải có cognito-idp.
+    // img-src mở https: vì imageUrl của sản phẩm do admin nhập, có thể ở tên miền khác.
+    const securityHeaders = new ResponseHeadersPolicy(this, 'SecurityHeaders', {
+      comment: `shop-ai header bảo mật (${shopEnv.name})`,
+      securityHeadersBehavior: {
+        contentSecurityPolicy: {
+          contentSecurityPolicy: [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self'",
+            "img-src 'self' data: https:",
+            "font-src 'self'",
+            `connect-src 'self' https://cognito-idp.${this.region}.amazonaws.com`,
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'",
+          ].join('; '),
+          override: true,
+        },
+        contentTypeOptions: { override: true },
+        frameOptions: { frameOption: HeadersFrameOption.DENY, override: true },
+        referrerPolicy: {
+          referrerPolicy: HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+          override: true,
+        },
+        strictTransportSecurity: {
+          accessControlMaxAge: Duration.days(365),
+          includeSubdomains: true,
+          override: true,
+        },
+      },
+      customHeadersBehavior: {
+        customHeaders: [
+          {
+            header: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+            override: true,
+          },
+        ],
+      },
+      removeHeaders: ['Server'],
+    });
+
     const distribution = new Distribution(this, 'Distribution', {
       comment: `shop-ai web (${shopEnv.name})`,
+      webAclId: webAclArn,
       defaultRootObject: 'index.html',
       // Gồm châu Á; rẻ hơn PriceClass_All
       priceClass: PriceClass.PRICE_CLASS_200,
@@ -98,6 +149,7 @@ export class WebStack extends Stack {
         origin: S3BucketOrigin.withOriginAccessControl(bucket),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+        responseHeadersPolicy: securityHeaders,
         functionAssociations: [
           { function: spaRewrite, eventType: FunctionEventType.VIEWER_REQUEST },
         ],
@@ -110,6 +162,7 @@ export class WebStack extends Stack {
           allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
           cachePolicy: productsCache,
           originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: securityHeaders,
         },
         '/api/*': {
           origin: apiOrigin,
@@ -118,6 +171,7 @@ export class WebStack extends Stack {
           cachePolicy: CachePolicy.CACHING_DISABLED,
           // Chuyển query, header (trừ Host) và cookie sang API; Host phải là tên miền của API Gateway
           originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: securityHeaders,
         },
       },
     });
@@ -146,10 +200,6 @@ export class WebStack extends Stack {
       {
         id: 'AwsSolutions-CFR1',
         reason: 'Shop bán cho khách ở mọi nơi; không chặn theo quốc gia.',
-      },
-      {
-        id: 'AwsSolutions-CFR2',
-        reason: 'WAF gắn ở bước sau theo ADR-0006 (gói CloudFront Free có 5 rule WAF).',
       },
       {
         id: 'AwsSolutions-CFR3',
@@ -207,6 +257,14 @@ export class WebStack extends Stack {
           'Runtime của Lambda do CDK tự chọn cho BucketDeployment và tự xoá file; cập nhật theo phiên bản CDK.',
       },
     );
+
+    if (webAclArn === undefined) {
+      Validations.of(this).acknowledge({
+        id: 'AwsSolutions-CFR2',
+        reason:
+          'Dev, staging không gắn WAF để tiết kiệm chi phí (ADR-0006, cập nhật 29/10/2026); chỉ prod có WAF.',
+      });
+    }
 
     new CfnOutput(this, 'WebUrl', { value: `https://${distribution.distributionDomainName}` });
     new CfnOutput(this, 'WebBucketName', { value: bucket.bucketName });

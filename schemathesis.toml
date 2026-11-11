@@ -1,0 +1,23 @@
+# Cấu hình Schemathesis cho nightly.yml (tự đọc ở thư mục gốc repo).
+
+# cursor là chuỗi mờ do chính API sinh, schema không tả được: chuỗi tự chế như "0" đúng là bị từ chối 400.
+[[operations]]
+include-name = "GET /api/v1/products"
+checks.positive_data_acceptance.enabled = false
+
+[[operations]]
+include-name = "GET /api/v1/orders"
+checks.positive_data_acceptance.enabled = false
+
+# exclude cố ý chấp nhận mã rỗng ("exclude=,"): server bỏ qua, vô hại nên không coi là dữ liệu sai.
+[[operations]]
+include-name = "GET /api/v1/recs/bestsellers"
+checks.negative_data_rejection.enabled = false
+
+[[operations]]
+include-name = "GET /api/v1/recs/also-bought"
+checks.negative_data_rejection.enabled = false
+
+[[operations]]
+include-name = "GET /api/v1/recs/for-you"
+checks.negative_data_rejection.enabled = false

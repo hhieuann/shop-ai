@@ -43,7 +43,7 @@ Mỗi khu vực có người phụ trách chính và một người dự phòng.
 | 3 · 13–19/10 | Staging, smoke, phát hành v0.1.0 | Module giỏ hàng, E2E bản 1 | Module events, ẩn danh, KMS; gợi ý theo món tương tự |
 | 4 · 20–26/10 | API và widget gợi ý, dashboard, alarm | Đặt hàng qua SQS, email | Pipeline gợi ý mỗi đêm |
 | 5 · 27/10–02/11 | Cầu dao chi phí, WAF, phát hành v0.2.0 | Admin, integration test | Rule WAF, thí nghiệm đầu độc, test IDOR |
-| 6 · 03–09/11 | Load test, canary, diễn tập phục hồi, v1.0.0-rc.1 | Sửa lỗi, hiệu năng web | Chỉ số cuối, báo cáo bảo mật |
+| 6 · 03–09/11 | Load test, diễn tập phục hồi, v1.0.0-rc.1 (canary hoãn, ADR-0014) | Sửa lỗi, hiệu năng web | Chỉ số cuối, báo cáo bảo mật |
 | 7–8 · 10–23/11 | Proposal, ghép workshop nhóm, tập demo, v1.0.0 | Chương workshop, blog, sửa lỗi | Chương workshop, blog, sửa lỗi |
 | 24–29/11 | Nộp workshop trên portal | | |
 

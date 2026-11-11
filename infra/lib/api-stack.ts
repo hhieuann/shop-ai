@@ -246,10 +246,16 @@ export class ApiStack extends Stack {
     });
 
     // Giỏ hàng (cart.md): mọi route cần đăng nhập
-    const { cartFn, carts } = this.addCart(shopEnv, removalPolicy, httpApi, products);
+    const { cartFn, carts, cartIdempotency } = this.addCart(
+      shopEnv,
+      removalPolicy,
+      httpApi,
+      products,
+    );
 
     // Đặt hàng (ordering.md): mọi route cần đăng nhập
     const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
+    const orderAdminFn = this.addOrderAdmin(shopEnv, removalPolicy, httpApi, ordering.orders);
 
     // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
     const { eventsFn, events } = this.addEvents(shopEnv, removalPolicy, httpApi);
@@ -311,6 +317,7 @@ export class ApiStack extends Stack {
         catalog: catalogFn,
         cart: cartFn,
         ordering: ordering.fn,
+        'ordering-admin': orderAdminFn,
         events: eventsFn,
         recommendation: recsFn,
         account: accountFn,
@@ -318,6 +325,15 @@ export class ApiStack extends Stack {
       },
       workerFunctions: { 'order-processor': orderProcessorFn, 'recs-pipeline': recsPipeline.fn },
       recsPipelineFn: recsPipeline.fn,
+      tables: {
+        products,
+        carts,
+        'cart-idempotency': cartIdempotency,
+        orders: ordering.orders,
+        'order-idempotency': ordering.orderIdempotency,
+        events,
+        recs: this.recsTable,
+      },
       ordersQueue: ordering.queue,
       ordersDeadLetterQueue: ordering.deadLetterQueue,
       ...(typeof alarmEmail === 'string' && alarmEmail !== '' ? { alarmEmail } : {}),
@@ -447,7 +463,7 @@ export class ApiStack extends Stack {
     });
 
     new CfnOutput(this, 'CartsTableName', { value: carts.tableName });
-    return { cartFn, carts };
+    return { cartFn, carts, cartIdempotency };
   }
 
   /**
@@ -613,6 +629,84 @@ export class ApiStack extends Stack {
     new CfnOutput(this, 'OrdersTableName', { value: orders.tableName });
     new CfnOutput(this, 'OrdersQueueUrl', { value: queue.queueUrl });
     return { fn, orders, orderIdempotency, queue, deadLetterQueue };
+  }
+
+  /**
+   * API admin đơn hàng (ordering.md BR-15, #381): Lambda riêng chạy `adminLambda.ts`, tách khỏi Lambda
+   * ordering để chỉ có quyền trên bảng orders. Quyền tối thiểu:
+   * - `dynamodb:Query` chỉ trên index `byStatus` (xem đơn theo trạng thái, tra userId theo orderId);
+   * - `dynamodb:GetItem` trên bảng orders (đọc lại đơn khi trạng thái vừa đổi);
+   * - `dynamodb:UpdateItem` trên bảng orders: TransactWriteItems không có quyền IAM riêng, mỗi phần tử
+   *   Update trong giao dịch cần `dynamodb:UpdateItem` trên bảng của nó (đơn và item `#OPEN`).
+   * Không đặt điều kiện `dynamodb:Attributes` (bài học #253, #254). Không quyền bảng khác, không SQS, SNS.
+   * Kiểm nhóm `admin` ở Lambda (403); route gắn JWT authorizer của Cognito nên không token thì 401.
+   */
+  private addOrderAdmin(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    orders: Table,
+  ) {
+    const fn = new NodejsFunction(this, 'OrderAdminFunction', {
+      entry: path.join(API_SRC, 'modules', 'ordering', 'adminLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      // Tối đa 5 Query song song (tìm đơn ở các trạng thái khác) rồi một giao dịch 2 thao tác
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'OrderAdminLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        ORDERS_TABLE: orders.tableName,
+        POWERTOOLS_SERVICE_NAME: 'ordering-admin',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:Query'],
+        resources: [`${orders.tableArn}/index/${ORDERS_BY_STATUS_INDEX}`],
+      }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+        resources: [orders.tableArn],
+      }),
+    );
+    Tags.of(fn).add('module', 'ordering');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('OrderAdminIntegration', fn);
+    httpApi.addRoutes({
+      path: '/api/v1/admin/orders',
+      methods: [HttpMethod.GET],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/admin/orders/{orderId}',
+      methods: [HttpMethod.PATCH],
+      integration,
+      authorizer: this.authorizer,
+    });
+    return fn;
   }
 
   /**

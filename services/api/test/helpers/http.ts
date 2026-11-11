@@ -13,6 +13,8 @@ interface ApiEventInit {
   readonly body?: unknown;
   /** Có userId thì event mang claim `sub` như khi đã qua JWT authorizer của Cognito. */
   readonly userId?: string;
+  /** Claim thêm của access token, vd. { 'cognito:groups': '[admin]' } như HTTP API gửi */
+  readonly claims?: Readonly<Record<string, string | string[]>>;
 }
 
 /** Event HTTP API (payload 2.0) giống lúc API Gateway gọi Lambda. traceId luôn là 'req-test'. */
@@ -53,7 +55,10 @@ export function apiEvent(init: ApiEventInit): APIGatewayProxyEventV2WithJWTAutho
       authorizer: {
         principalId: '',
         integrationLatency: 0,
-        jwt: { claims: init.userId ? { sub: init.userId } : {}, scopes: [] },
+        jwt: {
+          claims: { ...(init.userId ? { sub: init.userId } : {}), ...init.claims },
+          scopes: [],
+        },
       },
     },
   };

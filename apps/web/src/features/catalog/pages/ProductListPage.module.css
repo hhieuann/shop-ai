@@ -141,6 +141,10 @@
   margin: var(--space-200) 0;
   color: var(--fg-subdued);
 }
+/* Tải lần đầu: cột kết quả còn trống, giữ chỗ để footer không hiện giữa màn hình rồi bị đẩy xuống */
+.loadingFirst {
+  min-height: 100vh;
+}
 .empty {
   padding: var(--space-500) var(--space-200);
   border: 1px solid var(--border-divider);

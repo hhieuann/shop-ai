@@ -7,6 +7,12 @@ import { LiveAnnouncerProvider } from '../../../shared/components/LiveAnnouncer'
 import type { CartAddable } from '../hooks/useCart';
 import { ADDED_MS, AddToCartButton, ERROR_MS } from './AddToCartButton';
 
+/** Hiệu ứng bay giả: chỉ ghi lại lần gọi */
+const flyToCart = vi.fn();
+vi.mock('../lib/flyToCart', () => ({
+  flyToCart: (...args: unknown[]) => flyToCart(...args),
+}));
+
 /** useCart giả: add.mutate gọi lại onSuccess/onError theo kết quả cho trước */
 type Outcome = { ok: true } | { ok: false; error: unknown } | 'pending';
 let outcome: Outcome = { ok: true };
@@ -51,6 +57,7 @@ beforeEach(() => {
   outcome = { ok: true };
   isPending = false;
   mutate.mockClear();
+  flyToCart.mockClear();
 });
 afterEach(() => {
   cleanup();
@@ -130,5 +137,18 @@ describe('AddToCartButton', () => {
     expect(soldOut).toBeDisabled();
     fireEvent.click(soldOut);
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('thêm thành công: ô bay từ chính nút, mang loại hàng nếu thẻ có', () => {
+    renderButton({ ...product, category: 'gpu' } as CartAddable);
+    fireEvent.click(button());
+    expect(flyToCart).toHaveBeenCalledExactlyOnceWith(button(), 'gpu');
+  });
+
+  it('thêm lỗi: không có ô bay', () => {
+    outcome = { ok: false, error: conflict({ code: 'CART_FULL' }) };
+    renderButton();
+    fireEvent.click(button());
+    expect(flyToCart).not.toHaveBeenCalled();
   });
 });

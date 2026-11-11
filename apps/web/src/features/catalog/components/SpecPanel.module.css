@@ -1,0 +1,211 @@
+/* Panel thông số mở từ bên phải (docs/web/design-system.md §9.24). Điện thoại trước, ≥640 sau */
+
+/* ── Vùng tối ── */
+.scrim {
+  position: fixed;
+  inset: 0;
+  /* Cùng panel nằm trên header (210), như bảng lọc */
+  z-index: 300;
+  background: var(--scrim);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-standard);
+}
+.scrim[data-state='open'] {
+  opacity: 1;
+}
+
+/* ── Khung: sát phải, trượt từ ngoài màn hình vào ── */
+.frame {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  width: var(--spec-panel-width);
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-divider);
+  box-shadow: var(--shadow-lg);
+  color: var(--fg-default);
+  transform: translateX(100%);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.frame[data-state='open'] {
+  transform: none;
+}
+
+/* ── Đầu ── */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-150);
+  padding: var(--space-200) var(--space-200) var(--space-150);
+  border-bottom: 1px solid var(--border-divider);
+}
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-btn);
+  background: transparent;
+  color: var(--fg-default);
+}
+/* :not(:disabled) để thắng `button:hover:not(:disabled)` của base.css */
+.close:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+
+/* ── Thân: điện thoại một cột (hàng tab trên, nội dung dưới) ── */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.toc {
+  flex-shrink: 0;
+  padding: var(--space-150) var(--space-200) 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--border-divider);
+  scrollbar-width: none;
+}
+.toc::-webkit-scrollbar {
+  display: none;
+}
+.tocList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tocItem {
+  display: block;
+  width: 100%;
+  padding: var(--space-100) 10px;
+  border: 0;
+  border-bottom: 2px solid var(--border-divider);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg-heading);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.tocItem:hover:not(:disabled) {
+  background: transparent;
+  color: var(--fg-primary);
+}
+.tocItem[aria-current='true'] {
+  border-color: var(--bg-primary);
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+.content {
+  position: relative; /* offsetTop của từng phần tính từ đây */
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-100) var(--space-200) var(--space-300);
+  overflow-y: auto;
+}
+
+/* ── Từng thông số ── */
+.section {
+  padding: var(--space-100) 0 var(--space-300);
+}
+.section + .section {
+  padding-top: var(--space-300);
+  border-top: 1px solid var(--border-divider);
+}
+.sectionTitle {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.valueBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-150);
+  margin-top: var(--space-150);
+  padding: var(--space-150) var(--space-200);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+}
+.value {
+  min-width: 0;
+  color: var(--fg-default);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+/* Nhãn "Sản phẩm này": biến thể primary của Badge (§9.7), chưa tách component chung */
+.badge {
+  flex-shrink: 0;
+  padding: 2px var(--space-100);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary-tint);
+  color: var(--fg-primary);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.help {
+  max-width: 72ch;
+  margin: var(--space-150) 0 0;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+.noHelp {
+  color: var(--fg-subdued);
+}
+
+/* ── Máy tính bảng, máy tính: mục lục 184px bên trái, mỗi cột cuộn riêng ── */
+@media (min-width: 640px) {
+  .head {
+    padding: var(--space-300) var(--space-300) var(--space-200);
+  }
+  .body {
+    display: grid;
+    grid-template-columns: 184px minmax(0, 1fr);
+  }
+  .toc {
+    padding: var(--space-200) 0 var(--space-200) var(--space-300);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-bottom: 0;
+  }
+  .tocList {
+    display: block;
+  }
+  .tocItem {
+    padding: var(--space-100) var(--space-150);
+    border-bottom: 0;
+    border-left: 2px solid var(--border-divider);
+    white-space: normal;
+  }
+  .content {
+    padding: var(--space-200) var(--space-300) var(--space-400);
+  }
+}

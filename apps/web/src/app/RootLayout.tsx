@@ -10,16 +10,27 @@ export interface RouteHandle {
    * (trang danh sách, design-system §1). Mặc định: nền xám, cách footer 32px.
    */
   surface?: 'plain';
+  /**
+   * 'collapse': từ 1280px hàng 2 của header thu lại khi cuộn (trang chi tiết sản phẩm,
+   * design-system §9.1 "Hàng 2 thu lại khi cuộn"). Mặc định: hai hàng cùng dính.
+   */
+  headerNeeds?: 'collapse';
+  /**
+   * true: `main` không có khoảng đệm trên, nội dung tự lo khoảng cách với header (trang chi tiết:
+   * padding của Breadcrumb là toàn bộ khoảng cách, pages/chi-tiet-san-pham.md §2).
+   */
+  flushTop?: boolean;
 }
 
 export function RootLayout() {
-  const plain = useMatches().some(
-    (m) => (m.handle as RouteHandle | undefined)?.surface === 'plain',
-  );
+  const handles = useMatches().map((m) => m.handle as RouteHandle | undefined);
+  const plain = handles.some((h) => h?.surface === 'plain');
+  const collapseNeeds = handles.some((h) => h?.headerNeeds === 'collapse');
+  const flushTop = handles.some((h) => h?.flushTop);
   return (
     <div className={`${styles.shell} ${plain ? styles.plain : ''}`}>
-      <Header />
-      <main id="main" className={styles.main}>
+      <Header collapseNeeds={collapseNeeds} />
+      <main id="main" className={`${styles.main} ${flushTop ? styles.flushTop : ''}`}>
         <Outlet />
       </main>
       <Footer flush={plain} />

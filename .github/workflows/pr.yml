@@ -44,7 +44,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
@@ -80,7 +80,7 @@ jobs:
       - name: Chưa có code Python
         if: hashFiles('data/pyproject.toml') == ''
         run: echo "Chưa có data/pyproject.toml, bỏ qua."
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         if: hashFiles('data/pyproject.toml') != ''
         with:
           working-directory: data
@@ -118,7 +118,7 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" \
             ghcr.io/gitleaks/gitleaks:v8.30.1 \
             git /repo --redact --verbose --log-opts="$BASE_SHA..$HEAD_SHA"
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
@@ -138,7 +138,7 @@ jobs:
       - name: Chưa có CDK app
         if: hashFiles('infra/cdk.json') == ''
         run: echo "Chưa có infra/cdk.json, bỏ qua."
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         if: hashFiles('infra/cdk.json') != ''
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: hashFiles('infra/cdk.json') != ''

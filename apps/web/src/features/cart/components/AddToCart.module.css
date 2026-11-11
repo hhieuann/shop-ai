@@ -1,35 +1,64 @@
+/* Phần dưới hộp mua trang chi tiết (docs/web/pages/chi-tiet-san-pham.md §3.4, design-system §9.3) */
 .box {
   display: grid;
-  gap: var(--space-150);
-  justify-items: start;
-  margin-top: var(--space-200);
+  gap: var(--space-200);
 }
+/* Nhãn bên trái, bộ chọn số lượng bên phải */
 .row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-150);
 }
 .label {
+  color: var(--fg-heading);
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 500;
 }
-.primary {
+/* Nút chính cỡ lg, rộng hết hộp mua */
+.primary,
+.soldOut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+  width: 100%;
   min-height: 48px;
-  padding: var(--space-100) var(--space-400);
-  border: 1px solid var(--bg-primary);
+  padding: var(--space-100) var(--space-300);
+  border: 1px solid;
   border-radius: var(--radius-lg);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.primary {
+  border-color: var(--bg-primary);
   background: var(--bg-primary);
   color: var(--fg-on-primary);
-  font-size: var(--text-body-lg);
-  font-weight: 600;
+  transition:
+    background-color var(--dur-fast) ease-out,
+    border-color var(--dur-fast) ease-out;
 }
 .primary:hover:not(:disabled) {
   border-color: var(--bg-primary-hover);
   background: var(--bg-primary-hover);
 }
-.primary:active {
+.primary:active:not(:disabled) {
+  border-color: var(--bg-primary-pressed);
   background: var(--bg-primary-pressed);
 }
+/* Đang thêm: chặn bấm, giữ màu và bề rộng (không làm mờ như nút vô hiệu) */
 .primary:disabled {
-  opacity: 0.4;
   color: var(--fg-on-primary);
+}
+.primary[aria-busy='true'] {
+  cursor: progress;
+}
+/* Hết hàng (§4): nền nhạt, viền nhạt, chữ vô hiệu */
+.soldOut {
+  border-color: var(--border-divider);
+  background: var(--bg-surface-raised);
+  color: var(--fg-disabled);
+  cursor: not-allowed;
 }

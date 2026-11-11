@@ -110,7 +110,7 @@ paths:
           in: query
           description: Con trỏ phân trang từ response trước
           schema:
-            type: string
+            $ref: '#/components/schemas/PageCursor'
       responses:
         '200':
           description: Danh sách sản phẩm
@@ -189,7 +189,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/ProductId'
       responses:
         '200':
           description: Chi tiết sản phẩm
@@ -197,6 +197,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/Problem'
         '404':
           $ref: '#/components/responses/Problem'
         default:
@@ -330,7 +332,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/ProductId'
       requestBody:
         required: true
         content:
@@ -373,7 +375,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/ProductId'
       responses:
         '200':
           description: Giỏ hàng sau khi xoá
@@ -488,7 +490,7 @@ paths:
         - name: cursor
           in: query
           schema:
-            type: string
+            $ref: '#/components/schemas/PageCursor'
       responses:
         '200':
           description: Danh sách đơn hàng
@@ -521,7 +523,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/OrderId'
       responses:
         '200':
           description: Chi tiết đơn hàng
@@ -545,7 +547,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/OrderId'
       responses:
         '200':
           description: Đơn đã bị huỷ
@@ -563,6 +565,125 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  # ─── Admin ─────────────────────────────────────────────────────────────────
+  /api/v1/admin/orders:
+    get:
+      operationId: listAdminOrders
+      summary: Admin xem đơn theo trạng thái, mới nhất trước
+      description: |
+        Chỉ người thuộc nhóm `admin` của Cognito (claim `cognito:groups` trong access token);
+        người khác nhận 403 (threat model L6, O3). Đọc index `byStatus` của bảng `orders`.
+        Danh sách **không** trả địa chỉ giao hàng, họ tên, SĐT, `userId` (O8).
+      tags: [admin]
+      parameters:
+        - name: status
+          in: query
+          required: true
+          description: Trạng thái cần xem; rc.1 chỉ cần đơn chờ giao và đang giao
+          schema:
+            type: string
+            enum: [CONFIRMED, SHIPPED]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            $ref: '#/components/schemas/PageCursor'
+      responses:
+        '200':
+          description: Danh sách đơn ở trạng thái đã chọn
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminOrderSummary'
+                  nextCursor:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/admin/orders/{orderId}:
+    patch:
+      operationId: updateOrderStatus
+      summary: Admin chuyển đơn sang trạng thái giao hàng tiếp theo
+      description: |
+        Chỉ nhóm `admin` của Cognito. Chỉ đi tiếp một bước: `CONFIRMED` → `SHIPPED`,
+        `SHIPPED` → `DELIVERED` (ordering.md BR-15). Sang `SHIPPED` thì giảm số đơn đang mở của
+        khách trong cùng giao dịch (BR-14). Không có admin huỷ đơn ở bản này.
+        Trả tóm tắt đơn, không trả địa chỉ giao hàng, họ tên, SĐT, `userId`: API admin không bao giờ
+        trả các trường này (O8).
+      tags: [admin]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              additionalProperties: false
+              properties:
+                status:
+                  type: string
+                  enum: [SHIPPED, DELIVERED]
+      responses:
+        '200':
+          description: Tóm tắt đơn sau khi chuyển trạng thái (không có địa chỉ, O8)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderSummary'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: |
+            Không có đơn, hoặc đơn vừa đổi trạng thái mà index `byStatus` chưa cập nhật kịp
+            (tra `userId` qua index). Body ghi thử lại sau ít giây.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: |
+            `INVALID_STATUS_TRANSITION` chuyển sai bước, đi ngược, hoặc đơn vừa được đổi trạng thái
+            bởi người khác; kèm `currentStatus` là trạng thái hiện tại của đơn
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderProblem'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -705,6 +826,19 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ProductId:
+      type: string
+      description: Mã sản phẩm. Sai dạng thì API trả 400; đúng dạng mà không có sản phẩm thì 404.
+      pattern: '^[A-Za-z0-9-]{1,64}$'
+    OrderId:
+      type: string
+      description: Mã đơn hàng. Sai dạng hoặc không phải đơn của mình đều trả 404.
+      pattern: '^[A-Za-z0-9-]{1,64}$'
+    PageCursor:
+      type: string
+      description: Con trỏ phân trang lấy từ response trước. Rỗng hoặc quá dài thì API trả 400.
+      minLength: 1
+      maxLength: 200
     # ─── Enums ─────────────────────────────────────────────────────────────
     ProductCategory:
       type: string
@@ -1173,6 +1307,40 @@ components:
           type: string
           format: date-time
 
+    AdminOrderSummary:
+      type: object
+      description: |
+        Đơn trong danh sách admin. Không có địa chỉ giao hàng, họ tên, SĐT, `userId` (threat model O8);
+        index `byStatus` có đủ các trường này nên backend phải lọc bỏ.
+      required: [orderId, status, totalAmount, itemCount, createdAt]
+      additionalProperties: false
+      properties:
+        orderId:
+          type: string
+          description: ULID
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        totalAmount:
+          type: integer
+          description: Tổng tiền (VND)
+        itemCount:
+          type: integer
+          description: Số loại sản phẩm trong đơn
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminOrderProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum: [INVALID_STATUS_TRANSITION]
+            currentStatus:
+              $ref: '#/components/schemas/OrderStatus'
+
     # ─── Events ─────────────────────────────────────────────────────────────
     EventInput:
       type: object
@@ -1193,7 +1361,7 @@ components:
         `PERSONALIZED` (Dành cho bạn), `ALSO_BOUGHT` (Thường mua kèm),
         `BESTSELLER` (không đủ dữ liệu nên trả hàng bán chạy, ADR-0016),
         `NEWEST` (danh sách hàng bán chạy nhưng cửa hàng chưa đủ đơn nên xếp theo hàng mới;
-        web dùng tiêu đề trung tính, không ghi "bán chạy").
+        web dùng tiêu đề trung tính "Có thể bạn quan tâm", không ghi "bán chạy").
       enum: [PERSONALIZED, ALSO_BOUGHT, BESTSELLER, NEWEST]
 
     RecsResult:
@@ -1226,7 +1394,7 @@ components:
       required: true
       description: Sản phẩm đang xem (trang chi tiết) hoặc món vừa thêm gần nhất (trang giỏ)
       schema:
-        type: string
+        $ref: '#/components/schemas/ProductId'
     RecsExclude:
       name: exclude
       in: query
@@ -1240,7 +1408,7 @@ components:
         type: array
         maxItems: 20
         items:
-          type: string
+          $ref: '#/components/schemas/ProductId'
     RecsLimit:
       name: limit
       in: query
@@ -1266,6 +1434,14 @@ components:
               message:
                 type: string
                 example: Unauthorized
+    Forbidden:
+      description: |
+        `FORBIDDEN` đã đăng nhập nhưng không thuộc nhóm được phép (vd. API admin cần nhóm `admin`
+        của Cognito). Lambda trả, theo RFC 9457.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     Problem:
       description: Lỗi
       content:

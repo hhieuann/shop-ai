@@ -4,6 +4,7 @@ import { App, Tags, Validations } from 'aws-cdk-lib';
 import { AwsSolutionsChecks } from 'cdk-nag';
 import { ApiStack } from '../lib/api-stack.js';
 import { resolveEnvironment } from '../lib/config.js';
+import { WafStack } from '../lib/waf-stack.js';
 import { WebStack } from '../lib/web-stack.js';
 
 const app = new App();
@@ -30,9 +31,23 @@ if (!existsSync(path.join(webDistPath, 'index.html'))) {
   );
 }
 
+// WAF chỉ ở prod (ADR-0006, cập nhật 29/10/2026). Web ACL cho CloudFront phải nằm ở us-east-1, nên tách
+// stack riêng và truyền ARN sang stack web bằng crossRegionReferences; `cdk deploy --all` tự deploy WAF trước.
+const waf = shopEnv.isProd
+  ? new WafStack(app, `${shopEnv.stackPrefix}-waf`, {
+      shopEnv,
+      env: { account: env.account, region: 'us-east-1' },
+      crossRegionReferences: true,
+      terminationProtection: true,
+      description: `shop-ai WAF (${shopEnv.name})`,
+    })
+  : undefined;
+
 new WebStack(app, `${shopEnv.stackPrefix}-web`, {
   shopEnv,
   env,
+  crossRegionReferences: waf !== undefined,
+  webAclArn: waf?.webAclArn,
   httpApi: api.httpApi,
   userPoolId: api.userPool.userPoolId,
   userPoolClientId: api.webClient.userPoolClientId,

@@ -1,0 +1,315 @@
+/* Trang chi tiết sản phẩm (docs/web/pages/chi-tiet-san-pham.md §2–§5). Điện thoại trước */
+
+/* ── Lưới chính: <960 một cột (sản phẩm → hộp mua → thông số) ── */
+.layout {
+  display: grid;
+  grid-template-areas:
+    'prod'
+    'buy'
+    'spec';
+  gap: var(--space-100);
+}
+
+/* ── Khối trắng: <640 tràn hết bề ngang, không bo ── */
+.block {
+  min-width: 0;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: var(--space-300) var(--space-200);
+  background: var(--bg-surface);
+}
+.product {
+  grid-area: prod;
+  display: grid;
+  gap: var(--space-300);
+}
+.spec {
+  grid-area: spec;
+}
+/* Tiêu đề khối thông số: <640 18/26, cách ô 12px; từ 640 20/28, cách 16px (§3.5) */
+.specTitle {
+  margin: 0 0 var(--space-150);
+  color: var(--fg-heading);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+}
+.buy {
+  grid-area: buy;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+}
+
+/* ── Ảnh ── */
+.media {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: var(--pdp-media-max);
+  aspect-ratio: 1;
+  padding: var(--space-300);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+.soldOut {
+  opacity: 0.6;
+}
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.placeholder {
+  display: grid;
+  color: var(--fg-icon-soft);
+}
+
+/* ── Thông tin bên cạnh ảnh ── */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  min-width: 0;
+}
+.category {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  color: var(--fg-primary);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.category:hover {
+  color: var(--fg-primary-hover);
+  text-decoration: underline;
+}
+.name {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.brand {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: 14px;
+  line-height: 20px;
+}
+.divider {
+  width: 100%;
+  margin: var(--space-200) 0 var(--space-100);
+  border: 0;
+  border-top: 1px solid var(--border-divider);
+}
+.descriptionTitle {
+  margin: var(--space-100) 0 var(--space-50);
+  color: var(--fg-heading);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.description {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 16px;
+  line-height: 24px;
+  white-space: pre-line;
+}
+
+/* ── Hộp mua ── */
+.priceStock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.shipping {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  padding: var(--space-150) var(--space-200);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+.shippingRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  margin: 0;
+}
+.truck {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.cash {
+  flex-shrink: 0;
+  color: var(--fg-icon-soft);
+}
+.shippingFree {
+  color: var(--fg-heading);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.cod {
+  color: var(--fg-subdued);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* ── Trạng thái ── */
+.message {
+  margin: var(--space-200) 0;
+  color: var(--fg-subdued);
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-200);
+  margin-inline: calc(-1 * var(--gutter));
+  padding: var(--space-500) var(--space-200);
+  background: var(--bg-surface);
+  text-align: center;
+}
+.emptyIcon {
+  color: var(--fg-icon-soft);
+}
+.emptyText {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 16px;
+  line-height: 24px;
+}
+/* Nút phụ cỡ md (design-system §9.3), chưa tách component Button */
+.emptyAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: var(--space-100) var(--space-200);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.emptyAction:hover {
+  background: var(--bg-surface-pressed);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+
+/* ── Khung chờ (gradient như design-system §9.12) ── */
+.skeleton {
+  display: block;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-pressed) 0%,
+    var(--bg-surface-pressed) 30%,
+    var(--bg-canvas) 50%,
+    var(--bg-surface-pressed) 70%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.skeletonCrumb {
+  composes: skeleton;
+  width: 280px;
+  max-width: 100%;
+  height: 20px;
+  margin: var(--space-150) 0 var(--space-100);
+}
+.skeletonLine {
+  height: 20px;
+}
+.skeletonTitle {
+  height: 32px;
+}
+.w25 {
+  width: 25%;
+}
+.w30 {
+  width: 30%;
+}
+.w60 {
+  width: 60%;
+}
+.w90 {
+  width: 90%;
+}
+.skeletonBuy {
+  height: 320px;
+}
+.skeletonFill {
+  height: 100%;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* ── ≥640: khối bo 16, padding 24, nằm trong lề trang ── */
+@media (min-width: 640px) {
+  .layout {
+    gap: var(--space-200);
+  }
+  .block,
+  .empty {
+    margin-inline: 0;
+    border-radius: var(--radius-2xl);
+  }
+  .block {
+    padding: var(--space-300);
+  }
+  .empty {
+    padding: 56px var(--space-300);
+  }
+  .specTitle {
+    margin-bottom: var(--space-200);
+    font-size: 20px;
+    line-height: 28px;
+  }
+  .name {
+    font-size: var(--text-title-md);
+    line-height: var(--leading-title-md);
+  }
+}
+
+/* ── ≥960: hai cột (cột trái + hộp mua 360px) ── */
+@media (min-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) var(--pdp-aside);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'prod buy'
+      'spec buy';
+    gap: var(--space-300);
+    align-items: start;
+  }
+}
+
+/* ── ≥1280: ảnh và thông tin cạnh nhau trong khối sản phẩm ── */
+@media (min-width: 1280px) {
+  .product {
+    grid-template-columns: minmax(0, var(--pdp-media-max)) minmax(320px, 1fr);
+    gap: var(--space-400);
+    align-items: start;
+  }
+  .skeletonCrumb {
+    margin: var(--space-200) 0 var(--space-150);
+  }
+}

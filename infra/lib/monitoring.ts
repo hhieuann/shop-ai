@@ -14,6 +14,7 @@ import {
 } from 'aws-cdk-lib/aws-cloudwatch';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import type { ITable } from 'aws-cdk-lib/aws-dynamodb';
 import type { IFunction, Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 import { FilterPattern, MetricFilter } from 'aws-cdk-lib/aws-logs';
 import type { IQueue } from 'aws-cdk-lib/aws-sqs';
@@ -38,6 +39,11 @@ export interface MonitoringProps {
   readonly ordersQueue?: IQueue;
   /** DLQ của hàng đợi đơn: có tin là có đơn worker xử lý lỗi quá 3 lần, còn kẹt ở PENDING */
   readonly ordersDeadLetterQueue?: IQueue;
+  /**
+   * Bảng DynamoDB của stack, theo tên ngắn: vẽ số lần đọc, ghi bị throttle trên dashboard cho runbook
+   * dynamodb-throttle. Không tạo alarm (đã dùng hết 10 alarm miễn phí của tài khoản chung, #252)
+   */
+  readonly tables?: Readonly<Record<string, ITable>>;
   /** Lambda job gợi ý mỗi đêm: không có lần chạy thành công nào trong 26 giờ thì báo (chỉ prod) */
   readonly recsPipelineFn?: IFunction;
   /**
@@ -321,6 +327,27 @@ export class Monitoring extends Construct {
           width: 8,
         }),
       );
+      // DynamoDB bị throttle (runbook dynamodb-throttle), mọi môi trường, không alarm. Dùng
+      // ReadThrottleEvents, WriteThrottleEvents vì chỉ cần dimension TableName; ThrottledRequests bắt
+      // buộc thêm dimension Operation, phải vẽ một đường cho mỗi loại thao tác của mỗi bảng.
+      // Throttle của index (GSI) có dimension GlobalSecondaryIndexName riêng, không nằm trong các đường này.
+      const tables = Object.entries(props.tables ?? {});
+      if (tables.length > 0) {
+        const throttle = (metricName: string, suffix: string) =>
+          tables.map(([label, table]) =>
+            table.metric(metricName, { period, statistic: Stats.SUM, label: `${label} ${suffix}` }),
+          );
+        dashboard.addWidgets(
+          new GraphWidget({
+            title: 'DynamoDB: request bị throttle theo bảng (mỗi 5 phút)',
+            left: throttle('ReadThrottleEvents', 'đọc'),
+            right: throttle('WriteThrottleEvents', 'ghi'),
+            leftYAxis: { label: 'đọc', min: 0 },
+            rightYAxis: { label: 'ghi', min: 0 },
+            width: 24,
+          }),
+        );
+      }
       // Hàng đợi đơn ở mọi môi trường, không alarm (dev, staging không có alarm; runbook sqs-backlog)
       const { ordersQueue, ordersDeadLetterQueue } = props;
       if (ordersQueue && ordersDeadLetterQueue) {

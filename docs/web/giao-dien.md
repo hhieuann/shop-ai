@@ -1,6 +1,6 @@
 # Giao diện web: Black Magic
 
-Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 13/10/2026 (bản chốt trang danh sách)
+Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 09/11/2026 (bản chốt trang đơn hàng)
 
 Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví dụ widget gợi ý, trang đăng nhập) đọc mục 1, 2 và 6 là đủ.
 
@@ -8,6 +8,8 @@ Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví
 
 > **Giao diện chàm (11/10/2026):** màu chàm, font Inter, header 2 hàng, footer 4 cột và trang chủ mới đã có trong code.
 > **Trang danh sách (chốt 13/10/2026):** nền trắng, cột lọc "Loại hàng" bên trái, thẻ có nút "Thêm vào giỏ", chuyển trang "Trước · Trang N · Sau", thanh cuộn mảnh cho cả web ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)).
+> **Trang chi tiết sản phẩm (chốt 03/11/2026, đã có trong code):** khối trắng bo 16px trên nền xám, mô tả cạnh ảnh, thông số là các ô chia đều theo hàng trong khối riêng, bấm ô mở panel bên phải; hộp mua 360px không dính; hàng 2 header thu lại khi cuộn ở máy tính ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md)).
+> **Đơn hàng (chốt 09/11/2026, code chưa đổi):** đơn gọi theo tên món đầu "… và N sản phẩm khác", mã đơn là dòng chữ mờ; chi tiết đơn có thanh 4 bước trạng thái, khối Thanh toán bên phải với nút "Huỷ đơn" hỏi lại trước khi huỷ; trang đặt hàng dùng header thu gọn ([pages/don-hang.md](pages/don-hang.md), [pages/dat-hang.md](pages/dat-hang.md)).
 
 ## 1. Nguyên tắc
 
@@ -63,7 +65,8 @@ Font **Inter** (có dấu tiếng Việt), dự phòng system-ui, Segoe UI, Robo
 | `Carousel` | `shared/components/Carousel.tsx` | Dải thẻ sản phẩm có nút mũi tên |
 | `ProductCard`, `StockBadge`, `CategoryIcon` | `features/catalog/components/` | Thẻ sản phẩm, nhãn tồn kho, icon loại hàng |
 | `Field`, `PasswordField`, `Checkbox`, `QuantityStepper`, `Alert`, `OrderSummary` | `shared/components/` | Form, giỏ hàng, đặt hàng |
-| `ProductListCard`, `AddToCartButton`, `FilterPanel`, `FilterSheet`, `CursorPager`, `Breadcrumb`, `Radio` (chưa có) | `features/catalog/`, `features/cart/`, `shared/components/` | Trang danh sách (design-system §9.5, §9.19–§9.23) |
+| `ProductListCard`, `AddToCartButton`, `FilterPanel`, `FilterSheet`, `CursorPager`, `Breadcrumb`, `Radio` | `features/catalog/`, `features/cart/`, `shared/components/` | Trang danh sách (design-system §9.5, §9.19–§9.23) |
+| `SpecTiles`, `SpecPanel` (chưa có) | `features/catalog/components/` | Ô thông số và panel thông số của trang chi tiết (design-system §9.24) |
 
 Style viết bằng **CSS Modules** (`*.module.css` cạnh component), không dùng thư viện UI. Icon dùng `lucide-react`, nét 1.75.
 

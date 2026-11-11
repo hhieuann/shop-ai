@@ -17,6 +17,11 @@ export const queryKeys = {
     list: () => ['orders', 'list'] as const,
     detail: (orderId: string) => ['orders', 'detail', orderId] as const,
   },
+  admin: {
+    all: ['admin'] as const,
+    /** Một trang đơn theo trạng thái; cursor của trang đang xem (undefined: trang 1) */
+    orders: (status: string, cursor?: string) => ['admin', 'orders', status, cursor ?? ''] as const,
+  },
   recs: {
     all: ['recs'] as const,
     /** Khác key với for-you: vừa đăng nhập thì gọi API mới, không dùng lại cache hàng bán chạy */
