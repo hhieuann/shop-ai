@@ -93,7 +93,16 @@ function signIn() {
     },
   );
   const token = res.status === 200 ? res.json('AuthenticationResult.AccessToken') : null;
-  if (!token) throw new Error(`Đăng nhập người dùng E2E thất bại: ${res.status}`);
+  if (!token) {
+    // Chỉ in loại lỗi của Cognito (vd. NotAuthorizedException), không in body có thể chứa thông tin khác
+    let errorType = '';
+    try {
+      errorType = String(res.json('__type') || '');
+    } catch (e) {
+      errorType = '';
+    }
+    throw new Error(`Đăng nhập người dùng E2E thất bại: ${res.status} ${errorType}`.trim());
+  }
   return token;
 }
 
