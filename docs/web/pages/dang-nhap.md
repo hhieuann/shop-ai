@@ -6,6 +6,8 @@ Người làm: **An**. File này chỉ quy định giao diện; luồng Cognito 
 
 Bố cục: header thu gọn, một thẻ form hẹp ở giữa trang, nhãn đậm phía trên ô nhập, nút hiện/ẩn mật khẩu trong ô, link chuyển qua lại "Đã có tài khoản? / Tạo tài khoản" ở cuối thẻ.
 
+Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus khi bấm Tab (mục 6); ô mã đổi thành 6 ô vuông (3.3). Sửa 11/11/2026: icon con mắt theo trạng thái mật khẩu, đang ẩn là mắt nhắm, đang hiện là mắt mở (mục 6).
+
 ## 1. Đường dẫn và dữ liệu
 
 | Đường dẫn | Màn hình |
@@ -61,7 +63,7 @@ Không có logo trong thẻ (header đã có), không có ô "Ghi nhớ đăng n
 | Tiêu đề | "Đăng nhập" |
 | Dòng phụ | "Đăng nhập để dùng giỏ hàng và đặt hàng." |
 | Email | `type="email"`, `autocomplete="username"`, `inputMode="email"`, `autoFocus` |
-| Mật khẩu | `PasswordField` (design-system §9.4), `autocomplete="current-password"` |
+| Mật khẩu | `PasswordField` (design-system §9.4), `autocomplete="current-password"`. Thứ tự Tab: Email → Mật khẩu → nút "Đăng nhập" (nút con mắt không nằm trong thứ tự Tab) |
 | Nút | "Đăng nhập" → đang gửi "Đang đăng nhập…" |
 | Chân thẻ | "Chưa có tài khoản? **Tạo tài khoản**" → `/register` |
 
@@ -75,7 +77,7 @@ Tài khoản admin (nhóm `admin`, bắt buộc MFA theo ADR-0007): sau mật kh
 | Username | `Field` 48px, nhãn "Username", gợi ý dưới ô "Tên hiện trên header khi bạn đăng nhập.", `autocomplete="nickname"`, `autoCapitalize="none"`, `spellCheck={false}`. Đề xuất (chờ An): 3–20 ký tự, chữ thường không dấu, số, dấu chấm, gạch dưới; không trùng với người khác. Lỗi: "Vui lòng nhập username", "Username chỉ gồm chữ thường không dấu, số, dấu chấm, gạch dưới", "Username này đã có người dùng." |
 | Email | như đăng nhập, `autocomplete="email"` |
 | Mật khẩu | `PasswordField`, `autocomplete="new-password"`, kèm **danh sách điều kiện** bên dưới |
-| Nhập lại mật khẩu | `PasswordField`, `autocomplete="new-password"`; lỗi "Mật khẩu nhập lại không khớp." |
+| Nhập lại mật khẩu | `PasswordField`, `autocomplete="new-password"`; lỗi "Mật khẩu nhập lại không khớp.". Thứ tự Tab: Username → Email → Mật khẩu → Nhập lại mật khẩu → nút "Tạo tài khoản" |
 | Nút | "Tạo tài khoản" → "Đang tạo tài khoản…" |
 | Chân thẻ | "Đã có tài khoản? **Đăng nhập**" → `/login` |
 
@@ -88,9 +90,17 @@ Username là tên hiển thị trên nút tài khoản ở header (design-system
 |---|---|
 | Tiêu đề | "Xác nhận email" |
 | Dòng phụ | "Nhập mã 6 số vừa gửi tới **{email}**." (email đậm 500 `--fg-default`) |
-| Ô mã | `Field` 48px, nhãn "Mã xác nhận", `inputMode="numeric"`, `autocomplete="one-time-code"`, `maxLength=6`, chữ 20/28/600 `tabular-nums`, `letter-spacing: .3em`, căn giữa |
+| Ô mã | `OtpInput` (design-system §9.4): nhãn "Mã xác nhận" phía trên, **6 ô vuông** chia đều bề ngang form, gap 8px, cao 56px (<640: gap 6px, cao 52px); mỗi ô một số 24/32/600 `tabular-nums` căn giữa. Bên dưới là **một** ô nhập thật (`inputMode="numeric"`, `autocomplete="one-time-code"`, `maxLength=6`) nên dán mã, tự điền mã từ email hoặc SMS vẫn chạy. Chưa focus thì không ô nào sáng; mở bước này focus vẫn vào `<h1>` như mục 6 |
 | Nút | "Xác nhận" → "Đang xác nhận…" |
-| Gửi lại | nút `ghost md` căn giữa dưới nút chính: "Gửi lại mã"; đang gửi thì vô hiệu ("Đang gửi…"); gửi xong `Alert success` "Đã gửi mã mới." |
+| Gửi lại | nút `ghost md` căn giữa dưới nút chính: "Gửi lại mã"; đang gửi thì vô hiệu ("Đang gửi…"); gửi xong `Alert success` "Đã gửi mã mới.", xoá các số đã gõ và focus lại ô đầu |
+
+**Cách gõ 6 ô** (giống nhau ở xác nhận email và xác thực hai lớp):
+- Gõ số nào thì số đó vào ô đang sáng, ô sáng nhảy sang phải. Chữ và dấu cách bị bỏ. Backspace xoá số cuối và lùi một ô.
+- Dán hoặc tự điền "123456", "123 456", "Mã: 123456": lấy 6 số đầu, điền một lượt.
+- Bấm vào ô nào hoặc Tab tới thì ô trống đầu tiên sáng (không sửa số ở giữa; muốn sửa thì xoá lùi).
+- Đủ 6 số thì **tự gửi**, không cần bấm "Xác nhận". Nút "Xác nhận" vẫn giữ (Enter, trình đọc màn hình, khi tự gửi lỗi mạng).
+- Đang gửi: các ô `readOnly`, số đổi màu `--fg-muted`, không ô nào sáng, nút "Đang xác nhận…".
+- Chưa đủ 6 số mà bấm "Xác nhận": lỗi dưới ô "Nhập đủ 6 số trong email." (xác thực hai lớp: "Nhập đủ 6 số trong ứng dụng xác thực.").
 
 ## 4. Trạng thái
 
@@ -103,8 +113,8 @@ Lỗi từ Cognito hiện bằng `Alert danger` ở đầu form (dưới dòng p
 | `UsernameExistsException` (trùng email) | "Email này đã có tài khoản." + link "Đăng nhập" | dưới ô Email |
 | Trùng username (cách Cognito báo lỗi này do An chọn) | "Username này đã có người dùng." | dưới ô Username |
 | `InvalidPasswordException` | "Mật khẩu chưa đạt điều kiện bên dưới." | dưới ô Mật khẩu |
-| `CodeMismatchException` | "Mã không đúng. Kiểm tra lại email mới nhất." | dưới ô mã |
-| `ExpiredCodeException` | "Mã đã hết hạn. Bấm Gửi lại mã." | dưới ô mã |
+| `CodeMismatchException` | "Mã không đúng. Kiểm tra lại email mới nhất." | dưới 6 ô; xoá 6 số, 6 ô viền `--fg-danger`, focus về ô đầu; gõ số mới thì lỗi tắt |
+| `ExpiredCodeException` | "Mã đã hết hạn. Bấm Gửi lại mã." | dưới 6 ô, như dòng trên |
 | `LimitExceededException`, `TooManyRequestsException` | "Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại." | Alert |
 | Lỗi mạng | "Không kết nối được máy chủ, vui lòng thử lại." | Alert |
 
@@ -120,7 +130,8 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 ## 6. Trợ năng
 - Một `<h1>` mỗi màn; khi đổi sang bước nhập mã, focus vào `<h1>` mới (`tabIndex={-1}`).
 - Mọi ô có `<label>` hiển thị (không dùng placeholder thay nhãn).
-- Nút hiện/ẩn mật khẩu: `aria-label` "Hiện mật khẩu" / "Ẩn mật khẩu", `aria-pressed`; không làm mất focus khỏi ô.
+- Nút hiện/ẩn mật khẩu: icon theo **trạng thái** của mật khẩu (11/11/2026): đang ẩn → mắt nhắm (`EyeClosed`), bấm vào → mắt mở (`Eye`) và mật khẩu hiện ra. `aria-label` nói việc nút sẽ làm: "Hiện mật khẩu" khi đang ẩn, "Ẩn mật khẩu" khi đang hiện; `aria-pressed` = mật khẩu đang hiện. Không làm mất focus khỏi ô. **Không nằm trong thứ tự Tab** (`tabIndex={-1}`, sửa 10/11/2026): gõ mật khẩu xong bấm Tab là tới nút gửi form. Chuột, chạm và chế độ duyệt của trình đọc màn hình vẫn bấm được. Đánh đổi: người chỉ dùng bàn phím không mở được chữ mật khẩu; chấp nhận vì đây là tiện ích, không phải bước bắt buộc.
+- Ô mã 6 số: trình đọc màn hình chỉ thấy **một** ô nhập có nhãn "Mã xác nhận" (hoặc "Mã xác thực") và lỗi nối bằng `aria-describedby`; 6 ô vuông chỉ để nhìn (`aria-hidden`). Ô đang sáng có viền focus như ô nhập thường.
 - `autocomplete` đúng như bảng để trình quản lý mật khẩu và mã OTP tự điền hoạt động.
 
 ## 7. Ngoài phạm vi
