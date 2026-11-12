@@ -200,7 +200,7 @@ expiresAt       Number   epoch giây, 24 giờ sau khi tạo; bảng orders bậ
 - Giới hạn 100 thao tác mỗi giao dịch → một đơn tối đa 50 dòng (ordering.md BR-02) cộng 4 thao tác, tối đa 54, là an toàn.
 - IAM cho `ordering` `UpdateItem` trên `products` **không** có điều kiện `dynamodb:Attributes` (O7, ADR-0017): thử trên dev 25/10 thì điều kiện này chặn lệnh trừ kho vì `ConditionExpression` dùng `status`, `price`. Điều kiện của giao dịch giữ nguyên.
 
-**Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status IN (...)` được phép (BR-10, BR-11), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn `PENDING` hoặc `CONFIRMED` thêm `UpdateItem` item `#OPEN`: `SET openOrders = openOrders - 1` với điều kiện `openOrders > 0`.
+**Huỷ đơn:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = CANCELLED` với điều kiện `status` = trạng thái vừa đọc (backend đã kiểm trạng thái đó được huỷ theo vai trò, BR-10, BR-11; điều kiện sai thì đọc lại), cộng `UpdateItem` từng sản phẩm `SET stock = stock + :qty`. Điều kiện trạng thái bảo đảm huỷ hai lần chỉ hoàn kho một lần. Huỷ đơn `PENDING` hoặc `CONFIRMED` thêm `UpdateItem` item `#OPEN`: `SET openOrders = openOrders - 1` với điều kiện `openOrders > 0`.
 
 **Chuyển `SHIPPED`:** một `TransactWriteItems` gồm `UpdateItem` đơn `SET status = SHIPPED` (điều kiện `status = CONFIRMED`) và `UpdateItem` item `#OPEN` giảm 1 như trên.
 
