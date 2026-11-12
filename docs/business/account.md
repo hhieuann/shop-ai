@@ -61,7 +61,7 @@ Là khách hàng quên mật khẩu, tôi muốn tự đặt mật khẩu mới 
 - Given tài khoản đã xác nhận, When khách bấm "Quên mật khẩu?", nhập email, nhập đúng mã và mật khẩu mới đạt 5 điều kiện, Then về trang đăng nhập với email điền sẵn, đăng nhập được bằng mật khẩu mới, còn mật khẩu cũ báo "Email hoặc mật khẩu không đúng."
 - Given email chưa có tài khoản, When nhập ở bước quên mật khẩu, Then vẫn sang bước nhập mã với cùng câu chữ như email có tài khoản, và không có thư nào gửi đi.
 - Given đang ở bước đặt mật khẩu mới, When nhập sai mã, Then báo "Mã không đúng. Kiểm tra lại email mới nhất." và mật khẩu chưa đổi.
-- Given khách đang đăng nhập trên máy A, When đặt lại mật khẩu trên máy B, Then máy A bị đăng xuất chậm nhất sau 1 giờ.
+- Given khách đang đăng nhập trên máy A, When đặt lại mật khẩu trên máy B, Then máy A bị đăng xuất chậm nhất sau 1 giờ (cần L9, PR infra của Nhân).
 
 ## Màn hình liên quan
 

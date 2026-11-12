@@ -190,7 +190,7 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 - Chính sách mật khẩu: ít nhất 8 ký tự, có chữ hoa, chữ thường, số, ký tự đặc biệt (đúng danh sách điều kiện ở 3.2).
 - Đăng nhập bằng **email**; username chỉ để hiển thị, lưu ở `preferred_username`, đọc từ ID token.
 - Username: 3–20 ký tự, chữ thường không dấu, số, `.`, `_`. Lambda Pre sign-up chặn sai luật và trùng; web nhận lỗi `UserLambdaValidationException` có mã `USERNAME_TAKEN`, `USERNAME_INVALID`, `USERNAME_REQUIRED` và hiện câu ở mục 4.
-- **Quên mật khẩu**: để sau v0.1.0 (đã chốt lại ngày 11/11/2026, xem dưới).
+- **Quên mật khẩu**: có từ bản sau v1.0.0, xem 3.4 và mục Đã chốt 11/11.
 - **Admin** đăng nhập chung `/login`; tài khoản đã bật MFA (ứng dụng xác thực, TOTP) thì thêm bước "Xác thực hai lớp". Bắt buộc admin bật MFA làm cùng trang quản trị.
 - Token lưu cookie `Secure; SameSite=Strict` (không dùng localStorage). Cấu hình Cognito đọc lúc chạy từ `/config.json`; chạy `vite dev` trên mock (không có `/config.json`) thì vẫn dùng token giả như cũ.
 - Chưa có `FocusLayout`: trang đăng nhập tạm nằm trong layout thường như checkout.
