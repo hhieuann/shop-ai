@@ -6,7 +6,7 @@ Người làm: **An**. File này chỉ quy định giao diện; luồng Cognito 
 
 Bố cục: header thu gọn, một thẻ form hẹp ở giữa trang, nhãn đậm phía trên ô nhập, nút hiện/ẩn mật khẩu trong ô, link chuyển qua lại "Đã có tài khoản? / Tạo tài khoản" ở cuối thẻ.
 
-Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus khi bấm Tab (mục 6); ô mã đổi thành 6 ô vuông (3.3). Sửa 11/11/2026: icon con mắt theo trạng thái mật khẩu, đang ẩn là mắt nhắm, đang hiện là mắt mở (mục 6). Sửa 11/11/2026 (An chốt): thêm quên mật khẩu, link dưới nút "Đăng nhập" (3.1) và màn đặt lại hai bước (3.4).
+Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus khi bấm Tab (mục 6); ô mã đổi thành 6 ô vuông (3.3). Sửa 11/11/2026: icon con mắt theo trạng thái mật khẩu, đang ẩn là mắt nhắm, đang hiện là mắt mở (mục 6). Sửa 11/11/2026 (An chốt): thêm quên mật khẩu, link dưới nút "Đăng nhập" (3.1) và màn đặt lại hai bước (3.4). Sửa 12/11/2026: ghi lý do ô mã quên mật khẩu không kiểm riêng (mục 8).
 
 ## 1. Đường dẫn và dữ liệu
 
@@ -125,7 +125,7 @@ Bước 2:
 |---|---|
 | Tiêu đề | "Đặt mật khẩu mới" |
 | Dòng phụ | "Nếu **{email}** có tài khoản, mã 6 số đã được gửi tới email này. Xem cả mục thư rác." Luôn hiện câu này, kể cả khi email chưa có tài khoản (account.md BR-13); không có lỗi "email không tồn tại" |
-| Ô mã | `OtpInput` "Mã xác nhận" như 3.3. **Khác 3.3: đủ 6 số không tự gửi**, focus chuyển sang ô "Mật khẩu mới" (Cognito chỉ kiểm mã cùng lúc với mật khẩu mới) |
+| Ô mã | `OtpInput` "Mã xác nhận" như 3.3. **Khác 3.3: đủ 6 số không tự gửi**, focus chuyển sang ô "Mật khẩu mới" (Cognito chỉ kiểm mã cùng lúc với mật khẩu mới, xem mục 8 Đã chốt 12/11) |
 | Mật khẩu mới | `PasswordField`, `autocomplete="new-password"`, kèm danh sách điều kiện như 3.2 |
 | Nhập lại mật khẩu mới | `PasswordField`, `autocomplete="new-password"`; lỗi "Mật khẩu nhập lại không khớp." |
 | Nút | "Đặt lại mật khẩu" → "Đang lưu…" |
@@ -208,3 +208,12 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 **Đã chốt (07/10/2026):** đăng xuất nằm trong menu tài khoản trên header (design-system §9.17). Khi đăng xuất: gọi `notifyAuthChanged()`, xoá giỏ khách (`shop-ai:guest-cart`) và dữ liệu phiên trên trình duyệt, đang ở trang bắt buộc đăng nhập thì về `/` (sửa 08/10/2026 cho khớp account.md BR-09).
 
 **Đã chốt (11/11/2026, An):** làm quên mật khẩu cho bản sau `v1.0.0`, chỉ trên `develop` (#438 tài liệu, #439 web). Xong thì về `/login` và điền sẵn email; tài khoản có TOTP đi đúng luồng đăng nhập hiện có. Giữ mẫu thư tiếng Anh mặc định của Cognito, không sửa infra. Không cho biết email có tài khoản hay không (`preventUserExistenceErrors`, bước 2 của 3.4). Thử trên dev 11/11: đặt lại mật khẩu không đăng xuất thiết bị khác, nên đăng xuất mọi thiết bị làm ở PR infra riêng của Nhân (threat-model.md L9); trang web không phải làm gì thêm.
+
+**Đã chốt (12/11/2026, Hoàng): ô mã ở bước 2 của 3.4 không tự gửi và không kiểm riêng.** Cognito không có lệnh chỉ kiểm mã đặt lại mật khẩu: `ConfirmForgotPassword` (Amplify `confirmResetPassword`) nhận mã cùng mật khẩu mới và đổi mật khẩu ngay khi mã đúng. Vì vậy web không biết mã đúng hay sai trước khi khách gõ mật khẩu mới. Các cách đã cân nhắc và bỏ:
+
+- Gửi kèm một mật khẩu tạm để thử mã: mã đúng thì mật khẩu tài khoản bị đổi thật sang mật khẩu tạm và mã bị dùng mất; khách bỏ dở thì tài khoản mang mật khẩu không ai biết.
+- Gửi kèm mật khẩu cố ý sai luật để xem Cognito báo lỗi mã hay lỗi mật khẩu: dựa vào thứ tự kiểm lỗi mà tài liệu Cognito không cam kết, và mỗi lần thử tính vào giới hạn nhập sai (dễ ra `LimitExceededException`).
+- Tự làm mã đặt lại riêng (tự sinh, lưu, gửi thư, API kiểm mã): phải tự lo hết hạn, giới hạn thử, chống dò mà Cognito đang lo; thêm bảng, Lambda, quyền IAM và đổi contract.
+- Đảo thứ tự (mật khẩu mới trước, ô mã cuối, đủ 6 số thì tự gửi): trái thứ tự khách quen (mã trước, mật khẩu sau) và phải đổi thứ tự Tab.
+
+Bù lại: mã sai hoặc hết hạn thì chỉ xoá 6 số và focus lại ô mã, mật khẩu đã gõ giữ nguyên (mục 4), nên khách chỉ gõ lại mã rồi bấm "Đặt lại mật khẩu".
