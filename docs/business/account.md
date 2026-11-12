@@ -1,8 +1,8 @@
-# Tính năng: Tài khoản (đăng ký, đăng nhập, đăng xuất)
+# Tính năng: Tài khoản (đăng ký, đăng nhập, đăng xuất, quên mật khẩu)
 
 - Module: account (Cognito, `services/api/src/modules/account`, `apps/web/src/features/auth`)
 - Vai trò: khách vãng lai, khách hàng, admin
-- Người viết: An · Ngày: 08/10/2026
+- Người viết: An · Ngày: 08/10/2026 · Sửa: 11/11/2026 (quên mật khẩu, BR-13)
 
 Giao diện chi tiết ở [docs/web/pages/dang-nhap.md](../web/pages/dang-nhap.md). Quyết định kỹ thuật ở [ADR-0007](../adr/0007-http-api-jwt-cognito.md).
 
@@ -11,6 +11,8 @@ Giao diện chi tiết ở [docs/web/pages/dang-nhap.md](../web/pages/dang-nhap.
 Là khách hàng, tôi muốn tạo tài khoản bằng email và đăng nhập nhanh để đặt hàng và xem lại đơn của mình, mà các món đã chọn khi chưa đăng nhập vẫn được giữ.
 
 Là admin, tôi muốn đăng nhập cùng trang với khách nhưng được bảo vệ thêm bằng mã xác thực hai lớp, vì tài khoản admin sửa được sản phẩm và đơn hàng.
+
+Là khách hàng quên mật khẩu, tôi muốn tự đặt mật khẩu mới bằng mã gửi về email, để không phải nhắn shop chờ người đặt lại giúp.
 
 ## Quy tắc nghiệp vụ
 
@@ -26,6 +28,12 @@ Là admin, tôi muốn đăng nhập cùng trang với khách nhưng được b�
 - BR-10: **Xác thực hai lớp (MFA):** khách hàng tuỳ chọn bật bằng ứng dụng xác thực (TOTP), không dùng SMS. Admin bắt buộc bật; bắt buộc này áp dụng khi có trang quản trị.
 - BR-11: **Dữ liệu tài khoản chỉ gồm email và username.** Họ tên, số điện thoại, địa chỉ nhập ở trang đặt hàng cho từng đơn (ordering.md), không có sổ địa chỉ trong MVP.
 - BR-12: **Thử sai nhiều lần:** Cognito tạm khoá lượt đăng nhập, đăng ký, gửi mã khi bị thử dồn dập; web báo "Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại."
+- BR-13: **Quên mật khẩu:** khách tự đặt lại, không cần đăng nhập. Bấm "Quên mật khẩu?" ở trang đăng nhập, nhập email; Cognito gửi mã 6 số tới email đó; khách nhập mã và mật khẩu mới (theo BR-04).
+  - **Không cho biết email có tài khoản hay không:** email nào cũng sang bước nhập mã với câu "Nếu email này có tài khoản, mã đã được gửi", giống BR-07.
+  - Gửi lại mã được. Thử dồn dập thì như BR-12.
+  - Đặt lại xong thì về trang đăng nhập, email điền sẵn, đăng nhập như thường (tài khoản có MFA vẫn qua bước nhập mã như BR-10).
+  - Đặt lại mật khẩu thì **các thiết bị khác đang đăng nhập bị đăng xuất** (thu hồi phiên cũ). Thiết bị đang mở có thể còn dùng thêm tối đa 1 giờ, tới khi phiên ngắn hạn hết hạn.
+  - Thư dùng mẫu tiếng Anh mặc định của Cognito như thư mã đăng ký, chung hạn mức khoảng 50 thư/ngày của user pool.
 
 ## Trường hợp đặc biệt
 
@@ -36,7 +44,9 @@ Là admin, tôi muốn đăng nhập cùng trang với khách nhưng được b�
 - Đã đăng nhập mà mở `/login` hoặc `/register` → về trang trước đó.
 - Khách vãng lai bấm "Đặt hàng" rồi tạo tài khoản → xác nhận mã xong thì đăng nhập luôn, gộp giỏ và sang thẳng checkout (cart.md BR-10, BR-11).
 - Đăng nhập ở hai tab → tab thứ hai dùng luôn phiên đang có.
-- Quên mật khẩu → **chưa có trong v0.1.0**; khách nhắn shop, admin đặt lại trên Cognito. Làm sau v0.1.0.
+- Quên mật khẩu → khách tự đặt lại theo BR-13. Shop không đặt lại mật khẩu giúp khách trên Cognito.
+- Nhập email chưa có tài khoản ở bước quên mật khẩu → vẫn sang bước nhập mã như email có tài khoản, nhưng không có thư nào được gửi; nhập mã nào cũng không đặt được mật khẩu; câu báo lỗi chốt khi làm trang quên mật khẩu (#439).
+- Tài khoản chưa xác nhận email mà bấm quên mật khẩu → chưa thử trên dev; câu báo lỗi chốt khi làm trang quên mật khẩu.
 - Xoá tài khoản → **ngoài MVP**; khách yêu cầu thì admin xoá trên Cognito.
 
 ## Tiêu chí nghiệm thu
@@ -48,8 +58,12 @@ Là admin, tôi muốn đăng nhập cùng trang với khách nhưng được b�
 - Given khách đã đăng nhập, When gọi `GET /api/v1/me`, Then nhận 200 kèm `userId` và `groups`; chưa đăng nhập thì 401.
 - Given tài khoản admin đã bật MFA, When đăng nhập đúng mật khẩu, Then phải nhập mã 6 số từ ứng dụng xác thực mới vào được.
 - Given khách đã đăng nhập, When đăng xuất, Then header hiện nút "Đăng nhập" và `/orders` chuyển sang trang đăng nhập.
+- Given tài khoản đã xác nhận, When khách bấm "Quên mật khẩu?", nhập email, nhập đúng mã và mật khẩu mới đạt 5 điều kiện, Then về trang đăng nhập với email điền sẵn, đăng nhập được bằng mật khẩu mới, còn mật khẩu cũ báo "Email hoặc mật khẩu không đúng."
+- Given email chưa có tài khoản, When nhập ở bước quên mật khẩu, Then vẫn sang bước nhập mã với cùng câu chữ như email có tài khoản, và không có thư nào gửi đi.
+- Given đang ở bước đặt mật khẩu mới, When nhập sai mã, Then báo "Mã không đúng. Kiểm tra lại email mới nhất." và mật khẩu chưa đổi.
+- Given khách đang đăng nhập trên máy A, When đặt lại mật khẩu trên máy B, Then máy A bị đăng xuất chậm nhất sau 1 giờ.
 
 ## Màn hình liên quan
 
-- `/login`, `/register`: [docs/web/pages/dang-nhap.md](../web/pages/dang-nhap.md)
+- `/login`, `/register`, `/forgot-password`: [docs/web/pages/dang-nhap.md](../web/pages/dang-nhap.md)
 - Nút và menu tài khoản trên header: design-system §9.17
