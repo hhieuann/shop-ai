@@ -1,0 +1,114 @@
+/* Ô mã số vẽ thành từng ô (docs/web/design-system.md §9.4 "Ô mã (OtpInput)") */
+.field {
+  display: grid;
+  align-content: start;
+  gap: var(--space-50);
+  min-width: 0;
+}
+.label {
+  font-weight: 500;
+}
+
+/* 6 ô chia đều bề ngang; ô nhập thật phủ kín cả hàng */
+.boxes {
+  position: relative;
+  display: grid;
+  /* Số cột theo prop length (biến cục bộ, không phải token), mặc định 6 */
+  grid-template-columns: repeat(var(--otp-length, 6), minmax(0, 1fr));
+  gap: var(--space-100);
+}
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px; /* §9.4: không có token chiều cao ô */
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.filled {
+  border-color: var(--border-default);
+  background: var(--bg-surface);
+}
+.invalid {
+  border-color: var(--fg-danger);
+}
+/* Ô đang sáng: như ô nhập thường đang focus (viền chàm + viền focus 2px cách 2px) */
+.active {
+  border-color: var(--border-primary);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+/* Đang lỗi: ô sáng vẫn viền đỏ, chỉ thêm viền focus chàm */
+.active.invalid {
+  border-color: var(--fg-danger);
+}
+/* Đang gửi: số mờ, không ô nào sáng */
+.readOnly .box {
+  background: var(--bg-surface-raised);
+  color: var(--fg-muted);
+}
+
+/* Vạch nháy trong ô trống đang sáng: 2×24px, nháy 1s */
+.caret {
+  width: 2px;
+  height: 24px;
+  background: var(--fg-default);
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}
+
+/* Ô nhập thật: phủ kín, trong suốt hoàn toàn nhưng vẫn nhận gõ, dán, tự điền, focus */
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px; /* iOS không phóng to khi focus */
+  outline: none;
+}
+.input::selection {
+  background: transparent;
+}
+.input:focus-visible {
+  outline: none;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+  margin: 0;
+  color: var(--fg-danger);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 500;
+}
+
+@media (max-width: 639px) {
+  .boxes {
+    gap: 6px; /* §9.4: không có token 6px */
+  }
+  .box {
+    height: 52px;
+  }
+}

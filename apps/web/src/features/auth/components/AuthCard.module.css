@@ -94,14 +94,6 @@
 .ghost:disabled {
   color: var(--fg-subdued);
 }
-.codeInput input {
-  text-align: center;
-  font-size: var(--text-title-md);
-  line-height: var(--leading-title-md);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.3em;
-}
 .rules {
   display: grid;
   gap: var(--space-50);
