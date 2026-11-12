@@ -633,7 +633,7 @@ paths:
       description: |
         Chỉ nhóm `admin` của Cognito. Chỉ đi tiếp một bước: `CONFIRMED` → `SHIPPED`,
         `SHIPPED` → `DELIVERED` (ordering.md BR-15). Sang `SHIPPED` thì giảm số đơn đang mở của
-        khách trong cùng giao dịch (BR-14). Không có admin huỷ đơn ở bản này.
+        khách trong cùng giao dịch (BR-14). Admin huỷ đơn dùng `DELETE` cùng đường dẫn (BR-11).
         Trả tóm tắt đơn, không trả địa chỉ giao hàng, họ tên, SĐT, `userId`: API admin không bao giờ
         trả các trường này (O8).
       tags: [admin]
@@ -680,6 +680,51 @@ paths:
           description: |
             `INVALID_STATUS_TRANSITION` chuyển sai bước, đi ngược, hoặc đơn vừa được đổi trạng thái
             bởi người khác; kèm `currentStatus` là trạng thái hiện tại của đơn
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: adminCancelOrder
+      summary: Admin huỷ đơn (khi status là PENDING, CONFIRMED hoặc SHIPPED)
+      description: |
+        Chỉ nhóm `admin` của Cognito (ordering.md BR-11). Bảng `orders` khoá `userId` + `orderId`
+        nên backend tra đơn qua index `byStatus` rồi đọc lại trên bảng chính trước khi huỷ.
+        Một giao dịch: đổi `CANCELLED`, hoàn kho mọi món (BR-12), đơn đang mở thì giảm số đơn
+        đang mở của khách (BR-14); huỷ đơn `SHIPPED` không giảm. Sau đó gửi email báo khách qua
+        worker (BR-13). Gọi lần hai trả 409, không hoàn kho thêm. Trả tóm tắt đơn, không trả
+        địa chỉ giao hàng, họ tên, SĐT, `userId` (O8).
+      tags: [admin]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/OrderId'
+      responses:
+        '200':
+          description: Tóm tắt đơn sau khi huỷ, `status` là `CANCELLED` (không có địa chỉ, O8)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: |
+            Không có đơn, hoặc đơn vừa tạo, vừa đổi trạng thái mà index `byStatus` chưa cập nhật
+            kịp (tra `userId` qua index). Body ghi thử lại sau ít giây.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: |
+            `CANNOT_CANCEL` đơn đang `DELIVERED` hoặc đã `CANCELLED`; kèm `currentStatus`
           content:
             application/problem+json:
               schema:
@@ -1341,7 +1386,7 @@ components:
           properties:
             code:
               type: string
-              enum: [INVALID_STATUS_TRANSITION]
+              enum: [INVALID_STATUS_TRANSITION, CANNOT_CANCEL]
             currentStatus:
               $ref: '#/components/schemas/OrderStatus'
 
