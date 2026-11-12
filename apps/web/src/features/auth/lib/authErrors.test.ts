@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toAuthError } from './authErrors';
+import { toAuthError, toResetPasswordError } from './authErrors';
 
 const err = (name: string, message = '') => Object.assign(new Error(message), { name });
 
@@ -68,5 +68,26 @@ describe('toAuthError', () => {
   ])('$name', ({ error, target, message }) => {
     // Act + Assert
     expect(toAuthError(error)).toEqual({ target, message });
+  });
+});
+
+describe('toResetPasswordError', () => {
+  it('toResetPasswordError_doesNotBlameEmailOrPassword_whenNotAuthorized', () => {
+    // Act + Assert: trang quên mật khẩu không có mật khẩu nào để sai
+    expect(toResetPasswordError(err('NotAuthorizedException'))).toEqual({
+      target: 'alert',
+      message: 'Không đặt lại được mật khẩu cho tài khoản này. Vui lòng liên hệ shop.',
+    });
+  });
+
+  it('toResetPasswordError_matchesToAuthError_forOtherErrors', () => {
+    // Act + Assert
+    for (const name of [
+      'CodeMismatchException',
+      'ExpiredCodeException',
+      'LimitExceededException',
+    ]) {
+      expect(toResetPasswordError(err(name))).toEqual(toAuthError(err(name)));
+    }
   });
 });

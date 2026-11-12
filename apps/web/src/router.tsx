@@ -90,6 +90,13 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // Quên mật khẩu: nhập email rồi mã + mật khẩu mới (dang-nhap.md §3.4)
+        path: 'forgot-password',
+        lazy: async () => ({
+          Component: (await import('./features/auth/pages/ForgotPasswordPage')).ForgotPasswordPage,
+        }),
+      },
+      {
         // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
         path: 'admin',
         lazy: async () => ({

@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { confirmSignIn, resendSignUpCode, signIn } from 'aws-amplify/auth';
 import { continueAfterSignIn } from '../../cart/lib/afterSignIn';
 import { LoginPage } from './LoginPage';
@@ -23,6 +23,12 @@ vi.mock('../../cart/lib/afterSignIn', () => ({ continueAfterSignIn: vi.fn() }));
 
 const cognitoError = (name: string) => Object.assign(new Error(name), { name });
 
+/** Trang /forgot-password giả: in state nhận được */
+function ForgotProbe() {
+  const location = useLocation();
+  return <pre data-testid="forgot-state">{JSON.stringify(location.state)}</pre>;
+}
+
 function renderLogin(state: object = { from: '/cart', reason: 'checkout' }) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -30,6 +36,7 @@ function renderLogin(state: object = { from: '/cart', reason: 'checkout' }) {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<p data-testid="register">register</p>} />
+          <Route path="/forgot-password" element={<ForgotProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -187,5 +194,63 @@ describe('LoginPage · bàn phím (#432)', () => {
     // Verify
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(signIn).toHaveBeenCalledWith({ username: 'an@example.com', password: 'Abcdef1!' });
+  });
+});
+
+describe('LoginPage · quên mật khẩu (#439)', () => {
+  it('forgotLink_keepsFromReasonAndTypedEmail', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderLogin({ from: '/cart', reason: 'checkout' });
+    await user.type(screen.getByLabelText('Email'), ' an@example.com ');
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Quên mật khẩu?' }));
+
+    // Assert
+    const state = JSON.parse((await screen.findByTestId('forgot-state')).textContent ?? 'null');
+    expect(state).toEqual({ from: '/cart', reason: 'checkout', email: 'an@example.com' });
+  });
+
+  it('tab_reachesSubmitBeforeForgotLink', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderLogin();
+    screen.getByLabelText('Mật khẩu').focus();
+
+    // Act + Assert: Mật khẩu → "Đăng nhập" → "Quên mật khẩu?" (dang-nhap.md §3.1)
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Đăng nhập' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('link', { name: 'Quên mật khẩu?' })).toHaveFocus();
+  });
+
+  it('notice_prefillsEmail_showsSuccess_andFocusesPassword', async () => {
+    // Arrange + Act: quay về sau khi đặt lại mật khẩu (§3.4)
+    renderLogin({
+      from: '/cart',
+      email: 'an@example.com',
+      notice: 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.',
+    });
+
+    // Assert
+    expect(screen.getByLabelText('Email')).toHaveValue('an@example.com');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.',
+    );
+    await waitFor(() => expect(screen.getByLabelText('Mật khẩu')).toHaveFocus());
+  });
+
+  it('notice_isNotForwarded_toOtherAuthPages', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderLogin({ from: '/cart', email: 'an@example.com', notice: 'Đã đặt mật khẩu mới.' });
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Quên mật khẩu?' }));
+
+    // Assert: thông báo chỉ hiện một lần ở /login, không mang sang trang khác
+    const state = JSON.parse((await screen.findByTestId('forgot-state')).textContent ?? 'null');
+    expect(state).toEqual({ from: '/cart', email: 'an@example.com' });
   });
 });

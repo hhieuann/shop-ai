@@ -94,6 +94,25 @@
 .ghost:disabled {
   color: var(--fg-subdued);
 }
+/* Link mang kiểu ghost (vd. "Quên mật khẩu?"): không gạch chân khi trỏ như nút ghost */
+a.ghost:hover {
+  text-decoration: none;
+}
+/* Nút trong chân thẻ trông như link bên cạnh (vd. "Nhập lại email", dang-nhap.md §3.4) */
+.footerLink {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg-primary);
+  font-weight: 500;
+}
+.footerLink:hover:not(:disabled) {
+  background: transparent;
+  color: var(--fg-primary-hover);
+  text-decoration: underline;
+}
 .rules {
   display: grid;
   gap: var(--space-50);
