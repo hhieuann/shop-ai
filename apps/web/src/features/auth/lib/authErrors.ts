@@ -52,3 +52,18 @@ export function toAuthError(error: unknown): AuthErrorView {
   }
   return BY_NAME[name] ?? { target: 'alert', message: 'Có lỗi xảy ra, vui lòng thử lại.' };
 }
+
+/**
+ * Lỗi ở trang quên mật khẩu (dang-nhap.md §3.4). Như toAuthError, trừ NotAuthorizedException: ở đây
+ * không có mật khẩu nào để sai (vd. tài khoản bị khoá), nên câu "Email hoặc mật khẩu không đúng." sai ngữ cảnh.
+ */
+export function toResetPasswordError(error: unknown): AuthErrorView {
+  const name = typeof error === 'object' && error && 'name' in error ? String(error.name) : '';
+  if (name === 'NotAuthorizedException') {
+    return {
+      target: 'alert',
+      message: 'Không đặt lại được mật khẩu cho tài khoản này. Vui lòng liên hệ shop.',
+    };
+  }
+  return toAuthError(error);
+}
