@@ -275,7 +275,7 @@ Hai hàng, dính đầu trang (`position: sticky; top: 0; z-index: 210`). Hàng 
 | Phần | Giá trị |
 |---|---|
 | Hàng 1 | cao **76px**, padding 16px dọc, lề `--gutter` trong khung `--content-max`; phần tử cao **44px**, cách nhau 12px |
-| Logo | ô 36px nền `--gradient-logo` bo 8px, icon `--hero-ink` + chữ "Black Magic" 22/28/700 trắng; cả cụm là link về `/` |
+| Logo | ô 36px nền `--gradient-logo` bo 8px, icon `--hero-ink` + chữ "Black Magic" 22/28/700 trắng; cả cụm là link về `/`. Favicon `apps/web/public/favicon.svg`: ô nền `--bg-chrome`, icon `Sparkles` `--fg-on-primary`; mã màu ghi thẳng trong file (svg không đọc token), đổi token thì sửa cả file này |
 | Cụm giữa | nút "Danh mục" + ô tìm kiếm thành **một cụm** `flex`, gap 12px, `flex: 0 1 872px`, `margin-inline: auto`: cụm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải (màn 1920: nút Danh mục bắt đầu khoảng 440px). Màn hẹp thì ô tìm co lại |
 | Nút "Danh mục" | `<button>` nền `--bg-chrome-strong`, chữ trắng 16/24/500, padding `10px 16px`, bo `--radius-btn` (10px), icon `Menu` 24 + chữ, gap 8px. Mở `CategoryMenu` (§9.18) dạng bảng thả xuống. Có ở mọi trang có header đầy đủ, kể cả trang chủ |
 | Ô tìm kiếm | Theo ảnh tham khảo của Hoàng (11/10/2026), dạng **viên thuốc**: `role="search"`, co giãn, **rộng tối đa 720px**; cao **48px**, nền `--bg-surface-raised` (`#FAFAFA`), **không viền**, bo `--radius-full`, padding `0 6px 0 22px`; chữ 16px `--fg-default`, placeholder "Tìm laptop, card đồ hoạ, RAM…" `--fg-placeholder` (4,54), `maxLength=30`. Nút tìm **tròn 36px nền `#1A1A1A`** (`--fg-default`), icon `Search` 18 trắng, sát phải trong ô, `aria-label="Tìm"`; hover nền `--bg-chrome-strong`. Focus: viền trắng 2px quanh cả ô (`:focus-within`) |
