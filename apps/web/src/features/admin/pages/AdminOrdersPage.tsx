@@ -12,6 +12,7 @@ import type {
 import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
 import { useAccount } from '../../../shared/auth/useSession';
 import { Alert } from '../../../shared/components/Alert';
+import { buttonClass } from '../../../shared/components/buttonClass';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { CursorPager, type PagerTarget } from '../../../shared/components/CursorPager';
@@ -34,6 +35,8 @@ const TABS: Record<
     action: string;
     dialogTitle: string;
     dialogNote: string;
+    /** Câu thêm trong hộp thoại huỷ đơn của tab này (mục 3b); rỗng thì không thêm */
+    cancelNote: string;
     empty: string;
     done: string;
   }
@@ -44,6 +47,7 @@ const TABS: Record<
     action: 'Chuyển sang Đang giao',
     dialogTitle: 'Chuyển đơn sang Đang giao?',
     dialogNote: 'Sau khi chuyển, khách không tự huỷ đơn này được nữa.',
+    cancelNote: '',
     empty: 'Không có đơn chờ giao.',
     done: 'Đang giao',
   },
@@ -53,11 +57,18 @@ const TABS: Record<
     action: 'Đã giao',
     dialogTitle: 'Xác nhận khách đã nhận đơn?',
     dialogNote: 'Đơn chuyển sang Đã giao và không đổi lại được.',
+    cancelNote: 'Đơn đang giao: báo đơn vị vận chuyển dừng giao.',
     empty: 'Không có đơn đang giao.',
     done: 'Đã giao',
   },
 };
 const STATUSES = Object.keys(TABS) as AdminListStatus[];
+
+/** Hộp thoại đang mở: chuyển trạng thái (mục 3) hoặc huỷ đơn (mục 3b) cho một đơn */
+interface DialogTarget {
+  kind: 'advance' | 'cancel';
+  order: AdminOrderSummary;
+}
 
 /** location.state: cursor các trang trước (như trang danh sách sản phẩm, không lên URL) */
 interface PageState {
@@ -161,8 +172,8 @@ function AdminOrders() {
     staleTime: 0,
   });
 
-  // Đơn đang hỏi lại trước khi chuyển; null thì hộp thoại đóng
-  const [target, setTarget] = useState<AdminOrderSummary | null>(null);
+  // Đơn đang hỏi lại trước khi chuyển hoặc huỷ; null thì hộp thoại đóng
+  const [target, setTarget] = useState<DialogTarget | null>(null);
   const advance = useMutation({
     mutationFn: (order: AdminOrderSummary) =>
       api.patch<AdminOrderSummary>(`/admin/orders/${order.orderId}`, { status: tab.next }),
@@ -181,9 +192,34 @@ function AdminOrders() {
       }
     },
   });
+  // Huỷ đơn (ordering.md BR-11): hoàn kho, khách nhận thư huỷ; không hoàn tác
+  const cancel = useMutation({
+    mutationFn: (order: AdminOrderSummary) =>
+      api.delete<AdminOrderSummary>(`/admin/orders/${order.orderId}`),
+    onSuccess: (order) => {
+      setTarget(null);
+      requestAnimationFrame(() => headingRef.current?.focus());
+      announce.polite(`Đã huỷ đơn ${order.orderId.slice(-8)}.`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
+    },
+    onError: (err) => {
+      if (err instanceof ApiError && err.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
+      }
+    },
+  });
+  // Hai thao tác không chạy chồng: đang gửi một lệnh thì không mở hộp thoại khác
+  const sending = advance.isPending || cancel.isPending;
+  const open = (kind: DialogTarget['kind'], order: AdminOrderSummary) => {
+    if (sending) return;
+    advance.reset();
+    cancel.reset();
+    setTarget({ kind, order });
+  };
 
   if (error instanceof ApiError && error.status === 403) return <Forbidden />;
   if (advance.error instanceof ApiError && advance.error.status === 403) return <Forbidden />;
+  if (cancel.error instanceof ApiError && cancel.error.status === 403) return <Forbidden />;
 
   const prevCursors = readPrevCursors(location.state, page);
   const next: PagerTarget | undefined = data?.nextCursor
@@ -289,17 +325,26 @@ function AdminOrders() {
                         </span>
                       </td>
                       <td role="cell" className={styles.action}>
-                        <button
-                          type="button"
-                          className={styles.button}
-                          aria-label={`${tab.action}: đơn ${order.orderId}`}
-                          onClick={() => {
-                            advance.reset();
-                            setTarget(order);
-                          }}
-                        >
-                          {tab.action}
-                        </button>
+                        <div className={styles.actions}>
+                          <button
+                            type="button"
+                            className={styles.button}
+                            aria-label={`${tab.action}: đơn ${order.orderId}`}
+                            disabled={sending}
+                            onClick={() => open('advance', order)}
+                          >
+                            {tab.action}
+                          </button>
+                          <button
+                            type="button"
+                            className={buttonClass({ variant: 'danger', size: 'sm' })}
+                            aria-label={`Huỷ đơn: đơn ${order.orderId}`}
+                            disabled={sending}
+                            onClick={() => open('cancel', order)}
+                          >
+                            Huỷ đơn
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -311,7 +356,7 @@ function AdminOrders() {
         )}
       </div>
 
-      {target && (
+      {target?.kind === 'advance' && (
         <ConfirmDialog
           title={tab.dialogTitle}
           confirmLabel={tab.action}
@@ -319,26 +364,75 @@ function AdminOrders() {
           busyLabel="Đang chuyển…"
           busy={advance.isPending}
           error={advance.error ? <AdvanceError error={advance.error} /> : undefined}
-          onConfirm={() => advance.mutate(target)}
+          onConfirm={() => advance.mutate(target.order)}
           onClose={() => setTarget(null)}
         >
-          Đơn <span className={styles.id}>{target.orderId}</span> · {target.itemCount} món ·{' '}
-          <strong className={styles.dialogTotal}>{formatVnd(target.totalAmount)}</strong>.{' '}
-          {tab.dialogNote}
+          <OrderLine order={target.order} /> {tab.dialogNote}
+        </ConfirmDialog>
+      )}
+      {target?.kind === 'cancel' && (
+        // pages/admin-don-hang.md mục 3b: "Giữ đơn" đứng trước nên được focus trước
+        <ConfirmDialog
+          title="Huỷ đơn này?"
+          confirmLabel="Huỷ đơn"
+          cancelLabel="Giữ đơn"
+          busyLabel="Đang huỷ…"
+          tone="danger"
+          busy={cancel.isPending}
+          error={cancel.error ? <CancelError error={cancel.error} /> : undefined}
+          onConfirm={() => cancel.mutate(target.order)}
+          onClose={() => setTarget(null)}
+        >
+          <OrderLine order={target.order} /> Hàng được cộng lại vào kho và khách nhận email báo huỷ.
+          Không hoàn tác được.{tab.cancelNote && ` ${tab.cancelNote}`}
         </ConfirmDialog>
       )}
     </div>
   );
 }
 
+/** "Đơn {mã} · N món · {tổng tiền}." đầu nội dung hộp thoại */
+function OrderLine({ order }: { order: AdminOrderSummary }) {
+  return (
+    <>
+      Đơn <span className={styles.id}>{order.orderId}</span> · {order.itemCount} món ·{' '}
+      <strong className={styles.dialogTotal}>{formatVnd(order.totalAmount)}</strong>.
+    </>
+  );
+}
+
+/** Nhãn tiếng Việt của currentStatus trong lỗi 409; không rõ thì undefined */
+function statusLabel(current: unknown): string | undefined {
+  return typeof current === 'string' && current in STATUS_LABEL
+    ? STATUS_LABEL[current as keyof typeof STATUS_LABEL]
+    : undefined;
+}
+
+/** Câu báo lỗi trong hộp thoại huỷ đơn (pages/admin-don-hang.md mục 3b) */
+function CancelError({ error }: { error: Error }) {
+  if (error instanceof ApiError && error.code === 'CANNOT_CANCEL') {
+    const label = statusLabel(error.currentStatus);
+    return (
+      <Alert tone="warning">
+        {label ? `Đơn đã ở trạng thái ${label}, không huỷ được.` : 'Đơn không huỷ được.'} Danh sách
+        đã được tải lại.
+      </Alert>
+    );
+  }
+  if (error instanceof ApiError && error.status === 404) {
+    return (
+      <Alert tone="warning">
+        Không tìm thấy đơn. Nếu đơn vừa đổi trạng thái, thử lại sau ít giây.
+      </Alert>
+    );
+  }
+  return <Alert tone="danger">Chưa huỷ được đơn. Thử lại sau.</Alert>;
+}
+
 /** Câu báo lỗi trong hộp thoại (pages/admin-don-hang.md §3) */
 function AdvanceError({ error }: { error: Error }) {
   if (error instanceof ApiError && error.code === 'INVALID_STATUS_TRANSITION') {
-    const current = error.currentStatus;
-    const label =
-      typeof current === 'string' && current in STATUS_LABEL
-        ? STATUS_LABEL[current as keyof typeof STATUS_LABEL]
-        : undefined;
+    const label = statusLabel(error.currentStatus);
     return (
       <Alert tone="warning">
         {label ? `Đơn đã ở trạng thái ${label}.` : 'Đơn vừa đổi trạng thái.'} Danh sách đã được tải
