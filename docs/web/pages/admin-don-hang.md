@@ -1,8 +1,8 @@
 # Quản trị đơn hàng `/admin`
 
-Code: `features/admin/pages/AdminOrdersPage.tsx`, `shared/components/ConfirmDialog.tsx`, `shared/api/types.ts` (type sinh từ contract). API: `GET /api/v1/admin/orders`, `PATCH /api/v1/admin/orders/{orderId}` (contracts/openapi.yaml, ordering.md BR-15). Đọc kèm [design-system.md](../design-system.md).
+Code: `features/admin/pages/AdminOrdersPage.tsx`, `shared/components/ConfirmDialog.tsx`, `shared/api/types.ts` (type sinh từ contract). API: `GET /api/v1/admin/orders`, `PATCH /api/v1/admin/orders/{orderId}` (contracts/openapi.yaml, ordering.md BR-15), `DELETE /api/v1/admin/orders/{orderId}` (huỷ đơn, BR-11). Đọc kèm [design-system.md](../design-system.md).
 
-Người làm: **Hoàng** (#382). Phạm vi bản `v1.0.0-rc.1`: admin chuyển đơn `CONFIRMED` → `SHIPPED` → `DELIVERED`. **Không có** admin huỷ đơn, thêm sản phẩm, xem đơn đã giao hay đã huỷ (làm sau rc.1).
+Người làm: **Hoàng** (#382). Phạm vi: admin chuyển đơn `CONFIRMED` → `SHIPPED` → `DELIVERED` (rc.1) và huỷ đơn (bản sau `v1.0.0`, mục 3b, #450). **Không có** thêm sản phẩm, xem đơn đã giao hay đã huỷ.
 
 ## 1. Ai thấy gì
 
@@ -34,7 +34,7 @@ Khối trắng bo 16 (`--radius-2xl`), padding `8px 24px`, chứa bảng:
 | Số món | số, căn phải |
 | Tổng tiền | `Price` đậm, căn phải |
 | Trạng thái | nhãn §9.7: "Đã xác nhận" (primary) hoặc "Đang giao" (accent) |
-| (nút) | nút phụ cỡ `sm`: "Chuyển sang Đang giao" ở tab Chờ giao, "Đã giao" ở tab Đang giao |
+| (nút) | nút phụ cỡ `sm`: "Chuyển sang Đang giao" ở tab Chờ giao, "Đã giao" ở tab Đang giao; thêm nút "Huỷ đơn" ở cả hai tab (mục 3b; kiểu nút chốt ở #450 kèm ảnh mẫu) |
 
 Không dùng nút `primary` trong bảng (mỗi màn hình một nút chính). Tiêu đề cột 14/20/600 `--fg-muted`, dòng cách nhau bằng viền `--border-divider`.
 
@@ -56,6 +56,21 @@ Mỗi dòng bảng thành một thẻ trắng bo 12 (`--radius-xl`), padding 16,
    - 403: chuyển sang màn "không có quyền".
    - Lỗi khác: "Chưa chuyển được đơn. Thử lại sau." Không đóng hộp thoại.
 
+## 3b. Huỷ đơn (ordering.md BR-11, bản sau `v1.0.0`)
+
+1. Bấm "Huỷ đơn" trên dòng (cả hai tab) → `ConfirmDialog` `tone="danger"` (§9.14):
+   - tiêu đề "Huỷ đơn này?";
+   - nội dung "Đơn {mã} · N món · {tổng tiền}. Hàng được cộng lại vào kho và khách nhận email báo huỷ. Không hoàn tác được.";
+   - tab Đang giao thêm câu "Đơn đang giao: báo đơn vị vận chuyển dừng giao.";
+   - nút "Giữ đơn" (secondary, focus trước) + "Huỷ đơn" (danger).
+2. Bấm "Huỷ đơn" → `DELETE`; nút đổi "Đang huỷ…" (`aria-busy`), chặn bấm lại.
+3. Thành công: đóng hộp thoại, tải lại danh sách, focus `h1`, `LiveAnnouncer` "Đã huỷ đơn {8 ký tự cuối}".
+4. Lỗi:
+   - 409 `CANNOT_CANCEL`: `Alert` warning trong hộp thoại "Đơn đã ở trạng thái {nhãn của currentStatus}, không huỷ được. Danh sách đã được tải lại." rồi tải lại danh sách.
+   - 404: `Alert` "Không tìm thấy đơn. Nếu đơn vừa đổi trạng thái, thử lại sau ít giây."
+   - 403: chuyển sang màn "không có quyền".
+   - Lỗi khác: "Chưa huỷ được đơn. Thử lại sau." Không đóng hộp thoại.
+
 ## 4. Trạng thái tải, rỗng, lỗi (§9.12)
 
 - Đang tải: dòng "Đang tải đơn…".
@@ -71,6 +86,6 @@ Mỗi dòng bảng thành một thẻ trắng bo 12 (`--radius-xl`), padding 16,
 - Đổi tab là đổi URL nên hai tab là link trong `<nav aria-label="Trạng thái đơn">`, link đang chọn có `aria-current="page"`; không dùng mẫu tab của ARIA (`tablist`, `tab`, `tabpanel`) vì mẫu đó cần phím mũi tên và không đổi URL. Back của trình duyệt quay lại tab trước.
 - Bảng ghi vai trò tường minh (`table`, `rowgroup`, `row`, `columnheader`, `cell`) vì điện thoại đổi `display` của dòng, ô sang grid.
 - Chuyển đơn thành công: dòng vừa bấm rời danh sách nên focus chuyển lên tiêu đề trang (`h1` có `tabIndex={-1}`).
-- Nút trên dòng có nhãn đọc kèm mã đơn: "Chuyển sang Đang giao: đơn {mã}".
+- Nút trên dòng có nhãn đọc kèm mã đơn: "Chuyển sang Đang giao: đơn {mã}", "Huỷ đơn: đơn {mã}".
 - Hộp thoại dùng `<dialog>` mở bằng `showModal()` (giữ focus, Esc đóng), `aria-labelledby` tiêu đề, `aria-describedby` nội dung.
 - Chuyển xong đọc câu ngắn qua `LiveAnnouncer`.
