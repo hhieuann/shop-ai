@@ -1193,6 +1193,38 @@ export class ApiStack extends Stack {
     });
     userPool.addTrigger(UserPoolOperation.PRE_SIGN_UP, preSignUpFn);
 
+    // Đặt lại mật khẩu xong thì đăng xuất mọi thiết bị (threat model L9): Cognito không tự thu hồi refresh
+    // token. Trigger cũng chạy khi xác nhận đăng ký, code bỏ qua trường hợp đó
+    const postConfirmationFn = this.noDataFunction(
+      'PostConfirmation',
+      'account',
+      removalPolicy,
+      'postConfirmationLambda.ts',
+      'account-session',
+      // Cognito chờ trigger tối đa 5 giây, giống Pre sign-up
+      { memorySize: 512, timeout: Duration.seconds(5) },
+    );
+    // Như Pre sign-up: userpool/* để tránh phụ thuộc vòng, giới hạn bằng tag env cùng môi trường
+    postConfirmationFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:AdminUserGlobalSignOut'],
+        resources: [
+          Stack.of(this).formatArn({
+            service: 'cognito-idp',
+            resource: 'userpool',
+            resourceName: '*',
+          }),
+        ],
+        conditions: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
+      }),
+    );
+    Validations.of(postConfirmationFn).acknowledge({
+      id: `AwsSolutions-IAM5[Resource::arn:aws:cognito-idp:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:userpool/*]`,
+      reason:
+        'Chỉ AdminUserGlobalSignOut để thu hồi phiên sau khi đặt lại mật khẩu, chỉ trên pool có tag env cùng môi trường; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
+    });
+    userPool.addTrigger(UserPoolOperation.POST_CONFIRMATION, postConfirmationFn);
+
     const webClient = userPool.addClient('WebClient', {
       userPoolClientName: `${shopEnv.stackPrefix}-web`,
       authFlows: { userSrp: true },
