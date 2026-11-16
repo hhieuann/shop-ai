@@ -324,6 +324,52 @@ describe('ApiStack', () => {
     });
   });
 
+  it('userPool_runsPostConfirmationTriggerThatCanOnlySignOutUsers', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: đặt lại mật khẩu xong thì đăng xuất mọi thiết bị (threat model L9)
+    template.hasResourceProperties('AWS::Cognito::UserPool', {
+      LambdaConfig: { PostConfirmation: Match.anyValue() },
+    });
+    // Assert: Lambda trigger chỉ có quyền thu hồi phiên, không đọc hay sửa thông tin người dùng
+    const fns = template.findResources('AWS::Lambda::Function', {
+      Properties: { Environment: { Variables: { POWERTOOLS_SERVICE_NAME: 'account-session' } } },
+    });
+    expect(Object.keys(fns)).toHaveLength(1);
+    const roleRef = (Object.values(fns)[0] as { Properties: { Role: { 'Fn::GetAtt': string[] } } })
+      .Properties.Role['Fn::GetAtt'][0];
+    const policies = Object.values(template.findResources('AWS::IAM::Policy')) as {
+      Properties: {
+        Roles: { Ref: string }[];
+        PolicyDocument: { Statement: { Action: string | string[] }[] };
+      };
+    }[];
+    const actions = policies
+      .filter((p) => p.Properties.Roles.some((r) => r.Ref === roleRef))
+      .flatMap((p) => p.Properties.PolicyDocument.Statement.flatMap((st) => st.Action));
+    expect(actions.filter((a) => a.startsWith('cognito-idp:'))).toEqual([
+      'cognito-idp:AdminUserGlobalSignOut',
+    ]);
+  });
+
+  it.each([dev, prod])('postConfirmation_signOutOnlyOnUserPoolOfSameEnv_$name', (shopEnv) => {
+    // Arrange: dev, staging, prod chung một tài khoản (ADR-0013); giới hạn bằng tag env như Pre sign-up
+    const template = synth(shopEnv);
+
+    // Assert
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: 'cognito-idp:AdminUserGlobalSignOut',
+            Condition: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
+          }),
+        ]),
+      },
+    });
+  });
+
   it('e2eClient_existsOnlyOutsideProd_andUsesPasswordAuth', () => {
     // Assert: dev có client E2E cho Newman (USER_PASSWORD_AUTH), authorizer chấp nhận token của nó
     const devTemplate = synth(dev);
