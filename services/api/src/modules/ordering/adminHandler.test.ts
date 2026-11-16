@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { apiEvent, parseBody } from '../../../test/helpers/http.js';
 import { makeAdminHandler, type AdminOrderUseCases } from './adminHandler.js';
 import {
+  AdminCannotCancelError,
   AdminOrderNotFoundError,
   InvalidOrderCursorError,
   InvalidStatusTransitionError,
@@ -10,6 +11,7 @@ import type { AdminOrderSummary } from './domain/order.js';
 
 const LIST = 'GET /api/v1/admin/orders';
 const UPDATE = 'PATCH /api/v1/admin/orders/{orderId}';
+const CANCEL = 'DELETE /api/v1/admin/orders/{orderId}';
 const ADMIN = 'admin-sub-1';
 const ORDER_ID = '01K8GQ5Z3XM2T9V4B6N8P0R2S4';
 /** Claim nhóm như HTTP API thật gửi tới Lambda: mảng bị đổi thành chuỗi */
@@ -27,6 +29,7 @@ function useCases() {
   return {
     listAdminOrders: vi.fn().mockResolvedValue({ items: [SUMMARY], nextCursor: 'next' }),
     advanceOrderStatus: vi.fn().mockResolvedValue(SUMMARY),
+    adminCancelOrder: vi.fn().mockResolvedValue({ ...SUMMARY, status: 'CANCELLED' }),
   } satisfies AdminOrderUseCases;
 }
 
@@ -225,5 +228,111 @@ describe('admin handler · PATCH /api/v1/admin/orders/{orderId}', () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.body).not.toContain('dynamo hỏng');
+  });
+});
+
+function cancelEvent(overrides: { claims?: Record<string, string | string[]> } = {}) {
+  return apiEvent({
+    routeKey: CANCEL,
+    userId: ADMIN,
+    claims: overrides.claims ?? ADMIN_CLAIMS,
+    pathParameters: { orderId: ORDER_ID },
+  });
+}
+
+describe('admin handler · huỷ đơn (BR-11)', () => {
+  it('cancel_returns401_whenNoSub', async () => {
+    // Arrange
+    const uc = useCases();
+    const event = apiEvent({
+      routeKey: CANCEL,
+      claims: ADMIN_CLAIMS,
+      pathParameters: { orderId: ORDER_ID },
+    });
+
+    // Act
+    const res = await makeAdminHandler(uc)(event);
+
+    // Assert
+    expect(res.statusCode).toBe(401);
+    // Verify
+    expect(uc.adminCancelOrder).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Record<string, string | string[]>]>([
+    ['không có claim nhóm', {}],
+    ['nhóm khác dạng mảng', { 'cognito:groups': ['customer'] }],
+  ])('cancel_returns403_andCallsNothing_when_%s', async (_name, claims) => {
+    // Arrange
+    const uc = useCases();
+
+    // Act
+    const res = await makeAdminHandler(uc)(cancelEvent({ claims }));
+
+    // Assert
+    expect(res.statusCode).toBe(403);
+    expect(parseBody(res)).toMatchObject({ code: 'FORBIDDEN' });
+    // Verify: không đọc, không ghi gì trước khi biết là admin
+    expect(uc.adminCancelOrder).not.toHaveBeenCalled();
+  });
+
+  it('cancel_returns200NoStore_andPassesAdminIdAndCorrelationId', async () => {
+    // Arrange
+    const uc = useCases();
+    const event = cancelEvent();
+
+    // Act
+    const res = await makeAdminHandler(uc)(event);
+
+    // Assert
+    expect(res.statusCode).toBe(200);
+    expect(res.headers?.['cache-control']).toBe('no-store');
+    expect(parseBody(res)).toEqual({ ...SUMMARY, status: 'CANCELLED' });
+    // Verify: adminId lấy từ token, correlationId là requestId để nối log tới worker
+    expect(uc.adminCancelOrder).toHaveBeenCalledExactlyOnceWith({
+      adminId: ADMIN,
+      orderId: ORDER_ID,
+      correlationId: event.requestContext.requestId,
+    });
+  });
+
+  it('cancel_returns409WithCurrentStatus_whenCannotCancel', async () => {
+    // Arrange
+    const uc = useCases();
+    uc.adminCancelOrder.mockRejectedValue(new AdminCannotCancelError(ORDER_ID, 'DELIVERED'));
+
+    // Act
+    const res = await makeAdminHandler(uc)(cancelEvent());
+
+    // Assert
+    expect(res.statusCode).toBe(409);
+    expect(parseBody(res)).toMatchObject({ code: 'CANNOT_CANCEL', currentStatus: 'DELIVERED' });
+  });
+
+  it('cancel_returns404_whenOrderNotFound', async () => {
+    // Arrange
+    const uc = useCases();
+    uc.adminCancelOrder.mockRejectedValue(new AdminOrderNotFoundError(ORDER_ID));
+
+    // Act
+    const res = await makeAdminHandler(uc)(cancelEvent());
+
+    // Assert
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('cancel_returns500WithoutDetail_whenCancelDisabled', async () => {
+    // Arrange: Lambda chưa có biến của hạ tầng #449 nên use case ném lỗi thường
+    const uc = useCases();
+    uc.adminCancelOrder.mockRejectedValue(
+      new Error('Huỷ đơn admin chưa bật: thiếu PRODUCTS_TABLE, ORDERS_QUEUE_URL'),
+    );
+
+    // Act
+    const res = await makeAdminHandler(uc)(cancelEvent());
+
+    // Assert: không lộ tên biến môi trường ra ngoài
+    expect(res.statusCode).toBe(500);
+    expect(JSON.stringify(parseBody(res))).not.toContain('PRODUCTS_TABLE');
   });
 });
