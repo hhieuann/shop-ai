@@ -199,7 +199,10 @@ export class Monitoring extends Construct {
           'dlq-orders',
         );
         // Đơn đã ghi mà không gửi được tin cho worker (ordering.md, luồng SQS bước 1): metric do
-        // Lambda ordering ghi bằng Powertools Metrics, namespace = tiền tố stack, dimension service
+        // Lambda ordering ghi bằng Powertools Metrics, namespace = tiền tố stack, dimension service.
+        // Lambda admin (huỷ đơn, BR-11) cũng ghi metric này với service=ordering qua orderingMetrics()
+        // (services/api/.../powertoolsOrderMetrics.ts, #448) dù POWERTOOLS_SERVICE_NAME là
+        // ordering-admin; đổi một trong hai giá trị thì alarm không thấy lỗi gửi tin huỷ của admin
         addAlarm(
           'OrderEnqueueFailedAlarm',
           'order-enqueue-failed',
