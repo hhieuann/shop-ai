@@ -9,7 +9,7 @@ Không có alarm riêng cho WAF (đã hết 10 alarm miễn phí). Runbook này 
 | 10 | `AWSManagedRulesAmazonIpReputationList` | Chặn |
 | 20 | `RateLimitPerIp`: quá 1000 request `/api/` trong 5 phút mỗi IP | Chặn |
 | 30 | `RateLimitEventsPerIp`: quá 300 request `/api/v1/events` trong 5 phút mỗi IP | Chặn |
-| 40 | `AWSManagedRulesCommonRuleSet` | **Chỉ đếm** tới khi xem log sau deploy đầu |
+| 40 | `AWSManagedRulesCommonRuleSet` | Chặn từ `v1.0.0`. Chỉ đếm ở `v1.0.0-rc.1`; log prod 12/11–16/11 không có đếm nhầm (#457). Từ `v1.0.0`, request thử ở bước 1 dưới đây bị chặn (403) và có dòng `BLOCK` với `terminatingRuleId` là `AWSManagedRulesCommonRuleSet` thay cho dòng `COUNT` |
 | 50 | `AWSManagedRulesKnownBadInputsRuleSet` | Chặn |
 
 ## Kiểm tra sau lần deploy prod đầu (v1.0.0-rc.1)
