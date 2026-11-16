@@ -42,10 +42,12 @@ function pathStartsWith(searchString: string): CfnWebACL.StatementProperty {
 }
 
 /**
- * Core rule set chỉ đếm cho tới khi xem log sau lần deploy prod đầu (v1.0.0-rc.1); đổi thành false bằng
- * PR riêng khi log không có chặn nhầm. Các rule còn lại chặn ngay vì ít khả năng nhầm.
+ * Core rule set chỉ đếm ở lần deploy prod đầu (v1.0.0-rc.1) để xem có chặn nhầm không. Log prod
+ * 12/11–16/11: 678 request, chỉ 74 request bị đếm và đều là request thử XSS (payload ở query hoặc
+ * `Referer`), không có request thật nào bị đếm nhầm, nên chặn từ v1.0.0 (runbook waf.md).
+ * Có rule con chặn nhầm thì đưa riêng rule con đó về đếm bằng `ruleActionOverrides`, không bật lại cả nhóm.
  */
-export const COMMON_RULE_SET_COUNT_ONLY = true;
+export const COMMON_RULE_SET_COUNT_ONLY = false;
 
 /**
  * WAF cho CloudFront theo ADR-0006 (cập nhật 29/10/2026): web ACL scope CLOUDFRONT bắt buộc nằm ở
