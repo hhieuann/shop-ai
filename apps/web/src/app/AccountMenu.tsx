@@ -8,8 +8,7 @@ import {
   type FocusEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ChevronDown,
   LayoutDashboard,
@@ -21,18 +20,10 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
-import { queryKeys } from '../shared/api/queryKeys';
-import { signOut } from '../shared/auth/token';
-import { clearCartSession } from '../features/cart/lib/afterSignIn';
-import { clearCheckoutItems } from '../features/orders/lib/checkoutStorage';
+import { useSignOut } from '../features/account/lib/useSignOut';
 import { useAccount } from '../shared/auth/useSession';
 import { DESKTOP_QUERY } from '../shared/hooks/useMediaQuery';
 import styles from './AccountMenu.module.css';
-
-/** Trang bắt buộc đăng nhập: đăng xuất ở đây thì về trang chủ (design-system §9.17) */
-const SIGNED_IN_ONLY = ['/orders', '/checkout', '/admin'];
-const isSignedInOnly = (path: string) =>
-  SIGNED_IN_ONLY.some((p) => path === p || path.startsWith(`${p}/`));
 
 /**
  * Nút tài khoản trên header và bảng thả xuống (docs/web/design-system.md §9.17).
@@ -43,8 +34,7 @@ export function AccountMenu() {
   const { status, user } = useAccount();
   const signedIn = status === 'signedIn';
   const location = useLocation();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const signOutAndLeave = useSignOut();
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -120,18 +110,10 @@ export function AccountMenu() {
     if (open && next && !rootRef.current?.contains(next)) setOpen(false);
   };
 
+  // Dọn giỏ, dữ liệu phiên, bộ nhớ đệm; ở trang bắt buộc đăng nhập thì về / (useSignOut)
   const doSignOut = async () => {
-    await signOut();
-    // Đăng xuất là hết phiên trên trình duyệt này: giỏ khách rỗng, không để lại giỏ và đơn của
-    // người vừa dùng (account.md BR-09). Gợi ý "Dành cho bạn" cũng là dữ liệu riêng của người đó.
-    // Danh sách sản phẩm vẫn giữ trong bộ nhớ đệm.
-    clearCartSession(queryClient);
-    clearCheckoutItems();
-    queryClient.removeQueries({ queryKey: queryKeys.orders.all });
-    queryClient.removeQueries({ queryKey: queryKeys.recs.all });
-    queryClient.removeQueries({ queryKey: queryKeys.admin.all });
+    await signOutAndLeave();
     close(true);
-    if (isSignedInOnly(location.pathname)) navigate('/', { replace: true });
   };
 
   const panelStyle = mobilePos ? { top: mobilePos.top } : undefined;
