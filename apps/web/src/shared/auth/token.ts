@@ -156,6 +156,15 @@ function devSignOut({ global }: Required<SignOutOptions>) {
 
 let signOutHandler: SignOutHandler = devSignOut;
 
+// Số lần đăng xuất chủ động (signOut thành công) từ lúc mở web. Trang bắt buộc đăng nhập so số này với
+// lúc trang mở để biết phiên hết vì khách tự đăng xuất (về /) hay vì hết hạn, bị thu hồi (sang /login)
+let signOutCount = 0;
+
+/** Số lần đăng xuất chủ động đã xong (useRequireSignIn) */
+export function getSignOutCount(): number {
+  return signOutCount;
+}
+
 export function setSignOutHandler(next: SignOutHandler) {
   signOutHandler = next;
 }
@@ -168,6 +177,8 @@ export function setSignOutHandler(next: SignOutHandler) {
  */
 export async function signOut(options: SignOutOptions = {}): Promise<void> {
   await signOutHandler({ global: options.global ?? false });
+  // Chỉ tăng khi đăng xuất xong; lỗi (vd. đăng xuất mọi nơi lỗi) thì phiên còn, số giữ nguyên
+  signOutCount += 1;
   notifyAuthChanged();
 }
 

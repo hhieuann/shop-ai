@@ -4,7 +4,7 @@ import { Banknote, ShoppingCart } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
-import { useSession } from '../../../shared/auth/useSession';
+import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
 import { Alert } from '../../../shared/components/Alert';
 import { Field } from '../../../shared/components/Field';
 import { FreeShipping, OrderSummary } from '../../../shared/components/OrderSummary';
@@ -115,12 +115,8 @@ export function CheckoutPage() {
 
   // Đặt hàng bắt buộc đăng nhập (ordering BR-01): chưa đăng nhập thì sang trang đăng nhập,
   // xong quay lại đây (các món đã chọn vẫn nằm trong sessionStorage)
-  const session = useSession();
-  useEffect(() => {
-    if (session === 'guest') {
-      navigate('/login', { replace: true, state: { from: '/checkout', reason: 'checkout' } });
-    }
-  }, [session, navigate]);
+  // Tự đăng xuất ở trang này thì về / như trang bắt buộc đăng nhập khác (useRequireSignIn)
+  useRequireSignIn({ reason: 'checkout' });
 
   // Thông báo lỗi vừa hiện → chuyển focus tới để người dùng bàn phím, trình đọc màn hình biết
   useEffect(() => {

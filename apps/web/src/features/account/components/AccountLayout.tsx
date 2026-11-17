@@ -16,10 +16,16 @@ import styles from './AccountLayout.module.css';
  * "Đổi mục" + bảng chọn mục (<1280), nội dung là trang con. Bắt buộc đăng nhập.
  */
 export function AccountLayout() {
-  const leavingRef = useRef(false);
-  const session = useRequireSignIn({ isLeaving: () => leavingRef.current });
+  const session = useRequireSignIn();
   // Hồ sơ đọc riêng (useAccount): chờ có cả hồ sơ mới vẽ, để đầu cột trái không nháy tên trống
   const { status, user } = useAccount();
+  const signedIn = session === 'signedIn' && status === 'signedIn';
+  // Đã vẽ một lần thì giữ nội dung khi phiên vừa hết: khách tự đăng xuất thì useSignOut (ở đây hoặc ở
+  // trang con) đang chuyển trang; hết hạn thì useRequireSignIn chuyển sang /login
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (signedIn) setShown(true);
+  }, [signedIn]);
   const { pathname } = useLocation();
   const signOutAndLeave = useSignOut();
   const section = currentSection(pathname);
@@ -37,20 +43,11 @@ export function AccountLayout() {
     if (returnFocus) switcherRef.current?.focus();
   }, []);
 
-  const beginLeave = useCallback(() => {
-    leavingRef.current = true;
-  }, []);
+  // Đăng xuất ở cột trái, bảng chọn mục: về trang chủ (useSignOut)
+  const signOut = () => void signOutAndLeave();
 
-  // Đăng xuất ở cột trái, bảng chọn mục: về trang chủ. Đánh dấu đang rời trang trước, để khung trang
-  // không chuyển sang /login khi phiên vừa hết (useSignOut đăng xuất xong mới về /)
-  const signOut = () => {
-    beginLeave();
-    void signOutAndLeave();
-  };
-
-  // Chưa biết phiên, hoặc vừa thành khách (đang chuyển sang /login): chưa vẽ nội dung.
-  // Trang đang tự rời đi (beginLeave) thì vẫn vẽ để trang chuyển trang được.
-  if ((session !== 'signedIn' || status !== 'signedIn') && !leavingRef.current) return null;
+  // Chưa biết phiên, chưa có hồ sơ, hoặc mở trang khi chưa đăng nhập (đang sang /login): chưa vẽ
+  if (!signedIn && !shown) return null;
 
   const crumbs: BreadcrumbItem[] =
     section.id === 'info'
@@ -85,7 +82,7 @@ export function AccountLayout() {
               <ChevronDown size={16} aria-hidden="true" />
             </span>
           </button>
-          <Outlet context={{ user, beginLeave } satisfies AccountOutletContext} />
+          <Outlet context={{ user } satisfies AccountOutletContext} />
         </div>
       </div>
       {sheetOpen && (
