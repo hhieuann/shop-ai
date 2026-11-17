@@ -1,6 +1,6 @@
 # Ngoài phạm vi giao diện
 
-Người viết: Hoàng · Ngày: 06/10/2026 · Thêm mục: 11/10/2026 · Sửa: 13/10/2026 (trang danh sách)
+Người viết: Hoàng · Ngày: 06/10/2026 · Thêm mục: 11/10/2026 · Sửa: 13/10/2026 (trang danh sách), 16/11/2026 (trang tài khoản)
 
 Các tính năng cửa hàng điện tử lớn thường có, nhưng **không có** trong tài liệu dự án (`project-plan.md`, `docs/business/`). **Không thiết kế, không code** các mục dưới đây, trừ khi tài liệu nghiệp vụ được bổ sung trước.
 
@@ -26,13 +26,14 @@ Các tính năng cửa hàng điện tử lớn thường có, nhưng **không c
 | Thuế, gói quà | Tổng = giá × số lượng, không phát sinh (ordering BR-06) |
 | Email liên hệ và đăng ký nhận SMS ở bước đặt hàng | Đã có email tài khoản; số điện thoại chỉ để giao hàng |
 | Đăng nhập bằng số điện thoại, passkey, Google, Apple; tài khoản doanh nghiệp; số điện thoại khôi phục | Cognito email + mật khẩu (ADR-0007) |
-| Trang tài khoản tổng quan, sổ địa chỉ, theo dõi vận chuyển, đổi trả | Không có trong nghiệp vụ |
-| Trong menu tài khoản: hồ sơ (Account), phương thức thanh toán, thẻ tín dụng, gói dịch vụ, sản phẩm đã lưu, cài đặt tài khoản, hỗ trợ, ảnh đại diện | Không có trang nào trong số này; chỉ COD; không có yêu thích (design-system §9.17) |
+| Trang tài khoản tổng quan (bảng điều khiển), sổ địa chỉ, theo dõi vận chuyển, đổi trả | Không có trong nghiệp vụ. Trang tài khoản chỉ có đổi username, xem email, đổi mật khẩu, đăng xuất (account.md BR-06, BR-14; [pages/tai-khoan.md](pages/tai-khoan.md)) |
+| Trong menu tài khoản: phương thức thanh toán, thẻ tín dụng, gói dịch vụ, sản phẩm đã lưu, hỗ trợ, ảnh đại diện | Không có trang nào trong số này; chỉ COD; không có yêu thích. Menu chỉ có "Tài khoản của tôi", "Trang quản trị" (admin), "Đăng xuất" (design-system §9.17) |
 | Quyền lợi tài khoản "miễn phí vận chuyển", "thanh toán nhanh", "*Áp dụng có điều kiện" | Mọi đơn đều miễn phí vận chuyển (ordering BR-06); không lưu địa chỉ hay thẻ; không có điều kiện ưu đãi |
 | Các mục trang tham khảo có (11/10/2026): banner khuyến mãi và dải banner nhỏ, ô "Mua kèm giá ưu đãi", ô "Tặng …", nhãn "Giảm N%", flash sale | catalog BR-05: không có giảm giá, quà tặng hay khuyến mãi. Chỗ banner ở trang chủ thay bằng nội dung có thật (trang-chu.md §3.2–3.4) |
 | Nút lọc dòng máy, hãng trong khối sản phẩm (PC I3, I5…), menu con nhiều tầng theo hãng | Chỉ lọc theo `category` (catalog BR-02) |
 | Link "Tin tức", "Tra cứu bảo hành", "Dịch vụ tận nhà", "Thu cũ đổi mới", "Hệ thống showroom"; khối tin tức; nút chat Zalo nổi | Không có trong nghiệp vụ |
 | Tim, số lượt thích, nút "…" trên thẻ sản phẩm (ảnh tham khảo bản 9) | Không có yêu thích, đánh giá; thẻ không có thao tác riêng (design-system §9.9) |
+| Các mục trang tham khảo có ở trang tài khoản (16/11/2026): họ tên, số điện thoại, giới tính, ngày sinh, ảnh đại diện, đổi email, sổ địa chỉ, mục "Liên hệ hỗ trợ", mã giảm giá, điểm thưởng, sản phẩm đã xem | account.md BR-11: dữ liệu tài khoản chỉ gồm email và username; họ tên, số điện thoại, địa chỉ nhập ở trang đặt hàng cho từng đơn. Email dùng để đăng nhập nên không đổi. Không có khuyến mãi, điểm thưởng ([pages/tai-khoan.md](pages/tai-khoan.md) mục 7) |
 | Các mục trang tham khảo phụ có ở trang kết quả tìm kiếm (13/10/2026): sao đánh giá, ô "So sánh", nút lưu, ảnh nhỏ đổi màu, nhãn sản phẩm tài trợ, ô loại hàng dạng thẻ ảnh, nút "Xem thêm" tải nối trang | Không có đánh giá, so sánh, yêu thích, quảng cáo; một ảnh mỗi sản phẩm; chuyển trang thay hẳn trang trước để trang không dài ra ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md) §3.6) |
 
 Muốn làm một mục ở trên: viết hoặc sửa tài liệu nghiệp vụ trước (`docs/business/_template.md`), rồi mới thêm spec giao diện.

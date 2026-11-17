@@ -25,6 +25,7 @@ Thư mục này chứa toàn bộ quy ước giao diện cho `apps/web`. **Giao 
 | [pages/dat-hang.md](pages/dat-hang.md) | Đặt hàng `/checkout` (bố cục tập trung: header thu gọn chỉ có logo và link quay lại giỏ) |
 | [pages/don-hang.md](pages/don-hang.md) | Đơn hàng của tôi `/orders`, chi tiết đơn `/orders/:orderId`, hộp thoại huỷ đơn (bản chốt 09/11/2026: đơn gọi theo tên món đầu, thanh 4 bước trạng thái) |
 | [pages/dang-nhap.md](pages/dang-nhap.md) | Đăng nhập `/login`, tạo tài khoản `/register` (An làm) |
+| [pages/tai-khoan.md](pages/tai-khoan.md) | Tài khoản `/account`, đổi mật khẩu `/account/password` (bản chốt 16/11/2026: cột mục bên trái, đổi username có nút "Cập nhật", email chỉ xem, đăng xuất) |
 | [pages/admin-don-hang.md](pages/admin-don-hang.md) | Quản trị đơn hàng `/admin` (bản rc.1, chốt 06/11/2026: hai tab Chờ giao, Đang giao; chuyển trạng thái có hỏi lại) |
 | [pages/khong-tim-thay.md](pages/khong-tim-thay.md) | Không tìm thấy trang, route `*` (bản chốt 10/11/2026: khối rỗng có tiêu đề, nút về trang chủ và xem sản phẩm, header đầy đủ) |
 | [man-hinh-du-kien.md](man-hinh-du-kien.md) | Màn hình dự án cần nhưng chưa có spec trang: component dùng lại, bố cục đề xuất, mức tin cậy |

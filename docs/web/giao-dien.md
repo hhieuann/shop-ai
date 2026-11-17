@@ -59,7 +59,8 @@ Font **Inter** (có dấu tiếng Việt), dự phòng system-ui, Segoe UI, Robo
 | Component | Ở đâu | Dùng khi |
 |---|---|---|
 | Header, Footer | `app/` | Mọi trang khách (trừ đặt hàng, đăng nhập dùng `FocusLayout`) |
-| `AccountMenu` | `app/AccountMenu.tsx` | Nút Đăng nhập / username trên header |
+| `AccountMenu` | `app/AccountMenu.tsx` | Nút Đăng nhập / username trên header; mục "Tài khoản của tôi" mở trang tài khoản |
+| `AccountNav`, `AccountSectionSheet` (chưa có) | `features/account/components/` | Cột mục và bảng chọn mục của trang tài khoản (design-system §9.27) |
 | `CategoryMenu` | `features/catalog/components/CategoryMenu.tsx` | 13 loại hàng: cột trái trang chủ, nút "Danh mục", ngăn kéo trên điện thoại |
 | `Price` | `shared/components/Price.tsx` | Mọi chỗ hiện giá |
 | `StoryBlock` | `shared/components/StoryBlock.tsx` | Một khối có tiêu đề (khối sản phẩm) |

@@ -1,12 +1,12 @@
 # Design system: Black Magic
 
-Người viết: Hoàng · Cập nhật: 10/11/2026 (bản chốt trang 404, hộp xác nhận tự trả focus; nút con mắt bỏ khỏi thứ tự Tab, ô mã 6 ô; 11/11: icon mắt nhắm, mắt mở) · Áp dụng cho `apps/web`
+Người viết: Hoàng · Cập nhật: 10/11/2026 (bản chốt trang 404, hộp xác nhận tự trả focus; nút con mắt bỏ khỏi thứ tự Tab, ô mã 6 ô; 11/11: icon mắt nhắm, mắt mở; 16/11: trang tài khoản, §9.17, §9.27, §10) · Áp dụng cho `apps/web`
 
 Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien.md](giao-dien.md), mục lục ở [README.md](README.md).
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`); trang tài khoản ([pages/tai-khoan.md](pages/tai-khoan.md), 16/11/2026, **code chưa làm**: §9.17 mục "Tài khoản của tôi", §9.27 cột mục và bảng chọn mục, token `--fg-primary-disabled` ở §10).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -179,7 +179,7 @@ Các dải cuộn ngang đang ẩn thanh cuộn (`Carousel`, hàng chip) **giữ
 | Lề hai bên `--gutter` | 16px (<640) → 24px (≥640) → 40px (≥960) → 64px (≥1280) |
 | Breakpoint | **640**, **768** (lưới thẻ 2 cột → dải cuộn), **960** (bố cục hai cột của trang con), **1280** (header đầy đủ 2 hàng, menu danh mục trái ở trang chủ), **1600** (7 thẻ mỗi hàng) |
 | Màn kiểm thử | 1920px, 1366px, 390px |
-| Khung hẹp | Giỏ hàng, đặt hàng: rộng tối đa **1280px**, căn giữa |
+| Khung hẹp | Giỏ hàng, đặt hàng, đơn hàng, tài khoản: rộng tối đa **1280px**, căn giữa |
 | Bố cục hai cột (≥960) | Trang chi tiết, giỏ hàng, đặt hàng: `grid-template-columns: minmax(0,1fr) 360px; gap:24px; align-items:start` (trang chi tiết viết 360px bằng `--pdp-aside`, §10) |
 | Khoảng cách giữa các khối sản phẩm | mỗi khối có padding trên 24px (điện thoại 20px), dưới 4px; tiêu đề cách hàng thẻ 16px |
 
@@ -264,7 +264,8 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `FocusLayout` + `MiniHeader` | `app/MiniHeader.tsx`; `RootLayout` vẽ `MiniHeader` thay `Header` khi route có `handle.chrome = 'focus'` (kèm `handle.back`) | ✅ (đặt hàng; đăng nhập, tạo tài khoản chưa dùng) |
 | `OrderStatusSteps` (thanh 4 bước trạng thái đơn) | `features/orders/components/OrderStatusSteps.tsx` | ✅ (chi tiết đơn, §9.26) |
 | `orderTitle` (tên đơn theo món đầu) | `features/orders/lib/orderTitle.ts` | ✅ (danh sách đơn, chi tiết đơn, hộp huỷ đơn; `pages/don-hang.md` mục 1) |
-| `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản") |
+| `AccountMenu` (nút tài khoản + bảng thả xuống) | `app/AccountMenu.tsx` | ✅ (header đầy đủ; thay link "Tài khoản"); thêm mục "Tài khoản của tôi" (§9.17) |
+| `AccountNav` (cột mục trang tài khoản) + `AccountSectionSheet` (nút "Đổi mục" và bảng chọn mục <1280) | `features/account/components/` | 📝 (trang tài khoản, §9.27) |
 | `CategoryMenu` (13 loại hàng: cột trái trang chủ, bảng thả xuống, ngăn kéo) | nên đặt `app/CategoryMenu.tsx` | 📝 |
 
 ### 9.1 Header (`app/Header`)
@@ -548,8 +549,10 @@ Nội dung **khi chưa đăng nhập**:
 Nội dung **khi đã đăng nhập**:
 - Đầu bảng: icon `UserRound` 28 + "Xin chào," 14/20/500 `--fg-subdued`, username 16/24/600 (xuống dòng được, `overflow-wrap:anywhere`), email 12/18 `--fg-subdued`.
 - Danh sách (`<ul>`, viền trên `--border-divider`, cách 16px, padding trên 12px): mỗi mục cao tối thiểu 44px, padding `0 8px`, bo 8px, icon 24 `--fg-muted` + chữ 16/24/500, gap 12px, hover nền `--bg-surface-raised`.
-  - "Trang quản trị" (`LayoutDashboard`), **chỉ khi tài khoản thuộc nhóm `admin`**, dẫn tới trang admin (man-hinh-du-kien.md §16); sau mục này có đường kẻ 1px.
-  - "Đăng xuất" (`LogOut`): đăng xuất (dang-nhap.md §8), gọi `notifyAuthChanged()`, đóng bảng. Đang ở trang bắt buộc đăng nhập (`/orders`, `/checkout`, trang admin) thì về `/`; trang khác ở nguyên chỗ.
+  - "Tài khoản của tôi" (`UserRound`) → `/account` (thêm 16/11/2026, [pages/tai-khoan.md](pages/tai-khoan.md)); mục đầu tiên, nhận focus khi mở bảng.
+  - "Trang quản trị" (`LayoutDashboard`), **chỉ khi tài khoản thuộc nhóm `admin`**, dẫn tới trang admin (man-hinh-du-kien.md §16).
+  - Đường kẻ 1px `--border-divider` (cách 8px trên dưới) trước "Đăng xuất".
+  - "Đăng xuất" (`LogOut`): đăng xuất (dang-nhap.md §8), gọi `notifyAuthChanged()`, đóng bảng. Đang ở trang bắt buộc đăng nhập (`/orders`, `/checkout`, `/account`, trang admin) thì về `/`; trang khác ở nguyên chỗ.
 - **Không** có "Đơn hàng của tôi": header đã có nút "Đơn hàng" ở mọi trang.
 
 **Mở, đóng và focus:**
@@ -558,7 +561,7 @@ Nội dung **khi đã đăng nhập**:
 - `role="dialog"`, `aria-modal="false"` (header vẫn dùng được), `aria-labelledby` trỏ tới tiêu đề hoặc dòng "Xin chào".
 - Không mở khi rê chuột (chỉ bấm), để dùng được trên màn cảm ứng.
 
-**Không có:** ảnh đại diện, trang hồ sơ, cài đặt tài khoản, phương thức thanh toán, danh sách yêu thích, hỗ trợ, quyền lợi "miễn phí vận chuyển" (mọi đơn đều miễn phí, ordering BR-06).
+**Không có:** ảnh đại diện, phương thức thanh toán, danh sách yêu thích, hỗ trợ, quyền lợi "miễn phí vận chuyển" (mọi đơn đều miễn phí, ordering BR-06). Trang tài khoản (đổi username, đổi mật khẩu) có từ 16/11/2026, vào bằng mục "Tài khoản của tôi".
 
 ### 9.18 Menu danh mục (`CategoryMenu`, ✅; trang chủ và nút "Danh mục")
 Theo kiểu menu danh mục cột trái của trang tham khảo. Một danh sách 13 loại hàng (`CATEGORIES`, cùng thứ tự với `CategoryIcon`), dùng ở 3 chỗ:
@@ -754,6 +757,33 @@ Chốt 09/11/2026 ([pages/don-hang.md](pages/don-hang.md) mục 4.1). `<ol>` 4 b
 
 Không có hiệu ứng chạy; trạng thái chỉ đổi khi tải lại dữ liệu.
 
+### 9.27 Cột mục tài khoản (`AccountNav`) và bảng chọn mục (`AccountSectionSheet`, 📝; trang tài khoản)
+Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách mục (`ACCOUNT_SECTIONS`: Thông tin tài khoản, Đổi mật khẩu, Đơn hàng của tôi; rồi Đăng xuất), vẽ hai kiểu.
+
+**`AccountNav` (≥1280, cột trái 280px):**
+
+| Phần | Giá trị |
+|---|---|
+| Khung | nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-2xl`, `overflow: hidden`; không dính khi cuộn |
+| Đầu khối | flex gap 12px, padding `20px 20px 16px`, viền dưới 1px `--border-divider`. Avatar: tròn 48px, nền `--bg-primary-tint-2`, chữ cái đầu của username viết hoa 20/28/600 `--fg-primary`, `aria-hidden`. Bên phải: username 16/24/600 `--fg-heading`, email 12/18 `--fg-subdued` (cả hai `overflow-wrap: anywhere`) |
+| Danh sách | `<nav aria-label="Tài khoản">` + `<ul>` padding 8px. Mỗi mục là link (Đăng xuất là `<button>`): flex gap 12px, cao tối thiểu 44px, padding `0 12px`, bo `--radius-lg`, icon 20 `--fg-muted` + chữ 14/20/500 `--fg-default`; hover nền `--bg-surface-raised` |
+| Mục đang xem | `aria-current="page"`: nền `--bg-primary-tint`, chữ và icon `--fg-primary`, chữ 600 |
+| Đường kẻ | trước "Đăng xuất": 1px `--border-divider`, cách `8px 4px` |
+| Đăng xuất | icon `LogOut`, chữ `--fg-muted` |
+
+**Nút "Đổi mục" (<1280):** thay cột trái, nằm trên khối nội dung, cách 12px. `<button aria-haspopup="dialog">` rộng 100%, cao tối thiểu 48px, padding `0 16px`, viền 1px `--border-divider`, bo `--radius-xl`, nền `--bg-surface`; icon của mục đang xem 20 `--fg-primary` + tên mục 14/20/600 `--fg-heading` (gap 12px); sát phải chữ "Đổi mục" 12/18/500 `--fg-subdued` + `ChevronDown` 16 (gap 4px), cùng một hàng.
+
+**`AccountSectionSheet` (bảng chọn mục, <1280):**
+
+| Phần | Giá trị |
+|---|---|
+| Khung | `role="dialog" aria-modal="true" aria-labelledby`; dính đáy màn hình, rộng hết; nền `--bg-surface`, bo `16px 16px 0 0`, `--shadow-lg`, padding đáy 16px (cộng `env(safe-area-inset-bottom)`); vùng tối `--scrim` phủ cả header |
+| Vạch kéo | 40×4px, bo `--radius-full`, nền `--border-divider`, căn giữa, cách đỉnh 8px; chỉ để nhìn (`aria-hidden`), không kéo được |
+| Đầu | padding `8px 8px 8px 16px`; `<h2>` "Tài khoản" 16/24/600; nút đóng `ghost` 40×40, icon `X` 24 `--fg-muted`, `aria-label="Đóng"` |
+| Danh sách | như `AccountNav`, padding `4px 8px`; mỗi mục cao tối thiểu 48px, chữ 16/24/500 |
+| Hiện, ẩn | trượt lên 200ms (`--dur-base`, `--ease-standard`); `prefers-reduced-motion` thì hiện ngay |
+| Hành vi | bấm một mục: đóng bảng rồi chuyển trang (Đăng xuất: đăng xuất như §9.17). Đóng bằng ×, Esc, bấm vùng tối. Mở: focus vào mục đang xem; giữ focus trong bảng; khoá cuộn trang; đóng xong trả focus về nút "Đổi mục" (trừ khi đã chuyển trang) |
+
 ## 10. Token sẽ thêm khi cần
 
 **Đã đưa vào `tokens.css` (đổi giao diện 11/10/2026):**
@@ -772,5 +802,11 @@ Không có hiệu ứng chạy; trạng thái chỉ đổi khi tải lại dữ 
 | `--pdp-media-max` | 560px | Bề rộng tối đa ô ảnh trong khối sản phẩm |
 | `--spec-tile-min` | 220px (<640: 150px) | Bề rộng tối thiểu một ô thông số; JS chia cột đọc giá trị này (§9.24) |
 | `--spec-panel-width` | `max(50vw, 560px)` (<640: `calc(100vw - 32px)`) | Bề rộng panel thông số |
+
+**Thêm khi làm trang tài khoản (chốt 16/11/2026)**, đặt cạnh `--fg-disabled` trong `tokens.css`, thêm cùng PR với chỗ dùng đầu tiên:
+
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `--fg-primary-disabled` | `#818CF8` | Chữ nút "Cập nhật" vô hiệu kiểu tím nhạt (nền `--bg-primary-tint-2`) ở trang tài khoản ([pages/tai-khoan.md](pages/tai-khoan.md) 3.1). Tương phản 2,42 trên `#E0E7FF`: được miễn vì là nút vô hiệu. Nút chính vô hiệu ở trang khác giữ `opacity .4` (§6) |
 
 Cần token mới khác thì ghi vào đây (tên, giá trị, khi nào dùng) trước, rồi thêm vào `tokens.css` trong cùng PR với chỗ dùng đầu tiên.
