@@ -47,7 +47,19 @@ export function notifyAuthChanged() {
   for (const listener of listeners) listener();
 }
 
+// ── Chờ nối Cognito xong rồi mới trả lời "có đăng nhập không" ───────────────────
+// main.tsx nạp Cognito (gói Amplify) song song với lúc vẽ trang. Trước khi initAuth() xong, bộ lấy token
+// mặc định ở bản build luôn trả null: trang bắt buộc đăng nhập sẽ tưởng là khách và chuyển sang /login
+// dù phiên còn (#499). Mặc định đã xong, để test và chạy trên mock không phải chờ.
+let ready: Promise<unknown> = Promise.resolve();
+
+/** main.tsx đưa lời hứa nạp Cognito vào. Nạp lỗi thì vẫn coi như xong (dùng bộ lấy token đang có), không treo trang */
+export function setAuthReady(next: Promise<unknown>) {
+  ready = next.catch(() => undefined);
+}
+
 export async function getAccessToken(): Promise<string | null> {
+  await ready;
   return provider();
 }
 
@@ -120,6 +132,7 @@ export function setProfileProvider(next: ProfileProvider) {
 
 /** Hồ sơ người đang đăng nhập; null khi chưa đăng nhập */
 export async function getUserProfile(): Promise<UserProfile | null> {
+  await ready;
   return profileProvider();
 }
 
