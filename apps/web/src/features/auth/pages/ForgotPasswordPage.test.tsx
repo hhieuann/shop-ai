@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -308,5 +308,59 @@ describe('ForgotPasswordPage', () => {
     // Assert
     const state = JSON.parse((await screen.findByTestId('login-state')).textContent ?? 'null');
     expect(state).toEqual({ from: '/cart', reason: 'checkout', email: 'an@example.com' });
+  });
+
+  describe('khi đang đăng nhập (dang-nhap.md 3.4)', () => {
+    beforeEach(() => {
+      localStorage.setItem('shop-ai:dev-token', 'dev');
+    });
+    afterEach(() => localStorage.clear());
+
+    it('signedIn_staysOnPage_withAccountEmailLocked_andFocusOnSend', async () => {
+      // Act
+      renderPage({});
+
+      // Assert: không bị đẩy đi, ô email là email tài khoản và chỉ đọc, focus nút "Gửi mã"
+      await waitFor(() =>
+        expect(screen.getByLabelText('Email')).toHaveValue('khachthu@example.com'),
+      );
+      expect(screen.getByLabelText('Email')).toHaveAttribute('readonly');
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Gửi mã' })).toHaveFocus());
+      expect(screen.getByRole('link', { name: 'Quay lại' })).toHaveAttribute(
+        'href',
+        '/account/password',
+      );
+      expect(screen.queryByTestId('login-state')).toBeNull();
+    });
+
+    it('signedIn_resetStep_hasNoChangeEmail_andSignsOutThenGoesToLogin', async () => {
+      // Arrange
+      vi.mocked(confirmResetPassword).mockResolvedValue(undefined);
+      renderPage({});
+      await waitFor(() =>
+        expect(screen.getByLabelText('Email')).toHaveValue('khachthu@example.com'),
+      );
+      const user = userEvent.setup();
+      await user.click(screen.getByRole('button', { name: 'Gửi mã' }));
+      await screen.findByRole('heading', { name: 'Đặt mật khẩu mới' });
+
+      // Assert: bước 2 không có "Nhập lại email"
+      expect(screen.queryByRole('button', { name: 'Nhập lại email' })).toBeNull();
+
+      // Act
+      await fillReset(user, '123456');
+
+      // Assert: đăng xuất máy này rồi tới /login kèm email, from, câu báo
+      const state = JSON.parse((await screen.findByTestId('login-state')).textContent ?? 'null');
+      expect(state).toEqual({
+        email: 'khachthu@example.com',
+        from: '/account',
+        notice: 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.',
+      });
+      expect(localStorage.getItem('shop-ai:dev-token')).toBeNull();
+
+      // Verify
+      expect(resetPassword).toHaveBeenCalledWith({ username: 'khachthu@example.com' });
+    });
   });
 });
