@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toAuthError, toResetPasswordError } from './authErrors';
+import { toAuthError, toChangePasswordError, toResetPasswordError } from './authErrors';
 
 const err = (name: string, message = '') => Object.assign(new Error(message), { name });
 
@@ -88,6 +88,38 @@ describe('toResetPasswordError', () => {
       'LimitExceededException',
     ]) {
       expect(toResetPasswordError(err(name))).toEqual(toAuthError(err(name)));
+    }
+  });
+});
+
+describe('toChangePasswordError', () => {
+  const named = (name: string, message = name) => Object.assign(new Error(message), { name });
+
+  it('toChangePasswordError_blamesCurrentPassword_whenNotAuthorized', () => {
+    expect(
+      toChangePasswordError(named('NotAuthorizedException', 'Incorrect username or password.')),
+    ).toEqual({
+      target: 'currentPassword',
+      message: 'Mật khẩu hiện tại không đúng.',
+    });
+  });
+
+  it('toChangePasswordError_meansSessionEnded_whenAccessTokenRevokedOrSignedOut', () => {
+    expect(
+      toChangePasswordError(named('NotAuthorizedException', 'Access Token has been revoked'))
+        .target,
+    ).toBe('session');
+    expect(toChangePasswordError(named('UserUnAuthenticatedException')).target).toBe('session');
+  });
+
+  it('toChangePasswordError_matchesToAuthError_forOtherErrors', () => {
+    for (const name of [
+      'InvalidPasswordException',
+      'LimitExceededException',
+      'NetworkError',
+      'Khac',
+    ]) {
+      expect(toChangePasswordError(named(name))).toEqual(toAuthError(named(name)));
     }
   });
 });
