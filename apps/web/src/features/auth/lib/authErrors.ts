@@ -8,7 +8,9 @@ export type AuthErrorTarget =
   /** Ô "Mật khẩu hiện tại" ở trang đổi mật khẩu */
   | 'currentPassword'
   /** Phiên đăng nhập đã hết: sang /login */
-  | 'session';
+  | 'session'
+  /** Quên mật khẩu: mật khẩu đã đổi dù Cognito báo lỗi (trigger L9), xử lý như thành công */
+  | 'resetDone';
 
 export interface AuthErrorView {
   readonly target: AuthErrorTarget;
@@ -68,6 +70,22 @@ export function toAuthError(error: unknown): AuthErrorView {
  */
 export function toResetPasswordError(error: unknown): AuthErrorView {
   const name = typeof error === 'object' && error && 'name' in error ? String(error.name) : '';
+  const message =
+    typeof error === 'object' && error && 'message' in error ? String(error.message) : '';
+  // Trigger Post confirmation (L9, thu hồi phiên máy khác) chạy SAU khi Cognito đã đổi mật khẩu. Trigger
+  // lỗi (UserLambdaValidationException: Lambda ném SESSION_REVOKE_FAILED; UnexpectedLambdaException:
+  // Lambda bị throttle) thì Cognito vẫn báo lỗi, message bắt đầu bằng "PostConfirmation", nhưng mật
+  // khẩu mới đã dùng được: coi như đặt lại xong (An, Nhân chốt 17/11). Lỗi Pre sign-up không có tiền tố này.
+  if (
+    (name === 'UserLambdaValidationException' || name === 'UnexpectedLambdaException') &&
+    message.startsWith('PostConfirmation')
+  ) {
+    return {
+      target: 'resetDone',
+      message:
+        'Đã đặt mật khẩu mới, nhưng chưa đăng xuất được các thiết bị khác. Đăng nhập bằng mật khẩu mới; nếu nghi bị lộ, hãy đổi mật khẩu lần nữa sau khi đăng nhập.',
+    };
+  }
   if (name === 'NotAuthorizedException') {
     return {
       target: 'alert',

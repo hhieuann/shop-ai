@@ -310,6 +310,75 @@ describe('ForgotPasswordPage', () => {
     expect(state).toEqual({ from: '/cart', reason: 'checkout', email: 'an@example.com' });
   });
 
+  describe('trigger L9 lỗi sau khi đã đổi mật khẩu (An, Nhân chốt 17/11)', () => {
+    const RESET_DONE =
+      'Đã đặt mật khẩu mới, nhưng chưa đăng xuất được các thiết bị khác. Đăng nhập bằng mật khẩu mới; nếu nghi bị lộ, hãy đổi mật khẩu lần nữa sau khi đăng nhập.';
+    const triggerErrors = [
+      [
+        'UserLambdaValidationException',
+        'PostConfirmation failed with error SESSION_REVOKE_FAILED.',
+      ],
+      [
+        'UnexpectedLambdaException',
+        'PostConfirmation invocation failed due to error TooManyRequestsException.',
+      ],
+    ] as const;
+
+    it.each(triggerErrors)(
+      'reset_goesToLoginWithResetDoneNotice_when %s',
+      async (name, message) => {
+        // Arrange
+        vi.mocked(confirmResetPassword).mockRejectedValue(
+          Object.assign(new Error(message), { name }),
+        );
+        renderPage({ from: '/cart', reason: 'checkout' });
+        const user = await goToResetStep();
+
+        // Act
+        await fillReset(user, '123456');
+
+        // Assert: như thành công, câu báo riêng; không báo lỗi chung ở lại trang
+        const state = JSON.parse((await screen.findByTestId('login-state')).textContent ?? 'null');
+        expect(state).toEqual({
+          from: '/cart',
+          reason: 'checkout',
+          email: 'an@example.com',
+          notice: RESET_DONE,
+        });
+        expect(screen.queryByText('Có lỗi xảy ra, vui lòng thử lại.')).toBeNull();
+      },
+    );
+
+    it('signedIn_reset_signsOutThenGoesToLoginWithResetDoneNotice', async () => {
+      // Arrange
+      localStorage.setItem('shop-ai:dev-token', 'dev');
+      const [name, message] = triggerErrors[0];
+      vi.mocked(confirmResetPassword).mockRejectedValue(
+        Object.assign(new Error(message), { name }),
+      );
+      renderPage({});
+      await waitFor(() =>
+        expect(screen.getByLabelText('Email')).toHaveValue('khachthu@example.com'),
+      );
+      const user = userEvent.setup();
+      await user.click(screen.getByRole('button', { name: 'Gửi mã' }));
+      await screen.findByRole('heading', { name: 'Đặt mật khẩu mới' });
+
+      // Act
+      await fillReset(user, '123456');
+
+      // Assert: đăng xuất máy này rồi sang /login kèm câu báo riêng
+      const state = JSON.parse((await screen.findByTestId('login-state')).textContent ?? 'null');
+      expect(state).toEqual({
+        email: 'khachthu@example.com',
+        from: '/account',
+        notice: RESET_DONE,
+      });
+      expect(localStorage.getItem('shop-ai:dev-token')).toBeNull();
+      localStorage.clear();
+    });
+  });
+
   describe('khi đang đăng nhập (dang-nhap.md 3.4)', () => {
     beforeEach(() => {
       localStorage.setItem('shop-ai:dev-token', 'dev');

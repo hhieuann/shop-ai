@@ -92,6 +92,54 @@ describe('toResetPasswordError', () => {
   });
 });
 
+describe('toResetPasswordError khi trigger L9 lỗi', () => {
+  const RESET_DONE =
+    'Đã đặt mật khẩu mới, nhưng chưa đăng xuất được các thiết bị khác. Đăng nhập bằng mật khẩu mới; nếu nghi bị lộ, hãy đổi mật khẩu lần nữa sau khi đăng nhập.';
+
+  it('toResetPasswordError_isResetDone_whenPostConfirmationRejected', () => {
+    // Lambda ném SESSION_REVOKE_FAILED
+    expect(
+      toResetPasswordError(
+        err(
+          'UserLambdaValidationException',
+          'PostConfirmation failed with error SESSION_REVOKE_FAILED.',
+        ),
+      ),
+    ).toEqual({ target: 'resetDone', message: RESET_DONE });
+  });
+
+  it('toResetPasswordError_isResetDone_whenPostConfirmationThrottled', () => {
+    // Lambda bị throttle
+    expect(
+      toResetPasswordError(
+        err(
+          'UnexpectedLambdaException',
+          'PostConfirmation invocation failed due to error TooManyRequestsException.',
+        ),
+      ),
+    ).toEqual({ target: 'resetDone', message: RESET_DONE });
+  });
+
+  it('toResetPasswordError_keepsOldMessages_whenNotPostConfirmation', () => {
+    // Pre sign-up vẫn như cũ; lỗi cùng tên mà không phải PostConfirmation vẫn là câu chung
+    expect(
+      toResetPasswordError(
+        err('UserLambdaValidationException', 'PreSignUp failed with error USERNAME_TAKEN.'),
+      ),
+    ).toEqual(
+      toAuthError(
+        err('UserLambdaValidationException', 'PreSignUp failed with error USERNAME_TAKEN.'),
+      ),
+    );
+    expect(toResetPasswordError(err('UserLambdaValidationException', 'Lỗi khác')).message).toBe(
+      'Có lỗi xảy ra, vui lòng thử lại.',
+    );
+    expect(toResetPasswordError(err('UnexpectedLambdaException', 'Lỗi khác')).message).toBe(
+      'Có lỗi xảy ra, vui lòng thử lại.',
+    );
+  });
+});
+
 describe('toChangePasswordError', () => {
   const named = (name: string, message = name) => Object.assign(new Error(message), { name });
 

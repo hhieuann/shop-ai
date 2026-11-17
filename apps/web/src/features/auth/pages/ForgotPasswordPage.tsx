@@ -90,6 +90,22 @@ export function ForgotPasswordPage() {
     codeRef.current?.focus();
   };
 
+  /** Đặt lại xong: sang /login điền sẵn email, kèm câu báo; đang đăng nhập thì đăng xuất máy này trước */
+  const finishReset = async (notice: string) => {
+    if (signedIn) {
+      // Đăng xuất máy này (không phải mọi nơi: máy khác do trigger L9 thu hồi) rồi sang /login
+      await signOutAndLeave({
+        to: '/login',
+        state: { email: trimmedEmail, from: '/account', notice },
+      });
+      return;
+    }
+    navigate('/login', {
+      replace: true,
+      state: { ...state, email: trimmedEmail, notice },
+    });
+  };
+
   const reset = async (e: FormEvent) => {
     e.preventDefault();
     setAlert(null);
@@ -108,22 +124,12 @@ export function ForgotPasswordPage() {
         confirmationCode: code,
         newPassword: password,
       });
-      const notice = 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.';
-      if (signedIn) {
-        // Đăng xuất máy này (không phải mọi nơi: máy khác do trigger L9 thu hồi) rồi sang /login
-        await signOutAndLeave({
-          to: '/login',
-          state: { email: trimmedEmail, from: '/account', notice },
-        });
-        return;
-      }
-      navigate('/login', {
-        replace: true,
-        state: { ...state, email: trimmedEmail, notice },
-      });
+      await finishReset('Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.');
     } catch (error) {
       const view = toResetPasswordError(error);
-      if (view.target === 'code') rejectCode(view.message);
+      // Mật khẩu đã đổi nhưng trigger L9 lỗi: như thành công, câu báo khác
+      if (view.target === 'resetDone') await finishReset(view.message);
+      else if (view.target === 'code') rejectCode(view.message);
       else if (view.target === 'password') setErrors({ password: view.message });
       else setAlert(view.message);
     } finally {
