@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toAuthError, toResetPasswordError } from './authErrors';
+import { toAuthError, toChangePasswordError, toResetPasswordError } from './authErrors';
 
 const err = (name: string, message = '') => Object.assign(new Error(message), { name });
 
@@ -88,6 +88,86 @@ describe('toResetPasswordError', () => {
       'LimitExceededException',
     ]) {
       expect(toResetPasswordError(err(name))).toEqual(toAuthError(err(name)));
+    }
+  });
+});
+
+describe('toResetPasswordError khi trigger L9 lỗi', () => {
+  const RESET_DONE =
+    'Đã đặt mật khẩu mới, nhưng chưa đăng xuất được các thiết bị khác. Đăng nhập bằng mật khẩu mới; nếu nghi bị lộ, hãy đổi mật khẩu lần nữa sau khi đăng nhập.';
+
+  it('toResetPasswordError_isResetDone_whenPostConfirmationRejected', () => {
+    // Lambda ném SESSION_REVOKE_FAILED
+    expect(
+      toResetPasswordError(
+        err(
+          'UserLambdaValidationException',
+          'PostConfirmation failed with error SESSION_REVOKE_FAILED.',
+        ),
+      ),
+    ).toEqual({ target: 'resetDone', message: RESET_DONE });
+  });
+
+  it('toResetPasswordError_isResetDone_whenPostConfirmationThrottled', () => {
+    // Lambda bị throttle
+    expect(
+      toResetPasswordError(
+        err(
+          'UnexpectedLambdaException',
+          'PostConfirmation invocation failed due to error TooManyRequestsException.',
+        ),
+      ),
+    ).toEqual({ target: 'resetDone', message: RESET_DONE });
+  });
+
+  it('toResetPasswordError_keepsOldMessages_whenNotPostConfirmation', () => {
+    // Pre sign-up vẫn như cũ; lỗi cùng tên mà không phải PostConfirmation vẫn là câu chung
+    expect(
+      toResetPasswordError(
+        err('UserLambdaValidationException', 'PreSignUp failed with error USERNAME_TAKEN.'),
+      ),
+    ).toEqual(
+      toAuthError(
+        err('UserLambdaValidationException', 'PreSignUp failed with error USERNAME_TAKEN.'),
+      ),
+    );
+    expect(toResetPasswordError(err('UserLambdaValidationException', 'Lỗi khác')).message).toBe(
+      'Có lỗi xảy ra, vui lòng thử lại.',
+    );
+    expect(toResetPasswordError(err('UnexpectedLambdaException', 'Lỗi khác')).message).toBe(
+      'Có lỗi xảy ra, vui lòng thử lại.',
+    );
+  });
+});
+
+describe('toChangePasswordError', () => {
+  const named = (name: string, message = name) => Object.assign(new Error(message), { name });
+
+  it('toChangePasswordError_blamesCurrentPassword_whenNotAuthorized', () => {
+    expect(
+      toChangePasswordError(named('NotAuthorizedException', 'Incorrect username or password.')),
+    ).toEqual({
+      target: 'currentPassword',
+      message: 'Mật khẩu hiện tại không đúng.',
+    });
+  });
+
+  it('toChangePasswordError_meansSessionEnded_whenAccessTokenRevokedOrSignedOut', () => {
+    expect(
+      toChangePasswordError(named('NotAuthorizedException', 'Access Token has been revoked'))
+        .target,
+    ).toBe('session');
+    expect(toChangePasswordError(named('UserUnAuthenticatedException')).target).toBe('session');
+  });
+
+  it('toChangePasswordError_matchesToAuthError_forOtherErrors', () => {
+    for (const name of [
+      'InvalidPasswordException',
+      'LimitExceededException',
+      'NetworkError',
+      'Khac',
+    ]) {
+      expect(toChangePasswordError(named(name))).toEqual(toAuthError(named(name)));
     }
   });
 });

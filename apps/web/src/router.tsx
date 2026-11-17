@@ -109,6 +109,14 @@ export const routes: RouteObject[] = [
               Component: (await import('./features/account/pages/AccountInfoPage')).AccountInfoPage,
             }),
           },
+          {
+            // Đổi mật khẩu (pages/tai-khoan.md 3.2)
+            path: 'password',
+            lazy: async () => ({
+              Component: (await import('./features/account/pages/ChangePasswordPage'))
+                .ChangePasswordPage,
+            }),
+          },
         ],
       },
       {
