@@ -70,7 +70,7 @@
   color: var(--fg-on-primary);
   font-weight: 600;
 }
-.primary:hover {
+.primary:hover:not(:disabled) {
   background: var(--bg-primary-hover);
   border-color: var(--bg-primary-hover);
 }
@@ -88,7 +88,7 @@
   color: var(--fg-primary);
   font-weight: 600;
 }
-.ghost:hover {
+.ghost:hover:not(:disabled) {
   background: var(--bg-transparent-hover);
 }
 .ghost:disabled {
