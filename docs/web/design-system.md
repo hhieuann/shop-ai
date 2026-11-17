@@ -367,6 +367,7 @@ Hình dạng chung: `display:inline-flex; align-items:center; justify-content:ce
 | Nhãn | phía trên, cách 4px. Bộ lọc: 12/18 `--fg-subdued`. Form: 14/20/500 `--fg-default`, trường bắt buộc có dấu `*` màu `--fg-danger` |
 | Lỗi | viền `--fg-danger`; dòng lỗi 12/18 `--fg-danger` bên dưới, nối bằng `aria-describedby`, `aria-invalid="true"` |
 | Gợi ý | 12/18 `--fg-subdued` bên dưới |
+| Chỉ xem (`appearance="readonly"`) | luôn `readOnly` (không `disabled`, vẫn Tab tới, chọn, chép được); nền `--bg-surface-raised`, viền `--border-divider`, chữ `--fg-subdued`, con trỏ mặc định; focus như ô thường. Dùng cho ô không sửa được (Email ở [pages/tai-khoan.md](pages/tai-khoan.md) 3.1). Ô tạm khoá lúc đang gửi form chỉ `readOnly`, không đổi nền |
 | Select | cùng hình dạng; mũi tên mặc định của trình duyệt (`color-scheme: light`) |
 
 - **Cỡ 48px** dùng cho form đặt hàng, đăng nhập, tạo tài khoản; 40px cho bộ lọc và chỗ khác.

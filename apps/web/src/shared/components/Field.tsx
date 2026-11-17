@@ -14,6 +14,11 @@ interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
    * design-system §9.4 "Nút trong ô"). Có thì ô được bọc trong một khung riêng và chừa chỗ bên phải
    */
   trailing?: ReactNode;
+  /**
+   * 'readonly': ô chỉ xem (vd. Email ở trang tài khoản, pages/tai-khoan.md 3.1), luôn `readOnly`,
+   * nền xám nhạt, viền nhạt, chữ mờ. Khác ô tạm khoá lúc đang gửi form (`readOnly` thường, giữ nền trắng)
+   */
+  appearance?: 'default' | 'readonly';
 }
 
 /** Nhãn + ô nhập + dòng lỗi/gợi ý (design-system §9.4) */
@@ -25,20 +30,23 @@ export function Field({
   required,
   className,
   trailing,
+  appearance = 'default',
   ...input
 }: FieldProps) {
+  const readonlyLook = appearance === 'readonly';
   const id = useId();
   const messageId = `${id}-message`;
   const message = error ?? hint;
   const control = (
     <input
       id={id}
-      className={`${styles.input} ${size === 'lg' ? styles.lg : ''} ${trailing ? styles.withTrailing : ''}`}
+      className={`${styles.input} ${size === 'lg' ? styles.lg : ''} ${trailing ? styles.withTrailing : ''} ${readonlyLook ? styles.readonlyLook : ''}`}
       required={required}
       aria-required={required || undefined}
       aria-invalid={error ? true : undefined}
       aria-describedby={message ? messageId : undefined}
       {...input}
+      readOnly={readonlyLook || input.readOnly}
     />
   );
   return (

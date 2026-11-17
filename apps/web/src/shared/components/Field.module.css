@@ -31,6 +31,13 @@
 .input:read-only {
   color: var(--fg-muted);
 }
+/* Ô chỉ xem (appearance="readonly", pages/tai-khoan.md 3.1): vẫn Tab tới, chọn, chép được */
+.input.readonlyLook {
+  color: var(--fg-subdued);
+  background: var(--bg-surface-raised);
+  border-color: var(--border-divider);
+  cursor: default;
+}
 /* Điện thoại: chữ 16px để iOS không tự phóng to khi gõ */
 @media (max-width: 639px) {
   .input {
