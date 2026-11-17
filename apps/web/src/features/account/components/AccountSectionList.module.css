@@ -1,0 +1,60 @@
+/* Danh sách mục tài khoản (design-system §9.27) */
+.list {
+  margin: 0;
+  padding: var(--space-100);
+  list-style: none;
+}
+.sheet {
+  padding: var(--space-50) var(--space-100);
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-150);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--fg-default);
+  font: inherit;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+}
+.sheet .item {
+  min-height: 48px;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+}
+.item svg {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+.item:hover:not(:disabled) {
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+/* Mục đang xem */
+.item[aria-current='page'],
+.item[aria-current='page']:hover {
+  background: var(--bg-primary-tint);
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+.item[aria-current='page'] svg {
+  color: var(--fg-primary);
+}
+/* Đường kẻ trước "Đăng xuất": 1px, cách 8px trên dưới, 4px hai bên */
+.divider {
+  height: 1px;
+  margin: var(--space-100) var(--space-50);
+  background: var(--border-divider);
+}
+.signOut {
+  color: var(--fg-muted);
+}

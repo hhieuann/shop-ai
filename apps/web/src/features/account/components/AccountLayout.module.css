@@ -1,0 +1,75 @@
+/* Khung trang tài khoản (pages/tai-khoan.md mục 2, 5) */
+
+/* Khung 1280px như giỏ hàng, đơn hàng; cách footer 48px */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-bottom: var(--space-600);
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-150);
+  align-items: start;
+}
+.aside {
+  display: none;
+}
+.content {
+  display: grid;
+  gap: var(--space-150);
+  min-width: 0;
+}
+
+/* Nút "Đổi mục" (<1280, design-system §9.27) */
+.switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-200);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+  text-align: left;
+}
+.switcher:hover:not(:disabled) {
+  background: var(--bg-surface-raised);
+}
+.switcherIcon {
+  flex-shrink: 0;
+  color: var(--fg-primary);
+}
+.switcherLabel {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+}
+.switcherHint {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-50);
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 500;
+}
+
+/* ≥1280: cột mục 280px bên trái, bỏ nút "Đổi mục" */
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: var(--space-300);
+  }
+  .aside {
+    display: block;
+  }
+  .switcher {
+    display: none;
+  }
+}

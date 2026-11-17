@@ -28,7 +28,7 @@ import styles from './AccountMenu.module.css';
 /**
  * Nút tài khoản trên header và bảng thả xuống (docs/web/design-system.md §9.17).
  * Chưa đăng nhập: "Đăng nhập" → bảng lợi ích + nút Đăng nhập / Tạo tài khoản.
- * Đã đăng nhập: username → bảng chào + Trang quản trị (admin) + Đăng xuất.
+ * Đã đăng nhập: username → bảng chào + Tài khoản của tôi + Trang quản trị (admin) + Đăng xuất.
  */
 export function AccountMenu() {
   const { status, user } = useAccount();
@@ -177,21 +177,24 @@ export function AccountMenu() {
                   </div>
                 </div>
                 <ul className={styles.items}>
+                  <li>
+                    <Link to="/account" className={styles.item} data-autofocus>
+                      <UserRound size={24} aria-hidden="true" />
+                      Tài khoản của tôi
+                    </Link>
+                  </li>
                   {user?.isAdmin && (
-                    <li className={styles.adminItem}>
-                      <Link to="/admin" className={styles.item} data-autofocus>
+                    <li>
+                      <Link to="/admin" className={styles.item}>
                         <LayoutDashboard size={24} aria-hidden="true" />
                         Trang quản trị
                       </Link>
                     </li>
                   )}
+                  {/* Đường kẻ trước "Đăng xuất" (§9.17) */}
+                  <li className={styles.divider} aria-hidden="true" />
                   <li>
-                    <button
-                      type="button"
-                      className={styles.item}
-                      onClick={() => void doSignOut()}
-                      data-autofocus={user?.isAdmin ? undefined : true}
-                    >
+                    <button type="button" className={styles.item} onClick={() => void doSignOut()}>
                       <LogOut size={24} aria-hidden="true" />
                       Đăng xuất
                     </button>
