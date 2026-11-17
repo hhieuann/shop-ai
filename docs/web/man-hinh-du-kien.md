@@ -1,6 +1,6 @@
 # Màn hình dự kiến
 
-Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 10/11/2026 (trang 404 chuyển sang spec trang)
+Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 10/11/2026 (trang 404 chuyển sang spec trang), 16/11/2026 (thêm trang tài khoản)
 
 Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đăng nhập nhiều bước, trạng thái rỗng, lỗi, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
 
@@ -30,6 +30,7 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 | 3 | Hộp thoại xác nhận huỷ đơn | đã chốt | [don-hang.md](pages/don-hang.md) mục 4.5, design-system §9.14 |
 | 4 | Sau khi đặt hàng thành công | đã chốt | [don-hang.md](pages/don-hang.md) mục 5 |
 | 5 | Nút và menu tài khoản trên header | HIGH / MEDIUM | design-system §9.17 |
+| 5b | Trang tài khoản, đổi mật khẩu | đã chốt | [tai-khoan.md](pages/tai-khoan.md) |
 | 6 | Nhập mã xác nhận email | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.3 |
 | 7 | Nhập mã MFA của admin | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.1 |
 | 8 | Lỗi ở form đăng nhập, tạo tài khoản | HIGH | [dang-nhap.md](pages/dang-nhap.md) §4 |
@@ -62,7 +63,7 @@ Tóm tắt:
 - Nút trên header ghi "Đăng nhập"; đã đăng nhập thì ghi username (rộng bằng chữ "Đăng nhập", tên dài mờ dần). Dưới 1280px chỉ icon.
 - Bấm mở bảng ngay dưới nút, vùng dưới header tối lại.
 - Chưa đăng nhập: 3 lợi ích, nút "Đăng nhập" + "Tạo tài khoản".
-- Đã đăng nhập: "Xin chào", username, email; "Trang quản trị" (chỉ admin); "Đăng xuất". Không lặp "Đơn hàng" (header đã có).
+- Đã đăng nhập: "Xin chào", username, email; "Tài khoản của tôi" (16/11/2026, mở [pages/tai-khoan.md](pages/tai-khoan.md)); "Trang quản trị" (chỉ admin); "Đăng xuất". Không lặp "Đơn hàng" (header đã có).
 - Header thu gọn (đăng nhập, tạo tài khoản, đặt hàng) không có nút này.
 
 Assumptions: đăng nhập bằng email, username chỉ để hiển thị (chờ An).
@@ -285,4 +286,4 @@ Do not introduce: sửa món trong đơn, sửa địa chỉ, hoàn tiền.
 
 ## Không thiết kế
 
-Các màn sau không có trong phạm vi nên **không thiết kế**: trang tổng quan tài khoản, sổ địa chỉ, phương thức thanh toán, thẻ và điểm thưởng, hội viên, danh sách đã lưu, theo dõi vận chuyển, đổi trả, bảo hành, chọn cách nhận hàng, số điện thoại khôi phục, passkey. Lý do từng mục: [ngoai-pham-vi.md](ngoai-pham-vi.md). Muốn làm một mục: viết tài liệu nghiệp vụ trước, rồi mới thêm vào file này.
+Các màn sau không có trong phạm vi nên **không thiết kế**: trang tổng quan tài khoản (trang tài khoản chỉ có đổi username, đổi mật khẩu: [pages/tai-khoan.md](pages/tai-khoan.md)), sổ địa chỉ, phương thức thanh toán, thẻ và điểm thưởng, hội viên, danh sách đã lưu, theo dõi vận chuyển, đổi trả, bảo hành, chọn cách nhận hàng, số điện thoại khôi phục, passkey. Lý do từng mục: [ngoai-pham-vi.md](ngoai-pham-vi.md). Muốn làm một mục: viết tài liệu nghiệp vụ trước, rồi mới thêm vào file này.

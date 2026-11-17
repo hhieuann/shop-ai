@@ -6,7 +6,7 @@ Người làm: **An**. File này chỉ quy định giao diện; luồng Cognito 
 
 Bố cục: header thu gọn, một thẻ form hẹp ở giữa trang, nhãn đậm phía trên ô nhập, nút hiện/ẩn mật khẩu trong ô, link chuyển qua lại "Đã có tài khoản? / Tạo tài khoản" ở cuối thẻ.
 
-Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus khi bấm Tab (mục 6); ô mã đổi thành 6 ô vuông (3.3). Sửa 11/11/2026: icon con mắt theo trạng thái mật khẩu, đang ẩn là mắt nhắm, đang hiện là mắt mở (mục 6). Sửa 11/11/2026 (An chốt): thêm quên mật khẩu, link dưới nút "Đăng nhập" (3.1) và màn đặt lại hai bước (3.4). Sửa 12/11/2026: ghi lý do ô mã quên mật khẩu không kiểm riêng (mục 8).
+Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus khi bấm Tab (mục 6); ô mã đổi thành 6 ô vuông (3.3). Sửa 11/11/2026: icon con mắt theo trạng thái mật khẩu, đang ẩn là mắt nhắm, đang hiện là mắt mở (mục 6). Sửa 11/11/2026 (An chốt): thêm quên mật khẩu, link dưới nút "Đăng nhập" (3.1) và màn đặt lại hai bước (3.4). Sửa 12/11/2026: ghi lý do ô mã quên mật khẩu không kiểm riêng (mục 8). Sửa 17/11/2026 (An chốt): quên mật khẩu khi đang đăng nhập (3.4); `/login` nhận câu báo sau khi đổi mật khẩu ở trang tài khoản (3.1).
 
 ## 1. Đường dẫn và dữ liệu
 
@@ -26,7 +26,7 @@ Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus 
 
 `reason: 'checkout'`: khách vãng lai bấm "Đặt hàng" ở giỏ. Dưới tiêu đề hiện câu "Đăng nhập hoặc tạo tài khoản để đặt hàng. Các sản phẩm bạn đã chọn được giữ nguyên." (trang tạm đã có câu này).
 
-Đã đăng nhập mà vào `/login` hoặc `/register` → về `from` (hoặc `/`).
+Đã đăng nhập mà vào `/login` hoặc `/register` → về `from` (hoặc `/`). `/forgot-password` thì vẫn mở được khi đang đăng nhập (3.4, phần "Khi đang đăng nhập").
 
 ## 2. Bố cục
 
@@ -72,7 +72,7 @@ Không có logo trong thẻ (header đã có), không có ô "Ghi nhớ đăng n
 
 Tài khoản admin (nhóm `admin`, bắt buộc MFA theo ADR-0007): sau mật khẩu hiện bước nhập mã MFA, dùng chung bố cục với bước nhập mã ở 3.3 (tiêu đề "Xác thực hai lớp", không có "Gửi lại mã"). Loại MFA (ứng dụng xác thực hay SMS) do An chọn.
 
-Mở `/login` với `state.email` và `state.notice` (từ bước 2 của 3.4): điền sẵn email, hiện `Alert success` với nội dung `notice`, focus vào ô Mật khẩu thay vì ô Email.
+Mở `/login` với `state.email` và `state.notice` (từ bước 2 của 3.4, hoặc sau khi đổi mật khẩu ở [tai-khoan.md](tai-khoan.md) 3.2): điền sẵn email, hiện `Alert success` với nội dung `notice`, focus vào ô Mật khẩu thay vì ô Email.
 
 ### 3.2 Tạo tài khoản `/register` (bước 1)
 | Thứ | Nội dung |
@@ -135,6 +135,18 @@ Bước 2:
 Thứ tự Tab bước 2: ô mã → Mật khẩu mới → Nhập lại mật khẩu mới → "Đặt lại mật khẩu" → "Gửi lại mã" → "Nhập lại email" (nút con mắt không nằm trong thứ tự Tab).
 
 Thành công: chuyển sang `/login` thay cho trang hiện tại (`replace`, nút Back không quay lại form đặt lại), mang theo `from`, `reason`, `email` và `notice` "Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới." (3.1). Không tự đăng nhập: tài khoản có MFA hoặc chưa xác nhận email đi đúng luồng 3.1 sẵn có.
+
+**Khi đang đăng nhập** (mở từ link "Quên mật khẩu hiện tại?" ở [tai-khoan.md](tai-khoan.md) 3.2; An chốt 17/11/2026, account.md BR-13):
+
+| Thứ | Khác với khi chưa đăng nhập |
+|---|---|
+| Mở trang | chạy bình thường, **không** đẩy về `from` như `/login` |
+| Email (bước 1) | điền sẵn **email của tài khoản** (từ hồ sơ đăng nhập, không lấy `state.email`) và **khoá**: `readOnly`, kiểu ô chỉ đọc như ô Email ở tai-khoan.md 3.1; không `autoFocus`, focus vào nút "Gửi mã" |
+| Chân thẻ bước 1 | "Nhớ ra mật khẩu? **Quay lại**" → `/account/password` (thay cho link "Đăng nhập") |
+| Chân thẻ bước 2 | không có "Sai email? Nhập lại email" (email không đổi được) |
+| Thành công | **đăng xuất máy này** (như "Đăng xuất" ở design-system §9.17: xoá dữ liệu phiên, giỏ khách, gọi `notifyAuthChanged()`) rồi mới sang `/login` (`replace`) với `email`, `from: '/account'` và cùng `notice` như trên |
+
+Lý do phải đăng xuất: access token còn hạn tới 1 giờ; chưa đăng xuất thì `/login` đẩy về trang trước và khách không thấy câu báo. Các máy khác bị thu hồi phiên theo BR-13 (L9).
 
 ## 4. Trạng thái
 
@@ -208,6 +220,8 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 **Đã chốt (07/10/2026):** đăng xuất nằm trong menu tài khoản trên header (design-system §9.17). Khi đăng xuất: gọi `notifyAuthChanged()`, xoá giỏ khách (`shop-ai:guest-cart`) và dữ liệu phiên trên trình duyệt, đang ở trang bắt buộc đăng nhập thì về `/` (sửa 08/10/2026 cho khớp account.md BR-09).
 
 **Đã chốt (11/11/2026, An):** làm quên mật khẩu cho bản sau `v1.0.0`, chỉ trên `develop` (#438 tài liệu, #439 web). Xong thì về `/login` và điền sẵn email; tài khoản có TOTP đi đúng luồng đăng nhập hiện có. Giữ mẫu thư tiếng Anh mặc định của Cognito, không sửa infra. Không cho biết email có tài khoản hay không (`preventUserExistenceErrors`, bước 2 của 3.4). Thử trên dev 11/11: đặt lại mật khẩu không đăng xuất thiết bị khác, nên đăng xuất mọi thiết bị làm ở PR infra riêng của Nhân (threat-model.md L9); trang web không phải làm gì thêm.
+
+**Đã chốt (17/11/2026, An): quên mật khẩu khi đang đăng nhập** (từ trang đổi mật khẩu, tai-khoan.md 3.2): trang chạy bình thường, khoá ô email theo email của tài khoản, đặt lại xong thì đăng xuất máy này rồi về `/login` (3.4, phần "Khi đang đăng nhập"). Hoàng sửa trong PR trang tài khoản, An review.
 
 **Đã chốt (12/11/2026, Hoàng): ô mã ở bước 2 của 3.4 không tự gửi và không kiểm riêng.** Cognito không có lệnh chỉ kiểm mã đặt lại mật khẩu: `ConfirmForgotPassword` (Amplify `confirmResetPassword`) nhận mã cùng mật khẩu mới và đổi mật khẩu ngay khi mã đúng. Vì vậy web không biết mã đúng hay sai trước khi khách gõ mật khẩu mới. Các cách đã cân nhắc và bỏ:
 
