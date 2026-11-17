@@ -237,10 +237,30 @@ export class ApiStack extends Stack {
     this.userPool = auth.userPool;
     this.webClient = auth.webClient;
     this.authorizer = auth.authorizer;
-    const accountFn = this.noDataFunction('Account', 'account', removalPolicy);
+    // GET /me đọc token; PATCH /me đổi username (account.md BR-06) nên gọi Cognito.
+    // Cognito có khi trả chậm lúc khởi động lạnh, như trigger Pre sign-up: 512 MB, chờ tối đa 10 giây
+    const accountFn = this.noDataFunction(
+      'Account',
+      'account',
+      removalPolicy,
+      'lambda.ts',
+      'account',
+      {
+        memorySize: 512,
+        timeout: Duration.seconds(10),
+      },
+    );
+    accountFn.addEnvironment('USER_POOL_ID', this.userPool.userPoolId);
+    // Lambda này không phải trigger nên ghi được đúng ARN user pool, không cần userpool/* như trigger
+    accountFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:ListUsers', 'cognito-idp:AdminUpdateUserAttributes'],
+        resources: [this.userPool.userPoolArn],
+      }),
+    );
     httpApi.addRoutes({
       path: '/api/v1/me',
-      methods: [HttpMethod.GET],
+      methods: [HttpMethod.GET, HttpMethod.PATCH],
       integration: new HttpLambdaIntegration('AccountIntegration', accountFn),
       authorizer: this.authorizer,
     });
