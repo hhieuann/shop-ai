@@ -51,6 +51,9 @@ Lambda post confirmation do Cognito gọi sau khi khách đặt lại mật kh�
 
 Alarm cộng cả Throttles vì hàm bị throttle thì không chạy, Errors vẫn bằng 0.
 
-**Kiểm tra:** Logs Insights trên log group `shop-prd-api-PostConfirmation…`, cùng câu truy vấn như trên; thấy `AccessDeniedException` là quyền IAM bị đổi, `TooManyRequestsException` là gọi Cognito quá giới hạn.
+**Kiểm tra:** mở metric `Errors` và `Throttles` của hàm (dashboard "Shop tổng quan" hoặc CloudWatch → Metrics → Lambda → By Function Name) để biết alarm do loại nào, rồi:
+
+- **Throttles > 0, log trống:** hàm bị giới hạn chạy đồng thời nên không chạy, không ghi log; Cognito trả `UnexpectedLambdaException` (`TooManyRequestsException`) cho web. Kiểm reserved concurrency của hàm (`aws lambda get-function-concurrency`, phải trống) và các hàm khác có đang dùng hết giới hạn chạy cùng lúc của tài khoản không (alarm `shop-prd-lambda-throttles`, tính chung cả dev, staging, prod). Thử trên dev 17/11: 4 Throttles, 0 Errors, không có dòng log nào.
+- **Errors > 0:** Logs Insights trên log group `shop-prd-api-PostConfirmation…`, cùng câu truy vấn như trên, đọc lỗi gốc của `AdminUserGlobalSignOut` (web chỉ thấy `SESSION_REVOKE_FAILED`): `AccessDeniedException` là quyền IAM bị đổi; `TooManyRequestsException` là gọi Cognito quá giới hạn.
 
 **Giảm thiểu:** sửa nguyên nhân xong, những khách đặt lại mật khẩu trong lúc lỗi vẫn còn phiên cũ. Lấy giờ lỗi trong log rồi báo nhóm; nếu cần, admin chạy `aws cognito-idp admin-user-global-sign-out` cho từng tài khoản khách báo nghi bị lộ.
