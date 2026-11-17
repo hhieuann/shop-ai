@@ -82,10 +82,10 @@ describe('AccountLayout', () => {
     );
     expect(screen.getAllByText('hoangnm@example.com').length).toBeGreaterThan(0);
 
-    // Assert: nội dung là <section> trỏ vào <h1>, hai ô chỉ xem
+    // Assert: nội dung là <section> trỏ vào <h1>; Email chỉ xem
     expect(screen.getByRole('region', { name: 'Thông tin tài khoản' })).toBeInTheDocument();
     expect(screen.getByLabelText('Username')).toHaveValue('hoangnm');
-    expect(screen.getByLabelText('Username')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('Username')).not.toHaveAttribute('readonly');
     expect(screen.getByLabelText('Email')).toHaveValue('hoangnm@example.com');
     expect(screen.getByLabelText('Email')).toHaveAttribute('readonly');
     const panel = screen.getByRole('region', { name: 'Thông tin tài khoản' });
@@ -93,7 +93,8 @@ describe('AccountLayout', () => {
       'href',
       '/account/password',
     );
-    expect(screen.queryByRole('button', { name: 'Cập nhật' })).toBeNull();
+    // Username sửa được (#497), chưa sửa gì thì nút "Cập nhật" vô hiệu
+    expect(screen.getByRole('button', { name: 'Cập nhật' })).toBeDisabled();
   });
 
   it('breadcrumb_followsSection', async () => {

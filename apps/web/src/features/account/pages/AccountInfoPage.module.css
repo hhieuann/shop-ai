@@ -7,6 +7,30 @@
   gap: var(--space-200);
 }
 
+/* Alert (thành công, lỗi chung) ngay dưới dòng phụ */
+.notice {
+  margin-bottom: var(--space-300);
+}
+
+/* Ô Username sửa được: nền trắng như ô nhập thường (tai-khoan.md 3.1) */
+.username input {
+  background: var(--bg-surface);
+}
+
+/* Nút "Cập nhật" sát phải, cách lưới ô 24px (<640: rộng 100%) */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-300);
+}
+/* Vô hiệu kiểu tím nhạt (ô giống tên hiện tại hoặc trống), chỉ riêng nút này; đang gửi thì giữ kiểu chung */
+.update:disabled:not([aria-busy='true']) {
+  border-color: var(--bg-primary-tint-2);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary-disabled);
+  cursor: not-allowed;
+}
+
 /* Phần Mật khẩu: viền trên, trái là tiêu đề + câu, phải là link "Đổi mật khẩu" */
 .password {
   display: flex;
@@ -42,6 +66,7 @@
   }
 }
 @media (max-width: 639px) {
+  .update,
   .passwordLink {
     width: 100%;
   }

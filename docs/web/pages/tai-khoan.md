@@ -177,7 +177,4 @@ Câu lỗi Cognito dùng chung `features/auth/lib/authErrors.ts` nếu đã có 
 
 ## 9. Việc còn lại
 
-- Token `--fg-primary-disabled` (design-system §10), thêm vào `tokens.css` cùng PR làm trang.
-- Route `/account`, `/account/password` trong `router.tsx`; thêm `/account` vào danh sách trang bắt buộc đăng nhập của `AccountMenu` (đăng xuất ở đây thì về `/`).
-- Menu tài khoản thêm mục "Tài khoản của tôi" (design-system §9.17).
-- Làm theo hai PR web: khung trang, cột mục, đổi mật khẩu, quên mật khẩu khi đang đăng nhập, mục menu trước (không cần backend); đổi username sau (API đã có từ PR #472 của An). Giữa hai PR, ô Username tạm là ô chỉ đọc như Email và chưa có nút "Cập nhật".
+Đã làm xong (17/11/2026): `shared/auth` và đăng xuất dùng chung (#481); khung trang, cột mục, bảng chọn mục, mục menu "Tài khoản của tôi" (#485); đổi mật khẩu và quên mật khẩu khi đang đăng nhập (#496); đổi username, nút "Cập nhật", token `--fg-primary-disabled` (#497). Không còn việc nào của trang này.
