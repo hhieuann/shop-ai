@@ -18,6 +18,12 @@ import { useSignOut } from './useSignOut';
 
 const DEV_TOKEN_KEY = 'shop-ai:dev-token';
 
+/**
+ * Lần render đầu của file phải nạp code AccountMenu, trang tài khoản lần đầu; trên CI mất hơn 1 giây (mức chờ
+ * mặc định của findBy) nên ca chạy đầu đỏ ngẫu nhiên. Chỉ nới cho lần chờ nút tài khoản đầu tiên.
+ */
+const FIRST_RENDER = { timeout: 5000 };
+
 beforeAll(() => {
   // jsdom không có ResizeObserver và matchMedia (AccountMenu dùng)
   globalThis.ResizeObserver ??= class {
@@ -145,7 +151,7 @@ describe('#487 đăng xuất ở trang bắt buộc đăng nhập', () => {
       // Arrange
       localStorage.setItem(DEV_TOKEN_KEY, 'dev');
       const { router, user } = renderAt(path);
-      await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }));
+      await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }, FIRST_RENDER));
 
       // Act
       await user.click(
@@ -195,7 +201,7 @@ describe('#487 đăng xuất ở trang bắt buộc đăng nhập', () => {
     // Arrange: đăng xuất ở /products (trang công khai)
     localStorage.setItem(DEV_TOKEN_KEY, 'dev');
     const { router, user } = renderAt('/');
-    await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }));
+    await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }, FIRST_RENDER));
     await user.click(
       within(screen.getByRole('dialog', { name: 'Xin chào,' })).getByRole('button', {
         name: 'Đăng xuất',
