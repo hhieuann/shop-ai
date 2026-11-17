@@ -54,3 +54,9 @@ export type EventType = EventInput['eventType'];
 export type FieldError = NonNullable<Schemas['Problem']['errors']>[number];
 export type InvalidItem = NonNullable<OrderProblem['invalidItems']>[number];
 export type ChangedItem = NonNullable<OrderProblem['changedItems']>[number];
+
+/** Đổi username (PATCH /api/v1/me, account.md BR-06) */
+export type ChangeUsernameRequest =
+  operations['changeUsername']['requestBody']['content']['application/json'];
+export type ChangeUsernameResponse =
+  operations['changeUsername']['responses'][200]['content']['application/json'];
