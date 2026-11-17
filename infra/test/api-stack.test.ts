@@ -279,6 +279,51 @@ describe('ApiStack', () => {
     template.hasOutput('UserPoolClientId', {});
   });
 
+  it('patchMeRoute_requiresCognitoJwt_andAccountFunctionCanOnlyChangeUsersOfItsPool', () => {
+    // Act
+    const template = synth(dev);
+
+    // Assert: đổi username (account.md BR-06) cần đăng nhập
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'PATCH /api/v1/me',
+      AuthorizationType: 'JWT',
+    });
+
+    // Assert: Lambda account biết user pool của môi trường
+    const fns = template.findResources('AWS::Lambda::Function', {
+      Properties: { Environment: { Variables: { POWERTOOLS_SERVICE_NAME: 'account' } } },
+    });
+    expect(Object.keys(fns)).toHaveLength(1);
+    const fn = Object.values(fns)[0] as {
+      Properties: {
+        Environment: { Variables: Record<string, unknown> };
+        Role: { 'Fn::GetAtt': string[] };
+      };
+    };
+    const poolId = (fn.Properties.Environment.Variables.USER_POOL_ID as { Ref: string }).Ref;
+    expect(Object.keys(template.findResources('AWS::Cognito::UserPool'))).toContain(poolId);
+
+    // Assert: chỉ ListUsers và AdminUpdateUserAttributes, đúng ARN user pool đó (không có userpool/*)
+    const roleRef = fn.Properties.Role['Fn::GetAtt'][0];
+    const policies = Object.values(template.findResources('AWS::IAM::Policy')) as {
+      Properties: {
+        Roles: { Ref: string }[];
+        PolicyDocument: { Statement: { Action: string | string[]; Resource: unknown }[] };
+      };
+    }[];
+    const cognitoStatements = policies
+      .filter((p) => p.Properties.Roles.some((r) => r.Ref === roleRef))
+      .flatMap((p) => p.Properties.PolicyDocument.Statement)
+      .filter((st) => [st.Action].flat().some((a) => a.startsWith('cognito-idp:')));
+    expect(cognitoStatements).toEqual([
+      {
+        Effect: 'Allow',
+        Action: ['cognito-idp:ListUsers', 'cognito-idp:AdminUpdateUserAttributes'],
+        Resource: { 'Fn::GetAtt': [poolId, 'Arn'] },
+      },
+    ]);
+  });
+
   it('userPool_runsPreSignUpTriggerThatCanOnlyListUsers', () => {
     // Act
     const template = synth(dev);
