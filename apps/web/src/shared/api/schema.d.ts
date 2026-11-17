@@ -38,7 +38,14 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Đổi username của người đang đăng nhập
+     * @description account.md BR-06: cùng luật và không trùng như lúc đăng ký. Email không đổi được.
+     *     Đổi sang đúng username đang dùng thì trả 200, không báo trùng.
+     *     ID token cũ vẫn chứa tên cũ: web làm mới phiên (`fetchAuthSession({ forceRefresh: true })`)
+     *     để header hiện tên mới.
+     */
+    patch: operations['changeUsername'];
     trace?: never;
   };
   '/api/v1/products': {
@@ -875,6 +882,60 @@ export interface operations {
         };
       };
       401: components['responses']['Unauthorized'];
+      default: components['responses']['Problem'];
+    };
+  };
+  changeUsername: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @example hoang.nm */
+          username: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Username sau khi đổi */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @example hoang.nm */
+            username: string;
+          };
+        };
+      };
+      /**
+       * @description `USERNAME_REQUIRED` thiếu hoặc rỗng · `USERNAME_INVALID` sai luật (3–20 ký tự: chữ thường
+       *     không dấu, số, dấu chấm, gạch dưới). Body không phải JSON thì không có `code`.
+       */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      /** @description `USERNAME_TAKEN` người khác đang dùng username này */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
       default: components['responses']['Problem'];
     };
   };

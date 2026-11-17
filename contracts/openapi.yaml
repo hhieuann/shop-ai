@@ -63,6 +63,61 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Problem'
+    patch:
+      operationId: changeUsername
+      summary: Đổi username của người đang đăng nhập
+      description: |
+        account.md BR-06: cùng luật và không trùng như lúc đăng ký. Email không đổi được.
+        Đổi sang đúng username đang dùng thì trả 200, không báo trùng.
+        ID token cũ vẫn chứa tên cũ: web làm mới phiên (`fetchAuthSession({ forceRefresh: true })`)
+        để header hiện tên mới.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  pattern: '^[a-z0-9._]{3,20}$'
+                  example: hoang.nm
+      responses:
+        '200':
+          description: Username sau khi đổi
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [username]
+                properties:
+                  username:
+                    type: string
+                    example: hoang.nm
+        '400':
+          description: |
+            `USERNAME_REQUIRED` thiếu hoặc rỗng · `USERNAME_INVALID` sai luật (3–20 ký tự: chữ thường
+            không dấu, số, dấu chấm, gạch dưới). Body không phải JSON thì không có `code`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: '`USERNAME_TAKEN` người khác đang dùng username này'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
 
   # ─── Catalog ───────────────────────────────────────────────────────────────
   /api/v1/products:
