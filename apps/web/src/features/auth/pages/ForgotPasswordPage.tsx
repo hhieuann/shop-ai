@@ -6,7 +6,8 @@ import { Field } from '../../../shared/components/Field';
 import { OtpInput } from '../../../shared/components/OtpInput';
 import { PasswordField } from '../../../shared/components/PasswordField';
 import { authMode, initAuth } from '../../../shared/auth/cognito';
-import { getAccessToken } from '../../../shared/auth/token';
+import { useAccount } from '../../../shared/auth/useSession';
+import { useSignOut } from '../../account/lib/useSignOut';
 import { AuthCard } from '../components/AuthCard';
 import styles from '../components/AuthCard.module.css';
 import { PasswordRules } from '../components/PasswordRules';
@@ -22,10 +23,18 @@ type Errors = Partial<Record<'email' | 'code' | 'password' | 'confirm', string>>
  * Quên mật khẩu (dang-nhap.md §3.4, account.md BR-13): bước 1 nhập email, Cognito gửi mã; bước 2 nhập
  * mã và mật khẩu mới. Không cho biết email có tài khoản hay không: email nào cũng sang bước 2 với cùng
  * câu chữ. Xong thì về /login điền sẵn email, không tự đăng nhập (MFA, xác nhận email đi luồng §3.1).
+ *
+ * Đang đăng nhập (mở từ "Quên mật khẩu hiện tại?" ở trang đổi mật khẩu): trang chạy bình thường, ô email
+ * khoá theo email tài khoản; đặt lại xong thì đăng xuất máy này rồi mới sang /login (access token còn
+ * hạn tới 1 giờ, chưa đăng xuất thì /login đẩy về trang trước).
  */
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const { state, from, email: initialEmail } = useAuthNavigation();
+  const { state, email: initialEmail } = useAuthNavigation();
+  const account = useAccount();
+  // Đang đăng nhập: email là email tài khoản, không sửa được (dang-nhap.md 3.4 "Khi đang đăng nhập")
+  const signedIn = account.status === 'signedIn';
+  const signOutAndLeave = useSignOut();
   const [step, setStep] = useState<'email' | 'reset'>('email');
   const [email, setEmail] = useState(initialEmail ?? '');
   const [code, setCode] = useState('');
@@ -39,16 +48,18 @@ export function ForgotPasswordPage() {
   const [mode, setMode] = useState(authMode());
   const codeRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const sendRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     void initAuth().then(setMode);
-    // Đã đăng nhập thì không cần đặt lại mật khẩu: về trang trước (§1)
-    void getAccessToken().then((token) => {
-      if (token) navigate(from, { replace: true });
-    });
-  }, [from, navigate]);
+  }, []);
 
-  const trimmedEmail = email.trim();
+  // Đang đăng nhập thì ô email khoá, không autoFocus: focus nút "Gửi mã"
+  useEffect(() => {
+    if (signedIn) sendRef.current?.focus();
+  }, [signedIn]);
+
+  const trimmedEmail = (signedIn ? (account.user?.email ?? '') : email).trim();
 
   const sendCode = async (e: FormEvent) => {
     e.preventDefault();
@@ -97,13 +108,18 @@ export function ForgotPasswordPage() {
         confirmationCode: code,
         newPassword: password,
       });
+      const notice = 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.';
+      if (signedIn) {
+        // Đăng xuất máy này (không phải mọi nơi: máy khác do trigger L9 thu hồi) rồi sang /login
+        await signOutAndLeave({
+          to: '/login',
+          state: { email: trimmedEmail, from: '/account', notice },
+        });
+        return;
+      }
       navigate('/login', {
         replace: true,
-        state: {
-          ...state,
-          email: trimmedEmail,
-          notice: 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới.',
-        },
+        state: { ...state, email: trimmedEmail, notice },
       });
     } catch (error) {
       const view = toResetPasswordError(error);
@@ -152,21 +168,24 @@ export function ForgotPasswordPage() {
         alert={alert}
         notice={notice}
         footer={
-          <>
-            Sai email?{' '}
-            <button
-              type="button"
-              className={styles.footerLink}
-              onClick={() => {
-                setStep('email');
-                setErrors({});
-                setAlert(null);
-                setNotice(null);
-              }}
-            >
-              Nhập lại email
-            </button>
-          </>
+          // Đang đăng nhập thì email không đổi được: không có "Nhập lại email"
+          !signedIn && (
+            <>
+              Sai email?{' '}
+              <button
+                type="button"
+                className={styles.footerLink}
+                onClick={() => {
+                  setStep('email');
+                  setErrors({});
+                  setAlert(null);
+                  setNotice(null);
+                }}
+              >
+                Nhập lại email
+              </button>
+            </>
+          )
         }
       >
         <form ref={formRef} onSubmit={(e) => void reset(e)} noValidate className={styles.body}>
@@ -232,29 +251,52 @@ export function ForgotPasswordPage() {
       subtitle="Nhập email của tài khoản. Chúng tôi sẽ gửi mã 6 số để bạn đặt mật khẩu mới."
       alert={alert}
       footer={
-        <>
-          Nhớ ra mật khẩu?{' '}
-          <Link to="/login" state={{ ...state, email: trimmedEmail || undefined }}>
-            Đăng nhập
-          </Link>
-        </>
+        signedIn ? (
+          <>
+            Nhớ ra mật khẩu? <Link to="/account/password">Quay lại</Link>
+          </>
+        ) : (
+          <>
+            Nhớ ra mật khẩu?{' '}
+            <Link to="/login" state={{ ...state, email: trimmedEmail || undefined }}>
+              Đăng nhập
+            </Link>
+          </>
+        )
       }
     >
       <form onSubmit={(e) => void sendCode(e)} noValidate className={styles.body}>
         {mockNotice}
-        <Field
-          label="Email"
-          size="lg"
-          type="email"
-          autoComplete="username"
-          inputMode="email"
-          autoFocus
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          readOnly={busy}
-          error={errors.email}
-        />
-        <button type="submit" className={styles.primary} aria-busy={busy} disabled={busy}>
+        {signedIn ? (
+          <Field
+            label="Email"
+            size="lg"
+            type="email"
+            appearance="readonly"
+            autoComplete="username"
+            value={trimmedEmail}
+          />
+        ) : (
+          <Field
+            label="Email"
+            size="lg"
+            type="email"
+            autoComplete="username"
+            inputMode="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            readOnly={busy}
+            error={errors.email}
+          />
+        )}
+        <button
+          ref={sendRef}
+          type="submit"
+          className={styles.primary}
+          aria-busy={busy}
+          disabled={busy}
+        >
           {busy ? 'Đang gửi…' : 'Gửi mã'}
         </button>
       </form>
