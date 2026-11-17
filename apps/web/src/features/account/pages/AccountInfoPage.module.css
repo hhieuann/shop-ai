@@ -1,0 +1,48 @@
+/* Thông tin tài khoản (pages/tai-khoan.md 3.1) */
+
+/* Lưới ô: 2 cột bằng nhau (<768: 1 cột) */
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-200);
+}
+
+/* Phần Mật khẩu: viền trên, trái là tiêu đề + câu, phải là link "Đổi mật khẩu" */
+.password {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  margin-top: var(--space-300);
+  padding-top: var(--space-300);
+  border-top: 1px solid var(--border-divider);
+}
+.passwordTitle {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.passwordText {
+  margin: var(--space-25) 0 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.passwordLink {
+  gap: var(--space-100);
+}
+
+@media (min-width: 768px) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-200) var(--space-300);
+  }
+}
+@media (max-width: 639px) {
+  .passwordLink {
+    width: 100%;
+  }
+}

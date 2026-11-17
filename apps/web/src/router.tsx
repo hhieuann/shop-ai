@@ -97,6 +97,21 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // Tài khoản (pages/tai-khoan.md): khung chung (cột mục, đường dẫn, bắt buộc đăng nhập), mục là trang con
+        path: 'account',
+        lazy: async () => ({
+          Component: (await import('./features/account/components/AccountLayout')).AccountLayout,
+        }),
+        children: [
+          {
+            index: true,
+            lazy: async () => ({
+              Component: (await import('./features/account/pages/AccountInfoPage')).AccountInfoPage,
+            }),
+          },
+        ],
+      },
+      {
         // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
         path: 'admin',
         lazy: async () => ({

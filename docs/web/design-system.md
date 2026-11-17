@@ -758,7 +758,7 @@ Chốt 09/11/2026 ([pages/don-hang.md](pages/don-hang.md) mục 4.1). `<ol>` 4 b
 
 Không có hiệu ứng chạy; trạng thái chỉ đổi khi tải lại dữ liệu.
 
-### 9.27 Cột mục tài khoản (`AccountNav`) và bảng chọn mục (`AccountSectionSheet`, 📝; trang tài khoản)
+### 9.27 Cột mục tài khoản (`AccountNav`) và bảng chọn mục (`AccountSectionSheet`, ✅; trang tài khoản)
 Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách mục (`ACCOUNT_SECTIONS`: Thông tin tài khoản, Đổi mật khẩu, Đơn hàng của tôi; rồi Đăng xuất), vẽ hai kiểu.
 
 **`AccountNav` (≥1280, cột trái 280px):**
