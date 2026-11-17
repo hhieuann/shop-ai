@@ -1,6 +1,13 @@
 import type { PostConfirmationTriggerEvent } from 'aws-lambda';
 import { logger } from '../../shared/logger.js';
 
+/**
+ * Message lỗi ném ra cho Cognito. Cognito chuyển nguyên message của Lambda về trình duyệt
+ * ("PostConfirmation failed with error <message>"), lỗi gốc của SDK chứa account ID, ARN role và ID user
+ * pool (thử trên dev 17/11), nên chỉ ném mã cố định; chi tiết nằm trong log.
+ */
+export const SESSION_REVOKE_FAILED = 'SESSION_REVOKE_FAILED';
+
 /** Thu hồi mọi phiên (refresh token) của một người dùng trong user pool. */
 export interface SessionRevoker {
   signOutEverywhere(userPoolId: string, username: string): Promise<void>;
@@ -13,12 +20,22 @@ export interface SessionRevoker {
  *
  * Trigger này cũng chạy khi xác nhận đăng ký (`PostConfirmation_ConfirmSignUp`): lúc đó chưa có phiên
  * nào nên bỏ qua. Lỗi thì ném ra để Lambda ghi Errors và web báo lỗi, thay vì im lặng để phiên cũ còn sống.
+ * Cognito đổi mật khẩu trước rồi mới gọi trigger (thử trên dev 17/11), nên lúc lỗi mật khẩu mới vẫn dùng
+ * được, chỉ phiên cũ chưa bị thu hồi; web bắt lỗi này riêng (message bắt đầu bằng "PostConfirmation").
  * Access token đã cấp vẫn dùng được tới khi hết hạn (tối đa 1 giờ), vì JWT authorizer chỉ kiểm chữ ký.
  */
 export function makePostConfirmationHandler(deps: { readonly sessions: SessionRevoker }) {
   return async (event: PostConfirmationTriggerEvent): Promise<PostConfirmationTriggerEvent> => {
     if (event.triggerSource !== 'PostConfirmation_ConfirmForgotPassword') return event;
-    await deps.sessions.signOutEverywhere(event.userPoolId, event.userName);
+    try {
+      await deps.sessions.signOutEverywhere(event.userPoolId, event.userName);
+    } catch (error) {
+      // Log chỉ đọc được trong tài khoản; không có username hay email
+      logger.error('Không đăng xuất được mọi thiết bị sau khi đặt lại mật khẩu', { error });
+      // Cố ý không gắn cause: lỗi gốc chứa ARN, đã ghi ở log ngay trên
+      // eslint-disable-next-line preserve-caught-error
+      throw new Error(SESSION_REVOKE_FAILED);
+    }
     // Không log username hay email: chỉ cần biết đã thu hồi
     logger.info('Đã đăng xuất mọi thiết bị sau khi đặt lại mật khẩu');
     return event;

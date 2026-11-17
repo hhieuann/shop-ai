@@ -38,3 +38,19 @@ Lambda pre sign-up do **Cognito** gọi mỗi lần có người đăng ký, đ�
 ## Sau sự cố
 
 Thử đăng ký một tài khoản thật trên môi trường đó; trên prod viết postmortem trong 48 giờ.
+
+## Alarm `shop-prd-postconfirmation-errors` (trigger đăng xuất mọi thiết bị)
+
+Ngưỡng: ≥ 1 lần lỗi hoặc throttle trong 5 phút · Chỉ prod · Người trực: Nhân (threat model L9)
+
+Lambda post confirmation do Cognito gọi sau khi khách đặt lại mật khẩu, để đăng xuất mọi thiết bị. Cognito đổi mật khẩu **trước** rồi mới gọi trigger (thử trên dev 17/11), nên khi trigger lỗi:
+
+- Mật khẩu mới **đã dùng được**, mật khẩu cũ bị từ chối.
+- Phiên trên máy khác **chưa bị thu hồi**: kẻ đã đăng nhập bằng mật khẩu bị lộ vẫn dùng tiếp tới 30 ngày.
+- Web nhận lỗi Cognito có message bắt đầu bằng `PostConfirmation`: `UserLambdaValidationException` khi hàm chạy rồi ném lỗi (`SESSION_REVOKE_FAILED`), `UnexpectedLambdaException` khi hàm bị throttle.
+
+Alarm cộng cả Throttles vì hàm bị throttle thì không chạy, Errors vẫn bằng 0.
+
+**Kiểm tra:** Logs Insights trên log group `shop-prd-api-PostConfirmation…`, cùng câu truy vấn như trên; thấy `AccessDeniedException` là quyền IAM bị đổi, `TooManyRequestsException` là gọi Cognito quá giới hạn.
+
+**Giảm thiểu:** sửa nguyên nhân xong, những khách đặt lại mật khẩu trong lúc lỗi vẫn còn phiên cũ. Lấy giờ lỗi trong log rồi báo nhóm; nếu cần, admin chạy `aws cognito-idp admin-user-global-sign-out` cho từng tài khoản khách báo nghi bị lộ.
