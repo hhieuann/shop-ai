@@ -96,7 +96,13 @@ Thành công (account.md BR-14, sửa 17/11/2026):
 2. Chuyển sang `/login` thay cho trang hiện tại (`replace`), mang theo `email` (email của tài khoản), `from: '/account'` và `notice` "Đã đổi mật khẩu. Đăng nhập bằng mật khẩu mới." Trang đăng nhập điền sẵn email, hiện Alert và focus vào ô Mật khẩu (dang-nhap.md 3.1). Không có Alert thành công trên trang đổi mật khẩu.
 3. Chuyển trang này không được bị bước "chưa đăng nhập thì sang `/login`" của trang tài khoản (mục 1) đè mất `email` và `notice`.
 
-Mật khẩu đã đổi nhưng bước đăng xuất mọi nơi lỗi (mạng): vẫn xoá phiên trên máy này và sang `/login` như trên, vì mật khẩu cũ đã hết dùng được.
+Mật khẩu đã đổi nhưng bước đăng xuất mọi nơi lỗi (mạng, Cognito từ chối; An chốt 17/11/2026):
+1. Ở lại trang, **giữ phiên trên máy này** để thử lại được.
+2. Hiện `Alert danger` dưới dòng phụ: "Đã đổi mật khẩu nhưng chưa đăng xuất được các thiết bị khác." kèm nút "Thử lại" (`Button secondary sm` trong Alert); focus vào Alert.
+3. Form khoá (ba ô `readOnly`, nút "Đổi mật khẩu" ẩn) vì mật khẩu đã đổi; "Thử lại" chỉ gọi lại đăng xuất mọi nơi, không đổi mật khẩu lần nữa. Đang thử thì nút "Đang thử lại…".
+4. Thử lại thành công thì như bước 1, 2 ở trên (sang `/login` kèm câu báo).
+
+Lý do không xoá phiên như trước: đăng xuất mọi nơi là để đuổi người lạ đang dùng mật khẩu cũ; xoá phiên máy này mà chưa thu hồi được phiên máy khác thì khách tưởng đã an toàn. Web tự gọi Cognito `GlobalSignOut` để biết lỗi (`signOut({ global: true })` của Amplify bắt mọi lỗi của bước này rồi vẫn xoá token).
 
 ### 3.3 Cột trái và đăng xuất
 
@@ -133,6 +139,7 @@ Lỗi của một ô hiện dưới ô đó (§9.4); lỗi chung hiện bằng `
 | `LimitExceededException`, `TooManyRequestsException` | "Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại." | Alert |
 | Phiên hết hạn (không làm mới được token) | sang `/login` với `state.from` | — |
 | Lỗi mạng | "Không kết nối được máy chủ, vui lòng thử lại." | Alert |
+| Đã đổi mật khẩu, đăng xuất mọi nơi lỗi | "Đã đổi mật khẩu nhưng chưa đăng xuất được các thiết bị khác." + nút "Thử lại" (3.2) | Alert, form khoá |
 
 Câu lỗi Cognito dùng chung `features/auth/lib/authErrors.ts` nếu đã có câu; thêm câu "Mật khẩu hiện tại không đúng." cho riêng màn này (không dùng "Email hoặc mật khẩu không đúng." vì khách đã đăng nhập).
 
@@ -164,6 +171,7 @@ Câu lỗi Cognito dùng chung `features/auth/lib/authErrors.ts` nếu đã có 
 - **`PATCH /api/v1/me`** (#471, account.md BR-06): 400 `USERNAME_REQUIRED` hoặc `USERNAME_INVALID` (gửi số hay mảng cũng là `USERNAME_INVALID`); body không phải JSON thì 400 không có `code`; 409 `USERNAME_TAKEN`; đổi sang đúng tên đang dùng thì 200 và không ghi gì; kết quả `{ username }`, `Cache-Control: no-store`. Web làm mới phiên bằng `refreshProfile()` (mục 1).
 - **Đổi mật khẩu xong thì đăng xuất mọi nơi, gồm cả máy đang dùng** (BR-14, 3.2). Lý do: khách thường đổi mật khẩu vì nghi bị lộ; giữ phiên cũ thì người lạ đã đăng nhập vẫn dùng tiếp được. Khớp BR-13 (L9), không cần thêm Lambda.
 - **"Quên mật khẩu hiện tại?" khi đang đăng nhập:** trang quên mật khẩu chạy bình thường (không đẩy về trang trước như `/login`), khoá ô email theo email của tài khoản; đặt lại xong thì **đăng xuất máy này thật** rồi mới sang `/login`, vì access token còn hạn tới 1 giờ, không đăng xuất thì `/login` đẩy về trang trước. Chi tiết ở dang-nhap.md 3.4.
+- **Đăng xuất mọi nơi lỗi sau khi đã đổi mật khẩu** (sửa 17/11/2026): giữ phiên máy này, báo "Đã đổi mật khẩu nhưng chưa đăng xuất được các thiết bị khác." kèm nút "Thử lại" (3.2), thay cho "vẫn xoá phiên máy này". Web tự gọi Cognito `GlobalSignOut` vì Amplify 6.21.2 bắt lỗi bước này rồi vẫn xoá token (#477). Phần còn lại: access token đã cấp cho máy khác còn dùng được tới tối đa 1 giờ (threat model L10).
 - Giới hạn đã biết: gọi thẳng Cognito bằng access token vẫn đổi được `preferred_username` và email (BR-06). Nhân ghi vào threat model.
 - Bật xác thực hai lớp cho khách: làm sau.
 
