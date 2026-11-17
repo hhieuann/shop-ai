@@ -136,6 +136,8 @@ Thứ tự Tab bước 2: ô mã → Mật khẩu mới → Nhập lại mật k
 
 Thành công: chuyển sang `/login` thay cho trang hiện tại (`replace`, nút Back không quay lại form đặt lại), mang theo `from`, `reason`, `email` và `notice` "Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu mới." (3.1). Không tự đăng nhập: tài khoản có MFA hoặc chưa xác nhận email đi đúng luồng 3.1 sẵn có.
 
+Mật khẩu đã đổi nhưng trigger Post confirmation lỗi (thu hồi phiên máy khác, threat model L9; An và Nhân chốt 17/11/2026): Cognito đổi mật khẩu trước rồi mới gọi trigger, nên vẫn báo lỗi dù mật khẩu mới đã dùng được. Web coi như đặt lại xong: làm như "Thành công" ở trên (kể cả phần "Khi đang đăng nhập" bên dưới), chỉ đổi `notice` thành "Đã đặt mật khẩu mới, nhưng chưa đăng xuất được các thiết bị khác. Đăng nhập bằng mật khẩu mới; nếu nghi bị lộ, hãy đổi mật khẩu lần nữa sau khi đăng nhập." (cùng kiểu Alert success ở 3.1). Nhận biết ở mục 4.
+
 **Khi đang đăng nhập** (mở từ link "Quên mật khẩu hiện tại?" ở [tai-khoan.md](tai-khoan.md) 3.2; An chốt 17/11/2026, account.md BR-13):
 
 | Thứ | Khác với khi chưa đăng nhập |
@@ -162,6 +164,7 @@ Lỗi từ Cognito hiện bằng `Alert danger` ở đầu form (dưới dòng p
 | `CodeMismatchException` | "Mã không đúng. Kiểm tra lại email mới nhất." | dưới 6 ô; xoá 6 số, 6 ô viền `--fg-danger`, focus về ô đầu; gõ số mới thì lỗi tắt |
 | `ExpiredCodeException` | "Mã đã hết hạn. Bấm Gửi lại mã." | dưới 6 ô, như dòng trên |
 | `LimitExceededException`, `TooManyRequestsException` | "Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại." | Alert |
+| `UserLambdaValidationException` (Lambda ném `SESSION_REVOKE_FAILED`) hoặc `UnexpectedLambdaException` (Lambda bị throttle), **message bắt đầu bằng `PostConfirmation`**; chỉ ở bước 2 của 3.4 | không báo lỗi: mật khẩu đã đổi, sang `/login` như thành công với câu báo riêng (3.4) | — |
 | Lỗi mạng | "Không kết nối được máy chủ, vui lòng thử lại." | Alert |
 
 Ở bước 2 của 3.4 dùng lại các dòng trên: `CodeMismatchException`, `ExpiredCodeException` như 3.3 (xoá số, focus ô mã) nhưng mật khẩu đã gõ giữ nguyên; `InvalidPasswordException` dưới ô "Mật khẩu mới"; `LimitExceededException` (gửi mã hoặc nhập sai quá nhiều) là Alert "Bạn thử quá nhiều lần…". Tài khoản chưa xác nhận email bấm quên mật khẩu: chưa thử trên dev, câu chữ chốt khi làm trang (#439).
