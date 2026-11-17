@@ -340,6 +340,7 @@ export class ApiStack extends Stack {
       shopEnv,
       httpApi,
       preSignUpFn: auth.preSignUpFn,
+      postConfirmationFn: auth.postConfirmationFn,
       apiFunctions: {
         catalog: catalogFn,
         cart: cartFn,
@@ -1333,7 +1334,7 @@ export class ApiStack extends Stack {
     const authorizer = new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
       userPoolClients: clients,
     });
-    return { userPool, webClient, authorizer, preSignUpFn };
+    return { userPool, webClient, authorizer, preSignUpFn, postConfirmationFn };
   }
 
   /**

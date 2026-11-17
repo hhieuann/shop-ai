@@ -31,6 +31,11 @@ export interface MonitoringProps {
   readonly httpApi: IHttpApi;
   /** Lambda do Cognito gọi khi đăng ký: lỗi của nó không hiện ở 5xx của API. Cần log group để đếm lần từ chối */
   readonly preSignUpFn: LambdaFunction;
+  /**
+   * Lambda do Cognito gọi sau khi đặt lại mật khẩu để đăng xuất mọi thiết bị (threat model L9). Lỗi thì
+   * mật khẩu vẫn đổi mà phiên cũ còn sống, và cũng không hiện ở 5xx của API
+   */
+  readonly postConfirmationFn?: IFunction;
   /** Lambda đứng sau API, theo tên module: vẽ lỗi và thời gian chạy của từng hàm trên dashboard */
   readonly apiFunctions: Readonly<Record<string, IFunction>>;
   /** Lambda chạy nền (đọc SQS), theo tên: vẽ chung với Lambda API trên dashboard */
@@ -245,6 +250,27 @@ export class Monitoring extends Construct {
         alarm.addOkAction(new SnsAction(this.alarmTopic));
         alarms.push(alarm);
       }
+      // Trigger đăng xuất mọi thiết bị (L9) lỗi hoặc bị throttle: mật khẩu đã đổi nhưng phiên của kẻ đã
+      // đăng nhập còn sống. Throttle thì Lambda không chạy nên Errors = 0 (thử trên dev 17/11), phải cộng
+      // Throttles. Chỉ prod, cùng lý do hạn mức alarm ở trên
+      if (shopEnv.isProd && props.postConfirmationFn) {
+        addAlarm(
+          'PostConfirmationErrorsAlarm',
+          'postconfirmation-errors',
+          new MathExpression({
+            expression: 'FILL(errors, 0) + FILL(throttles, 0)',
+            usingMetrics: {
+              errors: props.postConfirmationFn.metricErrors({ period, statistic: Stats.SUM }),
+              throttles: props.postConfirmationFn.metricThrottles({ period, statistic: Stats.SUM }),
+            },
+            period,
+            label: 'Lỗi và throttle của trigger đăng xuất mọi thiết bị',
+          }),
+          1,
+          1,
+          'lambda-errors',
+        );
+      }
       // Giới hạn Lambda chạy cùng lúc tính chung cả tài khoản (không dimension), nên chỉ canh ở prod
       if (shopEnv.isProd) {
         addAlarm(
@@ -263,8 +289,13 @@ export class Monitoring extends Construct {
       }
 
       // Dashboard "Shop tổng quan": runbook mở trang này trước tiên
-      const { httpApi, preSignUpFn, apiFunctions, workerFunctions } = props;
-      const fns = { ...apiFunctions, ...workerFunctions, presignup: preSignUpFn };
+      const { httpApi, preSignUpFn, postConfirmationFn, apiFunctions, workerFunctions } = props;
+      const fns = {
+        ...apiFunctions,
+        ...workerFunctions,
+        presignup: preSignUpFn,
+        ...(postConfirmationFn ? { postconfirmation: postConfirmationFn } : {}),
+      };
       const dashboard = new Dashboard(this, 'Dashboard', {
         dashboardName: `${shopEnv.stackPrefix}-overview`,
         defaultInterval: Duration.hours(3),

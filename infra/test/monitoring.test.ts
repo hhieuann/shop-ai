@@ -31,6 +31,7 @@ function synth(alarmEmail?: string, shopEnv: ShopEnvironment = dev): Template {
     shopEnv,
     httpApi,
     preSignUpFn: fakeFunction('PreSignUp'),
+    postConfirmationFn: fakeFunction('PostConfirmation'),
     apiFunctions: { catalog: fakeFunction('Catalog'), cart: fakeFunction('Cart') },
     ...(alarmEmail ? { alarmEmail } : {}),
   });
@@ -110,8 +111,9 @@ describe('Monitoring', () => {
     // Act
     const template = synth('test@example.com', prod);
 
-    // Assert: giới hạn 10 Lambda chạy cùng lúc là của cả tài khoản, nên chỉ canh một lần ở prod
-    template.resourceCountIs('AWS::CloudWatch::Alarm', 4);
+    // Assert: giới hạn 10 Lambda chạy cùng lúc là của cả tài khoản, nên chỉ canh một lần ở prod;
+    // thêm alarm trigger đăng xuất mọi thiết bị (L9), cũng chỉ prod
+    template.resourceCountIs('AWS::CloudWatch::Alarm', 5);
     template.hasResourceProperties('AWS::CloudWatch::Alarm', {
       AlarmName: 'shop-prd-lambda-throttles',
       Namespace: 'AWS/Lambda',
@@ -214,6 +216,38 @@ describe('Monitoring', () => {
         }),
       ]),
     });
+  });
+
+  it('postConfirmationErrorsAlarm_countsErrorsAndThrottles_onlyInProd', () => {
+    // Act
+    const prodTemplate = synth('test@example.com', prod);
+    const devTemplate = synth('test@example.com', dev);
+
+    // Assert: throttle thì Lambda không chạy nên Errors = 0 (dev 17/11), phải cộng cả Throttles
+    prodTemplate.hasResourceProperties('AWS::CloudWatch::Alarm', {
+      AlarmName: 'shop-prd-postconfirmation-errors',
+      Threshold: 1,
+      AlarmDescription: Match.stringLikeRegexp('docs/runbooks/lambda-errors.md'),
+      Metrics: Match.arrayWith([
+        Match.objectLike({ Expression: 'FILL(errors, 0) + FILL(throttles, 0)', ReturnData: true }),
+        Match.objectLike({
+          Id: 'errors',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ Namespace: 'AWS/Lambda', MetricName: 'Errors' }),
+          }),
+        }),
+        Match.objectLike({
+          Id: 'throttles',
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ Namespace: 'AWS/Lambda', MetricName: 'Throttles' }),
+          }),
+        }),
+      ]),
+    });
+    // Dev, staging không thêm alarm (hạn mức 10 alarm miễn phí của tài khoản chung)
+    expect(JSON.stringify(devTemplate.findResources('AWS::CloudWatch::Alarm'))).not.toContain(
+      'postconfirmation',
+    );
   });
 
   it('preSignUpRejectedFilter_countsOnlySignUpRejectedError', () => {
