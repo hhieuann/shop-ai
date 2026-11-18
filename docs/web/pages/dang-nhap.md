@@ -70,7 +70,7 @@ Không có logo trong thẻ (header đã có), không có ô "Ghi nhớ đăng n
 | Quên mật khẩu | nút `ghost md` căn giữa ngay dưới nút "Đăng nhập" (như "Gửi lại mã" ở 3.3): "Quên mật khẩu?" → `/forgot-password`, mang theo email đang gõ và `from`, `reason`. Đặt dưới nút chứ không dưới ô mật khẩu, để Tab từ ô mật khẩu tới thẳng nút "Đăng nhập" (mục 6) |
 | Chân thẻ | "Chưa có tài khoản? **Tạo tài khoản**" → `/register` |
 
-Tài khoản admin (nhóm `admin`, bắt buộc MFA theo ADR-0007): sau mật khẩu hiện bước nhập mã MFA, dùng chung bố cục với bước nhập mã ở 3.3 (tiêu đề "Xác thực hai lớp", không có "Gửi lại mã"). Loại MFA (ứng dụng xác thực hay SMS) do An chọn.
+Tài khoản đã bật xác thực hai lớp (khách tự bật ở [tai-khoan.md](tai-khoan.md) 3.4; admin bắt buộc, account.md BR-10): sau mật khẩu hiện bước nhập mã, dùng chung bố cục với bước nhập mã ở 3.3 (tiêu đề "Xác thực hai lớp", không có "Gửi lại mã"). Mã lấy từ ứng dụng xác thực (TOTP), không dùng SMS. Dưới ô mã có dòng gợi ý "Mã trong ứng dụng xác thực của bạn" (12/18 `--fg-subdued`, thêm 18/11/2026).
 
 Mở `/login` với `state.email` và `state.notice` (từ bước 2 của 3.4, hoặc sau khi đổi mật khẩu ở [tai-khoan.md](tai-khoan.md) 3.2): điền sẵn email, hiện `Alert success` với nội dung `notice`, focus vào ô Mật khẩu thay vì ô Email.
 
@@ -206,7 +206,7 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 - Đăng nhập bằng **email**; username chỉ để hiển thị, lưu ở `preferred_username`, đọc từ ID token.
 - Username: 3–20 ký tự, chữ thường không dấu, số, `.`, `_`. Lambda Pre sign-up chặn sai luật và trùng; web nhận lỗi `UserLambdaValidationException` có mã `USERNAME_TAKEN`, `USERNAME_INVALID`, `USERNAME_REQUIRED` và hiện câu ở mục 4.
 - **Quên mật khẩu**: có từ bản sau v1.0.0, xem 3.4 và mục Đã chốt 11/11.
-- **Admin** đăng nhập chung `/login`; tài khoản đã bật MFA (ứng dụng xác thực, TOTP) thì thêm bước "Xác thực hai lớp". Bắt buộc admin bật MFA làm cùng trang quản trị.
+- **Admin** đăng nhập chung `/login`; tài khoản đã bật MFA (ứng dụng xác thực, TOTP) thì thêm bước "Xác thực hai lớp". Admin chưa bật mà mở `/admin` thì web chuyển sang trang bật (tai-khoan.md 3.4); chỉ là chặn ở web.
 - Token lưu cookie `Secure; SameSite=Strict` (không dùng localStorage). Cấu hình Cognito đọc lúc chạy từ `/config.json`; chạy `vite dev` trên mock (không có `/config.json`) thì vẫn dùng token giả như cũ.
 - Chưa có `FocusLayout`: trang đăng nhập tạm nằm trong layout thường như checkout.
 

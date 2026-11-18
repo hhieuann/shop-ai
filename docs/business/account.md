@@ -32,7 +32,20 @@ Là khách hàng đã đăng nhập, tôi muốn đổi username hiện trên he
 - BR-07: **Đăng nhập bằng email và mật khẩu.** Sai email hoặc mật khẩu thì báo chung "Email hoặc mật khẩu không đúng.", không nói rõ sai cái nào (tránh dò email đã đăng ký).
 - BR-08: **Phiên đăng nhập:** giữ đăng nhập 30 ngày trên cùng trình duyệt, tự làm mới mỗi giờ mà khách không thấy. Quá 30 ngày hoặc token bị thu hồi thì phải đăng nhập lại.
 - BR-09: **Đăng xuất** trong menu tài khoản và ở trang tài khoản: kết thúc phiên trên trình duyệt này; giỏ khách trên trình duyệt bắt đầu lại từ rỗng; đang ở trang cần đăng nhập thì về trang chủ.
-- BR-10: **Xác thực hai lớp (MFA):** khách hàng tuỳ chọn bật bằng ứng dụng xác thực (TOTP), không dùng SMS. Admin bắt buộc bật; bắt buộc này áp dụng khi có trang quản trị.
+- BR-10: **Xác thực hai lớp (MFA)** bằng mã 6 số từ ứng dụng xác thực (TOTP, chuẩn mở; sửa 18/11/2026); không dùng SMS, không dùng email.
+  - Khách **tuỳ chọn** bật, tắt ở trang tài khoản (`/account`, phần "Xác thực hai lớp"). Bật: quét mã QR hoặc chép mã chữ vào ứng dụng, rồi nhập mã 6 số đang hiện để xác nhận; mã sai thì chưa bật. Tắt: hỏi lại một lần.
+  - Ứng dụng nào tạo mã TOTP cũng dùng được: trên điện thoại (Google Authenticator, Microsoft Authenticator) hoặc **trên máy tính** cho khách không tiện dùng điện thoại (tiện ích trình duyệt, trình quản lý mật khẩu có mã hai bước như Bitwarden, 1Password, KeePassXC).
+  - Đã bật thì mỗi lần đăng nhập bằng email, mật khẩu đều phải nhập thêm mã 6 số (dang-nhap.md 3.1, bước mã xác thực có sẵn).
+  - Quên mật khẩu (BR-13) vẫn đặt lại được bằng email; đăng nhập sau đó vẫn hỏi mã.
+  - Tắt chỉ cần phiên đăng nhập, không hỏi lại mật khẩu hay mã (Cognito không có API kiểm riêng). Cognito không gửi thư báo khi bật hay tắt. Giới hạn ghi ở threat model (L11).
+  - **Mất thiết bị tạo mã** (mất điện thoại, xoá ứng dụng): khách không tự tắt được vì không đăng nhập được. Shop xác minh chủ tài khoản rồi admin tắt giúp (An chốt 18/11/2026; An làm bước của admin):
+    1. Khách gửi yêu cầu cho shop.
+    2. Admin gửi **một mã ngẫu nhiên** tới **email của tài khoản** (không trả lời vào địa chỉ vừa gửi yêu cầu).
+    3. Khách gửi lại mã đó kèm **mã một đơn hàng** mình đã đặt.
+    4. Khớp cả hai thì admin tắt bằng `AdminSetUserMFAPreference` rồi thu hồi mọi phiên bằng `AdminUserGlobalSignOut`.
+    - Lý do: địa chỉ người gửi thư giả được nên mã phải gửi tới email của tài khoản; mã đơn có trong thư xác nhận đơn nên chủ hộp thư mới biết. Tài khoản chưa có đơn nào thì chỉ dựa vào mã gửi qua email.
+  - **Admin bắt buộc bật.** Tài khoản nhóm `admin` chưa bật mà mở `/admin` thì web chuyển sang `/account/two-factor` với câu "Tài khoản quản trị cần bật xác thực hai lớp." (tai-khoan.md 3.4, admin-don-hang.md mục 1). Đây **chỉ là chặn ở web**: bảo vệ thật là An bật MFA cho tài khoản admin trên Cognito theo quy trình (threat model L5); backend kiểm nhóm `admin`, không kiểm MFA.
+  - Không có mã dự phòng (Cognito không hỗ trợ sẵn) và không có passkey (hướng mở rộng: Cognito không cho passkey làm lớp thứ hai sau mật khẩu, cần gói Essentials).
 - BR-11: **Dữ liệu tài khoản chỉ gồm email và username.** Họ tên, số điện thoại, địa chỉ nhập ở trang đặt hàng cho từng đơn (ordering.md), không có sổ địa chỉ trong MVP.
 - BR-12: **Thử sai nhiều lần:** Cognito tạm khoá lượt đăng nhập, đăng ký, gửi mã khi bị thử dồn dập; web báo "Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại."
 - BR-13: **Quên mật khẩu:** khách tự đặt lại, không cần đăng nhập. Bấm "Quên mật khẩu?" ở trang đăng nhập, nhập email; Cognito gửi mã 6 số tới email đó; khách nhập mã và mật khẩu mới (theo BR-04).
@@ -74,6 +87,10 @@ Là khách hàng đã đăng nhập, tôi muốn đổi username hiện trên he
 - Given tài khoản chưa xác nhận email, When đăng nhập đúng mật khẩu, Then chuyển sang bước nhập mã và email nhận mã mới.
 - Given khách đã đăng nhập, When gọi `GET /api/v1/me`, Then nhận 200 kèm `userId` và `groups`; chưa đăng nhập thì 401.
 - Given tài khoản admin đã bật MFA, When đăng nhập đúng mật khẩu, Then phải nhập mã 6 số từ ứng dụng xác thực mới vào được.
+- Given khách đã đăng nhập, chưa bật MFA, When bật bằng mã đúng từ ứng dụng, Then trang tài khoản hiện "Đang bật" và lần đăng nhập sau phải nhập mã 6 số.
+- Given khách đang bật MFA ở trang bật, When nhập mã sai, Then báo "Mã không đúng. Nhập mã đang hiện trong ứng dụng (mã đổi mỗi 30 giây)." và MFA chưa bật.
+- Given khách đã bật MFA, When tắt và xác nhận, Then trang hiện "Đang tắt" và lần đăng nhập sau không hỏi mã.
+- Given tài khoản nhóm `admin` chưa bật MFA, When mở `/admin`, Then về `/account/two-factor` với câu "Tài khoản quản trị cần bật xác thực hai lớp."
 - Given khách đã đăng nhập, When đăng xuất, Then header hiện nút "Đăng nhập" và `/orders` chuyển sang trang đăng nhập.
 - Given tài khoản đã xác nhận, When khách bấm "Quên mật khẩu?", nhập email, nhập đúng mã và mật khẩu mới đạt 5 điều kiện, Then về trang đăng nhập với email điền sẵn, đăng nhập được bằng mật khẩu mới, còn mật khẩu cũ báo "Email hoặc mật khẩu không đúng."
 - Given email chưa có tài khoản, When nhập ở bước quên mật khẩu, Then vẫn sang bước nhập mã với cùng câu chữ như email có tài khoản, và không có thư nào gửi đi.
@@ -92,4 +109,4 @@ Là khách hàng đã đăng nhập, tôi muốn đổi username hiện trên he
 
 - `/login`, `/register`, `/forgot-password`: [docs/web/pages/dang-nhap.md](../web/pages/dang-nhap.md)
 - Nút và menu tài khoản trên header: design-system §9.17 (mục "Tài khoản của tôi")
-- `/account`, `/account/password`: [docs/web/pages/tai-khoan.md](../web/pages/tai-khoan.md)
+- `/account`, `/account/password`, `/account/two-factor`: [docs/web/pages/tai-khoan.md](../web/pages/tai-khoan.md)
