@@ -15,8 +15,8 @@ Bản chốt 16/11/2026. Sửa 17/11/2026 theo An: đổi mật khẩu xong thì
 - **Bắt buộc đăng nhập.** Chưa đăng nhập mà mở các đường dẫn này thì sang `/login` với `state.from` là đường dẫn đang mở, như `/orders`. Đăng nhập xong quay lại đúng mục.
 - Username và email đọc từ hồ sơ đang có (`useAccount()`, `shared/auth/useSession`; nguồn là ID token, dang-nhap.md mục 8). Không gọi API để hiện trang.
 - **Đổi username:** `PATCH /api/v1/me` với `{ "username": "..." }` (account.md BR-06; API của An, issue #471, PR #472 đã merge 17/11, có trong `contracts/openapi.yaml`). Kết quả 200 trả `{ username }`. Thành công thì web **làm mới phiên** bằng `refreshProfile()` của `shared/auth` (lấy ID token mới có `preferred_username` mới, rồi `notifyAuthChanged()`) để header, menu tài khoản và cột trái hiện tên mới.
-- **Đổi mật khẩu:** gọi thẳng Cognito qua `shared/auth` (`changePassword`, bản Cognito dùng `updatePassword` của Amplify: mật khẩu hiện tại + mật khẩu mới), không qua API của shop. Đổi xong thì **đăng xuất mọi nơi** (`signOut({ global: true })`) và về `/login` (account.md BR-14, mục 3.2).
-- **Xác thực hai lớp:** gọi thẳng Cognito qua `shared/auth`, không qua API của shop. Bản Cognito dùng `fetchMFAPreference` (đọc trạng thái khi mở `/account`), `setUpTOTP` + `getSetupUri` (tạo mã), `verifyTOTPSetup` (xác nhận mã) và `updateMFAPreference` (bật, tắt) của Amplify. Bản mock (chạy `vite dev` không có Cognito): mã giả, mã "000000" là sai, 6 số khác là đúng; trạng thái ghi `localStorage`.
+- **Đổi mật khẩu:** gọi thẳng Cognito qua `shared/auth` (`changePassword`, bản Cognito dùng `updatePassword` của Amplify: mật khẩu hiện tại + mật khẩu mới), không qua API của shop. Đổi xong thì **đăng xuất mọi nơi** (gọi thẳng Cognito `GlobalSignOut`, #481) và về `/login` (account.md BR-14, mục 3.2).
+- **Xác thực hai lớp:** gọi thẳng Cognito qua `shared/auth`, không qua API của shop. Bản Cognito dùng `fetchMFAPreference` (đọc trạng thái khi mở `/account`), `setUpTOTP` (tạo mã; URI `otpauth://` tự dựng, mã hoá nhãn và issuer), `verifyTOTPSetup` (xác nhận mã) và `updateMFAPreference` (bật: `{ totp: 'PREFERRED' }` ngay sau `verifyTOTPSetup`, vì user pool để MFA tuỳ chọn nên chỉ xác nhận mã thì lần đăng nhập sau chưa hỏi mã; tắt: `{ totp: 'DISABLED' }`) của Amplify; các hàm này nằm ở chunk riêng, chỉ nạp khi cần. Bản mock (chạy `vite dev` không có Cognito): mã giả, mã "000000" là sai, 6 số khác là đúng; trạng thái ghi `localStorage`.
 - Không có trang tổng quan riêng: `/account` là mục đầu tiên.
 
 ## 2. Bố cục
@@ -99,7 +99,7 @@ Thứ tự Tab: Mật khẩu hiện tại → "Quên mật khẩu hiện tại?"
 Kiểm trước khi gửi: ô trống ("Vui lòng nhập mật khẩu hiện tại.", "Vui lòng nhập mật khẩu mới."), mật khẩu mới chưa đạt điều kiện ("Mật khẩu chưa đạt điều kiện bên dưới."), nhập lại không khớp. Lỗi đầu tiên được focus.
 
 Thành công (account.md BR-14, sửa 17/11/2026):
-1. Đăng xuất mọi nơi: `signOut({ global: true })`, dọn dữ liệu phiên như "Đăng xuất" ở 3.3 (giỏ khách, dữ liệu phiên, bộ nhớ đệm) và gọi `notifyAuthChanged()`. Nút giữ "Đang đổi mật khẩu…" tới lúc chuyển trang.
+1. Đăng xuất mọi nơi: gọi thẳng Cognito `GlobalSignOut` (`shared/auth/cognito.ts`), dọn dữ liệu phiên như "Đăng xuất" ở 3.3 (giỏ khách, dữ liệu phiên, bộ nhớ đệm) và gọi `notifyAuthChanged()`. Nút giữ "Đang đổi mật khẩu…" tới lúc chuyển trang.
 2. Chuyển sang `/login` thay cho trang hiện tại (`replace`), mang theo `email` (email của tài khoản), `from: '/account'` và `notice` "Đã đổi mật khẩu. Đăng nhập bằng mật khẩu mới." Trang đăng nhập điền sẵn email, hiện Alert và focus vào ô Mật khẩu (dang-nhap.md 3.1). Không có Alert thành công trên trang đổi mật khẩu.
 3. Chuyển trang này không được bị bước "chưa đăng nhập thì sang `/login`" của trang tài khoản (mục 1) đè mất `email` và `notice`.
 
@@ -142,7 +142,9 @@ Khung như mục khác (`AccountLayout`, `AccountPanel`). Đã bật rồi mà m
 
 Đang tạo mã (`setUpTOTP`): chỗ QR và mã chữ là khung chờ cùng cỡ (không nhảy bố cục); nút "Bật xác thực hai lớp" vô hiệu. Tạo mã lỗi: `Alert danger` "Không tạo được mã, vui lòng thử lại." kèm `Button secondary sm` "Thử lại" (trong Alert, §9.13).
 
-Thành công: về `/account` (`replace`) với `Alert success` "Đã bật xác thực hai lớp. Lần đăng nhập sau cần mã 6 số." (mang qua `state.notice`, đọc xong xoá khỏi history như `/login`); phần Xác thực hai lớp hiện "Đang bật". Đến từ `/admin` thì bật xong về `/admin`.
+Đọc trạng thái lỗi: **không tạo mã** (AssociateSoftwareToken gỡ ngay mã cũ nếu tài khoản đã bật, khách mất ứng dụng xác thực đang dùng); `Alert danger` "Không tải được trạng thái xác thực hai lớp, vui lòng thử lại." kèm `Button secondary sm` "Thử lại" (đọc lại trạng thái); chỗ QR, mã chữ giữ khung chờ, nút "Bật xác thực hai lớp" vô hiệu.
+
+Bấm "Bật xác thực hai lớp": `verifyTOTPSetup({ code })` rồi `updateMFAPreference({ totp: 'PREFERRED' })` (thiếu bước sau thì lần đăng nhập sau Cognito chưa hỏi mã; kiểm trên dev: bật, đăng xuất, đăng nhập lại phải bị hỏi mã). Mã đúng mà bước bật lỗi thì bấm lại chỉ chạy bước bật. Thành công: về `/account` (`replace`) với `Alert success` "Đã bật xác thực hai lớp. Lần đăng nhập sau cần mã 6 số." (mang qua `state.notice`, đọc xong xoá khỏi history như `/login`); phần Xác thực hai lớp hiện "Đang bật". Đến từ `/admin` thì bật xong về `/admin`.
 
 Mã chữ chỉ hiện trên màn hình: không lưu vào trình duyệt, không ghi log (threat model L13). Rời trang rồi mở lại thì tạo mã mới.
 
