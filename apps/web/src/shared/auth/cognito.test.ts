@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { cognitoSignOutHandler, globalSignOut, profileFromIdToken } from './cognito';
+import {
+  cognitoSignOutHandler,
+  cognitoTwoFactorHandlers,
+  globalSignOut,
+  profileFromIdToken,
+} from './cognito';
 
 describe('profileFromIdToken', () => {
   it('profileFromIdToken_readsUsernameEmailAndAdmin_fromIdTokenClaims', () => {
@@ -123,5 +128,65 @@ describe('cognitoSignOutHandler', () => {
     // Assert
     expect(d.revokeEverywhere).not.toHaveBeenCalled();
     expect(d.clearThisDevice).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('cognitoTwoFactorHandlers', () => {
+  // Sinh lúc chạy, không viết cứng chuỗi trông như khoá (gitleaks)
+  const generated = crypto.randomUUID();
+
+  /** Thay nạp động cognitoMfa.ts bằng hàm giả */
+  const load = (api: ReturnType<typeof deps>) => () => Promise.resolve(api as never);
+
+  function deps(enabled?: ('TOTP' | 'SMS' | 'EMAIL')[]) {
+    return {
+      fetchMFAPreference: vi.fn(async () => ({ enabled })),
+      setUpTOTP: vi.fn(async () => ({
+        sharedSecret: generated,
+        getSetupUri: () => new URL('otpauth://totp/x'),
+      })),
+      verifyTOTPSetup: vi.fn(async () => undefined),
+      updateMFAPreference: vi.fn(async () => undefined),
+    };
+  }
+
+  it('isEnabled_readsTotpFromMfaPreference', async () => {
+    expect(await cognitoTwoFactorHandlers(load(deps(['TOTP']))).isEnabled()).toBe(true);
+    expect(await cognitoTwoFactorHandlers(load(deps([]))).isEnabled()).toBe(false);
+    // Chưa bật cách nào: Cognito không trả `enabled`
+    expect(await cognitoTwoFactorHandlers(load(deps())).isEnabled()).toBe(false);
+  });
+
+  it('setUp_returnsOnlySharedSecret', async () => {
+    // Act
+    const secret = await cognitoTwoFactorHandlers(load(deps())).setUp();
+
+    // Assert: URI do trang tự dựng (lib/totp.ts), không dùng getSetupUri
+    expect(secret).toBe(generated);
+  });
+
+  it('verify_passesCode_toVerifyTotpSetup', async () => {
+    // Arrange
+    const d = deps();
+
+    // Act
+    await cognitoTwoFactorHandlers(load(d)).verify('123456');
+
+    // Verify
+    expect(d.verifyTOTPSetup).toHaveBeenCalledWith({ code: '123456' });
+  });
+
+  it('setEnabled_setsTotpPreferredOrDisabled', async () => {
+    // Arrange
+    const d = deps();
+    const handlers = cognitoTwoFactorHandlers(load(d));
+
+    // Act
+    await handlers.setEnabled(true);
+    await handlers.setEnabled(false);
+
+    // Verify
+    expect(d.updateMFAPreference).toHaveBeenNthCalledWith(1, { totp: 'PREFERRED' });
+    expect(d.updateMFAPreference).toHaveBeenNthCalledWith(2, { totp: 'DISABLED' });
   });
 });

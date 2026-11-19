@@ -16,7 +16,9 @@ import {
   setRefreshProfileHandler,
   setSignOutHandler,
   setTokenProvider,
+  setTwoFactorHandlers,
   type SignOutOptions,
+  type TwoFactorHandlers,
   type UserProfile,
 } from './token';
 
@@ -112,6 +114,31 @@ export function cognitoSignOutHandler(deps: SignOutDeps) {
   };
 }
 
+/** Các hàm Amplify mà xác thực hai lớp dùng (cognitoMfa.ts) */
+type TwoFactorApi = Pick<
+  typeof import('aws-amplify/auth'),
+  'fetchMFAPreference' | 'setUpTOTP' | 'verifyTOTPSetup' | 'updateMFAPreference'
+>;
+
+/**
+ * Bản Cognito của xác thực hai lớp (token.ts, account.md BR-10). Hàm Amplify nạp động lần đầu cần
+ * (`load`, chunk riêng), không cộng vào gói Cognito nạp lúc mở web. Chỉ lấy `sharedSecret` của
+ * setUpTOTP: `getSetupUri` của Amplify 6.21.2 ghép nhãn và issuer không mã hoá URL, nên trang tự dựng
+ * URI (features/account/lib/totp.ts). Bật đặt TOTP là cách ưu tiên (PREFERRED, cũng là đang bật).
+ */
+export function cognitoTwoFactorHandlers(
+  load: () => Promise<TwoFactorApi> = () => import('./cognitoMfa'),
+): TwoFactorHandlers {
+  return {
+    isEnabled: async () =>
+      (await (await load()).fetchMFAPreference()).enabled?.includes('TOTP') ?? false,
+    setUp: async () => (await (await load()).setUpTOTP()).sharedSecret,
+    verify: async (code) => (await load()).verifyTOTPSetup({ code }),
+    setEnabled: async (enabled) =>
+      (await load()).updateMFAPreference({ totp: enabled ? 'PREFERRED' : 'DISABLED' }),
+  };
+}
+
 let mode: 'cognito' | 'dev' | undefined;
 
 /** 'cognito' khi đã cấu hình được Cognito; 'dev' khi chạy trên mock (giữ token giả) */
@@ -171,6 +198,7 @@ export async function initAuth(): Promise<'cognito' | 'dev'> {
   setRefreshProfileHandler(async () => {
     await fetchAuthSession({ forceRefresh: true });
   });
+  setTwoFactorHandlers(cognitoTwoFactorHandlers());
 
   // Token bị thu hồi hoặc hết hạn không làm mới được: báo để giỏ hàng và header cập nhật
   Hub.listen('auth', ({ payload }) => {

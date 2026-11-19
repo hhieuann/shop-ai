@@ -252,3 +252,92 @@ export async function refreshProfile(hint?: ProfileHint): Promise<void> {
   await refreshProfileHandler(hint);
   notifyAuthChanged();
 }
+
+// ── Xác thực hai lớp bằng ứng dụng xác thực (account.md BR-10, pages/tai-khoan.md 3.1, 3.4, 3.5) ─────
+// Cùng kiểu với đổi mật khẩu: file này giữ hàm gọi và bản mock, cognito.ts đặt bản Cognito trong initAuth().
+
+export interface TwoFactorHandlers {
+  /** Đã bật xác thực hai lớp (TOTP) chưa */
+  isEnabled: () => Promise<boolean>;
+  /** Tạo mã bí mật mới để thêm tài khoản vào ứng dụng xác thực. Mã chỉ để hiện, không lưu, không ghi log */
+  setUp: () => Promise<string>;
+  /** Kiểm mã 6 số đầu tiên từ ứng dụng (mã sai: CodeMismatchException) */
+  verify: (code: string) => Promise<void>;
+  /** Bật hoặc tắt hỏi mã khi đăng nhập */
+  setEnabled: (enabled: boolean) => Promise<void>;
+}
+
+const DEV_MFA_KEY = 'shop-ai:dev-mfa';
+
+/** Mã bí mật giả cho bản mock: 32 ký tự base32, sinh lúc chạy */
+function randomBase32(length = 32): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+}
+
+/** Bản mock chỉ chạy khi `vite dev` có token giả; bản build không có Cognito thì báo lỗi */
+async function devTwoFactorGuard(): Promise<void> {
+  if (!import.meta.env.DEV) throw namedError('AuthNotConfigured', 'Chưa cấu hình Cognito');
+  await devDelay();
+  if (!readDevToken()) throw namedError('UserUnAuthenticatedException');
+}
+
+/**
+ * Bản mock: mã "000000" là sai (CodeMismatchException), 6 số khác là đúng; bật, tắt ghi vào
+ * localStorage 'shop-ai:dev-mfa' để thấy nhãn đổi.
+ */
+const devTwoFactor: TwoFactorHandlers = {
+  isEnabled: async () => {
+    await devTwoFactorGuard();
+    try {
+      return localStorage.getItem(DEV_MFA_KEY) === '1';
+    } catch {
+      return false;
+    }
+  },
+  setUp: async () => {
+    await devTwoFactorGuard();
+    return randomBase32();
+  },
+  verify: async (code) => {
+    await devTwoFactorGuard();
+    if (code === '000000') throw namedError('CodeMismatchException');
+  },
+  setEnabled: async (enabled) => {
+    await devTwoFactorGuard();
+    try {
+      if (enabled) localStorage.setItem(DEV_MFA_KEY, '1');
+      else localStorage.removeItem(DEV_MFA_KEY);
+    } catch {
+      // bỏ qua
+    }
+  },
+};
+
+let twoFactorHandlers: TwoFactorHandlers = devTwoFactor;
+
+export function setTwoFactorHandlers(next: TwoFactorHandlers) {
+  twoFactorHandlers = next;
+}
+
+/** Xác thực hai lớp đang bật hay tắt (tai-khoan.md 3.1; trang admin chặn admin chưa bật) */
+export async function getTwoFactorEnabled(): Promise<boolean> {
+  await ready;
+  return twoFactorHandlers.isEnabled();
+}
+
+/** Bắt đầu bật: trả mã bí mật (`sharedSecret`) để hiện mã QR và mã chữ (tai-khoan.md 3.4) */
+export async function setUpTwoFactor(): Promise<string> {
+  return twoFactorHandlers.setUp();
+}
+
+/** Xác nhận mã 6 số từ ứng dụng; đúng thì mới bật được */
+export async function verifyTwoFactorCode(code: string): Promise<void> {
+  await twoFactorHandlers.verify(code);
+}
+
+/** Bật (sau khi xác nhận mã) hoặc tắt (tai-khoan.md 3.5) */
+export async function setTwoFactorEnabled(enabled: boolean): Promise<void> {
+  await twoFactorHandlers.setEnabled(enabled);
+}
