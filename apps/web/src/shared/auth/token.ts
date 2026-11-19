@@ -53,9 +53,26 @@ export function notifyAuthChanged() {
 // dù phiên còn (#499). Mặc định đã xong, để test và chạy trên mock không phải chờ.
 let ready: Promise<unknown> = Promise.resolve();
 
-/** main.tsx đưa lời hứa nạp Cognito vào. Nạp lỗi thì vẫn coi như xong (dùng bộ lấy token đang có), không treo trang */
-export function setAuthReady(next: Promise<unknown>) {
-  ready = next.catch(() => undefined);
+/** Chờ nạp Cognito tối đa bấy nhiêu mili giây (#501) */
+export const AUTH_READY_TIMEOUT_MS = 10_000;
+
+/**
+ * main.tsx đưa lời hứa nạp Cognito vào. Nạp lỗi, hoặc quá `timeoutMs` chưa xong (gói Cognito tải treo),
+ * thì vẫn coi như xong: xét phiên bằng bộ lấy token đang có, không để trang quay "Đang tải…" mãi (#501).
+ * Cognito nạp xong muộn thì setTokenProvider vẫn báo notifyAuthChanged() như thường.
+ */
+export function setAuthReady(next: Promise<unknown>, timeoutMs = AUTH_READY_TIMEOUT_MS) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs);
+  });
+  const settled = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  // Nạp xong trước hạn thì huỷ hẹn giờ
+  void settled.then(() => clearTimeout(timer));
+  ready = Promise.race([settled, timeout]);
 }
 
 export async function getAccessToken(): Promise<string | null> {
