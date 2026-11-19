@@ -171,3 +171,21 @@ describe('toChangePasswordError', () => {
     }
   });
 });
+
+describe('toAuthError · phiên cũ (#501)', () => {
+  it('toAuthError_reloadAlert_whenStillAuthenticatedAfterSignOut', () => {
+    // Act
+    const view = toAuthError(
+      Object.assign(new Error('There is already a signed in user.'), {
+        name: 'UserAlreadyAuthenticatedException',
+      }),
+    );
+
+    // Assert
+    expect(view).toEqual({
+      target: 'alert',
+      message:
+        'Không đăng xuất được phiên cũ trên máy này. Vui lòng tải lại trang rồi đăng nhập lại.',
+    });
+  });
+});

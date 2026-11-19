@@ -5,6 +5,7 @@ import { Field } from '../../../shared/components/Field';
 import { PasswordField } from '../../../shared/components/PasswordField';
 import { authMode, initAuth } from '../../../shared/auth/cognito';
 import { getAccessToken, signInWithDevToken } from '../../../shared/auth/token';
+import { useSignOut } from '../../account/lib/useSignOut';
 import { AuthCard } from '../components/AuthCard';
 import styles from '../components/AuthCard.module.css';
 import { CodeStep } from '../components/CodeStep';
@@ -36,6 +37,7 @@ export function LoginPage() {
   const [alert, setAlert] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState(authMode());
+  const signOutThisDevice = useSignOut();
 
   useEffect(() => {
     void initAuth().then(setMode);
@@ -84,14 +86,20 @@ export function LoginPage() {
     setBusy(true);
     try {
       await initAuth();
-      const { nextStep } = await signIn({ username: email.trim(), password });
-      await handleNextStep(nextStep.signInStep);
-    } catch (error) {
-      // Phiên cũ còn (vd. mở 2 tab): coi như đã đăng nhập
-      if ((error as { name?: string }).name === 'UserAlreadyAuthenticatedException') {
-        await finish();
-        return;
+      const credentials = { username: email.trim(), password };
+      let result;
+      try {
+        result = await signIn(credentials);
+      } catch (error) {
+        if ((error as { name?: string }).name !== 'UserAlreadyAuthenticatedException') throw error;
+        // Máy còn phiên cũ (có thể của người khác trên máy dùng chung, #501): không dùng phiên đó. Đăng
+        // xuất máy này (dọn giỏ, dữ liệu phiên như nút Đăng xuất) rồi đăng nhập lại một lần bằng email,
+        // mật khẩu vừa nhập. Lần này vẫn lỗi thì báo như lỗi đăng nhập thường, không thử nữa
+        await signOutThisDevice();
+        result = await signIn(credentials);
       }
+      await handleNextStep(result.nextStep.signInStep);
+    } catch (error) {
       const view = toAuthError(error);
       if (view.target === 'email' || view.target === 'password') {
         setErrors({ [view.target]: view.message });
