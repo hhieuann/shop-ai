@@ -117,6 +117,13 @@ export const routes: RouteObject[] = [
                 .ChangePasswordPage,
             }),
           },
+          {
+            // Bật xác thực hai lớp (pages/tai-khoan.md 3.4); thư viện mã QR chỉ nạp ở trang này
+            path: 'two-factor',
+            lazy: async () => ({
+              Component: (await import('./features/account/pages/TwoFactorPage')).TwoFactorPage,
+            }),
+          },
         ],
       },
       {

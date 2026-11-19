@@ -22,6 +22,11 @@ export const queryKeys = {
     /** Một trang đơn theo trạng thái; cursor của trang đang xem (undefined: trang 1) */
     orders: (status: string, cursor?: string) => ['admin', 'orders', status, cursor ?? ''] as const,
   },
+  account: {
+    all: ['account'] as const,
+    /** Xác thực hai lớp bật hay tắt của tài khoản có email này (đọc từ Cognito, không qua API) */
+    twoFactor: (email: string) => ['account', 'two-factor', email] as const,
+  },
   recs: {
     all: ['recs'] as const,
     /** Khác key với for-you: vừa đăng nhập thì gọi API mới, không dùng lại cache hàng bán chạy */

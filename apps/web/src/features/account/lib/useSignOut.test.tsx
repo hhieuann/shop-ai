@@ -116,6 +116,7 @@ describe('useSignOut', () => {
     queryClient.setQueryData(queryKeys.orders.all, ['đơn']);
     queryClient.setQueryData(queryKeys.recs.all, ['gợi ý']);
     queryClient.setQueryData(queryKeys.admin.all, ['admin']);
+    queryClient.setQueryData(queryKeys.account.twoFactor('an@example.com'), true);
     const { user } = renderAt('/products', undefined, queryClient);
 
     // Act
@@ -125,5 +126,7 @@ describe('useSignOut', () => {
     await waitFor(() => expect(queryClient.getQueryData(queryKeys.orders.all)).toBeUndefined());
     expect(queryClient.getQueryData(queryKeys.recs.all)).toBeUndefined();
     expect(queryClient.getQueryData(queryKeys.admin.all)).toBeUndefined();
+    // Trạng thái xác thực hai lớp của người vừa dùng (#183)
+    expect(queryClient.getQueryData(queryKeys.account.twoFactor('an@example.com'))).toBeUndefined();
   });
 });
