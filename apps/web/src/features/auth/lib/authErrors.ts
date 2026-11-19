@@ -37,6 +37,12 @@ const BY_NAME: Record<string, AuthErrorView> = {
   CodeMismatchException: { target: 'code', message: 'Mã không đúng. Kiểm tra lại email mới nhất.' },
   ExpiredCodeException: { target: 'code', message: 'Mã đã hết hạn. Bấm Gửi lại mã.' },
   NetworkError: { target: 'alert', message: 'Không kết nối được máy chủ, vui lòng thử lại.' },
+  // Máy còn phiên cũ mà đăng xuất rồi đăng nhập lại vẫn bị Cognito báo đã đăng nhập (#501)
+  UserAlreadyAuthenticatedException: {
+    target: 'alert',
+    message:
+      'Không đăng xuất được phiên cũ trên máy này. Vui lòng tải lại trang rồi đăng nhập lại.',
+  },
 };
 
 const TOO_MANY = new Set([

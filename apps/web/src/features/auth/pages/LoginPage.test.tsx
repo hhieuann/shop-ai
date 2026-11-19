@@ -19,7 +19,11 @@ vi.mock('../../../shared/auth/cognito', () => ({
   initAuth: vi.fn(async () => 'cognito'),
   authMode: () => 'cognito',
 }));
-vi.mock('../../cart/lib/afterSignIn', () => ({ continueAfterSignIn: vi.fn() }));
+// Giữ bản thật của phần còn lại (clearCartSession: đăng xuất máy này khi còn phiên cũ, #501)
+vi.mock('../../cart/lib/afterSignIn', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../cart/lib/afterSignIn')>()),
+  continueAfterSignIn: vi.fn(),
+}));
 
 const cognitoError = (name: string) => Object.assign(new Error(name), { name });
 
@@ -256,5 +260,108 @@ describe('LoginPage · quên mật khẩu (#439)', () => {
     // Assert: thông báo chỉ hiện một lần ở /login, không mang sang trang khác
     const state = JSON.parse((await screen.findByTestId('forgot-state')).textContent ?? 'null');
     expect(state).toEqual({ from: '/cart', email: 'an@example.com' });
+  });
+});
+
+/** #501: máy còn phiên cũ (có thể của người khác) thì không dùng phiên đó */
+describe('LoginPage · máy còn phiên cũ', () => {
+  const DEV_TOKEN_KEY = 'shop-ai:dev-token';
+  /** Token giả còn trong máy lúc mỗi lần gọi signIn (đăng xuất phải chạy giữa hai lần) */
+  let tokensSeen: (string | null)[];
+
+  beforeEach(() => {
+    localStorage.clear();
+    tokensSeen = [];
+  });
+
+  /**
+   * Form đã hiện (trang chưa thấy phiên lúc mở, vd. bấm khi đang nạp Cognito hoặc làm mới token lỗi),
+   * nhưng máy vẫn còn phiên cũ của người khác (token giả của bản mock)
+   */
+  async function renderWithOldSession() {
+    renderLogin();
+    await screen.findByLabelText('Mật khẩu');
+    localStorage.setItem(DEV_TOKEN_KEY, 'phien-cu');
+  }
+
+  /** signIn lần 1 báo đã đăng nhập; lần 2 chạy `second` */
+  function mockAlreadyAuthenticatedThen(second: () => Promise<unknown>) {
+    vi.mocked(signIn).mockImplementation(async () => {
+      tokensSeen.push(localStorage.getItem(DEV_TOKEN_KEY));
+      if (tokensSeen.length === 1) throw cognitoError('UserAlreadyAuthenticatedException');
+      return second() as never;
+    });
+  }
+
+  it('submit_signsOutOldSessionThenSignsInAgain_withTypedCredentials', async () => {
+    // Arrange
+    mockAlreadyAuthenticatedThen(async () => ({
+      isSignedIn: true,
+      nextStep: { signInStep: 'DONE' },
+    }));
+    await renderWithOldSession();
+
+    // Act
+    await fillAndSubmit('binh@example.com', 'Abcdef1!');
+
+    // Assert: đăng nhập bằng tài khoản vừa nhập, không dùng phiên cũ
+    await waitFor(() => expect(continueAfterSignIn).toHaveBeenCalledTimes(1));
+    // Verify: hai lần cùng email, mật khẩu; phiên cũ đã xoá trước lần thứ hai
+    expect(vi.mocked(signIn).mock.calls).toEqual([
+      [{ username: 'binh@example.com', password: 'Abcdef1!' }],
+      [{ username: 'binh@example.com', password: 'Abcdef1!' }],
+    ]);
+    expect(tokensSeen).toEqual(['phien-cu', null]);
+  });
+
+  it('submit_showsWrongPassword_andDoesNotFinish_whenOldSessionAndPasswordWrong', async () => {
+    // Arrange: trước đây nhập mật khẩu nào cũng vào bằng phiên cũ
+    mockAlreadyAuthenticatedThen(async () => {
+      throw cognitoError('NotAuthorizedException');
+    });
+    await renderWithOldSession();
+
+    // Act
+    await fillAndSubmit('binh@example.com', 'Sai1!sai');
+
+    // Assert: báo sai như BR-07, không vào, phiên cũ đã bị xoá khỏi máy
+    expect(await screen.findByRole('alert')).toHaveTextContent('Email hoặc mật khẩu không đúng.');
+    expect(continueAfterSignIn).not.toHaveBeenCalled();
+    expect(localStorage.getItem(DEV_TOKEN_KEY)).toBeNull();
+  });
+
+  it('submit_showsReloadAlert_andTriesOnlyOnce_whenStillAuthenticated', async () => {
+    // Arrange: xoá phiên cũ không được, lần hai Cognito vẫn báo đã đăng nhập
+    mockAlreadyAuthenticatedThen(async () => {
+      throw cognitoError('UserAlreadyAuthenticatedException');
+    });
+    await renderWithOldSession();
+
+    // Act
+    await fillAndSubmit('binh@example.com', 'Abcdef1!');
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Không đăng xuất được phiên cũ trên máy này. Vui lòng tải lại trang rồi đăng nhập lại.',
+    );
+    // Verify: không vào, không lặp
+    expect(continueAfterSignIn).not.toHaveBeenCalled();
+    expect(signIn).toHaveBeenCalledTimes(2);
+  });
+
+  it('submit_asksForTotpCode_whenRetryNeedsMfa', async () => {
+    // Arrange: tài khoản vừa nhập có bật xác thực hai lớp
+    mockAlreadyAuthenticatedThen(async () => ({
+      isSignedIn: false,
+      nextStep: { signInStep: 'CONFIRM_SIGN_IN_WITH_TOTP_CODE' },
+    }));
+    await renderWithOldSession();
+
+    // Act
+    await fillAndSubmit('binh@example.com', 'Abcdef1!');
+
+    // Assert: vẫn phải nhập mã, không bỏ qua bước MFA
+    expect(await screen.findByRole('heading', { name: 'Xác thực hai lớp' })).toBeInTheDocument();
+    expect(continueAfterSignIn).not.toHaveBeenCalled();
   });
 });

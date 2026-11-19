@@ -26,7 +26,7 @@ Sửa 10/11/2026 (góp ý của nhóm): nút con mắt không còn nhận focus 
 
 `reason: 'checkout'`: khách vãng lai bấm "Đặt hàng" ở giỏ. Dưới tiêu đề hiện câu "Đăng nhập hoặc tạo tài khoản để đặt hàng. Các sản phẩm bạn đã chọn được giữ nguyên." (trang tạm đã có câu này).
 
-Đã đăng nhập mà vào `/login` hoặc `/register` → về `from` (hoặc `/`). `/forgot-password` thì vẫn mở được khi đang đăng nhập (3.4, phần "Khi đang đăng nhập").
+Đã đăng nhập mà vào `/login` hoặc `/register` → về `from` (hoặc `/`). `/forgot-password` thì vẫn mở được khi đang đăng nhập (3.4, phần "Khi đang đăng nhập"). Web chờ nạp Cognito xong mới xét đã đăng nhập hay chưa (#499), chờ tối đa 10 giây; quá hạn thì xét bằng những gì đang có (thường là coi như chưa đăng nhập) để trang không quay "Đang tải…" mãi (#501).
 
 ## 2. Bố cục
 
@@ -157,6 +157,7 @@ Lỗi từ Cognito hiện bằng `Alert danger` ở đầu form (dưới dòng p
 | Lỗi Cognito | Câu hiển thị | Ở đâu |
 |---|---|---|
 | `NotAuthorizedException` (sai email/mật khẩu) | "Email hoặc mật khẩu không đúng." (không nói rõ sai cái nào) | Alert |
+| `UserAlreadyAuthenticatedException` khi bấm "Đăng nhập" (máy còn phiên cũ, có thể của người khác trên máy dùng chung) | không dùng phiên cũ: đăng xuất máy này (như nút Đăng xuất) rồi đăng nhập lại một lần bằng email, mật khẩu vừa nhập; sai thì báo như dòng trên. Lần đăng nhập lại vẫn báo lỗi này: "Không đăng xuất được phiên cũ trên máy này. Vui lòng tải lại trang rồi đăng nhập lại." (#501) | Alert |
 | `UserNotConfirmedException` khi đăng nhập | chuyển sang bước nhập mã (3.3) và tự gửi lại mã | — |
 | `UsernameExistsException` (trùng email) | "Email này đã có tài khoản." + link "Đăng nhập" | dưới ô Email |
 | Trùng username (cách Cognito báo lỗi này do An chọn) | "Username này đã có người dùng." | dưới ô Username |
