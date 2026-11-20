@@ -12,6 +12,8 @@ interface OtpInputProps {
   /** Số ô, mặc định 6 */
   length?: number;
   error?: string;
+  /** Dòng gợi ý dưới ô (12/18 `--fg-subdued`); có lỗi thì lỗi thay chỗ gợi ý */
+  hint?: string;
   readOnly?: boolean;
   autoFocus?: boolean;
   inputRef?: Ref<HTMLInputElement>;
@@ -41,12 +43,15 @@ export function OtpInput({
   onComplete,
   length = 6,
   error,
+  hint,
   readOnly = false,
   autoFocus,
   inputRef,
 }: OtpInputProps) {
   const id = useId();
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy = error ? errorId : hint ? hintId : undefined;
   const [focused, setFocused] = useState(false);
   // Ô đang sáng: ô trống đầu tiên, đủ số thì ô cuối; chỉ khi đang focus và gõ được
   const activeIndex = focused && !readOnly ? Math.min(value.length, length - 1) : -1;
@@ -88,7 +93,7 @@ export function OtpInput({
           readOnly={readOnly}
           autoFocus={autoFocus}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={describedBy}
           onChange={(event) => {
             const next = event.target.value.replace(/\D/g, '').slice(0, length);
             onChange(next);
@@ -103,11 +108,17 @@ export function OtpInput({
           onSelect={caretToEnd}
         />
       </div>
-      {error && (
+      {error ? (
         <p id={errorId} className={styles.error}>
           <CircleAlert size={16} aria-hidden="true" />
           {error}
         </p>
+      ) : (
+        hint && (
+          <p id={hintId} className={styles.hint}>
+            {hint}
+          </p>
+        )
       )}
     </div>
   );

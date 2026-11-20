@@ -5,7 +5,7 @@ import { Breadcrumb, type BreadcrumbItem } from '../../../shared/components/Brea
 import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
 import { useAccount } from '../../../shared/auth/useSession';
 import type { AccountOutletContext } from '../lib/accountOutlet';
-import { currentSection } from '../lib/sections';
+import { crumbLabel, currentSection } from '../lib/sections';
 import { useSignOut } from '../lib/useSignOut';
 import { AccountNav } from './AccountNav';
 import { AccountSectionSheet } from './AccountSectionSheet';
@@ -49,14 +49,14 @@ export function AccountLayout() {
   // Chưa biết phiên, chưa có hồ sơ, hoặc mở trang khi chưa đăng nhập (đang sang /login): chưa vẽ
   if (!signedIn && !shown) return null;
 
-  const crumbs: BreadcrumbItem[] =
-    section.id === 'info'
-      ? [{ label: 'Trang chủ', to: '/' }, { label: 'Tài khoản' }]
-      : [
-          { label: 'Trang chủ', to: '/' },
-          { label: 'Tài khoản', to: '/account' },
-          { label: section.label },
-        ];
+  const pageLabel = crumbLabel(pathname);
+  const crumbs: BreadcrumbItem[] = pageLabel
+    ? [
+        { label: 'Trang chủ', to: '/' },
+        { label: 'Tài khoản', to: '/account' },
+        { label: pageLabel },
+      ]
+    : [{ label: 'Trang chủ', to: '/' }, { label: 'Tài khoản' }];
   const SectionIcon = section.icon;
 
   return (

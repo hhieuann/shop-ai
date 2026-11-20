@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`); trang tài khoản ([pages/tai-khoan.md](pages/tai-khoan.md), 16/11/2026, code đã đổi theo: §9.17 mục "Tài khoản của tôi", §9.27 cột mục và bảng chọn mục (#485), token `--fg-primary-disabled` ở §10 (#497)).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`); trang tài khoản ([pages/tai-khoan.md](pages/tai-khoan.md), 16/11/2026, code đã đổi theo: §9.17 mục "Tài khoản của tôi", §9.27 cột mục và bảng chọn mục (#485), token `--fg-primary-disabled` ở §10 (#497), §9.7 nhãn xác thực hai lớp, §9.28 ô mã QR (#183)).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -425,6 +425,8 @@ Nhãn có trong nghiệp vụ:
 | Đang giao | `SHIPPED` | accent |
 | Đã giao | `DELIVERED` | success |
 | Đã huỷ | `CANCELLED` | danger |
+| Đang bật | xác thực hai lớp đã bật (account.md BR-10, trang tài khoản) | success |
+| Đang tắt | xác thực hai lớp chưa bật | neutral |
 
 (Chữ trạng thái đơn lấy từ `STATUS_LABEL` trong `features/orders/types.ts`.)
 
@@ -784,6 +786,9 @@ Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách m
 | Danh sách | như `AccountNav`, padding `4px 8px`; mỗi mục cao tối thiểu 48px, chữ 16/24/500 |
 | Hiện, ẩn | trượt lên 200ms (`--dur-base`, `--ease-standard`); `prefers-reduced-motion` thì hiện ngay |
 | Hành vi | bấm một mục: đóng bảng rồi chuyển trang (Đăng xuất: đăng xuất như §9.17). Đóng bằng ×, Esc, bấm vùng tối. Mở: focus vào mục đang xem; giữ focus trong bảng; khoá cuộn trang; đóng xong trả focus về nút "Đổi mục" (trừ khi đã chuyển trang) |
+
+### 9.28 Ô mã QR (trang bật xác thực hai lớp)
+Chốt 18/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md) 3.4). Ô vuông **176px** (gồm padding và viền), padding **12px** (ảnh QR 150px), nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-xl`. Ảnh tạo trong trình duyệt bằng thư viện `qrcode` (`toDataURL`), chỉ nạp ở trang này. Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục. Chỉ là kích thước bố cục của một trang nên ghi số thẳng trong CSS module, không thêm token.
 
 ## 10. Token sẽ thêm khi cần
 

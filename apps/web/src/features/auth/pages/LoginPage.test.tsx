@@ -113,6 +113,10 @@ describe('LoginPage', () => {
     // Act
     const user = await fillAndSubmit('admin@example.com', 'Abcdef1!');
     expect(await screen.findByRole('heading', { name: 'Xác thực hai lớp' })).toBeInTheDocument();
+    // Dòng gợi ý dưới ô mã, nối vào ô (dang-nhap.md 3.1, thêm 18/11)
+    expect(screen.getByLabelText('Mã xác thực')).toHaveAccessibleDescription(
+      'Mã trong ứng dụng xác thực của bạn',
+    );
     // Gõ đủ 6 số là tự gửi, không bấm "Xác nhận"
     await user.type(screen.getByLabelText('Mã xác thực'), '123456');
 

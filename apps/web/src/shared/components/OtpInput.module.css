@@ -104,6 +104,14 @@
   font-weight: 500;
 }
 
+/* Gợi ý dưới ô (bước mã xác thực khi đăng nhập, dang-nhap.md 3.1) */
+.hint {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
 @media (max-width: 639px) {
   .boxes {
     gap: 6px; /* §9.4: không có token 6px */

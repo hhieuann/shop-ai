@@ -49,6 +49,7 @@ export function useSignOut() {
       queryClient.removeQueries({ queryKey: queryKeys.orders.all });
       queryClient.removeQueries({ queryKey: queryKeys.recs.all });
       queryClient.removeQueries({ queryKey: queryKeys.admin.all });
+      queryClient.removeQueries({ queryKey: queryKeys.account.all });
 
       const target = to ?? (isSignedInOnly(pathname) ? '/' : undefined);
       if (target) navigate(target, { replace: true, state });

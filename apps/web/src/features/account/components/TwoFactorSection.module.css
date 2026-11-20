@@ -1,0 +1,40 @@
+/* Phần "Xác thực hai lớp" ở /account (pages/tai-khoan.md 3.1): cùng kiểu với phần Mật khẩu */
+.section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  margin-top: var(--space-300);
+  padding-top: var(--space-300);
+  border-top: 1px solid var(--border-divider);
+}
+/* Tiêu đề và nhãn Đang bật / Đang tắt cùng hàng, cách 8px */
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-100);
+}
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.text {
+  margin: var(--space-25) 0 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.action {
+  gap: var(--space-100);
+}
+
+@media (max-width: 639px) {
+  .action {
+    width: 100%;
+  }
+}

@@ -5,8 +5,12 @@ import {
   getAccessToken,
   getUserProfile,
   onAuthChange,
+  getTwoFactorEnabled,
   refreshProfile,
+  setTwoFactorEnabled,
+  setUpTwoFactor,
   signOut,
+  verifyTwoFactorCode,
 } from './token';
 
 const DEV_TOKEN_KEY = 'shop-ai:dev-token';
@@ -120,6 +124,49 @@ describe('token.ts bản mock', () => {
     // Act + Assert: bản build không giả thành công
     await expect(changePassword('Cu12345!', 'Moi12345!')).rejects.toMatchObject({
       name: 'AuthNotConfigured',
+    });
+  });
+});
+
+/** Bản mock của xác thực hai lớp (pages/tai-khoan.md mục 1): "000000" sai, 6 số khác đúng */
+describe('token.ts bản mock: xác thực hai lớp', () => {
+  it('twoFactor_enableThenDisable_storesStatusInLocalStorage', async () => {
+    // Assert: mặc định đang tắt
+    expect(await getTwoFactorEnabled()).toBe(false);
+
+    // Act + Assert: bật
+    await setTwoFactorEnabled(true);
+    expect(await getTwoFactorEnabled()).toBe(true);
+
+    // Act + Assert: tắt
+    await setTwoFactorEnabled(false);
+    expect(await getTwoFactorEnabled()).toBe(false);
+  });
+
+  it('setUpTwoFactor_returnsNewBase32Secret_eachTime', async () => {
+    // Act
+    const first = await setUpTwoFactor();
+    const second = await setUpTwoFactor();
+
+    // Assert: 32 ký tự base32, mỗi lần một mã
+    expect(first).toMatch(/^[A-Z2-7]{32}$/);
+    expect(second).not.toBe(first);
+  });
+
+  it('verifyTwoFactorCode_rejectsAllZeros_acceptsOtherCodes', async () => {
+    await expect(verifyTwoFactorCode('000000')).rejects.toMatchObject({
+      name: 'CodeMismatchException',
+    });
+    await expect(verifyTwoFactorCode('123456')).resolves.toBeUndefined();
+  });
+
+  it('twoFactor_throwsUnauthenticated_whenSignedOut', async () => {
+    // Arrange
+    localStorage.removeItem(DEV_TOKEN_KEY);
+
+    // Act + Assert
+    await expect(getTwoFactorEnabled()).rejects.toMatchObject({
+      name: 'UserUnAuthenticatedException',
     });
   });
 });

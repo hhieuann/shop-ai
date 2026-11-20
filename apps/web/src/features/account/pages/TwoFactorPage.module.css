@@ -1,0 +1,123 @@
+/* Bật xác thực hai lớp (pages/tai-khoan.md 3.4; ô QR: design-system §9.28) */
+
+/* Alert (câu cho admin, lỗi) ngay dưới dòng phụ */
+.notice {
+  margin-bottom: var(--space-300);
+}
+
+/* Tiêu đề hai bước: h2 16/24/600 */
+.step {
+  margin: 0 0 var(--space-200);
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+
+/* Bước 1: mã QR bên trái, hướng dẫn và mã chữ bên phải (<640: xếp dọc) */
+.setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-300);
+}
+/* Ô QR 176px gồm padding 12px và viền 1px (ảnh 150px); số riêng của trang, không phải token (§9.28) */
+.qr {
+  flex: none;
+  box-sizing: border-box;
+  width: 176px;
+  height: 176px;
+  padding: var(--space-150);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục */
+.qr[aria-busy='true'] {
+  background: var(--bg-surface-raised);
+}
+.guide {
+  min-width: 0;
+}
+.lead {
+  margin: 0;
+  color: var(--fg-default);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.help {
+  margin: var(--space-100) 0 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.secretRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-100);
+  margin-top: var(--space-150);
+}
+/* Mã chữ: nhóm 4 ký tự, chữ mono, chọn được */
+.secret {
+  padding: var(--space-50) var(--space-100);
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-md);
+  color: var(--fg-default);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+/* Chỗ giữ mã chữ khi đang tạo mã: rộng bằng 8 nhóm 4 ký tự */
+.secretLoading {
+  display: inline-block;
+  width: 40ch;
+  max-width: 100%;
+  min-height: calc(var(--leading-body-md) + 2 * var(--space-50));
+  box-sizing: border-box;
+}
+.copy {
+  gap: var(--space-50);
+}
+.appLink {
+  display: inline-block;
+  margin-top: var(--space-100);
+  color: var(--fg-primary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 500;
+}
+
+/* Bước 2: cách bước 1 32px; ô mã rộng tối đa 360px */
+.verify {
+  margin-top: var(--space-400);
+}
+.code {
+  max-width: 360px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-150);
+  margin-top: var(--space-300);
+}
+
+@media (min-width: 640px) {
+  .setup {
+    flex-direction: row;
+  }
+}
+@media (max-width: 639px) {
+  .submit,
+  .later {
+    width: 100%;
+  }
+}

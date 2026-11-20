@@ -1,6 +1,6 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { KeyRound } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../../../shared/api/client';
 import { refreshProfile } from '../../../shared/auth/token';
 import { Alert } from '../../../shared/components/Alert';
@@ -10,6 +10,7 @@ import { buttonClass } from '../../../shared/components/buttonClass';
 import { USERNAME_PATTERN } from '../../auth/lib/validation';
 import { updateUsername } from '../api/updateUsername';
 import { AccountPanel } from '../components/AccountPanel';
+import { TwoFactorSection, type SectionNotice } from '../components/TwoFactorSection';
 import { useAccountOutlet } from '../lib/accountOutlet';
 import { useSignOut } from '../lib/useSignOut';
 import styles from './AccountInfoPage.module.css';
@@ -19,14 +20,18 @@ const INVALID = 'Username chưa đúng quy tắc bên dưới.';
 const TAKEN = 'Username này đã có người dùng.';
 const HINT = '3–20 ký tự: chữ thường không dấu, số, dấu chấm, gạch dưới.';
 
-interface Notice {
-  tone: 'success' | 'danger';
-  text: string;
-}
+type Notice = SectionNotice;
+
+/** Câu báo mang từ trang khác, vd. vừa bật xác thực hai lớp (tai-khoan.md 3.4) */
+const incomingNotice = (state: unknown): string | undefined => {
+  const notice = (state as { notice?: unknown } | null)?.notice;
+  return typeof notice === 'string' ? notice : undefined;
+};
 
 /**
  * Thông tin tài khoản `/account` (pages/tai-khoan.md 3.1, mục 4; account.md BR-06): đổi username bằng
- * nút "Cập nhật" (PATCH /api/v1/me), email chỉ xem.
+ * nút "Cập nhật" (PATCH /api/v1/me), email chỉ xem; dưới cùng là phần Mật khẩu và phần Xác thực hai lớp
+ * (3.5, account.md BR-10).
  */
 export function AccountInfoPage() {
   const { user } = useAccountOutlet();
@@ -38,7 +43,13 @@ export function AccountInfoPage() {
   const [saved, setSaved] = useState(profileName);
   const [seen, setSeen] = useState(profileName);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Đọc câu báo mang sang một lần, rồi xoá khỏi history để tải lại trang không hiện lại
+  const [notice, setNotice] = useState<Notice | null>(() => {
+    const text = incomingNotice(location.state);
+    return text ? { tone: 'success', text } : null;
+  });
   const [busy, setBusy] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const alertRef = useRef<HTMLDivElement>(null);
@@ -55,6 +66,15 @@ export function AccountInfoPage() {
       formRef.current?.querySelector<HTMLInputElement>('input[name="username"]')?.focus(),
     );
   const focusAlert = () => requestAnimationFrame(() => alertRef.current?.focus());
+
+  const arrivedWithNotice = useRef(Boolean(incomingNotice(location.state)));
+  useEffect(() => {
+    if (!arrivedWithNotice.current) return;
+    arrivedWithNotice.current = false;
+    navigate(location.pathname, { replace: true, state: null });
+    // Vừa chuyển trang: đưa focus tới câu báo để trình đọc màn hình đọc
+    alertRef.current?.focus();
+  }, [navigate, location.pathname]);
 
   const empty = value === '';
   const unchanged = value === saved;
@@ -189,6 +209,14 @@ export function AccountInfoPage() {
           Đổi mật khẩu
         </Link>
       </div>
+
+      <TwoFactorSection
+        email={user?.email}
+        onNotice={(next) => {
+          setNotice(next);
+          if (next.tone === 'danger') focusAlert();
+        }}
+      />
     </AccountPanel>
   );
 }

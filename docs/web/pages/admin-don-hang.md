@@ -10,7 +10,10 @@ Người làm: **Hoàng** (#382). Phạm vi: admin chuyển đơn `CONFIRMED` �
 |---|---|
 | Chưa đăng nhập | Sang `/login` như `/orders` (`useRequireSignIn`) |
 | Đã đăng nhập, không thuộc nhóm `admin` (nhóm đọc từ token đăng nhập, `useAccount().user.isAdmin`), hoặc đọc hồ sơ lỗi | Khung trạng thái rỗng (§9.12): "Bạn không có quyền xem trang này." + link "Về trang chủ". Không gọi API admin |
-| Thuộc nhóm `admin` | Nội dung bên dưới. Backend vẫn kiểm nhóm (threat model O3), giao diện không phải lớp bảo vệ |
+| Thuộc nhóm `admin`, **chưa bật xác thực hai lớp** | Chuyển sang `/account/two-factor` (`replace`) với câu "Tài khoản quản trị cần bật xác thực hai lớp." (account.md BR-10, tai-khoan.md 3.4); bật xong quay lại `/admin`. Không gọi API admin. Đọc trạng thái MFA lỗi thì hiện trang như bình thường |
+| Thuộc nhóm `admin`, đã bật | Nội dung bên dưới. Backend vẫn kiểm nhóm (threat model O3), giao diện không phải lớp bảo vệ |
+
+Chặn admin chưa bật MFA **chỉ ở web** (thêm 18/11/2026, #183): backend không kiểm MFA, gọi thẳng API admin vẫn chỉ cần token nhóm `admin`. Bảo vệ thật là An bật MFA cho tài khoản admin trên Cognito theo quy trình (threat model L5).
 
 Link "Trang quản trị" trong menu tài khoản (§9.17) đã trỏ tới `/admin`. Code trang tải riêng (route `lazy`), không cộng vào JS ban đầu.
 
