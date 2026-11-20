@@ -116,13 +116,13 @@ describe('WafStack', () => {
     expect(RATE_LIMIT_EVENTS).toBeLessThan(RATE_LIMIT_ALL);
   });
 
-  it('commonRuleSet_onlyCounts_whileOtherManagedRulesBlock', () => {
-    // Assert: core rule set dễ chặn nhầm nên chỉ đếm ở lần deploy đầu; IP reputation, known bad inputs chặn
+  it('allManagedRuleGroups_block_afterCountOnlyPeriod', () => {
+    // Assert: log prod sau rc.1 không có đếm nhầm nên core rule set chặn như IP reputation, known bad inputs
     const override = (name: string) =>
       (rules().find((r) => r.Name === name) as { OverrideAction?: Record<string, unknown> })
         .OverrideAction;
-    expect(COMMON_RULE_SET_COUNT_ONLY).toBe(true);
-    expect(override('AWSManagedRulesCommonRuleSet')).toEqual({ Count: {} });
+    expect(COMMON_RULE_SET_COUNT_ONLY).toBe(false);
+    expect(override('AWSManagedRulesCommonRuleSet')).toEqual({ None: {} });
     expect(override('AWSManagedRulesAmazonIpReputationList')).toEqual({ None: {} });
     expect(override('AWSManagedRulesKnownBadInputsRuleSet')).toEqual({ None: {} });
   });
