@@ -1,7 +1,7 @@
 /**
- * API admin đơn hàng (ordering.md BR-15, threat model L6, O3): khách thường và người không đăng nhập
- * không xem, không đổi được trạng thái đơn. Người dùng E2E không thuộc nhóm `admin`, nên ở đây chỉ kiểm
- * 401 và 403; đường đúng của admin An kiểm tay trên staging (checklist rc.1, AD1–AD3).
+ * API admin đơn hàng (ordering.md BR-15, BR-11, threat model L6, O3): khách thường và người không đăng
+ * nhập không xem, không đổi trạng thái, không huỷ đơn bằng quyền admin. Người dùng E2E không thuộc
+ * nhóm `admin`, nên ở đây chỉ kiểm 401 và 403; đường đúng của admin An kiểm tay trên staging (checklist rc.1, AD1–AD3).
  * Không ghi dữ liệu: mọi lệnh đổi trạng thái đều bị chặn trước khi tới bảng.
  */
 import { randomUUID } from 'node:crypto';
@@ -28,10 +28,12 @@ describe.skipIf(!ready)('E2E API admin đơn hàng: phân quyền', () => {
       method: 'PATCH',
       body: { status: 'SHIPPED' },
     });
+    const cancel = await call(`/admin/orders/${unknownOrderId()}`, { method: 'DELETE' });
 
     // Assert: JWT authorizer chặn trước khi tới Lambda (body không theo RFC 9457, chỉ dựa vào mã)
     expect(list.status).toBe(401);
     expect(update.status).toBe(401);
+    expect(cancel.status).toBe(401);
   });
 
   it('listAdminOrders_returns403_forCustomer', async () => {
@@ -59,6 +61,28 @@ describe.skipIf(!ready)('E2E API admin đơn hàng: phân quyền', () => {
       token,
       body: { status: 'SHIPPED' },
     });
+
+    // Assert
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({ status: 403, code: 'FORBIDDEN' });
+    // Verify: đơn không đổi trạng thái
+    if (before !== undefined) {
+      const after = (await call(`/orders/${target}`, { token })).body as Order;
+      expect(after.status).toBe(before);
+    }
+  });
+
+  it('adminCancelOrder_returns403_andOrderUnchanged_forCustomer', async () => {
+    // Arrange: đơn gần nhất của chính người dùng E2E (nếu có) để xem có bị huỷ không
+    const own = (await call('/orders?limit=1', { token })).body as OrderList;
+    const target = own.items[0]?.orderId ?? unknownOrderId();
+    const before =
+      own.items.length > 0
+        ? ((await call(`/orders/${target}`, { token })).body as Order).status
+        : undefined;
+
+    // Act: khách gọi API huỷ của admin (huỷ được cả đơn SHIPPED, threat model O3)
+    const res = await call(`/admin/orders/${target}`, { method: 'DELETE', token });
 
     // Assert
     expect(res.status).toBe(403);

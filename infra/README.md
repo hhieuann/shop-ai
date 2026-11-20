@@ -50,6 +50,26 @@ pnpm --filter infra exec cdk bootstrap aws://<ACCOUNT_ID>/ap-southeast-1 aws://<
 
 `us-east-1` cần cho WAF gắn vào CloudFront. Rồi tạo AWS Budgets $5, $10, $20, và sau lần deploy đầu tiên thì bật cost allocation tag `project` trong Billing.
 
+### Khoá HMAC ẩn danh người dùng (mỗi môi trường một lần, trước lần deploy đầu)
+
+Lambda `events`, Lambda nhận `PURCHASE`, API gợi ý và pipeline mỗi đêm băm `userId` bằng khoá ở SSM `/shop/<env>/events/hmac-key` (SecureString, [events.md](../docs/business/events.md) mục 2, threat model E6). Khoá tạo bằng CLI, không nằm trong repo hay template CDK, nên `cdk deploy` không tự tạo. `<env>` là `sbx`, `dev`, `staging` hoặc `prod`; mọi sandbox dùng chung `sbx`. Thiếu khoá thì đặt hàng vẫn chạy, nhưng ghi sự kiện lỗi `ParameterNotFound` và tin `PURCHASE` vào DLQ `OrderConfirmedEventsDeadLetterQueue` (gặp khi dựng sandbox mới 16/11/2026).
+
+Kiểm đã có chưa:
+
+```bash
+aws ssm describe-parameters --region ap-southeast-1 --parameter-filters "Key=Name,Option=BeginsWith,Values=/shop/" --query "Parameters[].Name"
+```
+
+Tạo khoá ngẫu nhiên, không in giá trị ra màn hình (PowerShell; đổi `sbx` thành môi trường cần tạo):
+
+```powershell
+$k = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)); aws ssm put-parameter --region ap-southeast-1 --name /shop/sbx/events/hmac-key --type SecureString --value $k --query Version --output text; Remove-Variable k
+```
+
+Không đổi khoá của môi trường đang chạy: `userIdHash` của mọi người dùng sẽ đổi theo, sự kiện cũ và gợi ý `FOR_YOU` không còn nối được với người dùng.
+
+Đã lỡ deploy khi chưa có khoá: tạo khoá như trên, rồi chuyển tin trong DLQ về hàng đợi gốc (SQS → `OrderConfirmedEventsDeadLetterQueue` → **Start DLQ redrive**, hoặc `aws sqs start-message-move-task --source-arn <ARN của DLQ>`). Log `EventsPurchase` phải có "Đã ghi PURCHASE" và DLQ về 0.
+
 ## Kết nối GitHub Actions với AWS bằng OIDC (tài khoản demo)
 
 OIDC provider và 4 role nằm trong [bootstrap/github-oidc.yaml](bootstrap/github-oidc.yaml). Muốn đổi trust policy thì sửa file này qua PR; Nhân review trước khi bật deploy.

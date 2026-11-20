@@ -209,8 +209,54 @@ describe('toSummary', () => {
       status: 'PENDING',
       totalAmount: 47_700_000,
       itemCount: 1,
+      firstItemName: 'ASUS TUF RTX 4070',
       createdAt: NOW,
     });
+  });
+
+  it('toSummary_returnsFirstItemName_inOrderPlaced', () => {
+    // Arrange: đơn 3 món, món đầu là chuột (thứ tự khách gửi lúc đặt)
+    const order = buildOrder({
+      orderId: '01K8ORDER',
+      userId: 'user-1',
+      requested: [
+        requested({ productId: 'mouse-1', expectedPrice: 50_000 }),
+        requested(),
+        requested({ productId: 'kb-1', expectedPrice: 900_000 }),
+      ],
+      products: catalog(
+        product(),
+        product({ productId: 'mouse-1', name: 'Chuột G502', price: 50_000 }),
+        product({ productId: 'kb-1', name: 'Bàn phím K8', price: 900_000 }),
+      ),
+      shippingAddress: ADDRESS,
+      now: NOW,
+    });
+
+    // Act
+    const summary = toSummary(order);
+
+    // Assert
+    expect(summary.firstItemName).toBe('Chuột G502');
+    expect(summary.itemCount).toBe(3);
+  });
+
+  it('toSummary_returnsEmptyFirstItemName_whenNoItems', () => {
+    // Arrange: dữ liệu hỏng (POST /orders không cho đơn rỗng), không được làm lỗi cả trang
+    const broken = {
+      orderId: '01K8ORDER',
+      status: 'CONFIRMED' as const,
+      items: [],
+      totalAmount: 0,
+      createdAt: NOW,
+    };
+
+    // Act
+    const summary = toSummary(broken);
+
+    // Assert
+    expect(summary.firstItemName).toBe('');
+    expect(summary.itemCount).toBe(0);
   });
 });
 

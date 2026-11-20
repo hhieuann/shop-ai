@@ -76,6 +76,23 @@ export class CannotCancelError extends ConflictError {
   }
 }
 
+/**
+ * BR-11: admin huỷ đơn đang `DELIVERED` hoặc đã `CANCELLED` → 409 CANNOT_CANCEL kèm trạng thái
+ * hiện tại (contract AdminOrderProblem), để màn quản trị báo đơn đang ở đâu. Lỗi của khách
+ * (CannotCancelError) giữ nguyên, không có `currentStatus`.
+ */
+export class AdminCannotCancelError extends ConflictError {
+  constructor(
+    readonly orderId: string,
+    readonly currentStatus: string,
+  ) {
+    super(`Đơn ${orderId} đang ở trạng thái ${currentStatus}, không huỷ được`, {
+      code: 'CANNOT_CANCEL',
+      extensions: { currentStatus },
+    });
+  }
+}
+
 /** BR-15: admin chuyển sai bước, đi ngược, hoặc đơn vừa bị đổi → 409 kèm trạng thái hiện tại. */
 export class InvalidStatusTransitionError extends ConflictError {
   constructor(

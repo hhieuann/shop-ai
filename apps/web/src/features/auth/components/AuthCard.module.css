@@ -70,7 +70,7 @@
   color: var(--fg-on-primary);
   font-weight: 600;
 }
-.primary:hover {
+.primary:hover:not(:disabled) {
   background: var(--bg-primary-hover);
   border-color: var(--bg-primary-hover);
 }
@@ -88,19 +88,30 @@
   color: var(--fg-primary);
   font-weight: 600;
 }
-.ghost:hover {
+.ghost:hover:not(:disabled) {
   background: var(--bg-transparent-hover);
 }
 .ghost:disabled {
   color: var(--fg-subdued);
 }
-.codeInput input {
-  text-align: center;
-  font-size: var(--text-title-md);
-  line-height: var(--leading-title-md);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.3em;
+/* Link mang kiểu ghost (vd. "Quên mật khẩu?"): không gạch chân khi trỏ như nút ghost */
+a.ghost:hover {
+  text-decoration: none;
+}
+/* Nút trong chân thẻ trông như link bên cạnh (vd. "Nhập lại email", dang-nhap.md §3.4) */
+.footerLink {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg-primary);
+  font-weight: 500;
+}
+.footerLink:hover:not(:disabled) {
+  background: transparent;
+  color: var(--fg-primary-hover);
+  text-decoration: underline;
 }
 .rules {
   display: grid;

@@ -1,0 +1,117 @@
+/* Thanh trạng thái đơn (docs/web/design-system.md §9.26) */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-100);
+  padding: 0 var(--space-50);
+  text-align: center;
+}
+
+/* Chấm 14px: chưa tới viền trong, xong tô chàm, hiện tại tô chàm + vòng ngoài 4px */
+.dot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 2px var(--border-default);
+}
+.done .dot {
+  background: var(--bg-primary);
+  box-shadow: none;
+}
+.current .dot {
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 4px var(--bg-primary-tint-2);
+}
+
+/* Vạch nối ngang: từ tâm bước trước tới tâm bước này, ngang tâm chấm (7px − 2px) */
+.step + .step::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: -50%;
+  right: 50%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-divider);
+}
+/* Đã tới bước này (xong hoặc hiện tại) thì vạch dẫn vào nó tô chàm */
+.step.done::before,
+.step.current::before {
+  background: var(--bg-primary);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+}
+.label {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+}
+.done .label {
+  color: var(--fg-default);
+}
+.current .label {
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+.time {
+  min-height: 18px;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Điện thoại: dọc, chấm bên trái, vạch nối dọc từ dưới chấm này tới chấm sau */
+@media (max-width: 639px) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-200);
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr);
+    column-gap: var(--space-150);
+    align-items: start;
+    padding: 0;
+    text-align: left;
+  }
+  .dot {
+    margin-top: 3px;
+  }
+  .step + .step::before {
+    content: none;
+  }
+  /* Bắt đầu dưới chấm (3px + 14px), kéo qua khoảng cách 16px tới chấm của bước sau */
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 17px;
+    bottom: calc(-1 * var(--space-200) - 3px);
+    left: 5px;
+    width: 4px;
+    border-radius: 2px;
+    background: var(--border-divider);
+  }
+  .done:not(:last-child)::after {
+    background: var(--bg-primary);
+  }
+  .time {
+    min-height: 0;
+  }
+}

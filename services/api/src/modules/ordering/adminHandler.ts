@@ -10,15 +10,17 @@ import {
   type HttpResult,
 } from '../../shared/http/response.js';
 import { logger } from '../../shared/logger.js';
+import type { AdminCancelOrderInput } from './application/adminCancelOrder.js';
 import type { AdvanceOrderStatusInput } from './application/advanceOrderStatus.js';
 import type { ListAdminOrdersInput, ListAdminOrdersOutput } from './application/listAdminOrders.js';
 import { MAX_PAGE_SIZE } from './domain/history.js';
-import type { OrderSummary } from './domain/order.js';
+import type { AdminOrderSummary } from './domain/order.js';
 
 /** Use case của API admin đơn hàng. Lambda admin (PR hạ tầng) truyền bản thật, test truyền mock. */
 export interface AdminOrderUseCases {
   listAdminOrders(input: ListAdminOrdersInput): Promise<ListAdminOrdersOutput>;
-  advanceOrderStatus(input: AdvanceOrderStatusInput): Promise<OrderSummary>;
+  advanceOrderStatus(input: AdvanceOrderStatusInput): Promise<AdminOrderSummary>;
+  adminCancelOrder(input: AdminCancelOrderInput): Promise<AdminOrderSummary>;
 }
 
 type Route = (
@@ -81,10 +83,17 @@ export const adminRoutes: Readonly<Record<string, Route>> = {
     const orderId = event.pathParameters?.orderId ?? '';
     return noStore(200, await advanceOrderStatus({ adminId, orderId, to: body.data.status }));
   },
+  'DELETE /api/v1/admin/orders/{orderId}': async (event, adminId, { adminCancelOrder }) => {
+    // DELIVERED, CANCELLED → 409 CANNOT_CANCEL kèm currentStatus; không có đơn hoặc sai dạng → 404
+    const orderId = event.pathParameters?.orderId ?? '';
+    const correlationId = event.requestContext.requestId;
+    return noStore(200, await adminCancelOrder({ adminId, orderId, correlationId }));
+  },
 };
 
 /**
- * API admin đơn hàng (ordering.md BR-15), chạy ở Lambda riêng chỉ có quyền trên bảng orders.
+ * API admin đơn hàng (ordering.md BR-15, BR-11), chạy ở Lambda riêng: bảng orders, cộng kho khi
+ * huỷ đơn, gửi tin huỷ cho worker.
  * Route gắn JWT authorizer của Cognito nên token đã được kiểm; thiếu `sub` vẫn chặn 401.
  * Không thuộc nhóm `admin` → 403 trước khi đọc bảng (threat model L6, O3): kiểm ở đây, không dựa
  * vào việc giao diện ẩn nút.

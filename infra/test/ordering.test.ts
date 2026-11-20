@@ -426,11 +426,11 @@ function adminStatements(template: Template): Statement[] {
 }
 
 describe('ApiStack · API admin đơn hàng (ordering.md BR-15)', () => {
-  it('adminFunction_runsAdminEntry_withOrdersTableOnly', () => {
+  it('adminFunction_runsAdminEntry_withOrdersProductsAndQueueEnv', () => {
     // Act
     const template = synth(staging);
 
-    // Assert: tên bảng lấy từ stack, không có bảng hay hàng đợi khác
+    // Assert: tên bảng, hàng đợi lấy từ stack; products, hàng đợi cho huỷ đơn (#449); không giỏ
     template.hasResourceProperties('AWS::Lambda::Function', {
       MemorySize: 256,
       Timeout: 10,
@@ -439,23 +439,26 @@ describe('ApiStack · API admin đơn hàng (ordering.md BR-15)', () => {
       Environment: {
         Variables: Match.objectLike({
           ORDERS_TABLE: { Ref: Match.stringLikeRegexp('^OrdersTable') },
+          PRODUCTS_TABLE: { Ref: Match.stringLikeRegexp('^ProductsTable') },
+          ORDERS_QUEUE_URL: { Ref: Match.stringLikeRegexp('^OrdersQueue') },
+          // Cùng namespace với Lambda ordering để alarm order-enqueue-failed đọc được (#448)
+          POWERTOOLS_METRICS_NAMESPACE: 'shop-stg',
           POWERTOOLS_SERVICE_NAME: 'ordering-admin',
-          PRODUCTS_TABLE: Match.absent(),
           CARTS_TABLE: Match.absent(),
-          ORDERS_QUEUE_URL: Match.absent(),
         }),
       },
     });
   });
 
-  it('adminFunction_queriesOnlyByStatusIndex_andUpdatesOnlyOrdersTable', () => {
+  it('adminFunction_hasLeastPrivilege_forListAdvanceAndCancel', () => {
     // Act
     const statements = adminStatements(synth(staging));
     const dynamo = statements.filter((s) => JSON.stringify(s.Action).includes('dynamodb:'));
 
     // Assert: Query chỉ trên index byStatus; GetItem, UpdateItem (phần tử Update của
-    // TransactWriteItems) chỉ trên bảng orders; không điều kiện dynamodb:Attributes (#253, #254)
-    expect(dynamo).toHaveLength(2);
+    // TransactWriteItems) trên bảng orders; chỉ UpdateItem trên products (cộng kho khi huỷ, ADR-0017);
+    // không điều kiện dynamodb:Attributes (#253, #254)
+    expect(dynamo).toHaveLength(3);
     const query = dynamo.find((s) => s.Action === 'dynamodb:Query');
     expect(JSON.stringify(query?.Resource)).toMatch(/OrdersTable.*\/index\/byStatus/);
     const write = dynamo.find((s) => Array.isArray(s.Action));
@@ -463,19 +466,35 @@ describe('ApiStack · API admin đơn hàng (ordering.md BR-15)', () => {
     expect(write?.Resource).toEqual({
       'Fn::GetAtt': [expect.stringMatching(/^OrdersTable/), 'Arn'],
     });
+    const restock = dynamo.find((s) => JSON.stringify(s.Resource).includes('ProductsTable'));
+    expect(restock?.Action).toBe('dynamodb:UpdateItem');
+    expect(restock?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^ProductsTable/), 'Arn'],
+    });
     for (const s of dynamo) expect(s.Condition).toBeUndefined();
 
-    // Verify: không đụng bảng khác, không ghi mới hay xoá đơn, không quét, không SQS, SNS
+    // Assert: chỉ SendMessage, chỉ trên hàng đợi đơn (không DLQ, không GetQueueAttributes, GetQueueUrl)
+    const sqs = statements.filter((s) => JSON.stringify(s.Action).includes('sqs:'));
+    expect(sqs).toHaveLength(1);
+    expect(sqs[0]?.Action).toBe('sqs:SendMessage');
+    expect(sqs[0]?.Resource).toEqual({
+      'Fn::GetAtt': [expect.stringMatching(/^OrdersQueue(?!.*DeadLetter)/), 'Arn'],
+    });
+
+    // Verify: không giỏ, không idempotency, không ghi mới hay xoá, không quét, không SNS, không KMS
     const all = JSON.stringify(statements);
     for (const forbidden of [
-      'ProductsTable',
       'CartsTable',
       'Idempotency',
+      'DeadLetter',
       'dynamodb:PutItem',
       'dynamodb:DeleteItem',
       'dynamodb:Scan',
-      'sqs:',
+      'dynamodb:BatchGetItem',
+      'sqs:GetQueueAttributes',
+      'sqs:GetQueueUrl',
       'sns:',
+      'kms:',
     ]) {
       expect(all).not.toContain(forbidden);
     }
@@ -486,7 +505,11 @@ describe('ApiStack · API admin đơn hàng (ordering.md BR-15)', () => {
     const routes = Object.values(synth(staging).findResources('AWS::ApiGatewayV2::Route'));
 
     // Assert: không token thì authorizer trả 401 trước khi tới Lambda (threat model L6, O3)
-    for (const routeKey of ['GET /api/v1/admin/orders', 'PATCH /api/v1/admin/orders/{orderId}']) {
+    for (const routeKey of [
+      'GET /api/v1/admin/orders',
+      'PATCH /api/v1/admin/orders/{orderId}',
+      'DELETE /api/v1/admin/orders/{orderId}',
+    ]) {
       const route = routes.find((r) => r.Properties.RouteKey === routeKey);
       expect(route?.Properties.AuthorizationType).toBe('JWT');
       expect(JSON.stringify(route?.Properties.Target)).toContain('OrderAdminIntegration');

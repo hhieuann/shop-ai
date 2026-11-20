@@ -1,0 +1,222 @@
+/* Đơn hàng của tôi (docs/web/pages/don-hang.md mục 2, 3, 5, 6) */
+
+/* Khung hẹp 1280px như giỏ hàng; <main> đã có 16px, thêm 16px để tiêu đề cách header 32px */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-top: var(--space-200);
+}
+.title {
+  margin: 0 0 var(--space-200);
+  color: var(--fg-heading);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 600;
+}
+
+/* Khối danh sách: các dòng cách nhau bằng viền trên */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-2xl);
+}
+.item + .item {
+  border-top: 1px solid var(--border-divider);
+}
+
+/* Một dòng = một link: lưới tên | tổng tiền | mũi tên */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 20px;
+  column-gap: var(--space-300);
+  row-gap: var(--space-50);
+  padding: var(--space-200) var(--space-300);
+  color: var(--fg-default);
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.row:hover {
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+  text-decoration: none;
+}
+.row:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Hàng 1: tên đơn một dòng (phần tên món cắt …, "và N sản phẩm khác" luôn đủ) + nhãn */
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  min-width: 0;
+}
+.titleText {
+  display: flex;
+  min-width: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 500;
+}
+.row:hover .titleText {
+  color: var(--fg-primary);
+}
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.others {
+  flex: none;
+  margin-left: var(--space-50);
+  white-space: nowrap;
+}
+.badge {
+  flex: none;
+  display: inline-flex;
+}
+
+/* Hàng 2, 3 */
+.meta {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.code {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+/* Cỡ chữ kế thừa từ .code (12/18) */
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Cột 2, 3: giữa theo chiều cao cả dòng */
+.total {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+  justify-self: end;
+}
+.chevron {
+  grid-column: 3;
+  grid-row: 1 / span 3;
+  align-self: center;
+  color: var(--fg-subdued);
+}
+
+/* Xem thêm đơn */
+.more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-100);
+  margin-top: var(--space-300);
+}
+.message {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+
+/* Khung chờ (design-system §9.12): cùng khoảng đệm với dòng thật */
+.skeletonRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-300);
+  row-gap: var(--space-100);
+  padding: var(--space-200) var(--space-300);
+}
+.bar {
+  display: block;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-pressed) 0%,
+    var(--bg-surface-pressed) 30%,
+    var(--bg-canvas) 50%,
+    var(--bg-surface-pressed) 70%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.barTitle {
+  width: min(420px, 100%);
+  height: 20px;
+}
+.barMeta {
+  width: min(220px, 100%);
+  height: 14px;
+}
+.barTotal {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 120px;
+  height: 20px;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* Điện thoại (mục 6): tên 2 dòng, "và N sản phẩm khác" dòng riêng, nhãn dưới tên, tổng tiền cuối */
+@media (max-width: 639px) {
+  .title {
+    font-size: var(--text-title-sm);
+    line-height: var(--leading-title-sm);
+  }
+  .row,
+  .skeletonRow {
+    padding: var(--space-200);
+  }
+  .row {
+    grid-template-columns: minmax(0, 1fr) 20px;
+    column-gap: var(--space-200);
+  }
+  .titleLine {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-50);
+  }
+  .titleText {
+    display: block;
+  }
+  .name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+  .others {
+    display: block;
+    margin-left: 0;
+    color: var(--fg-muted);
+    font-size: var(--text-body-md);
+    line-height: var(--leading-body-md);
+    white-space: normal;
+  }
+  .total {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    align-self: auto;
+  }
+  .chevron {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+}

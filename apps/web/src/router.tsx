@@ -54,6 +54,11 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'checkout',
+        // Bố cục tập trung: khách đang điền địa chỉ chỉ có logo và link quay lại giỏ (dat-hang.md §2)
+        handle: {
+          chrome: 'focus',
+          back: { to: '/cart', label: 'Quay lại giỏ hàng' },
+        } satisfies RouteHandle,
         lazy: async () => ({
           Component: (await import('./features/orders/pages/CheckoutPage')).CheckoutPage,
         }),
@@ -83,6 +88,36 @@ export const routes: RouteObject[] = [
         lazy: async () => ({
           Component: (await import('./features/auth/pages/RegisterPage')).RegisterPage,
         }),
+      },
+      {
+        // Quên mật khẩu: nhập email rồi mã + mật khẩu mới (dang-nhap.md §3.4)
+        path: 'forgot-password',
+        lazy: async () => ({
+          Component: (await import('./features/auth/pages/ForgotPasswordPage')).ForgotPasswordPage,
+        }),
+      },
+      {
+        // Tài khoản (pages/tai-khoan.md): khung chung (cột mục, đường dẫn, bắt buộc đăng nhập), mục là trang con
+        path: 'account',
+        lazy: async () => ({
+          Component: (await import('./features/account/components/AccountLayout')).AccountLayout,
+        }),
+        children: [
+          {
+            index: true,
+            lazy: async () => ({
+              Component: (await import('./features/account/pages/AccountInfoPage')).AccountInfoPage,
+            }),
+          },
+          {
+            // Đổi mật khẩu (pages/tai-khoan.md 3.2)
+            path: 'password',
+            lazy: async () => ({
+              Component: (await import('./features/account/pages/ChangePasswordPage'))
+                .ChangePasswordPage,
+            }),
+          },
+        ],
       },
       {
         // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng

@@ -1,7 +1,7 @@
 # ADR-0017: Ngoại lệ đọc, ghi bảng của module khác; bảng idempotency riêng từng module
 
 - Trạng thái: Chấp nhận
-- Ngày: 08/10/2026 · Sửa: 24/10/2026 (ordering đọc `products`, `carts` và chỉ ghi cột `stock`; `recommendation` đọc `products`; ngoại lệ Scan cho pipeline gợi ý; #226)
+- Ngày: 08/10/2026 · Sửa: 24/10/2026 (ordering đọc `products`, `carts` và chỉ ghi cột `stock`; `recommendation` đọc `products`; ngoại lệ Scan cho pipeline gợi ý; #226); 12/11/2026 (Lambda admin của ordering cộng kho khi admin huỷ đơn; #447)
 - Người quyết: An, theo đề xuất của Hoàng; phần sửa 24/10 An chốt, Nhân góp ý phần `recommendation`
 
 ## Bối cảnh
@@ -24,6 +24,7 @@
 | `cart` | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index | Xem giỏ, thêm món, gộp giỏ: đọc tên, ảnh, giá, tồn kho, trạng thái |
 | `ordering` | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index, `ProjectionExpression` `productId, name, price, stock, status` | Đọc trước giao dịch đặt hàng: chụp tên, giá vào đơn, kiểm lại từng món (BR-03, BR-07) |
 | `ordering` | `products` (catalog) | `dynamodb:UpdateItem` trên ARN bảng, không có điều kiện `dynamodb:Attributes` (threat model O7, xem bên dưới) | Trừ tồn kho khi đặt, cộng lại khi huỷ, trong `TransactWriteItems` |
+| `ordering` (Lambda admin `OrderAdminFunction`, từ 12/11/2026) | `products` (catalog) | `dynamodb:UpdateItem` trên ARN bảng, như dòng trên, không có điều kiện `dynamodb:Attributes` | Cộng lại tồn kho trong `TransactWriteItems` khi admin huỷ đơn (ordering.md BR-11). Lambda này cũng `sqs:SendMessage` lên hàng đợi đơn của chính `ordering` (tin `CANCELLED` cho worker, không phải bảng của module khác); không đọc, không ghi `carts` |
 | `ordering` | `carts` (cart) | `dynamodb:GetItem` | Đọc giỏ để biết danh sách và `version` hiện tại |
 | `ordering` | `carts` (cart) | `dynamodb:UpdateItem`, ghi `SET items, version, updatedAt` với điều kiện `version = :v` | Bỏ các món đã đặt khỏi giỏ trong cùng giao dịch, không đè thay đổi giỏ song song |
 | `recommendation` (API) | `products` (catalog) | `dynamodb:BatchGetItem` trên ARN bảng, không gồm index (giống `cart`) | Lấy tồn kho, trạng thái mới nhất để bỏ hàng hết, `INACTIVE` khỏi gợi ý |

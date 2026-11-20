@@ -1,0 +1,57 @@
+/* Header rút gọn của bố cục tập trung (docs/web/design-system.md §9.16): không dính, không viền đáy */
+.header {
+  background: var(--bg-chrome);
+  color: var(--fg-on-chrome);
+}
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  max-width: var(--content-max);
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* Logo dùng lại, cỡ ô 40px, chữ 20/28 */
+.logo {
+  --logo-mark: 40px;
+  --logo-text: 20px;
+  --logo-leading: 28px;
+}
+.logo:focus-visible,
+.back:focus-visible {
+  outline-color: var(--focus-ring-on-chrome);
+}
+
+/* Một link quay lại bên phải */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-100);
+  height: 40px;
+  padding: 0 var(--space-100);
+  border-radius: var(--radius-lg);
+  color: var(--fg-on-chrome);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.back:hover {
+  background: var(--bg-chrome-hover);
+  color: var(--fg-on-chrome);
+  text-decoration: none;
+}
+
+/* Điện thoại: cao 56px, chỉ ô logo (chữ "Black Magic" ẩn, tên link vẫn đọc qua aria-label) */
+@media (max-width: 639px) {
+  .inner {
+    height: 56px;
+  }
+  .logo span:last-child {
+    display: none;
+  }
+}

@@ -1,5 +1,5 @@
 import { decodeOrderCursor, DEFAULT_PAGE_SIZE, encodeOrderCursor } from '../domain/history.js';
-import type { AdminListStatus, OrderSummary } from '../domain/order.js';
+import type { AdminListStatus, AdminOrderSummary } from '../domain/order.js';
 import type { AdminOrders } from '../ports.js';
 
 export interface ListAdminOrdersDeps {
@@ -15,7 +15,7 @@ export interface ListAdminOrdersInput {
 
 /** Khớp response 200 của listAdminOrders trong contracts/openapi.yaml */
 export interface ListAdminOrdersOutput {
-  readonly items: readonly OrderSummary[];
+  readonly items: readonly AdminOrderSummary[];
   readonly nextCursor?: string;
 }
 

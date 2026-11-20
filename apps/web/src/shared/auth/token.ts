@@ -47,7 +47,36 @@ export function notifyAuthChanged() {
   for (const listener of listeners) listener();
 }
 
+// ── Chờ nối Cognito xong rồi mới trả lời "có đăng nhập không" ───────────────────
+// main.tsx nạp Cognito (gói Amplify) song song với lúc vẽ trang. Trước khi initAuth() xong, bộ lấy token
+// mặc định ở bản build luôn trả null: trang bắt buộc đăng nhập sẽ tưởng là khách và chuyển sang /login
+// dù phiên còn (#499). Mặc định đã xong, để test và chạy trên mock không phải chờ.
+let ready: Promise<unknown> = Promise.resolve();
+
+/** Chờ nạp Cognito tối đa bấy nhiêu mili giây (#501) */
+export const AUTH_READY_TIMEOUT_MS = 10_000;
+
+/**
+ * main.tsx đưa lời hứa nạp Cognito vào. Nạp lỗi, hoặc quá `timeoutMs` chưa xong (gói Cognito tải treo),
+ * thì vẫn coi như xong: xét phiên bằng bộ lấy token đang có, không để trang quay "Đang tải…" mãi (#501).
+ * Cognito nạp xong muộn thì setTokenProvider vẫn báo notifyAuthChanged() như thường.
+ */
+export function setAuthReady(next: Promise<unknown>, timeoutMs = AUTH_READY_TIMEOUT_MS) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs);
+  });
+  const settled = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  // Nạp xong trước hạn thì huỷ hẹn giờ
+  void settled.then(() => clearTimeout(timer));
+  ready = Promise.race([settled, timeout]);
+}
+
 export async function getAccessToken(): Promise<string | null> {
+  await ready;
   return provider();
 }
 
@@ -120,11 +149,51 @@ export function setProfileProvider(next: ProfileProvider) {
 
 /** Hồ sơ người đang đăng nhập; null khi chưa đăng nhập */
 export async function getUserProfile(): Promise<UserProfile | null> {
+  await ready;
   return profileProvider();
 }
 
-type SignOutHandler = () => void | Promise<void>;
-let signOutHandler: SignOutHandler = removeDevToken;
+// ── Đăng xuất, đổi mật khẩu, làm mới hồ sơ (trang tài khoản, pages/tai-khoan.md) ──────────
+// Cùng kiểu với setProfileProvider: file này giữ hàm gọi và bản chạy trên mock (token giả),
+// cognito.ts đặt bản Cognito trong initAuth().
+
+/** Lỗi có `name` giống lỗi Cognito, để trang dùng chung bảng câu lỗi (authErrors.ts) khi chạy trên mock */
+function namedError(name: string, message = name): Error {
+  return Object.assign(new Error(message), { name });
+}
+
+/** Chờ như gọi mạng thật để thấy trạng thái "Đang…" khi thử giao diện trên mock */
+const devDelay = () => new Promise((resolve) => setTimeout(resolve, 500));
+
+export interface SignOutOptions {
+  /** Đăng xuất mọi nơi (thu hồi phiên ở mọi thiết bị), dùng khi vừa đổi mật khẩu (account.md BR-14) */
+  global?: boolean;
+}
+
+type SignOutHandler = (options: Required<SignOutOptions>) => void | Promise<void>;
+
+// Bản mock: đổi mật khẩu với mật khẩu mới chứa "loimang" thì lần đăng xuất mọi nơi kế tiếp lỗi,
+// để thử giao diện "chưa đăng xuất được các thiết bị khác" (pages/tai-khoan.md 3.2)
+let devFailNextGlobalSignOut = false;
+
+function devSignOut({ global }: Required<SignOutOptions>) {
+  if (global && devFailNextGlobalSignOut) {
+    devFailNextGlobalSignOut = false;
+    throw namedError('NetworkError', 'Mock: không gọi được đăng xuất mọi nơi');
+  }
+  removeDevToken();
+}
+
+let signOutHandler: SignOutHandler = devSignOut;
+
+// Số lần đăng xuất chủ động (signOut thành công) từ lúc mở web. Trang bắt buộc đăng nhập so số này với
+// lúc trang mở để biết phiên hết vì khách tự đăng xuất (về /) hay vì hết hạn, bị thu hồi (sang /login)
+let signOutCount = 0;
+
+/** Số lần đăng xuất chủ động đã xong (useRequireSignIn) */
+export function getSignOutCount(): number {
+  return signOutCount;
+}
 
 export function setSignOutHandler(next: SignOutHandler) {
   signOutHandler = next;
@@ -132,9 +201,71 @@ export function setSignOutHandler(next: SignOutHandler) {
 
 /**
  * Đăng xuất phiên đăng nhập. Dọn dữ liệu phiên trên trình duyệt (giỏ khách, đơn hàng trong bộ nhớ
- * đệm) do nơi gọi lo, vì phần đó thuộc tính năng giỏ và đơn hàng: xem AccountMenu.tsx.
+ * đệm) do nơi gọi lo, vì phần đó thuộc tính năng giỏ và đơn hàng: xem features/account/lib/useSignOut.ts.
+ *
+ * `global`: lỗi thì ném ra và **giữ phiên trên máy này** để trang báo lỗi và cho thử lại.
  */
-export async function signOut(): Promise<void> {
-  await signOutHandler();
+export async function signOut(options: SignOutOptions = {}): Promise<void> {
+  await signOutHandler({ global: options.global ?? false });
+  // Chỉ tăng khi đăng xuất xong; lỗi (vd. đăng xuất mọi nơi lỗi) thì phiên còn, số giữ nguyên
+  signOutCount += 1;
+  notifyAuthChanged();
+}
+
+type ChangePasswordHandler = (oldPassword: string, newPassword: string) => Promise<void>;
+
+/**
+ * Bản mock (chỉ khi `vite dev`): mật khẩu hiện tại "sai" → NotAuthorizedException, "nhieu" →
+ * LimitExceededException; mật khẩu mới chứa "loimang" → đổi được nhưng đăng xuất mọi nơi sau đó lỗi.
+ */
+async function devChangePassword(oldPassword: string, newPassword: string): Promise<void> {
+  if (!import.meta.env.DEV) throw namedError('AuthNotConfigured', 'Chưa cấu hình Cognito');
+  await devDelay();
+  if (!readDevToken()) throw namedError('UserUnAuthenticatedException');
+  if (oldPassword === 'sai') throw namedError('NotAuthorizedException');
+  if (oldPassword === 'nhieu') throw namedError('LimitExceededException');
+  if (newPassword.includes('loimang')) devFailNextGlobalSignOut = true;
+}
+
+let changePasswordHandler: ChangePasswordHandler = devChangePassword;
+
+export function setChangePasswordHandler(next: ChangePasswordHandler) {
+  changePasswordHandler = next;
+}
+
+/** Đổi mật khẩu của người đang đăng nhập (account.md BR-14). Chỉ đổi, không đăng xuất. */
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  await changePasswordHandler(oldPassword, newPassword);
+}
+
+/** Gợi ý cho bản mock biết hồ sơ mới; bản Cognito đọc lại từ ID token mới nên bỏ qua */
+export interface ProfileHint {
+  username?: string;
+}
+
+type RefreshProfileHandler = (hint?: ProfileHint) => void | Promise<void>;
+
+function devRefreshProfile(hint?: ProfileHint) {
+  // Chỉ khi chạy token giả (như readDevToken); bản build bỏ qua hint
+  if (!import.meta.env.DEV || !hint?.username) return;
+  try {
+    localStorage.setItem('shop-ai:dev-username', hint.username);
+  } catch {
+    // bỏ qua
+  }
+}
+
+let refreshProfileHandler: RefreshProfileHandler = devRefreshProfile;
+
+export function setRefreshProfileHandler(next: RefreshProfileHandler) {
+  refreshProfileHandler = next;
+}
+
+/**
+ * Làm mới hồ sơ sau khi đổi username (pages/tai-khoan.md mục 1): lấy ID token mới rồi báo để header,
+ * menu tài khoản và trang tài khoản hiện tên mới.
+ */
+export async function refreshProfile(hint?: ProfileHint): Promise<void> {
+  await refreshProfileHandler(hint);
   notifyAuthChanged();
 }

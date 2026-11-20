@@ -140,6 +140,8 @@ export interface OrderSummary {
   status: OrderStatus;
   totalAmount: number;
   itemCount: number;
+  /** Tên món đầu tiên của đơn (thứ tự lúc đặt) */
+  firstItemName: string;
   createdAt: string;
 }
 

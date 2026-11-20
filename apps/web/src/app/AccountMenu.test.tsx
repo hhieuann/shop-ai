@@ -75,13 +75,39 @@ describe('AccountMenu', () => {
     expect(screen.queryByRole('link', { name: 'Trang quản trị' })).toBeNull();
   });
 
-  it('admin thấy Trang quản trị', async () => {
+  it('admin thấy Trang quản trị, focus vẫn ở mục đầu Tài khoản của tôi', async () => {
     localStorage.setItem('shop-ai:dev-token', 'dev');
     localStorage.setItem('shop-ai:dev-admin', '1');
     const user = userEvent.setup();
     renderAt('/');
     await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }));
-    expect(screen.getByRole('link', { name: 'Trang quản trị' })).toHaveFocus();
+    expect(screen.getByRole('link', { name: 'Trang quản trị' })).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: 'Tài khoản của tôi' })).toHaveFocus();
+  });
+
+  it('đã đăng nhập: mục đầu Tài khoản của tôi trỏ /account và nhận focus khi mở', async () => {
+    localStorage.setItem('shop-ai:dev-token', 'dev');
+    const user = userEvent.setup();
+    renderAt('/products');
+
+    await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }));
+
+    const items = screen.getAllByRole('listitem').filter((li) => li.querySelector('a, button'));
+    expect(items[0]).toHaveTextContent('Tài khoản của tôi');
+    const account = screen.getByRole('link', { name: 'Tài khoản của tôi' });
+    expect(account).toHaveAttribute('href', '/account');
+    expect(account).toHaveFocus();
+  });
+
+  it('đăng xuất ở /account thì về trang chủ', async () => {
+    localStorage.setItem('shop-ai:dev-token', 'dev');
+    const user = userEvent.setup();
+    renderAt('/account');
+
+    await user.click(await screen.findByRole('button', { name: /Tài khoản của/ }));
+    await user.click(screen.getByRole('button', { name: 'Đăng xuất' }));
+
+    await waitFor(() => expect(screen.getByTestId('page')).toHaveTextContent('home'));
   });
 
   it('đăng xuất ở trang bắt buộc đăng nhập thì về trang chủ', async () => {

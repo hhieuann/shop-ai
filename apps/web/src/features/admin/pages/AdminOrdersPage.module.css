@@ -140,8 +140,18 @@
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-standard);
 }
-.button:hover {
+.button:hover:not(:disabled) {
   background: var(--bg-surface-pressed);
+}
+.button:disabled {
+  cursor: not-allowed;
+}
+
+/* Hai nút trên dòng: chuyển trạng thái, huỷ đơn (mục 3b) */
+.actions {
+  display: inline-flex;
+  gap: var(--space-100);
+  justify-content: flex-end;
 }
 
 /* Rỗng, không có quyền (design-system §9.12) */
@@ -241,7 +251,11 @@
     grid-area: action;
     margin-top: var(--space-100);
   }
+  /* Hai nút cạnh nhau: nút chuyển chiếm phần rộng, "Huỷ đơn" vừa chữ bên phải */
+  .actions {
+    display: flex;
+  }
   .button {
-    width: 100%;
+    flex: 1;
   }
 }
