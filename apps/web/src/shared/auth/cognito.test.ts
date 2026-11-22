@@ -7,24 +7,32 @@ import {
 } from './cognito';
 
 describe('profileFromIdToken', () => {
-  it('profileFromIdToken_readsUsernameEmailAndAdmin_fromIdTokenClaims', () => {
+  it('profileFromIdToken_readsSubUsernameEmailAndAdmin_fromIdTokenClaims', () => {
     // Act
     const profile = profileFromIdToken({
+      sub: 'sub-an',
       preferred_username: 'an_nguyen',
       email: 'an@example.com',
       'cognito:groups': ['admin'],
     });
 
     // Assert
-    expect(profile).toEqual({ username: 'an_nguyen', email: 'an@example.com', isAdmin: true });
+    // userId là sub: định danh không đổi để biết tab còn là cùng một người (#508)
+    expect(profile).toEqual({
+      userId: 'sub-an',
+      username: 'an_nguyen',
+      email: 'an@example.com',
+      isAdmin: true,
+    });
   });
 
   it('profileFromIdToken_fallsBackToEmail_whenNoUsername', () => {
     // Arrange: user admin tạo bằng CLI (vd. cho E2E) không có preferred_username
-    const profile = profileFromIdToken({ email: 'e2e@example.com' });
+    const profile = profileFromIdToken({ sub: 'sub-e2e', email: 'e2e@example.com' });
 
     // Assert
     expect(profile).toEqual({
+      userId: 'sub-e2e',
       username: 'e2e@example.com',
       email: 'e2e@example.com',
       isAdmin: false,

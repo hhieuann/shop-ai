@@ -46,6 +46,7 @@ export function profileFromIdToken(
   if (!payload) return null;
   const groups = payload['cognito:groups'];
   return {
+    userId: String(payload.sub ?? ''),
     username: String(payload.preferred_username ?? payload.email ?? ''),
     email: String(payload.email ?? ''),
     isAdmin: Array.isArray(groups) && groups.includes('admin'),

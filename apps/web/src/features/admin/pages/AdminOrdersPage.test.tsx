@@ -12,7 +12,7 @@ import { AdminOrdersPage } from './AdminOrdersPage';
 let session: SessionStatus = 'signedIn';
 let account: Account = {
   status: 'signedIn',
-  user: { username: 'an', email: 'an@example.com', isAdmin: true },
+  user: { userId: 'sub-an', username: 'an', email: 'an@example.com', isAdmin: true },
 };
 vi.mock('../../../shared/auth/useSession', () => ({
   useSession: () => session,
@@ -69,7 +69,7 @@ beforeEach(() => {
   session = 'signedIn';
   account = {
     status: 'signedIn',
-    user: { username: 'an', email: 'an@example.com', isAdmin: true },
+    user: { userId: 'sub-an', username: 'an', email: 'an@example.com', isAdmin: true },
   };
   listResponse = () => json({ items: [ORDER] });
   patchResponse = () => json({ ...ORDER, status: 'SHIPPED' });
@@ -148,7 +148,7 @@ describe('AdminOrdersPage · admin chưa bật xác thực hai lớp (chặn ở
     // Arrange
     account = {
       status: 'signedIn',
-      user: { username: 'khach', email: 'khach@example.com', isAdmin: false },
+      user: { userId: 'sub-khach', username: 'khach', email: 'khach@example.com', isAdmin: false },
     };
 
     // Act
@@ -177,7 +177,7 @@ describe('AdminOrdersPage · ai thấy gì', () => {
     // Arrange
     account = {
       status: 'signedIn',
-      user: { username: 'khach', email: 'khach@example.com', isAdmin: false },
+      user: { userId: 'sub-khach', username: 'khach', email: 'khach@example.com', isAdmin: false },
     };
 
     // Act
