@@ -1,4 +1,5 @@
 import { Outlet, useMatches } from 'react-router-dom';
+import { useCrossTabSession } from '../features/account/lib/crossTabSession';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { MiniHeader, type MiniHeaderBack } from './MiniHeader';
@@ -32,6 +33,8 @@ export interface RouteHandle {
 }
 
 export function RootLayout() {
+  // Tab khác cùng trình duyệt đăng nhập, đăng xuất thì tab này dọn dữ liệu và hiện đúng người (#508)
+  useCrossTabSession();
   const handles = useMatches().map((m) => m.handle as RouteHandle | undefined);
   const plain = handles.some((h) => h?.surface === 'plain');
   const collapseNeeds = handles.some((h) => h?.headerNeeds === 'collapse');

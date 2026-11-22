@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { notifyAuthChanged } from '../../../shared/auth/token';
+import { announceAuthChanged, notifyAuthChanged } from '../../../shared/auth/token';
 import { continueAfterSignIn } from '../../cart/lib/afterSignIn';
 
 export interface AuthState {
@@ -37,6 +37,8 @@ export function useAuthNavigation() {
     reasonIsCheckout: state.reason === 'checkout',
     finish: async () => {
       notifyAuthChanged();
+      // Khách vừa đăng nhập ở tab này: báo các tab khác kiểm lại người đang đăng nhập (#508)
+      announceAuthChanged();
       await continueAfterSignIn(navigate, queryClient, from);
     },
   };
