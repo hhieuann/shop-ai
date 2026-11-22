@@ -494,8 +494,8 @@ Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, n�
 | Loại | Ví dụ trong nghiệp vụ | Vai trò ARIA |
 |---|---|---|
 | success | "Đã thêm vào giỏ", "Đặt hàng thành công!" (chi tiết đơn ngay sau khi đặt), "Đã huỷ đơn." | `status` |
-| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT`, `TOO_MANY_OPEN_ORDERS` (kèm link "Xem đơn hàng") | `alert` |
-| danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL` | `alert` |
+| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT`, `TOO_MANY_OPEN_ORDERS` (kèm link "Xem đơn hàng"); đầu trang `/cart` khi tab đang đặt hàng thì tab khác đổi người: "Tài khoản đăng nhập vừa đổi ở tab khác nên đơn đang đặt dở chưa được gửi. Hãy kiểm tra lại giỏ hàng trước khi đặt." (chỉ ở đúng tab đó, một lần, #508) | `alert` |
+| danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL`; `/checkout` khi đã tải lại vì đổi người mà vẫn lệch: "Tài khoản vừa đổi ở tab khác. Tải lại trang để đặt hàng bằng tài khoản đang đăng nhập." (#508) | `alert` |
 
 ### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, huỷ đơn)
 Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger). Trang admin dùng nút xác nhận `primary` ("Chuyển sang Đang giao"). Dưới 640px hai nút xếp dọc rộng hết hộp, nút xác nhận ở trên. Đang xử lý: nút xác nhận đổi chữ "Đang …" (§9.3), Esc và nút phụ không đóng hộp; lỗi hiện bằng `Alert` ngay trên hàng nút.
