@@ -67,9 +67,15 @@ const named = (name: string) => Object.assign(new Error(name), { name });
 const codeField = () => screen.getByLabelText('Mã xác thực');
 const submitButton = () => screen.getByRole('button', { name: /Bật xác thực hai lớp|Đang bật/ });
 
+/**
+ * Lần vẽ đầu (AccountLayout, đọc trạng thái, tạo mã, vẽ QR) trên CI thiếu CPU có lúc quá 1 giây (mức chờ
+ * mặc định của findBy) nên test đỏ ngẫu nhiên. Chỉ nới cho các lần chờ trang vẽ xong lần đầu.
+ */
+const FIRST_RENDER = { timeout: 5000 };
+
 /** Chờ trang tạo mã xong (mã chữ hiện) */
 async function ready() {
-  await screen.findByText(generated.slice(0, 4), { exact: false });
+  await screen.findByText(generated.slice(0, 4), { exact: false }, FIRST_RENDER);
 }
 
 beforeEach(() => {
@@ -93,7 +99,11 @@ describe('TwoFactorPage: bật xác thực hai lớp', () => {
     // Assert: mã chữ chia nhóm 4, QR có alt, link mở ứng dụng là URI otpauth đã mã hoá
     expect(screen.getByText(generated.replace(/(.{4})(?=.)/g, '$1 '))).toBeInTheDocument();
     expect(
-      await screen.findByAltText('Mã QR để thêm tài khoản Black Magic vào ứng dụng xác thực'),
+      await screen.findByAltText(
+        'Mã QR để thêm tài khoản Black Magic vào ứng dụng xác thực',
+        {},
+        FIRST_RENDER,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mở bằng ứng dụng trên máy này' })).toHaveAttribute(
       'href',
@@ -244,7 +254,7 @@ describe('TwoFactorPage: bật xác thực hai lớp', () => {
     renderPage();
 
     // Assert
-    expect(await screen.findByTestId('where')).toHaveTextContent('/account null');
+    expect(await screen.findByTestId('where', {}, FIRST_RENDER)).toHaveTextContent('/account null');
     // Verify: không tạo mã mới khi đã bật
     expect(setUpTwoFactor).not.toHaveBeenCalled();
   });
@@ -256,7 +266,7 @@ describe('TwoFactorPage: bật xác thực hai lớp', () => {
       .mockRejectedValueOnce(named('NetworkError'))
       .mockResolvedValueOnce(false);
     const user = renderPage();
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, FIRST_RENDER);
 
     // Assert: báo lỗi trạng thái, mã chưa tạo, nút bật vô hiệu
     expect(alert).toHaveTextContent(
@@ -283,7 +293,7 @@ describe('TwoFactorPage: bật xác thực hai lớp', () => {
     // Arrange
     vi.mocked(setUpTwoFactor).mockRejectedValueOnce(named('NetworkError'));
     const user = renderPage();
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, FIRST_RENDER);
     expect(alert).toHaveTextContent('Không tạo được mã, vui lòng thử lại.');
     expect(submitButton()).toBeDisabled();
 
