@@ -29,6 +29,12 @@ function StateSpy() {
   return null;
 }
 
+/**
+ * Lần vẽ đầu (AccountLayout, đọc trạng thái) trên CI thiếu CPU có lúc quá 1 giây (mức chờ mặc định
+ * của findBy) nên test đỏ ngẫu nhiên. Chỉ nới cho các lần chờ trang vẽ xong lần đầu.
+ */
+const FIRST_RENDER = { timeout: 5000 };
+
 function renderPage(state?: unknown) {
   render(
     <QueryClientProvider
@@ -81,7 +87,7 @@ describe('TwoFactorSection (/account)', () => {
     renderPage();
 
     // Assert
-    const link = await screen.findByRole('link', { name: 'Bật' });
+    const link = await screen.findByRole('link', { name: 'Bật' }, FIRST_RENDER);
     expect(link).toHaveAttribute('href', '/account/two-factor');
     expect(within(section()).getByText('Đang tắt')).toBeInTheDocument();
     expect(
@@ -97,7 +103,7 @@ describe('TwoFactorSection (/account)', () => {
     renderPage();
 
     // Assert
-    expect(await screen.findByText('Đang kiểm tra…')).toBeInTheDocument();
+    expect(await screen.findByText('Đang kiểm tra…', {}, FIRST_RENDER)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Bật' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Tắt' })).toBeNull();
   });
@@ -111,7 +117,11 @@ describe('TwoFactorSection (/account)', () => {
 
     // Assert
     expect(
-      await screen.findByText('Không tải được trạng thái, vui lòng tải lại trang.'),
+      await screen.findByText(
+        'Không tải được trạng thái, vui lòng tải lại trang.',
+        {},
+        FIRST_RENDER,
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Bật' })).toBeNull();
   });
@@ -120,7 +130,7 @@ describe('TwoFactorSection (/account)', () => {
     // Arrange
     vi.mocked(getTwoFactorEnabled).mockResolvedValue(true);
     const user = renderPage();
-    expect(await screen.findByText('Đang bật')).toBeInTheDocument();
+    expect(await screen.findByText('Đang bật', {}, FIRST_RENDER)).toBeInTheDocument();
 
     // Act: bấm "Tắt" → hộp thoại, "Giữ bật" focus trước
     await user.click(screen.getByRole('button', { name: 'Tắt' }));
@@ -142,7 +152,7 @@ describe('TwoFactorSection (/account)', () => {
     // Arrange
     vi.mocked(getTwoFactorEnabled).mockResolvedValue(true);
     const user = renderPage();
-    await user.click(await screen.findByRole('button', { name: 'Tắt' }));
+    await user.click(await screen.findByRole('button', { name: 'Tắt' }, FIRST_RENDER));
 
     // Act
     await user.click(screen.getByRole('button', { name: 'Giữ bật' }));
@@ -159,7 +169,7 @@ describe('TwoFactorSection (/account)', () => {
     vi.mocked(getTwoFactorEnabled).mockResolvedValue(true);
     vi.mocked(setTwoFactorEnabled).mockRejectedValueOnce(named('LimitExceededException'));
     const user = renderPage();
-    await user.click(await screen.findByRole('button', { name: 'Tắt' }));
+    await user.click(await screen.findByRole('button', { name: 'Tắt' }, FIRST_RENDER));
 
     // Act
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tắt' }));
@@ -177,7 +187,7 @@ describe('TwoFactorSection (/account)', () => {
     vi.mocked(getTwoFactorEnabled).mockResolvedValue(true);
     vi.mocked(setTwoFactorEnabled).mockRejectedValueOnce(named('NotAuthorizedException'));
     const user = renderPage();
-    await user.click(await screen.findByRole('button', { name: 'Tắt' }));
+    await user.click(await screen.findByRole('button', { name: 'Tắt' }, FIRST_RENDER));
 
     // Act
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tắt' }));
@@ -192,7 +202,7 @@ describe('TwoFactorSection (/account)', () => {
     renderPage({ notice: 'Đã bật xác thực hai lớp. Lần đăng nhập sau cần mã 6 số.' });
 
     // Assert
-    const status = await screen.findByRole('status');
+    const status = await screen.findByRole('status', {}, FIRST_RENDER);
     expect(status).toHaveTextContent('Đã bật xác thực hai lớp. Lần đăng nhập sau cần mã 6 số.');
     await waitFor(() => expect(status).toHaveFocus());
     await waitFor(() => expect(lastState).toBeNull());
