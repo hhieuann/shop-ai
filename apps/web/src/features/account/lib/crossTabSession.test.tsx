@@ -271,6 +271,27 @@ describe('useCrossTabSession (#508)', () => {
     expect(signOut).not.toHaveBeenCalled();
   });
 
+  it('guestTab_otherTabSignsIn_keepsGuestCart_andReloads', async () => {
+    // Arrange: tab này là khách, giỏ khách (dùng chung mọi tab) có 1 món; tab kia đang đăng nhập và sẽ
+    // tự gộp giỏ khách vào tài khoản
+    const guestCart = JSON.stringify([{ productId: 'p-1', quantity: 1, addedPrice: 1_000 }]);
+    localStorage.setItem('shop-ai:guest-cart', guestCart);
+    currentUserId = null;
+    renderAt('/products');
+    await settle();
+
+    // Act: tab khác báo khách thành A
+    currentUserId = 'sub-a';
+    await otherTabMessage();
+
+    // Assert: giỏ khách còn nguyên cho tab đăng nhập gộp; tab này chỉ tải lại
+    expect(localStorage.getItem('shop-ai:guest-cart')).toBe(guestCart);
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+    // Verify: không gửi tin, không gọi signOut()
+    expect(announceAuthChanged).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
   it('reloadedButStillMismatched_doesNotReloadAgain', async () => {
     // Arrange: lần tải lại trước muốn tới B nhưng phiên sau khi tải lại là C
     sessionStorage.setItem('shop-ai:auth-reload', 'sub-b');

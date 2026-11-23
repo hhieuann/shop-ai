@@ -100,7 +100,20 @@ function applyAccountSwitch(
   queryClient: QueryClient,
   navigate: NavigateFunction,
 ) {
+  const wasGuest = shownUserId === null;
   shownUserId = current;
+  // Tab này đang là khách, tab khác vừa đăng nhập: KHÔNG dọn. Giỏ khách (localStorage), khoá gộp và ý
+  // định đặt hàng dùng chung mọi tab; tab vừa đăng nhập còn đang gộp giỏ khách rồi mới tự xoá, dọn ở đây
+  // thì món không được gộp. Chỉ tải lại (bộ nhớ đệm của khách mất theo), vẫn chống tải lại vòng
+  if (wasGuest && current !== null) {
+    if (reloadBlocked) {
+      notifyAuthChanged();
+      return;
+    }
+    writeSession(RELOAD_KEY, current);
+    pageReload.reload();
+    return;
+  }
   clearSessionData(queryClient);
   if (current === null) {
     notifyAuthChanged();

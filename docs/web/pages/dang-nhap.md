@@ -181,6 +181,7 @@ Phiên đăng nhập dùng chung cho mọi tab của trình duyệt. Tab nơi kh
 | Đăng xuất | Dọn dữ liệu phiên như bấm Đăng xuất ở tab này (giỏ, mục đặt dở, đơn, gợi ý); đang ở trang bắt buộc đăng nhập thì về `/`. Không gọi đăng xuất Cognito lần nữa, không báo lại các tab khác |
 | Đăng nhập người khác, tab đang ở trang thường | Dọn rồi tải lại trang đang xem |
 | Đăng nhập người khác, tab đang ở `/checkout` (kể cả đang ẩn) | Dọn (gồm mục đặt dở), không tải lại `/checkout` mà sang `/cart` với Alert warning: "Tài khoản đăng nhập vừa đổi ở tab khác nên đơn đang đặt dở chưa được gửi. Hãy kiểm tra lại giỏ hàng trước khi đặt." Câu này chỉ hiện ở đúng tab đó và một lần (F5 không hiện lại) |
+| Đăng nhập (tab này đang là khách) | Chỉ tải lại, **không** xoá giỏ khách: giỏ khách dùng chung mọi tab, tab vừa đăng nhập lo gộp vào tài khoản rồi tự xoá |
 | Đăng nhập lại đúng người đang hiện | Không làm gì |
 
 - Ngay trước khi gửi đơn, trang đặt hàng đọc lại người trong phiên; khác người trang đang hiện thì không gửi, xử lý như dòng `/checkout` ở trên.
