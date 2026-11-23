@@ -138,7 +138,8 @@ describe.skipIf(!ready)('E2E đặt hàng', () => {
     expect(res.status).toBe(200);
     expect(res.cacheControl).toContain('no-store');
     const [first] = (res.body as OrderList).items;
-    expect(first).toMatchObject({ orderId, itemCount: 1 });
+    // Đơn 1 món: tên đơn là tên sản phẩm vừa đặt
+    expect(first).toMatchObject({ orderId, itemCount: 1, firstItemName: product.name });
     // Worker order-processor có thể đã xác nhận đơn trong vài giây sau khi đặt (#263)
     expect(OPEN_STATUSES).toContain(first?.status);
   });

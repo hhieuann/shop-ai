@@ -1,6 +1,6 @@
 # Giao diện web: Black Magic
 
-Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 09/11/2026 (bản chốt trang đơn hàng)
+Người viết: Hoàng · Ngày: 04/10/2026 · Cập nhật: 10/11/2026 (bản chốt trang 404; ô mật khẩu và ô mã 6 ô)
 
 Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví dụ widget gợi ý, trang đăng nhập) đọc mục 1, 2 và 6 là đủ.
 
@@ -9,7 +9,8 @@ Quy ước giao diện chung cho `apps/web`. Ai làm thêm trang hay widget (ví
 > **Giao diện chàm (11/10/2026):** màu chàm, font Inter, header 2 hàng, footer 4 cột và trang chủ mới đã có trong code.
 > **Trang danh sách (chốt 13/10/2026):** nền trắng, cột lọc "Loại hàng" bên trái, thẻ có nút "Thêm vào giỏ", chuyển trang "Trước · Trang N · Sau", thanh cuộn mảnh cho cả web ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md)).
 > **Trang chi tiết sản phẩm (chốt 03/11/2026, đã có trong code):** khối trắng bo 16px trên nền xám, mô tả cạnh ảnh, thông số là các ô chia đều theo hàng trong khối riêng, bấm ô mở panel bên phải; hộp mua 360px không dính; hàng 2 header thu lại khi cuộn ở máy tính ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md)).
-> **Đơn hàng (chốt 09/11/2026, code chưa đổi):** đơn gọi theo tên món đầu "… và N sản phẩm khác", mã đơn là dòng chữ mờ; chi tiết đơn có thanh 4 bước trạng thái, khối Thanh toán bên phải với nút "Huỷ đơn" hỏi lại trước khi huỷ; trang đặt hàng dùng header thu gọn ([pages/don-hang.md](pages/don-hang.md), [pages/dat-hang.md](pages/dat-hang.md)).
+> **Đơn hàng (chốt 09/11/2026, đã có trong code):** đơn gọi theo tên món đầu "… và N sản phẩm khác", mã đơn là dòng chữ mờ; chi tiết đơn có thanh 4 bước trạng thái, khối Thanh toán bên phải với nút "Huỷ đơn" hỏi lại trước khi huỷ; trang đặt hàng dùng header thu gọn ([pages/don-hang.md](pages/don-hang.md), [pages/dat-hang.md](pages/dat-hang.md)).
+> **Trang 404 (chốt 10/11/2026, code chưa đổi):** header đầy đủ, một khối trắng bo 16px có icon, tiêu đề "Không tìm thấy trang", câu gợi ý dùng ô tìm kiếm, nút "Về trang chủ" và "Xem tất cả sản phẩm" ([pages/khong-tim-thay.md](pages/khong-tim-thay.md)).
 
 ## 1. Nguyên tắc
 
@@ -58,13 +59,14 @@ Font **Inter** (có dấu tiếng Việt), dự phòng system-ui, Segoe UI, Robo
 | Component | Ở đâu | Dùng khi |
 |---|---|---|
 | Header, Footer | `app/` | Mọi trang khách (trừ đặt hàng, đăng nhập dùng `FocusLayout`) |
-| `AccountMenu` | `app/AccountMenu.tsx` | Nút Đăng nhập / username trên header |
+| `AccountMenu` | `app/AccountMenu.tsx` | Nút Đăng nhập / username trên header; mục "Tài khoản của tôi" mở trang tài khoản |
+| `AccountNav`, `AccountSectionSheet` (chưa có) | `features/account/components/` | Cột mục và bảng chọn mục của trang tài khoản (design-system §9.27) |
 | `CategoryMenu` | `features/catalog/components/CategoryMenu.tsx` | 13 loại hàng: cột trái trang chủ, nút "Danh mục", ngăn kéo trên điện thoại |
 | `Price` | `shared/components/Price.tsx` | Mọi chỗ hiện giá |
 | `StoryBlock` | `shared/components/StoryBlock.tsx` | Một khối có tiêu đề (khối sản phẩm) |
 | `Carousel` | `shared/components/Carousel.tsx` | Dải thẻ sản phẩm có nút mũi tên |
 | `ProductCard`, `StockBadge`, `CategoryIcon` | `features/catalog/components/` | Thẻ sản phẩm, nhãn tồn kho, icon loại hàng |
-| `Field`, `PasswordField`, `Checkbox`, `QuantityStepper`, `Alert`, `OrderSummary` | `shared/components/` | Form, giỏ hàng, đặt hàng |
+| `Field`, `PasswordField`, `OtpInput` (chưa có), `Checkbox`, `QuantityStepper`, `Alert`, `OrderSummary` | `shared/components/` | Form, giỏ hàng, đặt hàng, đăng nhập |
 | `ProductListCard`, `AddToCartButton`, `FilterPanel`, `FilterSheet`, `CursorPager`, `Breadcrumb`, `Radio` | `features/catalog/`, `features/cart/`, `shared/components/` | Trang danh sách (design-system §9.5, §9.19–§9.23) |
 | `SpecTiles`, `SpecPanel` (chưa có) | `features/catalog/components/` | Ô thông số và panel thông số của trang chi tiết (design-system §9.24) |
 

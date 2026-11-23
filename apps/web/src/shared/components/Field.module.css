@@ -18,11 +18,25 @@
 .lg {
   height: 48px;
 }
+/* Có nút trong ô (prop trailing): khung bọc riêng ô, chừa 48px bên phải cho nút 40px cách mép 4px */
+.control {
+  position: relative;
+}
+.withTrailing {
+  padding-right: 48px;
+}
 .input[aria-invalid='true'] {
   border-color: var(--fg-danger);
 }
 .input:read-only {
   color: var(--fg-muted);
+}
+/* Ô chỉ xem (appearance="readonly", pages/tai-khoan.md 3.1): vẫn Tab tới, chọn, chép được */
+.input.readonlyLook {
+  color: var(--fg-subdued);
+  background: var(--bg-surface-raised);
+  border-color: var(--border-divider);
+  cursor: default;
 }
 /* Điện thoại: chữ 16px để iOS không tự phóng to khi gõ */
 @media (max-width: 639px) {

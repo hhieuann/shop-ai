@@ -6,7 +6,7 @@ import {
   previousStatus,
   type AdminTargetStatus,
   type OrderStatus,
-  type OrderSummary,
+  type AdminOrderSummary,
 } from '../domain/order.js';
 import type { AdminOrderRecord, AdminOrders, OrderStore } from '../ports.js';
 
@@ -36,7 +36,7 @@ export interface AdvanceOrderStatusInput {
 export async function advanceOrderStatus(
   deps: AdvanceOrderStatusDeps,
   input: AdvanceOrderStatusInput,
-): Promise<OrderSummary> {
+): Promise<AdminOrderSummary> {
   const { orderId, to } = input;
   if (!isOrderId(orderId)) throw new AdminOrderNotFoundError(orderId);
 
@@ -72,7 +72,7 @@ async function notInPreviousStatus(
     : new AdminOrderNotFoundError(orderId);
 }
 
-function summaryOf(record: AdminOrderRecord, status: AdminTargetStatus): OrderSummary {
+function summaryOf(record: AdminOrderRecord, status: AdminTargetStatus): AdminOrderSummary {
   return {
     orderId: record.orderId,
     status,

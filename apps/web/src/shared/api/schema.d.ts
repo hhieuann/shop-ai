@@ -38,7 +38,14 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Đổi username của người đang đăng nhập
+     * @description account.md BR-06: cùng luật và không trùng như lúc đăng ký. Email không đổi được.
+     *     Đổi sang đúng username đang dùng thì trả 200, không báo trùng.
+     *     ID token cũ vẫn chứa tên cũ: web làm mới phiên (`fetchAuthSession({ forceRefresh: true })`)
+     *     để header hiện tên mới.
+     */
+    patch: operations['changeUsername'];
     trace?: never;
   };
   '/api/v1/products': {
@@ -238,14 +245,23 @@ export interface paths {
     get?: never;
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Admin huỷ đơn (khi status là PENDING, CONFIRMED hoặc SHIPPED)
+     * @description Chỉ nhóm `admin` của Cognito (ordering.md BR-11). Bảng `orders` khoá `userId` + `orderId`
+     *     nên backend tra đơn qua index `byStatus` rồi đọc lại trên bảng chính trước khi huỷ.
+     *     Một giao dịch: đổi `CANCELLED`, hoàn kho mọi món (BR-12), đơn đang mở thì giảm số đơn
+     *     đang mở của khách (BR-14); huỷ đơn `SHIPPED` không giảm. Sau đó gửi email báo khách qua
+     *     worker (BR-13). Gọi lần hai trả 409, không hoàn kho thêm. Trả tóm tắt đơn, không trả
+     *     địa chỉ giao hàng, họ tên, SĐT, `userId` (O8).
+     */
+    delete: operations['adminCancelOrder'];
     options?: never;
     head?: never;
     /**
      * Admin chuyển đơn sang trạng thái giao hàng tiếp theo
      * @description Chỉ nhóm `admin` của Cognito. Chỉ đi tiếp một bước: `CONFIRMED` → `SHIPPED`,
      *     `SHIPPED` → `DELIVERED` (ordering.md BR-15). Sang `SHIPPED` thì giảm số đơn đang mở của
-     *     khách trong cùng giao dịch (BR-14). Không có admin huỷ đơn ở bản này.
+     *     khách trong cùng giao dịch (BR-14). Admin huỷ đơn dùng `DELETE` cùng đường dẫn (BR-11).
      *     Trả tóm tắt đơn, không trả địa chỉ giao hàng, họ tên, SĐT, `userId`: API admin không bao giờ
      *     trả các trường này (O8).
      */
@@ -681,6 +697,11 @@ export interface components {
       totalAmount: number;
       /** @description Số loại sản phẩm trong đơn */
       itemCount: number;
+      /**
+       * @description Tên món đầu tiên của đơn (thứ tự lúc đặt), để web đặt tên đơn
+       * @example Laptop ASUS TUF Gaming A15 FA507NV
+       */
+      firstItemName: string;
       /** Format: date-time */
       createdAt: string;
     };
@@ -722,7 +743,7 @@ export interface components {
     };
     AdminOrderProblem: components['schemas']['Problem'] & {
       /** @enum {string} */
-      code?: 'INVALID_STATUS_TRANSITION';
+      code?: 'INVALID_STATUS_TRANSITION' | 'CANNOT_CANCEL';
       currentStatus?: components['schemas']['OrderStatus'];
     };
     /** @description Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy. */
@@ -861,6 +882,60 @@ export interface operations {
         };
       };
       401: components['responses']['Unauthorized'];
+      default: components['responses']['Problem'];
+    };
+  };
+  changeUsername: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @example hoang.nm */
+          username: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Username sau khi đổi */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @example hoang.nm */
+            username: string;
+          };
+        };
+      };
+      /**
+       * @description `USERNAME_REQUIRED` thiếu hoặc rỗng · `USERNAME_INVALID` sai luật (3–20 ký tự: chữ thường
+       *     không dấu, số, dấu chấm, gạch dưới). Body không phải JSON thì không có `code`.
+       */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      /** @description `USERNAME_TAKEN` người khác đang dùng username này */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
       default: components['responses']['Problem'];
     };
   };
@@ -1366,6 +1441,52 @@ export interface operations {
       400: components['responses']['Problem'];
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
+      default: components['responses']['Problem'];
+    };
+  };
+  adminCancelOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['OrderId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Tóm tắt đơn sau khi huỷ, `status` là `CANCELLED` (không có địa chỉ, O8) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminOrderSummary'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      /**
+       * @description Không có đơn, hoặc đơn vừa tạo, vừa đổi trạng thái mà index `byStatus` chưa cập nhật
+       *     kịp (tra `userId` qua index). Body ghi thử lại sau ít giây.
+       */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      /** @description `CANNOT_CANCEL` đơn đang `DELIVERED` hoặc đã `CANCELLED`; kèm `currentStatus` */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['AdminOrderProblem'];
+        };
+      };
       default: components['responses']['Problem'];
     };
   };

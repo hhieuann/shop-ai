@@ -237,10 +237,30 @@ export class ApiStack extends Stack {
     this.userPool = auth.userPool;
     this.webClient = auth.webClient;
     this.authorizer = auth.authorizer;
-    const accountFn = this.noDataFunction('Account', 'account', removalPolicy);
+    // GET /me đọc token; PATCH /me đổi username (account.md BR-06) nên gọi Cognito.
+    // Cognito có khi trả chậm lúc khởi động lạnh, như trigger Pre sign-up: 512 MB, chờ tối đa 10 giây
+    const accountFn = this.noDataFunction(
+      'Account',
+      'account',
+      removalPolicy,
+      'lambda.ts',
+      'account',
+      {
+        memorySize: 512,
+        timeout: Duration.seconds(10),
+      },
+    );
+    accountFn.addEnvironment('USER_POOL_ID', this.userPool.userPoolId);
+    // Lambda này không phải trigger nên ghi được đúng ARN user pool, không cần userpool/* như trigger
+    accountFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:ListUsers', 'cognito-idp:AdminUpdateUserAttributes'],
+        resources: [this.userPool.userPoolArn],
+      }),
+    );
     httpApi.addRoutes({
       path: '/api/v1/me',
-      methods: [HttpMethod.GET],
+      methods: [HttpMethod.GET, HttpMethod.PATCH],
       integration: new HttpLambdaIntegration('AccountIntegration', accountFn),
       authorizer: this.authorizer,
     });
@@ -255,7 +275,14 @@ export class ApiStack extends Stack {
 
     // Đặt hàng (ordering.md): mọi route cần đăng nhập
     const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
-    const orderAdminFn = this.addOrderAdmin(shopEnv, removalPolicy, httpApi, ordering.orders);
+    const orderAdminFn = this.addOrderAdmin(
+      shopEnv,
+      removalPolicy,
+      httpApi,
+      ordering.orders,
+      products,
+      ordering.queue,
+    );
 
     // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
     const { eventsFn, events } = this.addEvents(shopEnv, removalPolicy, httpApi);
@@ -313,6 +340,7 @@ export class ApiStack extends Stack {
       shopEnv,
       httpApi,
       preSignUpFn: auth.preSignUpFn,
+      postConfirmationFn: auth.postConfirmationFn,
       apiFunctions: {
         catalog: catalogFn,
         cart: cartFn,
@@ -632,20 +660,27 @@ export class ApiStack extends Stack {
   }
 
   /**
-   * API admin đơn hàng (ordering.md BR-15, #381): Lambda riêng chạy `adminLambda.ts`, tách khỏi Lambda
-   * ordering để chỉ có quyền trên bảng orders. Quyền tối thiểu:
+   * API admin đơn hàng (ordering.md BR-15, #381; huỷ đơn BR-11, #449): Lambda riêng chạy
+   * `adminLambda.ts`, tách khỏi Lambda ordering. Quyền tối thiểu:
    * - `dynamodb:Query` chỉ trên index `byStatus` (xem đơn theo trạng thái, tra userId theo orderId);
-   * - `dynamodb:GetItem` trên bảng orders (đọc lại đơn khi trạng thái vừa đổi);
+   * - `dynamodb:GetItem` trên bảng orders (đọc lại đơn khi trạng thái vừa đổi, đọc đơn trước khi huỷ);
    * - `dynamodb:UpdateItem` trên bảng orders: TransactWriteItems không có quyền IAM riêng, mỗi phần tử
-   *   Update trong giao dịch cần `dynamodb:UpdateItem` trên bảng của nó (đơn và item `#OPEN`).
-   * Không đặt điều kiện `dynamodb:Attributes` (bài học #253, #254). Không quyền bảng khác, không SQS, SNS.
-   * Kiểm nhóm `admin` ở Lambda (403); route gắn JWT authorizer của Cognito nên không token thì 401.
+   *   Update trong giao dịch cần `dynamodb:UpdateItem` trên bảng của nó (đơn và item `#OPEN`);
+   * - `dynamodb:UpdateItem` trên bảng products: cộng kho trong giao dịch huỷ (ADR-0017, dòng
+   *   OrderAdminFunction). Không GetItem, Query, PutItem trên products;
+   * - `sqs:SendMessage` chỉ trên hàng đợi đơn: tin CANCELLED cho worker gửi thư (BR-13). Viết tay thay
+   *   `grantSendMessages`, vì hàm đó cấp thêm `sqs:GetQueueAttributes`, `sqs:GetQueueUrl` mà Lambda
+   *   không cần.
+   * Không đặt điều kiện `dynamodb:Attributes` (bài học #253, #254). Không quyền carts, bảng idempotency,
+   * SNS. Kiểm nhóm `admin` ở Lambda (403); route gắn JWT authorizer của Cognito nên không token thì 401.
    */
   private addOrderAdmin(
     shopEnv: ShopEnvironment,
     removalPolicy: RemovalPolicy,
     httpApi: HttpApi,
     orders: Table,
+    products: Table,
+    queue: Queue,
   ) {
     const fn = new NodejsFunction(this, 'OrderAdminFunction', {
       entry: path.join(API_SRC, 'modules', 'ordering', 'adminLambda.ts'),
@@ -653,7 +688,8 @@ export class ApiStack extends Stack {
       runtime: Runtime.NODEJS_24_X,
       architecture: Architecture.ARM_64,
       memorySize: 256,
-      // Tối đa 5 Query song song (tìm đơn ở các trạng thái khác) rồi một giao dịch 2 thao tác
+      // Tối đa 5 Query song song (tìm đơn theo trạng thái), một GetItem, một giao dịch (huỷ: n + 2 thao
+      // tác, thử lại tối đa 3 lần) và một SendMessage: vài trăm ms, 10 giây còn dư nhiều
       timeout: Duration.seconds(10),
       tracing: Tracing.ACTIVE,
       logGroup: new LogGroup(this, 'OrderAdminLogs', {
@@ -662,6 +698,12 @@ export class ApiStack extends Stack {
       }),
       environment: {
         ORDERS_TABLE: orders.tableName,
+        // Huỷ đơn (#448 đọc tuỳ chọn): cộng kho, gửi tin CANCELLED cho worker
+        PRODUCTS_TABLE: products.tableName,
+        ORDERS_QUEUE_URL: queue.queueUrl,
+        // Metric OrderEnqueueFailed: namespace như Lambda ordering; dimension service=ordering do code
+        // đặt (orderingMetrics), không theo POWERTOOLS_SERVICE_NAME bên dưới
+        POWERTOOLS_METRICS_NAMESPACE: shopEnv.stackPrefix,
         POWERTOOLS_SERVICE_NAME: 'ordering-admin',
         POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
         NODE_OPTIONS: '--enable-source-maps',
@@ -679,6 +721,15 @@ export class ApiStack extends Stack {
         actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
         resources: [orders.tableArn],
       }),
+    );
+    // Cộng kho khi admin huỷ đơn (ADR-0017). Không điều kiện dynamodb:Attributes: điều kiện đó tính cả
+    // thuộc tính trong ConditionExpression nên IAM chặn giao dịch (O7, #254)
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [products.tableArn] }),
+    );
+    // Hàng đợi dùng SQS_MANAGED nên không cần quyền KMS
+    fn.addToRolePolicy(
+      new PolicyStatement({ actions: ['sqs:SendMessage'], resources: [queue.queueArn] }),
     );
     Tags.of(fn).add('module', 'ordering');
     Validations.of(fn).acknowledge(
@@ -702,7 +753,8 @@ export class ApiStack extends Stack {
     });
     httpApi.addRoutes({
       path: '/api/v1/admin/orders/{orderId}',
-      methods: [HttpMethod.PATCH],
+      // PATCH chuyển trạng thái (BR-15), DELETE huỷ đơn (BR-11)
+      methods: [HttpMethod.PATCH, HttpMethod.DELETE],
       integration,
       authorizer: this.authorizer,
     });
@@ -1193,6 +1245,38 @@ export class ApiStack extends Stack {
     });
     userPool.addTrigger(UserPoolOperation.PRE_SIGN_UP, preSignUpFn);
 
+    // Đặt lại mật khẩu xong thì đăng xuất mọi thiết bị (threat model L9): Cognito không tự thu hồi refresh
+    // token. Trigger cũng chạy khi xác nhận đăng ký, code bỏ qua trường hợp đó
+    const postConfirmationFn = this.noDataFunction(
+      'PostConfirmation',
+      'account',
+      removalPolicy,
+      'postConfirmationLambda.ts',
+      'account-session',
+      // Cognito chờ trigger tối đa 5 giây, giống Pre sign-up
+      { memorySize: 512, timeout: Duration.seconds(5) },
+    );
+    // Như Pre sign-up: userpool/* để tránh phụ thuộc vòng, giới hạn bằng tag env cùng môi trường
+    postConfirmationFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['cognito-idp:AdminUserGlobalSignOut'],
+        resources: [
+          Stack.of(this).formatArn({
+            service: 'cognito-idp',
+            resource: 'userpool',
+            resourceName: '*',
+          }),
+        ],
+        conditions: { StringEquals: { 'aws:ResourceTag/env': shopEnv.name } },
+      }),
+    );
+    Validations.of(postConfirmationFn).acknowledge({
+      id: `AwsSolutions-IAM5[Resource::arn:aws:cognito-idp:${this.region}:${Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account}:userpool/*]`,
+      reason:
+        'Chỉ AdminUserGlobalSignOut để thu hồi phiên sau khi đặt lại mật khẩu, chỉ trên pool có tag env cùng môi trường; ghi ARN đúng user pool sẽ tạo phụ thuộc vòng với trigger.',
+    });
+    userPool.addTrigger(UserPoolOperation.POST_CONFIRMATION, postConfirmationFn);
+
     const webClient = userPool.addClient('WebClient', {
       userPoolClientName: `${shopEnv.stackPrefix}-web`,
       authFlows: { userSrp: true },
@@ -1250,7 +1334,7 @@ export class ApiStack extends Stack {
     const authorizer = new HttpUserPoolAuthorizer('CognitoAuthorizer', userPool, {
       userPoolClients: clients,
     });
-    return { userPool, webClient, authorizer, preSignUpFn };
+    return { userPool, webClient, authorizer, preSignUpFn, postConfirmationFn };
   }
 
   /**

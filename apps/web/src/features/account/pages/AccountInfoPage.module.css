@@ -1,0 +1,73 @@
+/* Thông tin tài khoản (pages/tai-khoan.md 3.1) */
+
+/* Lưới ô: 2 cột bằng nhau (<768: 1 cột) */
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-200);
+}
+
+/* Alert (thành công, lỗi chung) ngay dưới dòng phụ */
+.notice {
+  margin-bottom: var(--space-300);
+}
+
+/* Ô Username sửa được: nền trắng như ô nhập thường (tai-khoan.md 3.1) */
+.username input {
+  background: var(--bg-surface);
+}
+
+/* Nút "Cập nhật" sát phải, cách lưới ô 24px (<640: rộng 100%) */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-300);
+}
+/* Vô hiệu kiểu tím nhạt (ô giống tên hiện tại hoặc trống), chỉ riêng nút này; đang gửi thì giữ kiểu chung */
+.update:disabled:not([aria-busy='true']) {
+  border-color: var(--bg-primary-tint-2);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary-disabled);
+  cursor: not-allowed;
+}
+
+/* Phần Mật khẩu: viền trên, trái là tiêu đề + câu, phải là link "Đổi mật khẩu" */
+.password {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  margin-top: var(--space-300);
+  padding-top: var(--space-300);
+  border-top: 1px solid var(--border-divider);
+}
+.passwordTitle {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.passwordText {
+  margin: var(--space-25) 0 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.passwordLink {
+  gap: var(--space-100);
+}
+
+@media (min-width: 768px) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-200) var(--space-300);
+  }
+}
+@media (max-width: 639px) {
+  .update,
+  .passwordLink {
+    width: 100%;
+  }
+}

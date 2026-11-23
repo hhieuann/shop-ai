@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -34,11 +34,17 @@ const json = (body: unknown, status = 200) =>
     },
   });
 
-/** Trả lời theo method và URL; mặc định danh sách 1 đơn, PATCH thành công */
+/** Trả lời theo method và URL; mặc định danh sách 1 đơn, PATCH và DELETE thành công */
 let listResponse: () => Response;
 let patchResponse: () => Response;
+let deleteResponse: () => Response | Promise<Response>;
 const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(
-  async (_url, init) => (init?.method === 'PATCH' ? patchResponse() : listResponse()),
+  async (_url, init) =>
+    init?.method === 'PATCH'
+      ? patchResponse()
+      : init?.method === 'DELETE'
+        ? deleteResponse()
+        : listResponse(),
 );
 const calls = (method: string) =>
   fetchMock.mock.calls.filter(([, init]) => (init?.method ?? 'GET') === method);
@@ -61,6 +67,7 @@ beforeEach(() => {
   };
   listResponse = () => json({ items: [ORDER] });
   patchResponse = () => json({ ...ORDER, status: 'SHIPPED' });
+  deleteResponse = () => json({ ...ORDER, status: 'CANCELLED' });
   fetchMock.mockClear();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -225,12 +232,40 @@ describe('AdminOrdersPage · chuyển trạng thái', () => {
     );
   });
 
-  it('cancel_closesDialog_withoutPatching', async () => {
+  it('cancel_closesDialog_withoutPatching_andReturnsFocusToRowButton', async () => {
+    // Arrange
     const { user, dialog } = await openDialog();
 
+    // Act
     await user.click(within(dialog).getByRole('button', { name: 'Để sau' }));
 
+    // Assert: focus về đúng nút đã mở hộp, không rơi về body (#425)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: `Chuyển sang Đang giao: đơn ${ORDER.orderId}` }),
+      ).toHaveFocus(),
+    );
+    // Verify
+    expect(calls('PATCH')).toHaveLength(0);
+  });
+
+  it('esc_closesDialog_andReturnsFocusToRowButton', async () => {
+    // Arrange: focus đang ở nút trong hộp như khi dùng bàn phím
+    const { dialog } = await openDialog();
+    within(dialog).getByRole('button', { name: 'Để sau' }).focus();
+
+    // Act: Esc trên <dialog> gốc phát sự kiện cancel
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
+
+    // Assert
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: `Chuyển sang Đang giao: đơn ${ORDER.orderId}` }),
+      ).toHaveFocus(),
+    );
+    // Verify
     expect(calls('PATCH')).toHaveLength(0);
   });
 
@@ -269,5 +304,170 @@ describe('AdminOrdersPage · chuyển trạng thái', () => {
         'Không tìm thấy đơn. Nếu đơn vừa đổi trạng thái, thử lại sau ít giây.',
       ),
     ).toBeInTheDocument();
+  });
+});
+
+describe('AdminOrdersPage · huỷ đơn (mục 3b)', () => {
+  async function openCancel(path = '/admin') {
+    const user = userEvent.setup();
+    renderAt(path);
+    await user.click(await screen.findByRole('button', { name: `Huỷ đơn: đơn ${ORDER.orderId}` }));
+    const dialog = screen.getByRole('dialog', { name: 'Huỷ đơn này?' });
+    return { user, dialog };
+  }
+
+  it('cancelButton_isOnEveryRow_inBothTabs', async () => {
+    // Arrange + Act
+    renderAt('/admin?status=SHIPPED');
+
+    // Assert: nhãn đọc kèm mã đơn (mục 6)
+    expect(
+      await screen.findByRole('button', { name: `Huỷ đơn: đơn ${ORDER.orderId}` }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: `Đã giao: đơn ${ORDER.orderId}` }),
+    ).toBeInTheDocument();
+  });
+
+  it('dialog_showsOrderAndWarning_withoutCarrierNote_onConfirmedTab', async () => {
+    // Act
+    const { dialog } = await openCancel();
+
+    // Assert
+    expect(dialog).toHaveTextContent(
+      `Đơn ${ORDER.orderId} · 3 món · 32.470.000₫. Hàng được cộng lại vào kho và khách nhận email báo huỷ. Không hoàn tác được.`,
+    );
+    expect(dialog).not.toHaveTextContent('báo đơn vị vận chuyển dừng giao');
+    expect(within(dialog).getByRole('button', { name: 'Giữ đơn' })).toBeInTheDocument();
+  });
+
+  it('dialog_addsCarrierNote_onShippedTab', async () => {
+    // Arrange
+    listResponse = () => json({ items: [{ ...ORDER, status: 'SHIPPED' }] });
+
+    // Act
+    const { dialog } = await openCancel('/admin?status=SHIPPED');
+
+    // Assert
+    expect(dialog).toHaveTextContent('Đơn đang giao: báo đơn vị vận chuyển dừng giao.');
+  });
+
+  it('keep_closesDialog_withoutDeleting', async () => {
+    // Arrange
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Giữ đơn' }));
+
+    // Assert
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Verify
+    expect(calls('DELETE')).toHaveLength(0);
+  });
+
+  it('confirm_deletesOrder_closesDialog_reloadsList_andFocusesHeading', async () => {
+    // Arrange
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Huỷ đơn' }));
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 1, name: 'Quản trị đơn hàng' })).toHaveFocus(),
+    );
+    expect(await screen.findByText(`Đã huỷ đơn ${ORDER.orderId.slice(-8)}.`)).toBeInTheDocument();
+    // Verify: DELETE đúng đơn, không body; danh sách tải lại; không PATCH
+    const [url, init] = calls('DELETE')[0] ?? [];
+    expect(url).toBe(`/api/v1/admin/orders/${ORDER.orderId}`);
+    expect(init?.body).toBeUndefined();
+    await waitFor(() => expect(calls('GET')).toHaveLength(2));
+    expect(calls('PATCH')).toHaveLength(0);
+  });
+
+  it('conflict409_showsCurrentStatus_andReloadsList', async () => {
+    // Arrange: đơn vừa được giao
+    deleteResponse = () =>
+      json(
+        { title: 'Conflict', status: 409, code: 'CANNOT_CANCEL', currentStatus: 'DELIVERED' },
+        409,
+      );
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Huỷ đơn' }));
+
+    // Assert: hộp thoại vẫn mở, báo trạng thái thật
+    expect(
+      await within(dialog).findByText(
+        /Đơn đã ở trạng thái Đã giao, không huỷ được\. Danh sách đã được tải lại\./,
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(calls('GET')).toHaveLength(2));
+  });
+
+  it('notFound404_asksToRetryLater', async () => {
+    // Arrange
+    deleteResponse = () => json({ title: 'Not Found', status: 404 }, 404);
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Huỷ đơn' }));
+
+    // Assert
+    expect(
+      await within(dialog).findByText(
+        'Không tìm thấy đơn. Nếu đơn vừa đổi trạng thái, thử lại sau ít giây.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('serverError_keepsDialogOpen_withRetryMessage', async () => {
+    // Arrange
+    deleteResponse = () => json({ title: 'Internal Server Error', status: 500 }, 500);
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Huỷ đơn' }));
+
+    // Assert
+    expect(await within(dialog).findByText('Chưa huỷ được đơn. Thử lại sau.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Huỷ đơn này?' })).toBeInTheDocument();
+  });
+
+  it('forbidden403_showsNoPermission', async () => {
+    // Arrange
+    deleteResponse = () => json({ title: 'Forbidden', status: 403, code: 'FORBIDDEN' }, 403);
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Huỷ đơn' }));
+
+    // Assert
+    expect(await screen.findByText('Bạn không có quyền xem trang này.')).toBeInTheDocument();
+  });
+
+  it('rowButtons_areDisabled_whileCancelIsSending', async () => {
+    // Arrange: DELETE chưa trả lời
+    deleteResponse = () => new Promise<Response>(() => undefined);
+    const { user, dialog } = await openCancel();
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Huỷ đơn' }));
+
+    // Assert: không mở được thao tác khác khi lệnh huỷ đang chạy
+    expect(within(dialog).getByRole('button', { name: 'Đang huỷ…' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `Chuyển sang Đang giao: đơn ${ORDER.orderId}`,
+        hidden: true,
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: `Huỷ đơn: đơn ${ORDER.orderId}`, hidden: true }),
+    ).toBeDisabled();
+    // Verify
+    expect(calls('PATCH')).toHaveLength(0);
   });
 });

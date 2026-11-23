@@ -1,0 +1,79 @@
+/* Bảng chọn mục tài khoản (<1280, design-system §9.27) */
+
+/* Vùng tối phủ cả header (header z-index 210) */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--scrim);
+  animation: fade-in var(--dur-base) var(--ease-standard);
+}
+.sheet {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 301;
+  max-height: 85vh;
+  padding-bottom: calc(var(--space-200) + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  box-shadow: var(--shadow-lg);
+  color: var(--fg-default);
+  animation: slide-up var(--dur-base) var(--ease-standard);
+}
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+/* Vạch kéo: chỉ để nhìn */
+.handle {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: var(--space-100) auto 0;
+  border-radius: var(--radius-full);
+  background: var(--border-divider);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-100) var(--space-100) var(--space-100) var(--space-200);
+}
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--fg-muted);
+}
+.close:hover:not(:disabled) {
+  background: var(--bg-transparent-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .sheet {
+    animation: none;
+  }
+}

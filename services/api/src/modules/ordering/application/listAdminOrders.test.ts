@@ -1,16 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import { InvalidOrderCursorError } from '../domain/errors.js';
 import { encodeOrderCursor } from '../domain/history.js';
-import type { OrderSummary } from '../domain/order.js';
+import type { AdminOrderSummary, OrderSummary } from '../domain/order.js';
 import { listAdminOrders, type ListAdminOrdersDeps } from './listAdminOrders.js';
 
-const SUMMARY: OrderSummary = {
+/** Đúng 5 trường API admin trả (contract AdminOrderSummary) */
+const SUMMARY: AdminOrderSummary = {
   orderId: '01K8GQ5Z3XM2T9V4B6N8P0R2S4',
   status: 'CONFIRMED',
   totalAmount: 15_900_000,
   itemCount: 1,
   createdAt: '2026-10-25T03:00:00.000Z',
 };
+/** Dòng adapter trả: có cả tên món đầu (toSummary), use case phải bỏ đi */
+const ROW: OrderSummary = { ...SUMMARY, firstItemName: 'ASUS TUF RTX 4070' };
 
 function deps(page: { orders: OrderSummary[]; hasMore: boolean }) {
   return {
@@ -21,13 +24,15 @@ function deps(page: { orders: OrderSummary[]; hasMore: boolean }) {
 describe('listAdminOrders', () => {
   it('listAdminOrders_returnsSummariesWithNextCursor_whenMorePages', async () => {
     // Arrange
-    const d = deps({ orders: [SUMMARY], hasMore: true });
+    const d = deps({ orders: [ROW], hasMore: true });
 
     // Act
     const result = await listAdminOrders(d, { status: 'CONFIRMED', limit: 1 });
 
     // Assert
     expect(result).toEqual({ items: [SUMMARY], nextCursor: encodeOrderCursor(SUMMARY.orderId) });
+    // Adapter trả cả tên món đầu nhưng API admin không có trường này (contract AdminOrderSummary)
+    expect(result.items[0]).not.toHaveProperty('firstItemName');
     // Verify
     expect(d.admin.listByStatus).toHaveBeenCalledWith('CONFIRMED', {
       limit: 1,
@@ -38,7 +43,7 @@ describe('listAdminOrders', () => {
   it('listAdminOrders_dropsAnyExtraField_soAddressNeverLeaks', async () => {
     // Arrange: adapter lỡ trả thêm địa chỉ, userId (vd. ai đó bỏ ProjectionExpression)
     const leaky = {
-      ...SUMMARY,
+      ...ROW,
       userId: 'user-1',
       shippingAddress: { fullName: 'A', phone: '0912345678', address: 'x', province: 'y' },
     };
@@ -49,7 +54,7 @@ describe('listAdminOrders', () => {
 
     // Assert: chỉ còn đúng 5 trường của tóm tắt
     expect(result).toEqual({ items: [SUMMARY] });
-    expect(JSON.stringify(result)).not.toMatch(/shippingAddress|userId|phone/);
+    expect(JSON.stringify(result)).not.toMatch(/shippingAddress|userId|phone|firstItemName/);
   });
 
   it('listAdminOrders_passesDecodedCursorAndDefaultLimit', async () => {

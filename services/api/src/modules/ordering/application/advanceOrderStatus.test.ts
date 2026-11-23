@@ -13,6 +13,7 @@ const RECORD: AdminOrderRecord = {
   status: 'CONFIRMED',
   totalAmount: 15_900_000,
   itemCount: 1,
+  firstItemName: 'ASUS TUF RTX 4070',
   createdAt: '2026-10-25T03:00:00.000Z',
 };
 
@@ -75,7 +76,7 @@ describe('advanceOrderStatus', () => {
       itemCount: 1,
       createdAt: RECORD.createdAt,
     });
-    expect(JSON.stringify(result)).not.toMatch(/shippingAddress|userId/);
+    expect(JSON.stringify(result)).not.toMatch(/shippingAddress|userId|firstItemName/);
     // Verify: tìm ở trạng thái liền trước, ghi có điều kiện từ trạng thái đó
     expect(d.admin.findInStatus).toHaveBeenCalledTimes(1);
     expect(d.admin.findInStatus).toHaveBeenCalledWith('CONFIRMED', ORDER_ID);

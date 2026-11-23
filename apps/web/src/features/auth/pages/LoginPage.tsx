@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { confirmSignIn, confirmSignUp, resendSignUpCode, signIn } from 'aws-amplify/auth';
 import { Field } from '../../../shared/components/Field';
 import { PasswordField } from '../../../shared/components/PasswordField';
 import { authMode, initAuth } from '../../../shared/auth/cognito';
 import { getAccessToken, signInWithDevToken } from '../../../shared/auth/token';
+import { useSignOut } from '../../account/lib/useSignOut';
 import { AuthCard } from '../components/AuthCard';
 import styles from '../components/AuthCard.module.css';
 import { CodeStep } from '../components/CodeStep';
@@ -17,15 +18,26 @@ type Step = 'password' | 'mfa' | 'confirmEmail';
 /** Đăng nhập (dang-nhap.md §3.1). Đăng nhập bằng email; username chỉ để hiển thị. */
 export function LoginPage() {
   const navigate = useNavigate();
-  const { state, from, reasonIsCheckout, finish } = useAuthNavigation();
+  const {
+    state,
+    from,
+    reasonIsCheckout,
+    finish,
+    email: incomingEmail,
+    notice: incomingNotice,
+  } = useAuthNavigation();
   const [step, setStep] = useState<Step>('password');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(incomingEmail ?? '');
+  // Thông báo mang từ trang khác (vd. vừa đặt lại mật khẩu, §3.4): giữ trong trang, xoá khỏi history
+  const [notice] = useState(incomingNotice ?? null);
+  const formRef = useRef<HTMLFormElement>(null);
   // Chỉ giữ trong bộ nhớ trang để đăng nhập lại ngay sau khi xác nhận email
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [alert, setAlert] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState(authMode());
+  const signOutThisDevice = useSignOut();
 
   useEffect(() => {
     void initAuth().then(setMode);
@@ -34,6 +46,16 @@ export function LoginPage() {
       if (token) navigate(from, { replace: true });
     });
   }, [from, navigate]);
+
+  useEffect(() => {
+    if (!incomingNotice) return;
+    // Email đã điền sẵn: focus ô mật khẩu (chạy sau AuthCard focus <h1>)
+    formRef.current
+      ?.querySelector<HTMLInputElement>('input[autocomplete="current-password"]')
+      ?.focus();
+    // F5 hay Back lại /login không hiện lại thông báo cũ
+    navigate('/login', { replace: true, state });
+  }, [incomingNotice, navigate, state]);
 
   const handleNextStep = async (signInStep: string) => {
     if (signInStep === 'DONE') return finish();
@@ -64,14 +86,20 @@ export function LoginPage() {
     setBusy(true);
     try {
       await initAuth();
-      const { nextStep } = await signIn({ username: email.trim(), password });
-      await handleNextStep(nextStep.signInStep);
-    } catch (error) {
-      // Phiên cũ còn (vd. mở 2 tab): coi như đã đăng nhập
-      if ((error as { name?: string }).name === 'UserAlreadyAuthenticatedException') {
-        await finish();
-        return;
+      const credentials = { username: email.trim(), password };
+      let result;
+      try {
+        result = await signIn(credentials);
+      } catch (error) {
+        if ((error as { name?: string }).name !== 'UserAlreadyAuthenticatedException') throw error;
+        // Máy còn phiên cũ (có thể của người khác trên máy dùng chung, #501): không dùng phiên đó. Đăng
+        // xuất máy này (dọn giỏ, dữ liệu phiên như nút Đăng xuất) rồi đăng nhập lại một lần bằng email,
+        // mật khẩu vừa nhập. Lần này vẫn lỗi thì báo như lỗi đăng nhập thường, không thử nữa
+        await signOutThisDevice();
+        result = await signIn(credentials);
       }
+      await handleNextStep(result.nextStep.signInStep);
+    } catch (error) {
       const view = toAuthError(error);
       if (view.target === 'email' || view.target === 'password') {
         setErrors({ [view.target]: view.message });
@@ -130,6 +158,7 @@ export function LoginPage() {
           : 'Đăng nhập để dùng giỏ hàng và đặt hàng.'
       }
       alert={alert}
+      notice={notice}
       footer={
         <>
           Chưa có tài khoản?{' '}
@@ -139,14 +168,14 @@ export function LoginPage() {
         </>
       }
     >
-      <form onSubmit={(e) => void submit(e)} noValidate className={styles.body}>
+      <form ref={formRef} onSubmit={(e) => void submit(e)} noValidate className={styles.body}>
         <Field
           label="Email"
           size="lg"
           type="email"
           autoComplete="username"
           inputMode="email"
-          autoFocus
+          autoFocus={!notice}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           readOnly={busy}
@@ -164,6 +193,14 @@ export function LoginPage() {
         <button type="submit" className={styles.primary} aria-busy={busy} disabled={busy}>
           {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>
+        {/* Dưới nút gửi: Tab từ ô mật khẩu tới thẳng "Đăng nhập" (dang-nhap.md §3.1, mục 6) */}
+        <Link
+          to="/forgot-password"
+          state={{ ...state, email: email.trim() || undefined }}
+          className={styles.ghost}
+        >
+          Quên mật khẩu?
+        </Link>
         {mode === 'dev' && import.meta.env.DEV && (
           <button type="button" className={styles.ghost} onClick={() => void devLogin()}>
             Đăng nhập thử (token giả, chỉ khi dev trên mock)

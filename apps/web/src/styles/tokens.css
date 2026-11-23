@@ -36,6 +36,9 @@
   --fg-icon-soft: #a3a3a3;
   --fg-placeholder: #737373;
   --fg-disabled: #a3a3a3;
+  /* Chữ nút "Cập nhật" vô hiệu kiểu tím nhạt (nền --bg-primary-tint-2), chỉ ở trang tài khoản
+     (pages/tai-khoan.md 3.1, design-system §10). Nút chính vô hiệu ở trang khác không dùng */
+  --fg-primary-disabled: #818cf8;
   --fg-price: #1a1a1a;
   --fg-on-primary: #ffffff;
   --fg-on-chrome: #ffffff;

@@ -1,5 +1,21 @@
-import { MetricUnit, type Metrics } from '@aws-lambda-powertools/metrics';
+import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
 import type { EmailMetrics, EmailRejectedReason, OrderMetrics } from '../ports.js';
+
+/**
+ * Dimension `service` của metric ordering. Alarm `order-enqueue-failed` (infra/lib/monitoring.ts) lọc
+ * đúng `service=ordering`: đổi giá trị này là alarm không thấy lỗi gửi tin nữa.
+ */
+export const ORDERING_METRICS_SERVICE = 'ordering';
+
+/**
+ * Metrics cho Lambda khác của module ordering (vd. Lambda admin, POWERTOOLS_SERVICE_NAME
+ * `ordering-admin` để log, trace tách riêng) mà vẫn ghi metric với `service=ordering`, nên lỗi gửi tin
+ * huỷ đơn của admin cũng làm alarm `order-enqueue-failed` kêu (ordering.md "Admin huỷ đơn").
+ * Namespace vẫn lấy từ POWERTOOLS_METRICS_NAMESPACE.
+ */
+export function orderingMetrics(): Metrics {
+  return new Metrics({ serviceName: ORDERING_METRICS_SERVICE });
+}
 
 /**
  * Metric nghiệp vụ của ordering qua Powertools Metrics (ghi định dạng EMF vào log, CloudWatch tự

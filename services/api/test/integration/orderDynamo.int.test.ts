@@ -352,6 +352,7 @@ describe('DynamoOrderStore.listByUser', () => {
       status: 'PENDING',
       totalAmount: 1_000_000,
       itemCount: 1,
+      firstItemName: 'GPU',
       createdAt: NOW,
     });
   });

@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Circle, CircleCheck } from 'lucide-react';
 import { autoSignIn, confirmSignUp, resendSignUpCode, signUp } from 'aws-amplify/auth';
 import { Field } from '../../../shared/components/Field';
 import { PasswordField } from '../../../shared/components/PasswordField';
@@ -9,14 +8,10 @@ import { getAccessToken } from '../../../shared/auth/token';
 import { AuthCard } from '../components/AuthCard';
 import styles from '../components/AuthCard.module.css';
 import { CodeStep } from '../components/CodeStep';
+import { PasswordRules } from '../components/PasswordRules';
 import { toAuthError } from '../lib/authErrors';
 import { useAuthNavigation } from '../lib/useAuthNavigation';
-import {
-  EMAIL_PATTERN,
-  passwordMeetsPolicy,
-  PASSWORD_RULES,
-  USERNAME_PATTERN,
-} from '../lib/validation';
+import { EMAIL_PATTERN, passwordMeetsPolicy, USERNAME_PATTERN } from '../lib/validation';
 
 type Errors = Partial<Record<'username' | 'email' | 'password' | 'confirm', string>>;
 
@@ -169,22 +164,7 @@ export function RegisterPage() {
           // Field tự nối dòng lỗi; chưa có lỗi thì nối danh sách điều kiện (dang-nhap.md §3.2)
           aria-describedby={errors.password ? undefined : 'password-rules'}
         >
-          <ul id="password-rules" className={styles.rules}>
-            {PASSWORD_RULES.map((rule) => {
-              const met = rule.test(password);
-              return (
-                <li key={rule.id} className={met ? styles.met : undefined}>
-                  {met ? (
-                    <CircleCheck size={16} aria-hidden="true" />
-                  ) : (
-                    <Circle size={16} aria-hidden="true" />
-                  )}
-                  {rule.label}
-                  <span className="sr-only">{met ? ' (đã đạt)' : ' (chưa đạt)'}</span>
-                </li>
-              );
-            })}
-          </ul>
+          <PasswordRules id="password-rules" password={password} />
         </PasswordField>
         <PasswordField
           label="Nhập lại mật khẩu"

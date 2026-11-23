@@ -1,0 +1,41 @@
+/* Khối nội dung mục tài khoản (pages/tai-khoan.md mục 2, 5) */
+.panel {
+  min-width: 0;
+  padding: var(--space-300);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-2xl);
+}
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+  font-weight: 600;
+}
+.subtitle {
+  margin: var(--space-50) 0 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.body {
+  margin-top: var(--space-300);
+}
+
+@media (max-width: 639px) {
+  .panel {
+    padding: var(--space-300) var(--space-200);
+  }
+}
+@media (min-width: 640px) {
+  .title {
+    font-size: var(--text-title-md);
+    line-height: var(--leading-title-md);
+  }
+}
+@media (min-width: 1280px) {
+  .panel {
+    padding: var(--space-400);
+  }
+}

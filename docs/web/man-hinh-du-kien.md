@@ -1,8 +1,8 @@
 # Màn hình dự kiến
 
-Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 09/11/2026 (đơn hàng chuyển sang spec trang)
+Người viết: Hoàng · Ngày: 06/10/2026 · Cập nhật token: 11/10/2026 (giao diện chàm) · Sửa tham chiếu: 10/11/2026 (trang 404 chuyển sang spec trang), 16/11/2026 (thêm trang tài khoản)
 
-Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đăng nhập nhiều bước, trạng thái rỗng, lỗi, 404, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
+Các màn hình và trạng thái Black Magic **cần** nhưng **chưa có spec trang riêng** trong [`pages/`](pages/): đăng nhập nhiều bước, trạng thái rỗng, lỗi, admin. Mỗi mục là phương án thiết kế đề xuất, ghép từ component đã có. Khi một màn được chốt và bắt đầu code, chuyển nội dung sang file trong `pages/`.
 
 ## Quy tắc
 
@@ -30,6 +30,7 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 | 3 | Hộp thoại xác nhận huỷ đơn | đã chốt | [don-hang.md](pages/don-hang.md) mục 4.5, design-system §9.14 |
 | 4 | Sau khi đặt hàng thành công | đã chốt | [don-hang.md](pages/don-hang.md) mục 5 |
 | 5 | Nút và menu tài khoản trên header | HIGH / MEDIUM | design-system §9.17 |
+| 5b | Trang tài khoản, đổi mật khẩu | đã chốt | [tai-khoan.md](pages/tai-khoan.md) |
 | 6 | Nhập mã xác nhận email | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.3 |
 | 7 | Nhập mã MFA của admin | MEDIUM | [dang-nhap.md](pages/dang-nhap.md) §3.1 |
 | 8 | Lỗi ở form đăng nhập, tạo tài khoản | HIGH | [dang-nhap.md](pages/dang-nhap.md) §4 |
@@ -38,7 +39,7 @@ Mục `LOW` phải được người phụ trách duyệt trước khi code.
 | 11 | Sản phẩm hết hàng ở trang chi tiết | MEDIUM | [chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) §4 |
 | 12 | Phản hồi sau khi bấm "Thêm vào giỏ" | LOW | [chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md) §3.4 |
 | 13 | Khung chờ khi tải | HIGH | design-system §9.12 |
-| 14 | Trang 404 | LOW | chưa có |
+| 14 | Trang 404 | đã chốt | [khong-tim-thay.md](pages/khong-tim-thay.md) |
 | 15 | Giao diện điện thoại | MEDIUM | mục Responsive của từng trang |
 | 16 | Khung trang admin | LOW | chưa có |
 | 17 | Admin: danh sách sản phẩm | LOW | chưa có |
@@ -62,7 +63,7 @@ Tóm tắt:
 - Nút trên header ghi "Đăng nhập"; đã đăng nhập thì ghi username (rộng bằng chữ "Đăng nhập", tên dài mờ dần). Dưới 1280px chỉ icon.
 - Bấm mở bảng ngay dưới nút, vùng dưới header tối lại.
 - Chưa đăng nhập: 3 lợi ích, nút "Đăng nhập" + "Tạo tài khoản".
-- Đã đăng nhập: "Xin chào", username, email; "Trang quản trị" (chỉ admin); "Đăng xuất". Không lặp "Đơn hàng" (header đã có).
+- Đã đăng nhập: "Xin chào", username, email; "Tài khoản của tôi" (16/11/2026, mở [pages/tai-khoan.md](pages/tai-khoan.md)); "Trang quản trị" (chỉ admin); "Đăng xuất". Không lặp "Đơn hàng" (header đã có).
 - Header thu gọn (đăng nhập, tạo tài khoản, đặt hàng) không có nút này.
 
 Assumptions: đăng nhập bằng email, username chỉ để hiển thị (chờ An).
@@ -75,13 +76,13 @@ Do not introduce: ảnh đại diện, trang hồ sơ, cài đặt, yêu thích,
 
 Confidence: MEDIUM
 
-Reuse: thẻ và `FocusLayout` của dang-nhap.md §2, `Field` 48px, `Button primary lg`, `Button ghost md`.
+Reuse: thẻ và `FocusLayout` của dang-nhap.md §2, `OtpInput` (design-system §9.4), `Button primary lg`, `Button ghost md`.
 
-Bố cục và tương tác: như dang-nhap.md §3.3 (tiêu đề, một ô mã 6 số, nút "Xác nhận", nút ghost "Gửi lại mã" bên dưới, căn giữa).
+Bố cục và tương tác: như dang-nhap.md §3.3 (tiêu đề, 6 ô mã, đủ 6 số thì tự gửi, nút "Xác nhận", nút ghost "Gửi lại mã" bên dưới, căn giữa).
 
-Assumptions: Cognito gửi mã 6 số qua email (cần An xác nhận). Một ô thay vì 6 ô riêng vì dùng lại được `Field` có sẵn và dán mã dễ hơn.
+Assumptions: Cognito gửi mã 6 số qua email (An đã xác nhận 08/10/2026). Đổi từ một ô sang 6 ô theo góp ý của nhóm (10/11/2026); bên dưới vẫn là một ô nhập thật nên dán và tự điền mã không đổi.
 
-Alternatives: 6 ô nhập tách riêng cho từng số; trang riêng `/register/verify` thay vì đổi bước trong cùng trang.
+Alternatives: 6 `<input>` riêng cho từng số (bỏ vì phải tự xử lý dán, tự điền, trình đọc màn hình đọc 6 ô); trang riêng `/register/verify` thay vì đổi bước trong cùng trang.
 
 ## 7. Nhập mã MFA của admin
 
@@ -173,17 +174,7 @@ Alternatives: vòng xoay (spinner) nhỏ thay cho khung chờ; không chọn vì
 
 ## 14. Trang 404
 
-Confidence: LOW
-
-Reuse: `RootLayout` (header đầy đủ để khách tìm tiếp), `EmptyState`.
-
-Bố cục và tương tác: `EmptyState` giữa trang, icon `SearchX` 48px, `<h1>` 24/32/600 "Không tìm thấy trang", câu "Đường dẫn có thể đã sai hoặc trang đã bị gỡ.", nút `primary md` "Về trang chủ" + link "Xem tất cả sản phẩm".
-
-Assumptions: router đã có `NotFoundPage` cho đường dẫn lạ; trang dùng `RootLayout` như mọi trang khách.
-
-Alternatives: chỉ một dòng chữ và link về trang chủ, không dùng `EmptyState`; hoặc hiện thêm dải "Hàng mới về".
-
-Do not introduce: hình minh hoạ lớn, trò chơi, ô tìm kiếm riêng (header đã có).
+Đã chốt 10/11/2026, chuyển sang [pages/khong-tim-thay.md](pages/khong-tim-thay.md). Giữ phương án ở đây (header đầy đủ, khối rỗng, icon `SearchX`, nút "Về trang chủ" và "Xem tất cả sản phẩm"); câu giải thích thêm gợi ý dùng ô tìm kiếm.
 
 ## 15. Giao diện điện thoại
 
@@ -295,4 +286,4 @@ Do not introduce: sửa món trong đơn, sửa địa chỉ, hoàn tiền.
 
 ## Không thiết kế
 
-Các màn sau không có trong phạm vi nên **không thiết kế**: trang tổng quan tài khoản, sổ địa chỉ, phương thức thanh toán, thẻ và điểm thưởng, hội viên, danh sách đã lưu, theo dõi vận chuyển, đổi trả, bảo hành, chọn cách nhận hàng, số điện thoại khôi phục, passkey. Lý do từng mục: [ngoai-pham-vi.md](ngoai-pham-vi.md). Muốn làm một mục: viết tài liệu nghiệp vụ trước, rồi mới thêm vào file này.
+Các màn sau không có trong phạm vi nên **không thiết kế**: trang tổng quan tài khoản (trang tài khoản chỉ có đổi username, đổi mật khẩu: [pages/tai-khoan.md](pages/tai-khoan.md)), sổ địa chỉ, phương thức thanh toán, thẻ và điểm thưởng, hội viên, danh sách đã lưu, theo dõi vận chuyển, đổi trả, bảo hành, chọn cách nhận hàng, số điện thoại khôi phục, passkey. Lý do từng mục: [ngoai-pham-vi.md](ngoai-pham-vi.md). Muốn làm một mục: viết tài liệu nghiệp vụ trước, rồi mới thêm vào file này.

@@ -1,0 +1,279 @@
+/* Chi tiết đơn (docs/web/pages/don-hang.md mục 2, 4, 5, 6) */
+
+/* Khung hẹp 1280px như giỏ hàng; khoảng cách với header do padding của link quay lại */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* "‹ Đơn hàng của tôi" thay cho breadcrumb */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-50);
+  padding: var(--space-200) 0 var(--space-150);
+  color: var(--fg-primary);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+}
+
+/* Đầu trang: tên đơn tối đa 2 dòng + nhãn trạng thái */
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-150);
+  row-gap: var(--space-50);
+}
+.title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 600;
+}
+.sub {
+  margin: var(--space-50) 0 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+}
+.notice {
+  margin-top: var(--space-200);
+}
+.noticeTitle {
+  display: block;
+  font-weight: 600;
+}
+.noticeLine {
+  display: block;
+}
+.message {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+
+/* Một cột dưới 960px: Trạng thái → Sản phẩm → Giao tới → Thanh toán */
+.layout {
+  display: grid;
+  gap: var(--space-200);
+  margin-top: var(--space-300);
+}
+.main {
+  display: grid;
+  gap: var(--space-200);
+  min-width: 0;
+}
+@media (min-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) var(--pdp-aside);
+    gap: var(--space-300);
+    align-items: start;
+  }
+}
+
+/* Khối trắng */
+.block {
+  padding: var(--space-300);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-2xl);
+}
+.blockTitle {
+  margin: 0 0 var(--space-200);
+  color: var(--fg-heading);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+  font-weight: 600;
+}
+
+/* Trạng thái: ô ghi chú dưới thanh */
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-100);
+  margin: 20px 0 0;
+  padding: var(--space-150) var(--space-200);
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-lg);
+  color: var(--fg-muted);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.noteIcon {
+  flex: none;
+  color: var(--fg-primary);
+}
+.cancelled {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-150);
+}
+.cancelledIcon {
+  flex: none;
+  color: var(--fg-danger);
+}
+.cancelledTitle {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.cancelledTime {
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+
+/* Sản phẩm */
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-200);
+  padding: var(--space-150) 0;
+}
+.item:first-child {
+  padding-top: 0;
+}
+.item:last-child {
+  padding-bottom: 0;
+}
+.item + .item {
+  border-top: 1px solid var(--border-divider);
+}
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.itemName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  color: var(--fg-default);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+}
+.itemName:hover {
+  color: var(--fg-primary);
+}
+.itemUnit {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-variant-numeric: tabular-nums;
+}
+.itemTotal {
+  color: var(--fg-default);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Giao tới */
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  color: var(--fg-muted);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.fullName {
+  color: var(--fg-default);
+  font-weight: 600;
+}
+
+/* Thanh toán: chú thích dưới tổng và dưới nút */
+.hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-100);
+  margin: 0;
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.hintIcon {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* Khung chờ (design-system §9.12) */
+.bone {
+  display: block;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-pressed) 0%,
+    var(--bg-surface-pressed) 30%,
+    var(--bg-canvas) 50%,
+    var(--bg-surface-pressed) 70%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.boneTitle {
+  width: min(560px, 100%);
+  height: 32px;
+}
+.boneSub {
+  width: min(320px, 100%);
+  height: 16px;
+  margin-top: var(--space-100);
+}
+.boneBlock {
+  border-radius: var(--radius-2xl);
+}
+.boneStatus {
+  height: 168px;
+}
+.boneItems {
+  height: 220px;
+}
+.boneAside {
+  height: 260px;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .title {
+    font-size: var(--text-title-sm);
+    line-height: var(--leading-title-sm);
+  }
+  .block {
+    padding: var(--space-200);
+  }
+}

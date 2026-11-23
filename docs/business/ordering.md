@@ -2,7 +2,7 @@
 
 - Module: ordering
 - Vai trò: khách hàng đã đăng nhập; admin (huỷ đơn, chuyển trạng thái giao hàng)
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker); 25/10/2026 (tin `order-confirmed` không bọc Idempotency); 06/11/2026 (admin chuyển `SHIPPED`, `DELIVERED`, BR-15)
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tồn kho, đổi giá, huỷ đơn, trạng thái); 07/10/2026 (khách vãng lai đăng nhập lúc đặt hàng); 21/10/2026 (giới hạn đơn đang mở BR-14, tin `order-confirmed`); 24/10/2026 (topic `order-confirmed` không có email admin, gửi SQS lỗi sau giao dịch, email huỷ đơn qua worker); 25/10/2026 (tin `order-confirmed` không bọc Idempotency); 06/11/2026 (admin chuyển `SHIPPED`, `DELIVERED`, BR-15); 12/11/2026 (admin huỷ đơn, BR-11, #447)
 
 ## Luồng đặt hàng (checkout flow)
 
@@ -74,7 +74,28 @@ Là khách hàng, tôi muốn tick chọn các sản phẩm trong giỏ mà tôi
   - Chuyển sang `SHIPPED` thì giảm `openOrders` trong cùng giao dịch (BR-14); sang `DELIVERED` thì không.
   - Ghi log `adminId`, `orderId`, trạng thái cũ và mới; không ghi địa chỉ.
   - Danh sách đơn cho admin lọc theo trạng thái, không trả địa chỉ giao hàng, họ tên, SĐT (O8).
-  - Bản `v1.0.0-rc.1` **chưa có** admin huỷ đơn (BR-11 làm sau).
+  - Admin huỷ đơn: xem mục "Admin huỷ đơn" ngay dưới (BR-11, bản sau `v1.0.0`).
+
+### Admin huỷ đơn (chốt 12/11/2026, bản sau `v1.0.0`)
+
+- BR-11 chi tiết. Chỉ nhóm `admin` của Cognito, kiểm ở backend (threat model L6, O3), qua `DELETE /api/v1/admin/orders/{orderId}`.
+- Tìm đơn:
+  - Bảng `orders` khoá `userId` + `orderId`, còn route chỉ có `orderId`. Backend tra đơn qua index `byStatus` ở mọi trạng thái (như PATCH ở BR-15).
+  - Thấy thì đọc lại đơn trên bảng chính theo `userId` + `orderId` (đọc mạnh): index có thể trễ, quyết định huỷ dựa trên bản đọc này.
+  - Không thấy ở trạng thái nào → 404 (thử lại sau ít giây nếu đơn vừa tạo hoặc vừa đổi).
+  - Đơn đang `DELIVERED` hoặc `CANCELLED` → 409 `CANNOT_CANCEL` kèm `currentStatus`.
+- Một giao dịch như khách huỷ (BR-12):
+  - đổi `CANCELLED` với điều kiện trạng thái đúng như lúc đọc;
+  - hoàn kho mọi món;
+  - đơn đang mở (`PENDING`, `CONFIRMED`) thì giảm `openOrders`. Đơn `SHIPPED` đã giảm lúc chuyển sang `SHIPPED` nên không giảm nữa.
+- Đơn đổi trạng thái giữa lúc đọc và ghi (điều kiện sai): đọc lại và xét lại, tối đa 3 lần như khách huỷ. Gọi lần hai thì thấy `CANCELLED` → 409, không hoàn kho thêm.
+- Huỷ đơn `SHIPPED` thì cộng kho ngay. Giới hạn đã biết: hàng chưa thật về kho mà đã bán lại được.
+- Không ghi lý do huỷ. Log `adminId`, `orderId`, trạng thái trước khi huỷ; không log địa chỉ.
+- Sau giao dịch gửi tin `CANCELLED` cho worker như BR-13; khách nhận thư huỷ hiện có (viết trung tính, không nói ai huỷ).
+- Gửi tin lỗi thì vẫn trả thành công, ghi log và metric `OrderEnqueueFailed`. Lambda admin ghi metric này với dimension `service=ordering` (như Lambda ordering) để alarm `order-enqueue-failed` bắt được; đổi tên service là alarm không thấy lỗi (code và test ở #448, #449).
+- Trả tóm tắt đơn (`AdminOrderSummary`), không địa chỉ, họ tên, SĐT, `userId` (O8).
+- Sự kiện `PURCHASE` đã ghi cho đơn trước khi huỷ vẫn giữ, giống khách huỷ (việc của module events).
+- Code: API #448, hạ tầng và E2E #449, màn hình #450.
 
 ## Máy trạng thái đơn hàng
 
@@ -168,6 +189,10 @@ MVP **không có** trạng thái `FAILED`. Đơn mà worker xử lý lỗi quá 
 - Given đơn `PENDING`, `DELIVERED` hoặc `CANCELLED`, When admin chuyển `SHIPPED`, Then trả 409 `INVALID_STATUS_TRANSITION`, đơn không đổi.
 - Given không có token hoặc tài khoản không thuộc nhóm `admin`, When gọi API admin, Then trả 401 hoặc 403, đơn không đổi.
 - Given `GET /api/v1/admin/orders?status=CONFIRMED`, Then không đơn nào có địa chỉ giao hàng.
+- Given đơn `CONFIRMED` có món A 3 cái, When admin huỷ, Then đơn `CANCELLED`, tồn kho A tăng 3, `openOrders` của khách giảm 1, khách nhận thư huỷ.
+- Given đơn `SHIPPED`, When admin huỷ, Then đơn `CANCELLED`, tồn kho tăng, `openOrders` không đổi.
+- Given đơn `DELIVERED` hoặc đã `CANCELLED`, When admin huỷ, Then trả 409 `CANNOT_CANCEL` kèm `currentStatus`, tồn kho không đổi.
+- Given không có token hoặc không thuộc nhóm `admin`, When gọi `DELETE /api/v1/admin/orders/{orderId}`, Then 401 hoặc 403, đơn không đổi.
 
 ## Màn hình liên quan
 

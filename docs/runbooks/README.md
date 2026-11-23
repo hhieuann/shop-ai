@@ -7,6 +7,7 @@ Mỗi alarm có một runbook: khi alarm kêu thì làm gì, theo thứ tự. Vi
 | [`api-5xx.md`](api-5xx.md) | `<tiền tố>-api-5xx`: ≥ 3 lỗi 5xx trong 5 phút | An |
 | [`api-latency.md`](api-latency.md) | `<tiền tố>-api-latency-p95`: p95 ≥ 1 giây, 15 phút liền | An |
 | [`lambda-errors.md`](lambda-errors.md) | `<tiền tố>-presignup-errors`: Lambda pre sign-up lỗi | An |
+| [`lambda-errors.md`](lambda-errors.md) | `shop-prd-postconfirmation-errors`: trigger đăng xuất mọi thiết bị lỗi hoặc bị throttle (chỉ prod) | Nhân |
 | [`lambda-throttle.md`](lambda-throttle.md) | `shop-prd-lambda-throttles`: Lambda bị throttle (chỉ prod) | An |
 | [`recs-pipeline.md`](recs-pipeline.md) | `shop-prd-recs-pipeline-no-success`: job gợi ý mỗi đêm 26 giờ không chạy thành công (chỉ prod) | Nhân |
 | [`waf.md`](waf.md) | Không có alarm: khách báo bị chặn, kiểm sau deploy prod có đổi WAF, chuyển core rule set sang chặn, dọn stack `shop-prd-waf` | Nhân |

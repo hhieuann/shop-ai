@@ -1,0 +1,46 @@
+/* Cột mục tài khoản (design-system §9.27) */
+.nav {
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-2xl);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  padding: 20px 20px var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+}
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+  font-weight: 600;
+}
+.who {
+  min-width: 0;
+}
+.username,
+.email {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.username {
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.email {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}

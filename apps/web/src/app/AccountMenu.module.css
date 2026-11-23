@@ -283,10 +283,11 @@
   border-top: 1px solid var(--border-divider);
   list-style: none;
 }
-.adminItem {
-  margin-bottom: var(--space-100);
-  padding-bottom: var(--space-100);
-  border-bottom: 1px solid var(--border-divider);
+/* Đường kẻ trước "Đăng xuất": 1px, cách 8px trên dưới */
+.divider {
+  height: 1px;
+  margin: var(--space-100) 0;
+  background: var(--border-divider);
 }
 .item {
   display: flex;
