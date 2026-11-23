@@ -58,3 +58,12 @@ new WebStack(app, `${shopEnv.stackPrefix}-web`, {
 
 // Kiểm bảo mật theo bộ luật AWS Solutions mỗi lần synth; còn lỗi chưa xử lý thì synth thất bại.
 Validations.of(app).addPlugins(new AwsSolutionsChecks(app, { verbose: true }));
+// L1 coi runtime nào không phải bản mới nhất trong aws-cdk-lib là lỗi. aws-cdk-lib 2.277 thêm
+// nodejs26.x, python3.15 nên mọi Lambda bị báo. Nhóm giữ nodejs24.x (LTS, khớp .nvmrc) và python3.14
+// (khớp data/), cả hai còn được AWS hỗ trợ; nâng runtime làm ở PR riêng có thử trên dev (#519).
+Validations.of(app).acknowledge({
+  id: 'AwsSolutions::AwsSolutions-L1',
+  reason:
+    'Giữ nodejs24.x (LTS, khớp .nvmrc) và python3.14 (khớp data/), còn được AWS hỗ trợ; ' +
+    'nâng lên nodejs26.x, python3.15 ở PR riêng có thử trên dev.',
+});
