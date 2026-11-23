@@ -111,6 +111,11 @@ function removeDevToken() {
 // và setSignOutHandler(() => <đăng xuất Cognito>) lúc khởi động app.
 
 export interface UserProfile {
+  /**
+   * `sub` của Cognito: định danh không bao giờ đổi, dùng để biết tab này còn là cùng một người không
+   * (#508). Không dùng email để so vì email đổi được khi gọi thẳng Cognito (threat model L14).
+   */
+  userId: string;
   /** Tên điền lúc tạo tài khoản, hiện trên header (dang-nhap.md §3.2) */
   username: string;
   email: string;
@@ -134,6 +139,8 @@ function readDevProfile(): UserProfile | null {
   };
   const username = get('shop-ai:dev-username') || 'khachthu';
   return {
+    // Đổi trong DevTools để thử đổi người giữa các tab: localStorage.setItem('shop-ai:dev-user-id', 'b')
+    userId: get('shop-ai:dev-user-id') || 'dev-user',
     username,
     email: `${username}@example.com`,
     isAdmin: get('shop-ai:dev-admin') === '1',
@@ -151,6 +158,52 @@ export function setProfileProvider(next: ProfileProvider) {
 export async function getUserProfile(): Promise<UserProfile | null> {
   await ready;
   return profileProvider();
+}
+
+/** `sub` của người đang đăng nhập, đọc mới từ phiên (cookie dùng chung mọi tab); khách là null (#508) */
+export async function getCurrentUserId(): Promise<string | null> {
+  return (await getUserProfile())?.userId ?? null;
+}
+
+// ── Báo cho các tab khác cùng trình duyệt (#508) ────────────────────────────────────────────────
+// Phiên nằm trong cookie dùng chung mọi tab, nhưng notifyAuthChanged() chỉ báo trong tab này. Tab nơi
+// khách bấm Đăng nhập hoặc Đăng xuất gửi một tin không kèm gì (không token, email, sub); tab nhận tự đọc
+// lại phiên. Trình duyệt không có BroadcastChannel thì bỏ qua: tab kia vẫn kiểm lại khi được mở lại.
+
+const AUTH_CHANNEL = 'shop-ai-auth';
+const AUTH_MESSAGE = 'auth-changed';
+let authChannel: BroadcastChannel | null | undefined;
+
+function getAuthChannel(): BroadcastChannel | null {
+  if (authChannel === undefined) {
+    try {
+      authChannel =
+        typeof BroadcastChannel === 'function' ? new BroadcastChannel(AUTH_CHANNEL) : null;
+    } catch {
+      authChannel = null;
+    }
+  }
+  return authChannel;
+}
+
+/** Chỉ gọi sau khi khách bấm Đăng nhập hoặc Đăng xuất ở tab này; tab nhận tin không gọi lại hàm này */
+export function announceAuthChanged() {
+  try {
+    getAuthChannel()?.postMessage({ type: AUTH_MESSAGE });
+  } catch {
+    // kênh đã đóng: tab kia vẫn kiểm lại khi được mở lại
+  }
+}
+
+/** Nghe tin đăng nhập, đăng xuất từ tab khác; trả về hàm huỷ. Tin của chính tab này không tới đây */
+export function onOtherTabAuthChange(listener: () => void): () => void {
+  const channel = getAuthChannel();
+  if (!channel) return () => {};
+  const handle = (event: MessageEvent) => {
+    if ((event.data as { type?: unknown } | null)?.type === AUTH_MESSAGE) listener();
+  };
+  channel.addEventListener('message', handle);
+  return () => channel.removeEventListener('message', handle);
 }
 
 // ── Đăng xuất, đổi mật khẩu, làm mới hồ sơ (trang tài khoản, pages/tai-khoan.md) ──────────

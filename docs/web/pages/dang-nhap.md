@@ -172,6 +172,21 @@ Lỗi từ Cognito hiện bằng `Alert danger` ở đầu form (dưới dòng p
 
 Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhập username", "Vui lòng nhập email"), username sai ký tự, email sai dạng ("Email không hợp lệ"), mật khẩu chưa đạt điều kiện, nhập lại không khớp. Đang gửi: nút `aria-busy`, các ô `readOnly`.
 
+### Nhiều tab (#508)
+
+Phiên đăng nhập dùng chung cho mọi tab của trình duyệt. Tab nơi khách bấm Đăng nhập hoặc Đăng xuất báo các tab khác (tin không kèm token, email); tab khác cũng tự kiểm lại khi được mở lại. So người bằng `sub`, không bằng email.
+
+| Tab khác vừa làm gì | Tab này |
+|---|---|
+| Đăng xuất | Dọn dữ liệu phiên như bấm Đăng xuất ở tab này (giỏ, mục đặt dở, đơn, gợi ý); đang ở trang bắt buộc đăng nhập thì về `/`. Không gọi đăng xuất Cognito lần nữa, không báo lại các tab khác |
+| Đăng nhập người khác, tab đang ở trang thường | Dọn rồi tải lại trang đang xem |
+| Đăng nhập người khác, tab đang ở `/checkout` (kể cả đang ẩn) | Dọn (gồm mục đặt dở), không tải lại `/checkout` mà sang `/cart` với Alert warning: "Tài khoản đăng nhập vừa đổi ở tab khác nên đơn đang đặt dở chưa được gửi. Hãy kiểm tra lại giỏ hàng trước khi đặt." Câu này chỉ hiện ở đúng tab đó và một lần (F5 không hiện lại) |
+| Đăng nhập (tab này đang là khách) | Chỉ tải lại, **không** xoá giỏ khách: giỏ khách dùng chung mọi tab, tab vừa đăng nhập lo gộp vào tài khoản rồi tự xoá |
+| Đăng nhập lại đúng người đang hiện | Không làm gì |
+
+- Ngay trước khi gửi đơn, trang đặt hàng đọc lại người trong phiên; khác người trang đang hiện thì không gửi, xử lý như dòng `/checkout` ở trên.
+- Tải lại xong mà phiên vẫn không phải người cần tới thì không tự tải lại nữa; nếu khách bấm đặt hàng thì `/checkout` hiện Alert danger: "Tài khoản vừa đổi ở tab khác. Tải lại trang để đặt hàng bằng tài khoản đang đăng nhập."
+
 ## 5. Responsive
 
 | Màn | Khác biệt |

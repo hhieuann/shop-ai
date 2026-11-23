@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Banknote, ShoppingCart } from 'lucide-react';
@@ -8,6 +8,11 @@ import { Checkbox } from '../../../shared/components/Checkbox';
 import { FreeShipping, OrderSummary } from '../../../shared/components/OrderSummary';
 import { Price } from '../../../shared/components/Price';
 import { formatVnd } from '../../../shared/lib/format';
+import {
+  ACCOUNT_SWITCHED_NOTICE,
+  peekAccountSwitchedNotice,
+  takeAccountSwitchedNotice,
+} from '../../account/lib/crossTabSession';
 import { ProductRail } from '../../home/components/ProductRail';
 import { CartLine } from '../components/CartLine';
 import { useCart, useGuestLines } from '../hooks/useCart';
@@ -27,6 +32,15 @@ import styles from './CartPage.module.css';
  */
 export function CartPage() {
   const navigate = useNavigate();
+  // Tab này đang đặt hàng thì tab khác đổi người (#508): báo một lần, F5 không hiện lại
+  // Đọc cờ lúc vẽ, xoá cờ sau khi đã vẽ (StrictMode gọi hàm khởi tạo hai lần nên không xoá ở đó)
+  const [accountSwitched] = useState(peekAccountSwitchedNotice);
+  useEffect(() => {
+    takeAccountSwitchedNotice();
+  }, []);
+  const switchedNotice = accountSwitched ? (
+    <Alert tone="warning">{ACCOUNT_SWITCHED_NOTICE}</Alert>
+  ) : null;
 
   const queryClient = useQueryClient();
   const {
@@ -135,6 +149,7 @@ export function CartPage() {
         <h1 className={styles.title}>Giỏ hàng của bạn đang trống</h1>
         <div className={styles.layout}>
           <div className={styles.main}>
+            {switchedNotice}
             {leftoverNotice}
             <section className={styles.empty} aria-label="Giỏ hàng trống">
               <ShoppingCart size={48} strokeWidth={1.75} aria-hidden="true" />
@@ -179,6 +194,7 @@ export function CartPage() {
       )}
       <div className={styles.layout}>
         <div className={styles.main}>
+          {switchedNotice}
           {leftoverNotice}
           <section className={styles.list} aria-label="Sản phẩm trong giỏ">
             <label className={styles.selectAll}>

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -46,11 +46,25 @@ function renderAt(path: string, options?: SignOutAndLeaveOptions, queryClient = 
   return { queryClient, user: userEvent.setup() };
 }
 
+/** BroadcastChannel giả: đếm tin token.ts gửi cho tab khác (#508). Kênh tạo lần đầu dùng, nên stub ngay */
+const posted: unknown[] = [];
+vi.stubGlobal(
+  'BroadcastChannel',
+  class {
+    postMessage(data: unknown) {
+      posted.push(data);
+    }
+    addEventListener() {}
+    removeEventListener() {}
+  },
+);
+
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   localStorage.setItem(DEV_TOKEN_KEY, 'dev');
   lastError = null;
+  posted.length = 0;
 });
 afterEach(cleanup);
 
@@ -128,5 +142,29 @@ describe('useSignOut', () => {
     expect(queryClient.getQueryData(queryKeys.admin.all)).toBeUndefined();
     // Trạng thái xác thực hai lớp của người vừa dùng (#183)
     expect(queryClient.getQueryData(queryKeys.account.twoFactor('an@example.com'))).toBeUndefined();
+  });
+
+  it('announcesToOtherTabs_afterSignOut', async () => {
+    // Arrange
+    const { user } = renderAt('/products');
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Đăng xuất' }));
+
+    // Assert: khách bấm Đăng xuất ở tab này thì báo các tab khác, tin không kèm gì (#508)
+    await waitFor(() => expect(posted).toEqual([{ type: 'auth-changed' }]));
+  });
+
+  it('doesNotAnnounce_whenGlobalSignOutFails', async () => {
+    // Arrange: đăng xuất mọi nơi lỗi thì phiên máy này còn, không có gì đổi để báo
+    await token.changePassword('Cu12345!', 'Moi-loimang-1A!');
+    const { user } = renderAt('/account/password', { global: true, to: '/login' });
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Đăng xuất' }));
+
+    // Assert
+    await waitFor(() => expect(lastError).toBe('NetworkError'));
+    expect(posted).toEqual([]);
   });
 });

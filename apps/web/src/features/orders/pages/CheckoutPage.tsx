@@ -9,6 +9,11 @@ import { Alert } from '../../../shared/components/Alert';
 import { Field } from '../../../shared/components/Field';
 import { FreeShipping, OrderSummary } from '../../../shared/components/OrderSummary';
 import { formatVnd } from '../../../shared/lib/format';
+import {
+  ACCOUNT_SWITCH_FALLBACK,
+  useOrderAccountGuard,
+  type OrderGuardResult,
+} from '../../account/lib/crossTabSession';
 import { clearCheckoutItems, loadCheckoutItems, saveCheckoutItems } from '../lib/checkoutStorage';
 import type {
   CartItem,
@@ -39,6 +44,14 @@ function isDefiniteFailure(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false; // mạng lỗi: không biết server đã làm gì
   if (error.status === 409) return error.code !== 'ORDER_IN_PROGRESS';
   return error.status === 400 || error.status === 422;
+}
+
+/** Không gửi đơn vì người đăng nhập vừa đổi ở tab khác (#508); chưa có lệnh nào tới server */
+class AccountSwitchedError extends Error {
+  constructor(readonly result: Exclude<OrderGuardResult, 'ok'>) {
+    super('Tài khoản vừa đổi ở tab khác');
+    this.name = 'AccountSwitchedError';
+  }
 }
 
 export function CheckoutPage() {
@@ -74,9 +87,14 @@ export function CheckoutPage() {
 
   // ── Mutation tạo đơn ─────────────────────────────────────────────────────────
   // Mọi hook phải gọi trước bất kỳ lệnh return sớm nào (Rules of Hooks)
+  const guardAccount = useOrderAccountGuard();
   const createOrder = useMutation({
-    mutationFn: () =>
-      api.post<Order>(
+    mutationFn: async () => {
+      // Chốt chặn: người trong phiên khác người trang đang hiện (đổi ở tab khác) thì không gửi đơn,
+      // để đơn không vào nhầm tài khoản dù tin giữa các tab bị lỡ (#508)
+      const guard = await guardAccount();
+      if (guard !== 'ok') throw new AccountSwitchedError(guard);
+      return api.post<Order>(
         '/orders',
         {
           // expectedPrice = giá khách đang nhìn thấy; server so với giá hiện tại (ordering.md BR-07)
@@ -88,7 +106,8 @@ export function CheckoutPage() {
           shippingAddress: toPayload(form),
         } satisfies CreateOrderRequest, // body sai so với OpenAPI → lỗi lúc biên dịch
         { headers: { 'Idempotency-Key': idempotencyKey } },
-      ),
+      );
+    },
     onSuccess: (order) => {
       clearCheckoutItems();
       // Server đã xoá các món đã đặt khỏi giỏ → làm mới cache giỏ và lịch sử đơn
@@ -98,6 +117,8 @@ export function CheckoutPage() {
       navigate(`/orders/${order.orderId}`, { replace: true, state: { justCreated: true } });
     },
     onError: (error) => {
+      // Chưa gửi gì tới server: giữ nguyên key; 'switched' thì trang đã chuyển sang /cart
+      if (error instanceof AccountSwitchedError) return;
       if (isDefiniteFailure(error)) setIdempotencyKey(crypto.randomUUID());
 
       // Giá đổi: hiện giá mới ngay trên trang để khách xem lại rồi bấm xác nhận lần nữa
@@ -254,11 +275,17 @@ export function CheckoutPage() {
           ]}
           total={total}
         >
-          {createOrder.isError && (
-            <Alert ref={alertRef} tone={alertTone(createOrder.error)}>
-              <OrderErrorMessage error={createOrder.error} nameOf={nameOf} />
-            </Alert>
-          )}
+          {createOrder.error instanceof AccountSwitchedError
+            ? createOrder.error.result === 'stuck' && (
+                <Alert ref={alertRef} tone="danger">
+                  {ACCOUNT_SWITCH_FALLBACK}
+                </Alert>
+              )
+            : createOrder.isError && (
+                <Alert ref={alertRef} tone={alertTone(createOrder.error)}>
+                  <OrderErrorMessage error={createOrder.error} nameOf={nameOf} />
+                </Alert>
+              )}
           {/* Nút nằm cạnh con số tổng; thuộc tính form vẫn gửi form ở cột trái */}
           <button
             type="submit"
