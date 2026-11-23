@@ -176,20 +176,23 @@ describe('ApiStack', () => {
     });
   });
 
-  it('demoProducts_onlyInsertMissing_whenProd', () => {
+  it('demoProducts_syncContentOnly_whenProd', () => {
     // Act
     const template = synth(prod);
 
-    // Assert: prod cũng có sản phẩm demo (chưa có trang admin), nhưng chỉ thêm sản phẩm còn thiếu,
-    // không ghi đè tồn kho và giá đã đổi; role không có quyền ghi theo lô
+    // Assert: prod cũng có sản phẩm demo (chưa có trang admin): thêm sản phẩm còn thiếu và cập nhật
+    // nội dung (#527), không ghi đè tồn kho và giá đã đổi; role không có quyền ghi theo lô
     template.resourceCountIs('AWS::CloudFormation::CustomResource', 1);
     template.hasResourceProperties('AWS::Lambda::Function', {
-      Environment: { Variables: Match.objectLike({ SEED_MODE: 'insert-missing' }) },
+      Environment: { Variables: Match.objectLike({ SEED_MODE: 'sync-content' }) },
     });
     template.hasResourceProperties('AWS::IAM::Policy', {
       PolicyDocument: {
         Statement: Match.arrayWith([
-          Match.objectLike({ Action: 'dynamodb:PutItem', Effect: 'Allow' }),
+          Match.objectLike({
+            Action: ['dynamodb:PutItem', 'dynamodb:UpdateItem'],
+            Effect: 'Allow',
+          }),
         ]),
       },
     });
