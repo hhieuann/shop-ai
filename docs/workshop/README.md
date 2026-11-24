@@ -26,7 +26,7 @@ Bản đã xong xem trên site báo cáo của An: <https://hhieuann.github.io/f
 | 5.1 Introduction | An | Chưa, chờ sơ đồ kiến trúc An tự vẽ | |
 | 5.2 Prerequisite (chuẩn bị, chi phí) | An | Xong | [site](https://hhieuann.github.io/fcaj-report/vi/5-workshop/5.2-prerequisite/) |
 | 5.3 Hạ tầng và CI/CD | An | Xong | [site](https://hhieuann.github.io/fcaj-report/vi/5-workshop/5.3-infrastructure/) |
-| 5.4 Luồng bán hàng | Hoàng | Bản nháp, còn ảnh chụp và số chi phí | [`5.4-luong-ban-hang.md`](5.4-luong-ban-hang.md) |
+| 5.4 Luồng bán hàng | Hoàng | Đủ ảnh và chi phí | [`5.4-luong-ban-hang.md`](5.4-luong-ban-hang.md) |
 | 5.5 Gợi ý và bảo mật dữ liệu | Nhân | Bản nháp, còn sửa theo góp ý #486 và thêm ảnh | [`5.5-goi-y-va-bao-mat-du-lieu.md`](5.5-goi-y-va-bao-mat-du-lieu.md) |
 | 5.6 Kiểm thử và vận hành | An | Xong | [site](https://hhieuann.github.io/fcaj-report/vi/5-workshop/5.6-testing/) |
 | 5.7 Clean up | An | Xong | [site](https://hhieuann.github.io/fcaj-report/vi/5-workshop/5.7-cleanup/) |
