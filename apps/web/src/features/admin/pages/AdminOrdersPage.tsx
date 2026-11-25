@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
 import type {
@@ -9,19 +9,16 @@ import type {
   AdminOrderSummary,
   AdminTargetStatus,
 } from '../../../shared/api/types';
-import { useRequireSignIn } from '../../../shared/auth/useRequireSignIn';
-import { useAccount } from '../../../shared/auth/useSession';
 import { Alert } from '../../../shared/components/Alert';
 import { buttonClass } from '../../../shared/components/buttonClass';
-import { Breadcrumb } from '../../../shared/components/Breadcrumb';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { CursorPager, type PagerTarget } from '../../../shared/components/CursorPager';
 import { LiveAnnouncerProvider } from '../../../shared/components/LiveAnnouncer';
 import { Price } from '../../../shared/components/Price';
 import { useAnnounce } from '../../../shared/hooks/useAnnounce';
 import { formatDateTime, formatVnd } from '../../../shared/lib/format';
-import { useTwoFactorStatus } from '../../account/lib/useTwoFactorStatus';
 import { STATUS_LABEL } from '../../orders/types';
+import { AdminForbidden } from '../components/AdminForbidden';
 import styles from './AdminOrdersPage.module.css';
 
 /** Mỗi trang 20 đơn (mặc định của API) */
@@ -93,18 +90,11 @@ function search(status: AdminListStatus, cursor?: string, page = 1): string {
 
 /**
  * Quản trị đơn hàng (docs/web/pages/admin-don-hang.md, ordering.md BR-15): xem đơn chờ giao, đang
- * giao và chuyển đơn đi tiếp một bước. Chỉ nhóm `admin` thấy nội dung; API vẫn tự kiểm (403).
+ * giao và chuyển đơn đi tiếp một bước. Nằm trong khung quản trị (`AdminLayout`), nơi đã kiểm đăng
+ * nhập, nhóm `admin` và xác thực hai lớp; API vẫn tự kiểm (403).
  * Không hiện địa chỉ, họ tên, SĐT: API admin không trả các trường này.
  */
 export function AdminOrdersPage() {
-  // Chưa đăng nhập thì sang /login, đăng nhập xong quay lại đây (như /orders)
-  const session = useRequireSignIn();
-  const account = useAccount();
-  const isAdmin = session === 'signedIn' && account.status === 'signedIn' && account.user?.isAdmin;
-  // Admin bắt buộc bật xác thực hai lớp (account.md BR-10). Chỉ chặn ở web: backend kiểm nhóm admin,
-  // không kiểm MFA; bảo vệ thật là bật MFA cho tài khoản admin trên Cognito (threat model L5)
-  const twoFactor = useTwoFactorStatus(isAdmin ? account.user?.email : undefined);
-
   useEffect(() => {
     const previous = document.title;
     document.title = 'Quản trị đơn hàng | Black Magic';
@@ -112,20 +102,6 @@ export function AdminOrdersPage() {
       document.title = previous;
     };
   }, []);
-
-  // Chưa biết phiên (khách sẽ được chuyển sang /login) hoặc chưa đọc xong hồ sơ
-  if (session !== 'signedIn' || account.status === 'loading') {
-    return <p className={styles.message}>Đang tải…</p>;
-  }
-  // Nhóm admin đọc từ token; đọc hồ sơ lỗi hoặc không phải admin thì không gọi API admin
-  if (account.status !== 'signedIn' || !account.user?.isAdmin) return <Forbidden />;
-  if (twoFactor.isPending) return <p className={styles.message}>Đang tải…</p>;
-  // Chưa bật thì sang trang bật, bật xong quay lại đây; đọc trạng thái lỗi thì vẫn hiện trang
-  if (twoFactor.data === false) {
-    return (
-      <Navigate to="/account/two-factor" replace state={{ from: '/admin', reason: 'admin' }} />
-    );
-  }
 
   return (
     <LiveAnnouncerProvider>
@@ -137,28 +113,17 @@ export function AdminOrdersPage() {
 /** Tiêu đề nhận focus (tabIndex -1) sau khi chuyển đơn: dòng vừa bấm đã rời danh sách */
 const Header = forwardRef<HTMLHeadingElement>(function Header(_props, ref) {
   return (
-    <>
-      <Breadcrumb items={[{ label: 'Trang chủ', to: '/' }, { label: 'Quản trị đơn hàng' }]} />
+    <div className={styles.head}>
       <h1 ref={ref} tabIndex={-1} className={styles.title}>
         Quản trị đơn hàng
       </h1>
-    </>
-  );
-});
-
-function Forbidden() {
-  return (
-    <div className={styles.page}>
-      <Header />
-      <div className={styles.empty}>
-        <p className={styles.emptyText}>Bạn không có quyền xem trang này.</p>
-        <Link to="/" className={styles.emptyLink}>
-          Về trang chủ
-        </Link>
-      </div>
+      <p className={styles.lead}>
+        Chuyển đơn đã xác nhận sang đang giao khi giao cho vận chuyển, rồi sang đã giao khi khách
+        nhận hàng.
+      </p>
     </div>
   );
-}
+});
 
 function AdminOrders() {
   const [searchParams] = useSearchParams();
@@ -229,9 +194,9 @@ function AdminOrders() {
     setTarget({ kind, order });
   };
 
-  if (error instanceof ApiError && error.status === 403) return <Forbidden />;
-  if (advance.error instanceof ApiError && advance.error.status === 403) return <Forbidden />;
-  if (cancel.error instanceof ApiError && cancel.error.status === 403) return <Forbidden />;
+  if ([error, advance.error, cancel.error].some((e) => e instanceof ApiError && e.status === 403)) {
+    return <AdminForbidden />;
+  }
 
   const prevCursors = readPrevCursors(location.state, page);
   const next: PagerTarget | undefined = data?.nextCursor
@@ -255,28 +220,26 @@ function AdminOrders() {
   const orders = data?.items ?? [];
 
   return (
-    <div className={styles.page}>
+    <div>
       <Header ref={headingRef} />
-      <p className={styles.lead}>
-        Chuyển đơn đã xác nhận sang đang giao khi giao cho vận chuyển, rồi sang đã giao khi khách
-        nhận hàng.
-      </p>
 
-      {/* Đổi tab là đổi URL nên dùng link điều hướng, không dùng mẫu tab của ARIA */}
-      <nav aria-label="Trạng thái đơn" className={styles.tabs}>
-        {STATUSES.map((s) => (
-          <Link
-            key={s}
-            to={{ search: search(s) }}
-            aria-current={s === status ? 'page' : undefined}
-            className={styles.tab}
-          >
-            {TABS[s].tab}
-          </Link>
-        ))}
-      </nav>
+      <section className={styles.block} aria-label="Danh sách đơn">
+        <div className={styles.toolbar}>
+          {/* Đổi tab là đổi URL nên dùng link điều hướng, không dùng mẫu tab của ARIA */}
+          <nav aria-label="Trạng thái đơn" className={styles.tabs}>
+            {STATUSES.map((s) => (
+              <Link
+                key={s}
+                to={{ search: search(s) }}
+                aria-current={s === status ? 'page' : undefined}
+                className={styles.tab}
+              >
+                {TABS[s].tab}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-      <div>
         {isPending ? (
           <p className={styles.message}>Đang tải đơn…</p>
         ) : error ? (
@@ -284,89 +247,88 @@ function AdminOrders() {
             Chưa tải được danh sách đơn. Tải lại trang để thử lần nữa.
           </p>
         ) : orders.length === 0 ? (
-          <div className={styles.empty}>
-            <p className={styles.emptyText}>{tab.empty}</p>
-          </div>
+          <p className={styles.message}>{tab.empty}</p>
         ) : (
           <>
-            <div className={styles.block}>
-              {/* Điện thoại đổi display của dòng, ô sang grid: ghi vai trò tường minh để trình đọc màn
-                  hình vẫn đọc như bảng */}
-              <table role="table" className={styles.table}>
-                <thead role="rowgroup">
-                  <tr role="row">
-                    <th role="columnheader" scope="col">
-                      Mã đơn
-                    </th>
-                    <th role="columnheader" scope="col">
-                      Ngày đặt
-                    </th>
-                    <th role="columnheader" scope="col" className={styles.num}>
-                      Số món
-                    </th>
-                    <th role="columnheader" scope="col" className={styles.num}>
-                      Tổng tiền
-                    </th>
-                    <th role="columnheader" scope="col">
-                      Trạng thái
-                    </th>
-                    <th role="columnheader" scope="col">
-                      <span className="sr-only">Thao tác</span>
-                    </th>
+            {/* Điện thoại đổi display của dòng, ô sang grid: ghi vai trò tường minh để trình đọc màn
+                hình vẫn đọc như bảng */}
+            <table role="table" className={styles.table}>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" scope="col">
+                    Mã đơn
+                  </th>
+                  <th role="columnheader" scope="col">
+                    Ngày đặt
+                  </th>
+                  <th role="columnheader" scope="col" className={styles.num}>
+                    Số món
+                  </th>
+                  <th role="columnheader" scope="col" className={styles.num}>
+                    Tổng tiền
+                  </th>
+                  <th role="columnheader" scope="col">
+                    Trạng thái
+                  </th>
+                  <th role="columnheader" scope="col">
+                    <span className="sr-only">Thao tác</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                {orders.map((order) => (
+                  <tr key={order.orderId} role="row" className={styles.row}>
+                    <td role="cell" className={styles.id}>
+                      {order.orderId}
+                    </td>
+                    <td role="cell" className={styles.date}>
+                      {formatDateTime(order.createdAt)}
+                    </td>
+                    <td role="cell" className={`${styles.num} ${styles.count}`}>
+                      {order.itemCount}
+                      <span className={styles.unit}> món</span>
+                    </td>
+                    <td role="cell" className={`${styles.num} ${styles.total}`}>
+                      <Price amount={order.totalAmount} />
+                    </td>
+                    <td role="cell" className={styles.status}>
+                      <span className={`${styles.badge} ${styles[order.status]}`}>
+                        {STATUS_LABEL[order.status]}
+                      </span>
+                    </td>
+                    <td role="cell" className={styles.action}>
+                      <div className={styles.actions}>
+                        <button
+                          type="button"
+                          className={buttonClass({ size: 'sm' })}
+                          aria-label={`${tab.action}: đơn ${order.orderId}`}
+                          disabled={sending}
+                          onClick={() => open('advance', order)}
+                        >
+                          {tab.action}
+                        </button>
+                        <button
+                          type="button"
+                          className={buttonClass({ variant: 'danger', size: 'sm' })}
+                          aria-label={`Huỷ đơn: đơn ${order.orderId}`}
+                          disabled={sending}
+                          onClick={() => open('cancel', order)}
+                        >
+                          Huỷ đơn
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody role="rowgroup">
-                  {orders.map((order) => (
-                    <tr key={order.orderId} role="row" className={styles.row}>
-                      <td role="cell" className={styles.id}>
-                        {order.orderId}
-                      </td>
-                      <td role="cell" className={styles.date}>
-                        {formatDateTime(order.createdAt)}
-                      </td>
-                      <td role="cell" className={`${styles.num} ${styles.count}`}>
-                        {order.itemCount}
-                        <span className={styles.unit}> món</span>
-                      </td>
-                      <td role="cell" className={`${styles.num} ${styles.total}`}>
-                        <Price amount={order.totalAmount} />
-                      </td>
-                      <td role="cell" className={styles.status}>
-                        <span className={`${styles.badge} ${styles[order.status]}`}>
-                          {STATUS_LABEL[order.status]}
-                        </span>
-                      </td>
-                      <td role="cell" className={styles.action}>
-                        <div className={styles.actions}>
-                          <button
-                            type="button"
-                            className={styles.button}
-                            aria-label={`${tab.action}: đơn ${order.orderId}`}
-                            disabled={sending}
-                            onClick={() => open('advance', order)}
-                          >
-                            {tab.action}
-                          </button>
-                          <button
-                            type="button"
-                            className={buttonClass({ variant: 'danger', size: 'sm' })}
-                            aria-label={`Huỷ đơn: đơn ${order.orderId}`}
-                            disabled={sending}
-                            onClick={() => open('cancel', order)}
-                          >
-                            Huỷ đơn
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+            <div className={styles.foot}>
+              <p className={styles.footCount}>Hiện {orders.length} đơn</p>
+              <CursorPager page={page} previous={previous} next={next} />
             </div>
-            <CursorPager page={page} previous={previous} next={next} />
           </>
         )}
-      </div>
+      </section>
 
       {target?.kind === 'advance' && (
         <ConfirmDialog

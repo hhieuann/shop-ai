@@ -64,7 +64,8 @@ export function TwoFactorPage() {
   const queryClient = useQueryClient();
   const signOutAndLeave = useSignOut();
   const { from, reason } = (location.state as TwoFactorState | null) ?? {};
-  const fromAdmin = from === '/admin';
+  // Mọi trang quản trị (/admin, /admin/...) chuyển sang đây đều quay về đúng trang đó sau khi bật
+  const fromAdmin = from !== undefined && /^\/admin(?:[/?]|$)/.test(from);
 
   const status = useTwoFactorStatus(email);
   // Chỉ tạo mã khi biết chắc chưa bật: AssociateSoftwareToken (setUpTOTP) gỡ ngay mã đang dùng, nên
@@ -153,7 +154,7 @@ export function TwoFactorPage() {
     }
     doneRef.current = true;
     queryClient.setQueryData(queryKeys.account.twoFactor(email ?? ''), true);
-    if (fromAdmin) navigate('/admin', { replace: true });
+    if (fromAdmin && from) navigate(from, { replace: true });
     else navigate('/account', { replace: true, state: { notice: ENABLED_NOTICE } });
   };
 

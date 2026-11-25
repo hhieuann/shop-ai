@@ -19,6 +19,14 @@ vi.mock('../features/orders/pages/CheckoutPage', () => ({
   CheckoutPage: () => <h1>Đặt hàng</h1>,
 }));
 vi.mock('../features/cart/pages/CartPage', () => ({ CartPage: () => <h1>Giỏ hàng</h1> }));
+// Khung quản trị thật kiểm phiên và nhóm admin (AdminLayout.test.tsx): ở đây chỉ cần nhận ra
+vi.mock('./AdminLayout', () => ({
+  AdminLayout: () => (
+    <main id="main">
+      <h1>Khung quản trị</h1>
+    </main>
+  ),
+}));
 
 afterEach(cleanup);
 
@@ -63,5 +71,17 @@ describe('RootLayout: bố cục tập trung (design-system §9.16)', () => {
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Quay lại giỏ hàng' })).toBeNull();
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
+  });
+});
+
+describe('RootLayout: khung quản trị (design-system §9.29)', () => {
+  it('admin_usesAdminLayout_withoutShopHeaderOrFooter', async () => {
+    // Act
+    await renderAt('/admin');
+
+    // Assert: không header, hàng danh mục, footer của cửa hàng
+    expect(screen.getByRole('heading', { level: 1, name: 'Khung quản trị' })).toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(screen.queryByText('Chân trang')).toBeNull();
   });
 });

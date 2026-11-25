@@ -1,5 +1,6 @@
 import { Outlet, useMatches } from 'react-router-dom';
 import { useCrossTabSession } from '../features/account/lib/crossTabSession';
+import { AdminLayout } from './AdminLayout';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { MiniHeader, type MiniHeaderBack } from './MiniHeader';
@@ -26,8 +27,11 @@ export interface RouteHandle {
    * 'focus': bố cục tập trung (design-system §9.16), vẽ `MiniHeader` thay header đầy đủ: chỉ logo
    * và một link quay lại, không ô tìm kiếm, Danh mục, hàng 2, tài khoản, giỏ (trang đặt hàng).
    * Mặc định: header đầy đủ.
+   *
+   * 'admin': khung trang quản trị (`AdminLayout`, design-system §9.29): thanh trên riêng, cột trái
+   * hoặc hàng chip, không header, hàng danh mục và footer của cửa hàng.
    */
-  chrome?: 'focus';
+  chrome?: 'focus' | 'admin';
   /** Link quay lại bên phải `MiniHeader` khi `chrome` là 'focus', vd. về giỏ hàng */
   back?: MiniHeaderBack;
 }
@@ -40,6 +44,7 @@ export function RootLayout() {
   const collapseNeeds = handles.some((h) => h?.headerNeeds === 'collapse');
   const flushTop = handles.some((h) => h?.flushTop);
   const focus = handles.find((h) => h?.chrome === 'focus');
+  if (handles.some((h) => h?.chrome === 'admin')) return <AdminLayout />;
   return (
     <div className={`${styles.shell} ${plain ? styles.plain : ''}`}>
       {focus ? <MiniHeader back={focus.back} /> : <Header collapseNeeds={collapseNeeds} />}

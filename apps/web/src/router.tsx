@@ -127,11 +127,18 @@ export const routes: RouteObject[] = [
         ],
       },
       {
-        // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
+        // Trang quản trị: khung riêng (AdminLayout) kiểm quyền cho mọi trang con
         path: 'admin',
-        lazy: async () => ({
-          Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
-        }),
+        handle: { chrome: 'admin' } satisfies RouteHandle,
+        children: [
+          {
+            // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
+            index: true,
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
+            }),
+          },
+        ],
       },
       {
         path: '*',
