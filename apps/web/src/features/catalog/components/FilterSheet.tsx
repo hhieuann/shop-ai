@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter } from 'lucide-react';
+import { Button } from '../../../shared/components/Button';
 import { trapTabKey } from '../../../shared/lib/focusTrap';
 import type { ProductCategory } from '../lib/productFilters';
 import { CategoryFilter } from './CategoryFilter';
@@ -65,20 +66,20 @@ export function FilterSheet({ category, onApply, onClose }: FilterSheetProps) {
         <h2 id={titleId} className={styles.title}>
           Bộ lọc tìm kiếm
         </h2>
-        <button type="button" className={styles.close} onClick={onClose}>
+        <Button variant="ghost" onClick={onClose}>
           Đóng
-        </button>
+        </Button>
       </div>
       <div className={`${styles.body} scroll-area`}>
         <CategoryFilter value={draft} onChange={setDraft} />
       </div>
       <div className={styles.foot}>
-        <button type="button" className={styles.reset} onClick={() => setDraft(undefined)}>
+        <Button size="lg" onClick={() => setDraft(undefined)}>
           Bỏ chọn
-        </button>
-        <button type="button" className={styles.apply} onClick={() => onApply(draft)}>
+        </Button>
+        <Button variant="primary" size="lg" onClick={() => onApply(draft)}>
           Áp dụng bộ lọc
-        </button>
+        </Button>
       </div>
     </div>,
     document.body,
