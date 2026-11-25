@@ -8,13 +8,14 @@ import {
 } from '../domain/errors.js';
 import type { Product } from '../domain/product.js';
 import { createAdminProduct } from './createAdminProduct.js';
+import { deleteAdminProduct } from './deleteAdminProduct.js';
+import { restoreAdminProduct } from './restoreAdminProduct.js';
 import { updateAdminProduct, type UpdateAdminProductInput } from './updateAdminProduct.js';
 
 const ADMIN = 'admin-sub-1';
 const ID = '01K6PZ3Q5G0000000000000001';
 const SEEN = '2026-10-04T07:00:00.000Z';
 const NOW = '2026-11-25T08:00:00.000Z';
-/** Món đã xoá mềm (BR-14, xoá làm ở PR sau) vẫn có thể có trong bảng */
 const DELETED_AT = '2026-11-20T08:00:00.000Z';
 
 const CURRENT = sampleProduct({ productId: ID, category: 'gpu', stock: 12, updatedAt: SEEN });
@@ -23,6 +24,8 @@ function writer() {
   return {
     create: vi.fn().mockResolvedValue(undefined),
     update: vi.fn<(...args: unknown[]) => Promise<Product | null>>(),
+    softDelete: vi.fn().mockResolvedValue(true),
+    restore: vi.fn<(...args: unknown[]) => Promise<Product | null>>(),
   };
 }
 
@@ -232,4 +235,77 @@ describe('updateAdminProduct (BR-12, BR-13)', () => {
       expect(w.update).toHaveBeenCalledTimes(1);
     },
   );
+});
+
+describe('deleteAdminProduct, restoreAdminProduct (BR-14)', () => {
+  it('deleteAdminProduct_softDeletesCurrent', async () => {
+    // Arrange
+    const w = writer();
+
+    // Act
+    await deleteAdminProduct(
+      { products: products(CURRENT), writer: w, now: () => NOW },
+      { adminId: ADMIN, productId: ID },
+    );
+
+    // Verify
+    expect(w.softDelete).toHaveBeenCalledWith(CURRENT, NOW);
+  });
+
+  it.each([
+    ['không có', null, true],
+    ['đã xoá mềm', { ...CURRENT, deletedAt: DELETED_AT }, true],
+    ['bị xoá giữa lúc đọc và lúc ghi', CURRENT, false],
+  ])('deleteAdminProduct_throwsNotFound_when_%s', async (_name, current, writeOk) => {
+    // Arrange
+    const w = writer();
+    w.softDelete.mockResolvedValue(writeOk);
+
+    // Act
+    const act = deleteAdminProduct(
+      { products: products(current), writer: w, now: () => NOW },
+      { adminId: ADMIN, productId: ID },
+    );
+
+    // Assert
+    await expect(act).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
+
+  it('restoreAdminProduct_returnsHiddenProduct_whenDeleted', async () => {
+    // Arrange
+    const w = writer();
+    const restored = { ...CURRENT, status: 'INACTIVE' as const, updatedAt: NOW };
+    w.restore.mockResolvedValue(restored);
+    const deleted = { ...CURRENT, status: 'INACTIVE' as const, deletedAt: DELETED_AT };
+
+    // Act
+    const result = await restoreAdminProduct(
+      { products: products(deleted), writer: w, now: () => NOW },
+      { adminId: ADMIN, productId: ID },
+    );
+
+    // Assert
+    expect(result).toEqual(restored);
+    // Verify
+    expect(w.restore).toHaveBeenCalledWith(deleted, NOW);
+  });
+
+  it.each<[string, Product | null, Product | null]>([
+    ['không có', null, null],
+    ['chưa bị xoá', CURRENT, null],
+    ['được khôi phục ở nơi khác giữa chừng', { ...CURRENT, deletedAt: DELETED_AT }, null],
+  ])('restoreAdminProduct_throwsNotFound_when_%s', async (_name, current, written) => {
+    // Arrange
+    const w = writer();
+    w.restore.mockResolvedValue(written);
+
+    // Act
+    const act = restoreAdminProduct(
+      { products: products(current), writer: w, now: () => NOW },
+      { adminId: ADMIN, productId: ID },
+    );
+
+    // Assert
+    await expect(act).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
 });

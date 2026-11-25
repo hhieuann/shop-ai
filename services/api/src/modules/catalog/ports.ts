@@ -46,4 +46,8 @@ export interface AdminProductWriter {
     readonly expectedStock?: number;
     readonly now: string;
   }): Promise<Product | null>;
+  /** Xoá mềm (BR-14): INACTIVE, `deletedAt`, khoá `<loại>#DELETED`. `false` khi không có hoặc đã xoá */
+  softDelete(product: Pick<Product, 'productId' | 'category'>, now: string): Promise<boolean>;
+  /** Khôi phục về đã ẩn (`<loại>#INACTIVE`), bỏ `deletedAt`. `null` khi không có hoặc chưa xoá */
+  restore(product: Pick<Product, 'productId' | 'category'>, now: string): Promise<Product | null>;
 }

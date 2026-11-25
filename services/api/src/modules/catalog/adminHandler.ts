@@ -30,6 +30,14 @@ export interface AdminProductUseCases {
     readonly draft: AdminProductDraft;
   }): Promise<Product>;
   updateAdminProduct(input: UpdateAdminProductInput): Promise<Product>;
+  deleteAdminProduct(input: {
+    readonly adminId: string;
+    readonly productId: string;
+  }): Promise<void>;
+  restoreAdminProduct(input: {
+    readonly adminId: string;
+    readonly productId: string;
+  }): Promise<Product>;
 }
 
 type Route = (
@@ -204,6 +212,22 @@ export const adminProductRoutes: Readonly<Record<string, Route>> = {
       ...(expectedStock !== undefined && { expectedStock }),
     });
     return noStore(200, product);
+  },
+  'DELETE /api/v1/admin/products/{productId}': async (event, adminId, { deleteAdminProduct }) => {
+    const params = productParams.safeParse(event.pathParameters ?? {});
+    if (!params.success) return validationProblem(params.error, event.requestContext.requestId);
+    await deleteAdminProduct({ adminId, productId: params.data.productId });
+    return { statusCode: 204, headers: { 'cache-control': 'no-store' } };
+  },
+  'POST /api/v1/admin/products/{productId}/restore': async (
+    event,
+    adminId,
+    { restoreAdminProduct },
+  ) => {
+    const params = productParams.safeParse(event.pathParameters ?? {});
+    if (!params.success) return validationProblem(params.error, event.requestContext.requestId);
+    // Không có hoặc chưa xoá → 404
+    return noStore(200, await restoreAdminProduct({ adminId, productId: params.data.productId }));
   },
 };
 

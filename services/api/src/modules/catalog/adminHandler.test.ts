@@ -21,6 +21,8 @@ function useCases() {
     getAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
     createAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
     updateAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
+    deleteAdminProduct: vi.fn().mockResolvedValue(undefined),
+    restoreAdminProduct: vi.fn().mockResolvedValue({ ...PRODUCT, status: 'INACTIVE' }),
   } satisfies AdminProductUseCases;
 }
 

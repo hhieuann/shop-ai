@@ -100,4 +100,58 @@ export class DynamoAdminProductWriter implements AdminProductWriter {
       return productItemSchema.parse(Attributes);
     });
   }
+
+  async softDelete(product: Pick<Product, 'productId' | 'category'>, now: string) {
+    const done = await unlessConditionFails(async () => {
+      await this.db.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: { productId: product.productId },
+          UpdateExpression:
+            'SET #status = :inactive, #deletedAt = :now, #categoryStatus = :key, #updatedAt = :now',
+          ConditionExpression: 'attribute_exists(productId) AND attribute_not_exists(#deletedAt)',
+          ExpressionAttributeNames: {
+            '#status': 'status',
+            '#deletedAt': 'deletedAt',
+            '#categoryStatus': 'categoryStatus',
+            '#updatedAt': 'updatedAt',
+          },
+          ExpressionAttributeValues: {
+            ':inactive': 'INACTIVE',
+            ':now': now,
+            ':key': categoryStatusKey(product.category, 'DELETED'),
+          },
+        }),
+      );
+      return true;
+    });
+    return done === true;
+  }
+
+  async restore(product: Pick<Product, 'productId' | 'category'>, now: string) {
+    return unlessConditionFails(async () => {
+      const { Attributes } = await this.db.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: { productId: product.productId },
+          UpdateExpression:
+            'SET #status = :inactive, #categoryStatus = :key, #updatedAt = :now REMOVE #deletedAt',
+          ConditionExpression: 'attribute_exists(#deletedAt)',
+          ExpressionAttributeNames: {
+            '#status': 'status',
+            '#deletedAt': 'deletedAt',
+            '#categoryStatus': 'categoryStatus',
+            '#updatedAt': 'updatedAt',
+          },
+          ExpressionAttributeValues: {
+            ':inactive': 'INACTIVE',
+            ':now': now,
+            ':key': categoryStatusKey(product.category, 'INACTIVE'),
+          },
+          ReturnValues: 'ALL_NEW',
+        }),
+      );
+      return productItemSchema.parse(Attributes);
+    });
+  }
 }
