@@ -138,6 +138,14 @@ export const routes: RouteObject[] = [
               Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
             }),
           },
+          {
+            // Admin xem, ẩn, xoá, khôi phục sản phẩm (pages/admin-san-pham.md mục 2); code tải riêng
+            path: 'products',
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminProductsPage'))
+                .AdminProductsPage,
+            }),
+          },
         ],
       },
       {
