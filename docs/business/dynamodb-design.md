@@ -14,7 +14,7 @@ Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không
 |---|---|---|
 | Q1 | Chi tiết sản phẩm theo `productId` | Cao |
 | Q2 | Danh sách sản phẩm theo `category`, phân trang | Cao |
-| Q3 | Admin: tất cả sản phẩm (kể cả INACTIVE) | Thấp |
+| Q3 | Admin: sản phẩm của một loại theo nhóm đang bán, đã ẩn, đã xoá (catalog.md BR-10) | Thấp |
 | Q4 | Tất cả sản phẩm ACTIVE, không lọc loại (trang chủ) | Cao |
 | Q5 | Tìm theo tên, không phân biệt hoa thường và dấu, khớp ở bất kỳ vị trí nào | Vừa |
 
@@ -29,7 +29,7 @@ Nguyên tắc: **thiết kế từ truy vấn cần có → chọn khoá, không
 > **Không dùng Scan ở bất kỳ đâu.**
 > DynamoDB không hỗ trợ ký tự đại diện trong khoá (`*#ACTIVE` không chạy được).
 >
-> - **Q3 (admin):** Query GSI1 với từng `<category>#ACTIVE` và `<category>#INACTIVE` (26 lần, chạy song song). Admin ít dùng nên chấp nhận được.
+> - **Q3 (admin, #543):** một loại mỗi lần. Query GSI1 với `<loại>#ACTIVE`, `<loại>#INACTIVE` hoặc `<loại>#DELETED` theo lọc `status` (bỏ trống: hai cái đầu, song song, gộp lại), `ScanIndexForward = false` để mới nhất trước (SK là ULID). Lọc `q` trên tên trong Lambda như Q5. `counts`: 3 Query `Select = COUNT` song song. Admin ít dùng, mỗi loại vài chục món nên chấp nhận được.
 > - **Q4, Q5:** Lambda giữ danh sách sản phẩm ACTIVE trong bộ nhớ 60 giây. Hết hạn thì Query GSI1 với từng `<category>#ACTIVE` (13 lần, song song), gộp lại. Chuẩn hoá tên một lần lúc nạp, rồi lọc, sắp xếp và phân trang trên mảng này. Cursor mã hoá vị trí của sản phẩm cuối trang trước (còn hay hết hàng, giá hoặc `createdAt`, `productId`), nên vẫn đúng khi cache nạp lại giữa hai trang.
 > - Cách Q4, Q5 hợp với catalog nhỏ (dưới vài nghìn sản phẩm). Xem `catalog.md` mục "Cách hiện thực tìm kiếm".
 
@@ -45,6 +45,7 @@ brand        String
 price        Number  (VND, số nguyên)
 stock        Number
 status       String  (ACTIVE | INACTIVE)
+deletedAt    String  (tuỳ chọn, ISO 8601 UTC; có khi admin xoá mềm, catalog.md BR-14)
 description  String
 imageUrl     String  (tuỳ chọn)
 specs        Map     (tuỳ chọn, thông số kỹ thuật)
@@ -53,9 +54,22 @@ updatedAt    String  (ISO 8601 UTC)
 ```
 
 **GSI: `byCategory`**
-- PK: `categoryStatus` = `category#status`; ai ghi sản phẩm (seed, admin) phải ghi kèm và cập nhật khi đổi `category` hoặc `status`
+- PK: `categoryStatus` = `category#status`; ai ghi sản phẩm (seed, admin) phải ghi kèm và cập nhật khi đổi `category` hoặc `status`. Món xoá mềm có `categoryStatus` = `<loại>#DELETED` (không phải giá trị của `status`)
 - SK: `productId`
 - Chiếu: ALL
+
+### Ghi của admin (catalog.md BR-11 … BR-14, #543)
+
+| Thao tác | Lệnh | Điều kiện |
+|---|---|---|
+| Thêm | `PutItem` (đủ thuộc tính + `categoryStatus`) | `attribute_not_exists(productId)` |
+| Sửa, ẩn, hiện | `UpdateItem` (`SET` các trường gửi lên, `updatedAt`, và `categoryStatus` khi đổi `status`; `REMOVE imageUrl` khi gửi `null`) | `updatedAt = :seen AND attribute_not_exists(deletedAt)`; có `stock` thì thêm `stock = :expectedStock` |
+| Xoá mềm | `UpdateItem` `SET status = INACTIVE, deletedAt, categoryStatus = <loại>#DELETED, updatedAt` | `attribute_exists(productId) AND attribute_not_exists(deletedAt)` |
+| Khôi phục | `UpdateItem` `REMOVE deletedAt`, `SET categoryStatus = <loại>#INACTIVE, updatedAt` | `attribute_exists(deletedAt)` |
+
+Điều kiện sai thì đọc lại (`GetItem` đọc mạnh) để trả đúng lỗi: không có hoặc đã xoá → 404; `updatedAt` lệch → 409 `PRODUCT_CHANGED`; `stock` lệch → 409 `STOCK_CHANGED`. Không `DeleteItem`.
+
+**Seed prod (`sync-content`, #531):** thêm điều kiện để không ghi đè sửa của admin: bỏ qua món có `deletedAt`, hoặc `updatedAt` trong bảng mới hơn `updatedAt` của món đó trong `products.json` (`attribute_not_exists(deletedAt) AND updatedAt <= :fileUpdatedAt`). Món demo bị xoá mềm không bị tạo lại vì item vẫn còn. Seed dev, staging (`overwrite`) giữ như cũ.
 
 ---
 
