@@ -1,0 +1,74 @@
+/* Thông báo nổi (docs/web/design-system.md §9.33) */
+.region {
+  position: fixed;
+  right: var(--space-300);
+  bottom: var(--space-300);
+  z-index: 400; /* trên header (210), ngăn kéo (300); dưới hộp thoại <dialog> (lớp trên cùng) */
+  display: grid;
+  justify-items: end;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  max-width: 480px;
+  padding: var(--space-150) var(--space-100) var(--space-150) var(--space-200);
+  border-radius: var(--radius-xl);
+  background: var(--fg-heading);
+  color: var(--fg-on-primary);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toast-in var(--dur-base) var(--ease-standard);
+}
+.text {
+  margin: 0;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  font-weight: 500;
+}
+.close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--fg-on-primary);
+}
+.close:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fg-on-primary) 16%, transparent);
+}
+.close:focus-visible {
+  outline-color: var(--focus-ring-on-chrome);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Điện thoại: rộng hết, cách mép 16px */
+@media (max-width: 639px) {
+  .region {
+    left: var(--space-200);
+    right: var(--space-200);
+    bottom: var(--space-200);
+    justify-items: stretch;
+  }
+  .toast {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

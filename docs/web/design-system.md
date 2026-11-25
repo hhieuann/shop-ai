@@ -250,6 +250,10 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (dùng ở đơn hàng, giỏ hàng, trang danh sách, 404); thêm prop `title`, `className` cho trang 404 (§9.12) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
+| `Select` (ô chọn) | `shared/components/Select.tsx` | ✅ (§9.30; trang admin sản phẩm dùng ở #548, #549) |
+| `Switch` (công tắc) | `shared/components/Switch.tsx` | ✅ (§9.31; form sản phẩm admin #549) |
+| `ActionMenu` (nút ba chấm, menu thao tác) | `shared/components/ActionMenu.tsx` | ✅ (§9.32; danh sách sản phẩm admin #548) |
+| `ToastProvider`, `useToast` (thông báo nổi) | `shared/components/Toast.tsx`, `toastContext.ts` | ✅ (§9.33; trang admin sản phẩm #548, #549) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
@@ -789,6 +793,44 @@ Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách m
 
 ### 9.28 Ô mã QR (trang bật xác thực hai lớp)
 Chốt 18/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md) 3.4). Ô vuông **176px** (gồm padding và viền), padding **12px** (ảnh QR 150px), nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-xl`. Ảnh tạo trong trình duyệt bằng thư viện `qrcode` (`toDataURL`), chỉ nạp ở trang này. Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục. Chỉ là kích thước bố cục của một trang nên ghi số thẳng trong CSS module, không thêm token.
+
+### 9.30 Ô chọn (`Select`, ✅)
+Chốt 25/11/2026 (#547). `<select>` gốc của trình duyệt (bàn phím, trình đọc màn hình, bảng chọn của điện thoại có sẵn), cùng hình dạng với `Field` (§9.4): cao 40px (`size="lg"` 48px), padding `0 12px`, nền `--bg-surface-raised`, viền 1px `--border-input`, bo `--radius-lg`, mũi tên mặc định (`color-scheme: light`), chữ 16px trên điện thoại. Nhãn, dấu `*`, dòng lỗi (`aria-invalid`, `aria-describedby`, icon `CircleAlert`) và gợi ý như `Field`. Prop `hideLabel`: nhãn chỉ cho trình đọc màn hình (`sr-only`), dùng ở thanh công cụ khi ô đã rõ nghĩa; form luôn hiện nhãn. Vô hiệu: chữ `--fg-disabled`, con trỏ `not-allowed`.
+
+### 9.31 Công tắc (`Switch`, ✅)
+Chốt 25/11/2026 (#547). Một hàng: bên trái nhãn 14/20/600 `--fg-heading` + dòng mô tả 12/18 `--fg-subdued` (tuỳ chọn); bên phải công tắc.
+
+| Phần | Giá trị |
+|---|---|
+| Nút | `<button type="button" role="switch" aria-checked>`, tên đọc từ nhãn (`aria-labelledby`), mô tả nối bằng `aria-describedby`. Bấm, Space, Enter đổi trạng thái |
+| Rãnh | 44×24px, bo `--radius-full`; tắt nền `--border-input` (hover `--border-default`); bật nền `--bg-primary` (hover `--bg-primary-hover`) |
+| Núm | tròn 18px nền `--bg-surface`, `--shadow-sm`, cách mép 3px; bật thì trượt sang phải 20px, `--dur-fast` `--ease-standard`; `prefers-reduced-motion` thì đổi ngay |
+| Vô hiệu | opacity .4, `not-allowed` |
+
+Dùng cho lựa chọn có/không áp dụng khi lưu form (vd. "Đang bán" ở form sản phẩm admin). Không dùng thay checkbox trong danh sách nhiều lựa chọn.
+
+### 9.32 Menu thao tác (`ActionMenu`, ✅)
+Chốt 25/11/2026 (#547). Nút ba chấm mở danh sách thao tác của một dòng (vd. danh sách sản phẩm admin), theo mẫu "menu button" của ARIA.
+
+| Phần | Giá trị |
+|---|---|
+| Nút | vuông 32×32 kiểu nút phụ `sm` (§9.3): viền `--border-default`, nền `--bg-surface-raised`, bo `--radius-lg`, icon `MoreHorizontal` 20; hover và khi mở nền `--bg-surface-pressed`. `aria-label` kèm tên đối tượng ("Thao tác khác: {tên}"), `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` |
+| Menu | `role="menu"`, nổi dưới nút cách 4px, canh mép phải, rộng tối thiểu 220px, padding 6px, nền `--bg-surface`, viền `--border-divider`, bo `--radius-xl`, `--shadow-lg` |
+| Mục | `role="menuitem"`, cao 36px, padding `0 10px`, bo `--radius-md`, icon 18 `--fg-muted` + chữ 14/20; hover và focus nền `--bg-transparent-hover` (viền focus nằm trong mục). Mục `tone="danger"` chữ và icon `--fg-danger`. `separatorBefore` kẻ vạch 1px `--border-divider` cách 6px |
+| Bàn phím | Enter, Space, bấm, mũi tên xuống: mở và focus mục đầu; mũi tên lên trên nút: mở và focus mục cuối. Trong menu: mũi tên lên, xuống đi vòng; Home, End; Esc đóng và trả focus về nút; Tab đóng |
+| Đóng | chọn mục: đóng, trả focus về nút rồi chạy thao tác (thao tác mở hộp thoại thì hộp thoại tự lấy focus). Bấm ra ngoài: đóng, focus ở chỗ vừa bấm |
+
+### 9.33 Thông báo nổi (`ToastProvider`, `useToast`, ✅)
+Chốt 25/11/2026 (#547). Báo kết quả một thao tác vừa xong mà không chặn trang (vd. "Đã ẩn "{tên}" khỏi cửa hàng."). Lỗi cần người dùng sửa thì vẫn dùng `Alert` (§9.13) hoặc lỗi dưới ô.
+
+| Phần | Giá trị |
+|---|---|
+| Vị trí | `position: fixed`, góc dưới phải cách 24px; dưới 640px rộng hết, cách mép 16px. Lớp trên header và ngăn kéo (`z-index` 400), dưới hộp thoại `<dialog>` |
+| Khối | nền `--fg-heading`, chữ `--fg-on-primary` 14/20/500, padding `12px 8px 12px 16px`, bo `--radius-xl`, `--shadow-lg`, rộng tối đa 480px; hiện bằng mờ dần + trượt lên 8px trong `--dur-base` (`prefers-reduced-motion`: hiện ngay) |
+| Nút đóng | 32×32 trong suốt, icon `X` 18 màu chữ, `aria-label="Đóng thông báo"`; hover nền chữ trộn 16%; viền focus `--focus-ring-on-chrome` |
+| Đọc | vùng `role="status"` (`aria-live="polite"`) luôn có trên trang, không dời focus của người dùng |
+| Thời gian | tự ẩn sau 5 giây; rê chuột hoặc focus vào thông báo thì dừng, rời ra thì đếm lại 5 giây. Một lúc một thông báo, câu mới thay câu cũ |
+| Dùng | `ToastProvider` đặt một lần ở cấp trang (vd. trang admin sản phẩm); con gọi `useToast().show(câu)` |
 
 ## 10. Token sẽ thêm khi cần
 
