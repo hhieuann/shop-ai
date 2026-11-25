@@ -21,6 +21,17 @@ describe('isVisibleToCustomers', () => {
     // Assert
     expect(result).toBe(visible);
   });
+
+  it('isVisibleToCustomers_returnsFalse_whenDeletedEvenIfActive', () => {
+    // Arrange: dữ liệu lệch, có deletedAt mà vẫn ACTIVE (BR-14 luôn ghi INACTIVE khi xoá)
+    const product = { status: 'ACTIVE' as const, deletedAt: '2026-11-25T08:00:00.000Z' };
+
+    // Act
+    const result = isVisibleToCustomers(product);
+
+    // Assert
+    expect(result).toBe(false);
+  });
 });
 
 describe('isInStock', () => {
