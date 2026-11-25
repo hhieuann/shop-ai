@@ -687,21 +687,21 @@ Chốt 03/11/2026 theo trang tham khảo phụ (khối ô thông số, bấm ô 
 
 | Loại | Thứ tự (`SPEC_ORDER`) |
 |---|---|
-| laptop | `cpu`, `chip`, `gpu`, `ram`, `ssd`, `man_hinh`, `trong_luong` |
-| cpu | `socket`, `nhan_luong`, `xung_toi_da`, `tdp` |
-| gpu | `vram`, `nguon_de_xuat`, `cong_cap`, `kich_thuoc` |
-| ram | `loai`, `dung_luong`, `bus`, `rgb` |
+| laptop | `cpu`, `chip`, `gpu`, `ram`, `ssd`, `man_hinh`, `pin`, `trong_luong` |
+| cpu | `socket`, `nhan_luong`, `xung_toi_da`, `bo_nho_dem`, `tdp`, `do_hoa_tich_hop`, `npu`, `tan_kem_theo` |
+| gpu | `kien_truc`, `vram`, `giao_tiep`, `nguon_de_xuat`, `cong_cap`, `kich_thuoc` |
+| ram | `loai`, `dung_luong`, `bus`, `rgb`, `chieu_cao` |
 | storage | `dung_luong`, `chuan`, `ket_noi`, `doc`, `ghi`, `toc_do` |
-| mainboard | `socket`, `chipset`, `ram`, `kich_thuoc`, `wifi` |
+| mainboard | `socket`, `chipset`, `ram`, `kich_thuoc`, `khe_m2`, `wifi`, `wifi_chuan` |
 | psu | `cong_suat`, `chuan`, `modular`, `cong_16pin` |
-| cooling | `loai`, `socket`, `tdp_toi_da`, `radiator`, `kich_thuoc`, `so_luong`, `khoi_luong` |
-| keyboard | `layout`, `loai`, `switch`, `ket_noi`, `hot_swap` |
-| mouse | `cam_bien`, `dpi`, `ket_noi`, `trong_luong`, `pin` |
-| monitor | `kich_thuoc`, `do_phan_giai`, `tan_so`, `tam_nen`, `mau`, `ket_noi`, `trong_luong` |
-| headset | `ket_noi`, `mic`, `chong_on`, `pin`, `trong_luong` |
+| cooling | `loai`, `socket`, `tdp_toi_da`, `radiator`, `quat`, `kich_thuoc`, `so_luong`, `khoi_luong` |
+| keyboard | `layout`, `loai`, `switch`, `ket_noi`, `hot_swap`, `keycap`, `khung`, `phim_macro`, `ung_dung_tuy_bien`, `sac` |
+| mouse | `cam_bien`, `dpi`, `so_nut`, `ket_noi`, `trong_luong`, `pin`, `sac` |
+| monitor | `kich_thuoc`, `do_phan_giai`, `tan_so`, `tam_nen`, `thoi_gian_phan_hoi`, `do_cong`, `mau`, `ket_noi`, `usb_c`, `trong_luong` |
+| headset | `kieu`, `ket_noi`, `driver`, `mic`, `chong_on`, `pin`, `trong_luong` |
 | accessory | `loai`, `kich_thuoc`, `kich_thuoc_toi_da`, `cong`, `chuan`, `chieu_dai`, `quat` |
 
-(Bảng phủ đủ 49 khoá có trong bộ dữ liệu demo, theo từng loại.)
+(Bảng phủ đủ 69 khoá có trong bộ dữ liệu demo, theo từng loại; cập nhật 25/11/2026 theo #527.)
 
 **`SpecTiles`:**
 
