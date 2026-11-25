@@ -1,8 +1,8 @@
 # Tính năng: Xem và tìm sản phẩm (Catalog)
 
 - Module: catalog
-- Vai trò: khách chưa đăng nhập, khách hàng
-- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tìm kiếm, loại hàng, sắp xếp)
+- Vai trò: khách chưa đăng nhập, khách hàng, admin (mục "Admin quản lý sản phẩm")
+- Người viết: Hoàng · Ngày: 01/10/2026 · Sửa: 03/10/2026 (tìm kiếm, loại hàng, sắp xếp) · 25/11/2026 (admin quản lý sản phẩm, BR-09 … BR-15)
 
 ## User story
 
@@ -46,6 +46,7 @@ Là khách truy cập, tôi muốn xem danh sách sản phẩm, lọc theo loạ
 | `price` | number (VND) | ✅ | Số nguyên |
 | `stock` | number | ✅ | Số lượng tồn kho |
 | `status` | ACTIVE / INACTIVE | ✅ | Mặc định ACTIVE |
+| `deletedAt` | ISO 8601 UTC | ❌ | Chỉ có khi admin xoá mềm (BR-14); không trả ra API khách |
 | `description` | string | ✅ | Mô tả ngắn |
 | `imageUrl` | string (URL) | ❌ | URL ảnh sản phẩm |
 | `specs` | object | ❌ | Thông số kỹ thuật (tuỳ category) |
@@ -82,6 +83,65 @@ Là khách truy cập, tôi muốn xem danh sách sản phẩm, lọc theo loạ
 
 - `/` hoặc `/products` — trang danh sách: grid sản phẩm, bộ lọc loại, ô sắp xếp, ô tìm kiếm phía trên. Từ khoá, loại và cách sắp xếp nằm trên URL (`/products?q=rtx&category=gpu&sort=price_asc`) để chia sẻ link được.
 - `/products/:productId` — trang chi tiết: ảnh, tên, giá, mô tả, specs, nút "Thêm vào giỏ", widget gợi ý (An làm).
+
+## Admin quản lý sản phẩm (#543, 25/11/2026)
+
+User story: là admin, tôi muốn thêm, sửa, ẩn và xoá sản phẩm để danh mục luôn đúng hàng đang bán mà không phải sửa file seed.
+
+API: `/api/v1/admin/products` (contracts/openapi.yaml, tag `admin`). Màn hình: [pages/admin-san-pham.md](../web/pages/admin-san-pham.md).
+
+### Quy tắc nghiệp vụ
+
+- BR-09: Chỉ nhóm `admin` của Cognito. Không có token → 401; đã đăng nhập nhưng không thuộc nhóm → 403 `FORBIDDEN` (như API admin đơn hàng). Mọi response `Cache-Control: no-store`.
+- BR-10: Danh sách theo **một** loại (`category` bắt buộc):
+  - Lọc `status`: bỏ trống thì gồm đang bán (`ACTIVE`) và đã ẩn (`INACTIVE`); hoặc riêng `ACTIVE`, `INACTIVE`, `DELETED` (đã xoá mềm, BR-14).
+  - `q` tìm theo tên 1–30 ký tự, cùng cách như BR-03.
+  - Mới nhất trước (theo `productId` ULID). Phân trang cursor, mặc định 20, tối đa 50.
+  - Trả kèm `counts` gồm `active`, `inactive`, `deleted` của loại đó (không phụ thuộc `q`, `status`) để hiện số trên nút lọc.
+- BR-11: Thêm sản phẩm:
+  - Server sinh `productId` (ULID), `createdAt` = `updatedAt` = lúc tạo, ghi `categoryStatus`.
+  - `name` 1–150 ký tự; `brand` 1–50; `price` số nguyên 1 … 1.000.000.000; `stock` 0 … 9999; `description` 1–1000; `status` `ACTIVE` hoặc `INACTIVE`.
+  - `imageUrl` không bắt buộc, `https://`, tối đa 500 ký tự.
+  - `specs` tối đa 20 cặp; khoá phải thuộc danh sách thông số của loại (`SPEC_ORDER`, bảng web dùng để xếp thông số); giá trị là chuỗi 1–100 ký tự.
+  - Chuỗi bỏ khoảng trắng hai đầu trước khi kiểm. Trùng tên được phép.
+- BR-12: Sửa mọi trường trừ `category` (đổi loại thì thêm món mới rồi xoá món cũ):
+  - Body bắt buộc kèm `updatedAt` admin đang thấy; khác bản trong bảng → 409 `PRODUCT_CHANGED` kèm bản mới (`current`).
+  - Đổi `stock` thì kèm `expectedStock` (tồn kho lúc mở form); khác tồn kho hiện tại (vd. khách vừa đặt hàng) → 409 `STOCK_CHANGED` kèm `currentStock`.
+  - Món đã xoá mềm → 404 (khôi phục trước).
+- BR-13: Ẩn, hiện lại là sửa `status`; `categoryStatus` đổi cùng trong một lần ghi. Món ẩn không hiện với khách (BR-04), không thêm vào giỏ được (cart `PRODUCT_UNAVAILABLE`).
+- BR-14: Xoá là **xoá mềm**:
+  - `status` thành `INACTIVE`, ghi `deletedAt`, `categoryStatus` thành `<loại>#DELETED`.
+  - Khách thấy như món ẩn. Admin chỉ thấy ở lọc "Đã xoá".
+  - Khôi phục: bỏ `deletedAt`, về trạng thái đã ẩn (`<loại>#INACTIVE`); muốn bán lại thì hiện lại (BR-13).
+  - Không xoá hẳn khỏi bảng: seed prod (`sync-content`) sẽ tạo lại món demo nếu thiếu, và đơn cũ trỏ tới `productId`.
+- BR-15: Thay đổi hiện ở cửa hàng chậm tối đa 60 giây (cache CloudFront và cache trong Lambda catalog).
+
+### Giới hạn đã biết
+
+- Seed dev, staging (`overwrite`) ghi đè món demo mỗi khi `products.json` đổi: sửa của admin trên món demo ở hai môi trường này có thể mất. Món admin tự thêm không bị đụng. Prod (`sync-content`) bỏ qua món đã sửa sau file hoặc đã xoá (dynamodb-design.md).
+- Bấm lưu hai lần có thể tạo hai món (API thêm không có `Idempotency-Key`); web khoá nút khi đang gửi.
+- Ảnh chỉ nhập URL, chưa tải ảnh lên.
+
+### Log
+
+Ghi `adminId` (sub), `productId`, hành động (`CREATE`, `UPDATE`, `HIDE`, `SHOW`, `DELETE`, `RESTORE`). Không ghi mô tả, thông số hay toàn bộ body.
+
+### Tiêu chí nghiệm thu
+
+- Given không có token, When gọi `GET /api/v1/admin/products?category=gpu`, Then 401.
+- Given khách thường đã đăng nhập, When gọi bất kỳ API admin sản phẩm, Then 403 `FORBIDDEN`.
+- Given loại `gpu` có 7 món đang bán, 1 món ẩn, 0 món đã xoá, When admin gọi danh sách không `status`, Then trả 8 món mới nhất trước và `counts` = `{ active: 7, inactive: 1, deleted: 0 }`.
+- Given thiếu `category`, When gọi danh sách, Then 400.
+- Given `q=rtx`, When gọi danh sách loại `gpu`, Then chỉ trả món có "rtx" trong tên; `counts` không đổi.
+- Given body hợp lệ, When admin `POST /api/v1/admin/products`, Then 201, header `Location`, `productId` là ULID mới, `createdAt` = `updatedAt`; trong 60 giây món hiện ở `/products?category=<loại>` nếu `ACTIVE`.
+- Given `price = 0` hoặc khoá `specs` không thuộc loại, When thêm, Then 400 kèm `errors` theo trường.
+- Given admin mở form lúc `updatedAt = T1`, người khác đã sửa thành `T2`, When gửi `PATCH` với `updatedAt = T1`, Then 409 `PRODUCT_CHANGED` kèm bản mới, không ghi gì.
+- Given admin thấy `stock = 12`, khách vừa đặt 2 món, When gửi `PATCH` `{ stock: 20, expectedStock: 12 }`, Then 409 `STOCK_CHANGED` kèm `currentStock = 10`, không ghi gì.
+- Given món đang bán, When `PATCH { status: INACTIVE }`, Then `GET /api/v1/products/{id}` trả 404 sau tối đa 60 giây; danh sách admin lọc "Đã ẩn" có món đó.
+- Given món đang bán, When `DELETE`, Then 204; danh sách admin mặc định không còn món đó, lọc `DELETED` có, khách nhận 404; đơn cũ có món đó vẫn xem được.
+- Given món đã xoá, When `POST .../restore`, Then 200, `status = INACTIVE`, không có `deletedAt`.
+- Given món đã xoá, When `PATCH` hoặc `DELETE` lần nữa, Then 404.
+- Given prod chạy seed `sync-content` sau khi admin sửa giá hoặc xoá một món demo, When deploy, Then món đó giữ bản của admin (không bị ghi lại, không được tạo lại).
 
 ## Cách hiện thực tìm kiếm (quyết định 03/10/2026, chờ An đồng ý)
 
