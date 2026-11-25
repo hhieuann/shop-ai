@@ -268,6 +268,92 @@ export interface paths {
     patch: operations['updateOrderStatus'];
     trace?: never;
   };
+  '/api/v1/admin/products': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Admin xem sản phẩm của một loại, gồm cả món đã ẩn hoặc đã xoá
+     * @description Chỉ nhóm `admin` của Cognito (catalog.md BR-09). Một loại mỗi lần (`category` bắt buộc),
+     *     mới nhất trước (BR-10). Đọc index `byCategory` với `<loại>#ACTIVE`, `<loại>#INACTIVE`,
+     *     `<loại>#DELETED`; không Scan. Không truyền `status` thì trả món đang bán và đã ẩn (không
+     *     gồm đã xoá). `counts` là số món của loại đó theo từng nhóm, không phụ thuộc `q`, `status`.
+     *     Không cache (`no-store`).
+     */
+    get: operations['listAdminProducts'];
+    put?: never;
+    /**
+     * Admin thêm sản phẩm
+     * @description Chỉ nhóm `admin` (catalog.md BR-11). Server sinh `productId` (ULID), `createdAt` bằng
+     *     `updatedAt`, ghi `categoryStatus`. Trùng tên được phép. Bấm lưu hai lần có thể tạo hai món
+     *     (web khoá nút khi đang gửi). Hiện ở cửa hàng chậm tối đa 60 giây (BR-15).
+     */
+    post: operations['createAdminProduct'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{productId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: components['schemas']['ProductId'];
+      };
+      cookie?: never;
+    };
+    /** Admin xem một sản phẩm, kể cả món đã ẩn hoặc đã xoá */
+    get: operations['getAdminProduct'];
+    put?: never;
+    post?: never;
+    /**
+     * Admin xoá mềm sản phẩm
+     * @description Xoá mềm (catalog.md BR-14): `status` thành `INACTIVE`, ghi `deletedAt`, `categoryStatus`
+     *     thành `<loại>#DELETED`. Khách thấy như món ẩn (404), đơn cũ vẫn giữ `productId`. Không
+     *     xoá hẳn khỏi bảng. Món đã xoá hoặc không có thì 404.
+     */
+    delete: operations['deleteAdminProduct'];
+    options?: never;
+    head?: never;
+    /**
+     * Admin sửa, ẩn hoặc hiện lại sản phẩm
+     * @description Chỉ nhóm `admin` (catalog.md BR-12, BR-13). Sửa được mọi trường trừ `category`. Body bắt buộc
+     *     kèm `updatedAt` admin đang thấy: khác bản trong bảng thì 409 `PRODUCT_CHANGED` kèm bản mới.
+     *     Đổi `stock` thì kèm `expectedStock`: khác tồn kho hiện tại (vd. khách vừa đặt hàng) thì 409
+     *     `STOCK_CHANGED` kèm `currentStock`. Đổi `status` thì `categoryStatus` đổi cùng một lần ghi.
+     *     Món đã xoá trả 404 (khôi phục trước). Gửi `imageUrl: null` để bỏ ảnh.
+     */
+    patch: operations['updateAdminProduct'];
+    trace?: never;
+  };
+  '/api/v1/admin/products/{productId}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: components['schemas']['ProductId'];
+      };
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Admin khôi phục sản phẩm đã xoá
+     * @description Bỏ `deletedAt`, sản phẩm về trạng thái đã ẩn (`INACTIVE`, `categoryStatus` `<loại>#INACTIVE`;
+     *     catalog.md BR-14). Muốn bán lại thì hiện lại bằng `PATCH`. Món không có hoặc chưa xoá thì 404.
+     */
+    post: operations['restoreAdminProduct'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/events': {
     parameters: {
       query?: never;
@@ -746,6 +832,169 @@ export interface components {
       code?: 'INVALID_STATUS_TRANSITION' | 'CANNOT_CANCEL';
       currentStatus?: components['schemas']['OrderStatus'];
     };
+    /**
+     * @description Sản phẩm như admin thấy; món đã xoá mềm có `deletedAt` (BR-14)
+     * @example {
+     *       "productId": "01J9XKPQ0000000000000001",
+     *       "name": "ASUS TUF Gaming GeForce RTX 4070",
+     *       "category": "gpu",
+     *       "brand": "ASUS",
+     *       "price": 15900000,
+     *       "stock": 12,
+     *       "status": "ACTIVE",
+     *       "description": "Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.",
+     *       "specs": {
+     *         "vram": "12GB GDDR6X",
+     *         "nguon_de_xuat": "750W"
+     *       },
+     *       "createdAt": "2026-10-01T07:00:00Z",
+     *       "updatedAt": "2026-11-20T03:15:00Z"
+     *     }
+     */
+    AdminProduct: components['schemas']['Product'] & {
+      /**
+       * Format: date-time
+       * @description Lúc xoá mềm; không có trường này nghĩa là chưa xoá
+       */
+      deletedAt?: string;
+    };
+    /**
+     * @description Tối đa 20 cặp. Khoá phải thuộc danh sách thông số của loại (`SPEC_ORDER`, cùng bảng web dùng
+     *     để xếp thông số), giá trị là chuỗi 1–100 ký tự sau khi bỏ khoảng trắng hai đầu.
+     */
+    AdminProductSpecs: {
+      [key: string]: string;
+    };
+    /**
+     * @description Thêm sản phẩm (BR-11). Server sinh `productId`, `createdAt`, `updatedAt`
+     * @example {
+     *       "name": "Chuột Logitech G304 Lightspeed",
+     *       "category": "mouse",
+     *       "brand": "Logitech",
+     *       "price": 790000,
+     *       "stock": 20,
+     *       "status": "ACTIVE",
+     *       "description": "Chuột không dây gọn nhẹ, pin AA dùng lâu, hợp chơi game và làm việc.",
+     *       "specs": {
+     *         "ket_noi": "Lightspeed 2.4GHz",
+     *         "cam_bien": "HERO 12K"
+     *       }
+     *     }
+     */
+    AdminProductCreate: {
+      name: string;
+      category: components['schemas']['ProductCategory'];
+      brand: string;
+      /** @description Giá bán (VND, số nguyên) */
+      price: number;
+      stock: number;
+      status: components['schemas']['ProductStatus'];
+      description: string;
+      /** Format: uri */
+      imageUrl?: string;
+      specs?: components['schemas']['AdminProductSpecs'];
+    };
+    /**
+     * @description Sửa sản phẩm (BR-12, BR-13): gửi các trường muốn đổi kèm `updatedAt` đang thấy. Không đổi
+     *     được `category`. Có `stock` thì bắt buộc `expectedStock`.
+     * @example {
+     *       "updatedAt": "2026-11-20T03:15:00Z",
+     *       "price": 15490000,
+     *       "stock": 10,
+     *       "expectedStock": 12
+     *     }
+     */
+    AdminProductUpdate: {
+      /**
+       * Format: date-time
+       * @description `updatedAt` của bản admin đang sửa
+       */
+      updatedAt: string;
+      name?: string;
+      brand?: string;
+      price?: number;
+      stock?: number;
+      /** @description Tồn kho admin thấy lúc mở form; bắt buộc khi có `stock` */
+      expectedStock?: number;
+      status?: components['schemas']['ProductStatus'];
+      description?: string;
+      /** @description `null` để bỏ ảnh */
+      imageUrl?: string | null;
+      specs?: components['schemas']['AdminProductSpecs'];
+    };
+    /**
+     * @example {
+     *       "items": [
+     *         {
+     *           "productId": "01J9XKPQ0000000000000001",
+     *           "name": "ASUS TUF Gaming GeForce RTX 4070",
+     *           "category": "gpu",
+     *           "brand": "ASUS",
+     *           "price": 15900000,
+     *           "stock": 12,
+     *           "status": "ACTIVE",
+     *           "description": "Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.",
+     *           "specs": {
+     *             "vram": "12GB GDDR6X",
+     *             "nguon_de_xuat": "750W"
+     *           },
+     *           "createdAt": "2026-10-01T07:00:00Z",
+     *           "updatedAt": "2026-11-20T03:15:00Z"
+     *         },
+     *         {
+     *           "productId": "01J9XKPQ0000000000000005",
+     *           "name": "MSI GeForce RTX 4060 Ventus 2X 8GB",
+     *           "category": "gpu",
+     *           "brand": "MSI",
+     *           "price": 8290000,
+     *           "stock": 2,
+     *           "status": "ACTIVE",
+     *           "description": "Card đồ hoạ tầm trung cho chơi game 1080p, tiết kiệm điện.",
+     *           "specs": {
+     *             "vram": "8GB GDDR6",
+     *             "nguon_de_xuat": "550W"
+     *           },
+     *           "createdAt": "2026-10-01T07:00:00Z",
+     *           "updatedAt": "2026-10-01T07:00:00Z"
+     *         },
+     *         {
+     *           "productId": "01J9XKPQ0000000000000006",
+     *           "name": "Gigabyte GeForce RTX 3060 Gaming OC 12GB",
+     *           "category": "gpu",
+     *           "brand": "Gigabyte",
+     *           "price": 7490000,
+     *           "stock": 0,
+     *           "status": "INACTIVE",
+     *           "description": "Card đồ hoạ đời trước, đã ngừng nhập hàng.",
+     *           "createdAt": "2026-10-01T07:00:00Z",
+     *           "updatedAt": "2026-11-18T09:00:00Z"
+     *         }
+     *       ],
+     *       "counts": {
+     *         "active": 7,
+     *         "inactive": 1,
+     *         "deleted": 0
+     *       }
+     *     }
+     */
+    AdminProductList: {
+      items: components['schemas']['AdminProduct'][];
+      /** @description Có giá trị nếu còn trang tiếp theo */
+      nextCursor?: string;
+      /** @description Số món của loại đang xem theo nhóm, không phụ thuộc `q` và `status` */
+      counts: {
+        active: number;
+        inactive: number;
+        deleted: number;
+      };
+    };
+    AdminProductProblem: components['schemas']['Problem'] & {
+      /** @enum {string} */
+      code?: 'PRODUCT_CHANGED' | 'STOCK_CHANGED';
+      current?: components['schemas']['AdminProduct'];
+      /** @description Tồn kho hiện tại (khi `STOCK_CHANGED`) */
+      currentStock?: number;
+    };
     /** @description Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy. */
     EventInput: {
       productId: string;
@@ -784,6 +1033,18 @@ export interface components {
     };
   };
   responses: {
+    /**
+     * @description Không có sản phẩm. Với PATCH, DELETE: cả món đã xoá mềm. Với khôi phục: cả món chưa bị xoá
+     *     (catalog.md BR-12, BR-14)
+     */
+    AdminProductNotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/problem+json': components['schemas']['Problem'];
+      };
+    };
     /**
      * @description Thiếu token, token sai hoặc hết hạn. JWT authorizer của HTTP API chặn trước khi tới Lambda
      *     (ADR-0007) và trả body cố định, **không** theo RFC 9457: HTTP API không có Gateway Responses,
@@ -1544,6 +1805,193 @@ export interface operations {
           'application/problem+json': components['schemas']['AdminOrderProblem'];
         };
       };
+      default: components['responses']['Problem'];
+    };
+  };
+  listAdminProducts: {
+    parameters: {
+      query: {
+        category: components['schemas']['ProductCategory'];
+        /** @description `ACTIVE` đang bán · `INACTIVE` đã ẩn · `DELETED` đã xoá mềm. Bỏ trống: đang bán và đã ẩn */
+        status?: 'ACTIVE' | 'INACTIVE' | 'DELETED';
+        /** @description Tìm trong tên như catalog.md BR-03 (không phân biệt hoa thường và dấu) */
+        q?: string;
+        limit?: number;
+        cursor?: components['schemas']['PageCursor'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sản phẩm của loại đã chọn */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminProductList'];
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      default: components['responses']['Problem'];
+    };
+  };
+  createAdminProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminProductCreate'];
+      };
+    };
+    responses: {
+      /** @description Sản phẩm vừa tạo */
+      201: {
+        headers: {
+          /** @description Đường dẫn của sản phẩm mới, vd. `/api/v1/admin/products/{productId}` */
+          Location?: string;
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminProduct'];
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      default: components['responses']['Problem'];
+    };
+  };
+  getAdminProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: components['schemas']['ProductId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sản phẩm; món đã xoá có `deletedAt` */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminProduct'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['AdminProductNotFound'];
+      default: components['responses']['Problem'];
+    };
+  };
+  deleteAdminProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: components['schemas']['ProductId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Đã xoá mềm */
+      204: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['AdminProductNotFound'];
+      default: components['responses']['Problem'];
+    };
+  };
+  updateAdminProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: components['schemas']['ProductId'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminProductUpdate'];
+      };
+    };
+    responses: {
+      /** @description Sản phẩm sau khi sửa */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminProduct'];
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['AdminProductNotFound'];
+      /**
+       * @description `PRODUCT_CHANGED` sản phẩm vừa được sửa ở nơi khác (kèm `current`);
+       *     `STOCK_CHANGED` tồn kho vừa đổi (kèm `currentStock`)
+       */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['AdminProductProblem'];
+        };
+      };
+      default: components['responses']['Problem'];
+    };
+  };
+  restoreAdminProduct: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        productId: components['schemas']['ProductId'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sản phẩm sau khi khôi phục (đã ẩn) */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminProduct'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['AdminProductNotFound'];
       default: components['responses']['Problem'];
     };
   };
