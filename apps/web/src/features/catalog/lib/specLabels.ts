@@ -148,6 +148,11 @@ export const SPEC_ORDER: Readonly<Record<ProductCategory, readonly string[]>> = 
   accessory: ['loai', 'kich_thuoc', 'kich_thuoc_toi_da', 'cong', 'chuan', 'chieu_dai', 'quat'],
 };
 
+/** Nhãn tiếng Việt của một khoá thông số; khoá lạ thì trả nguyên khoá (form sản phẩm admin, #549) */
+export function specLabel(key: string): string {
+  return SPEC_LABELS[key] ?? key;
+}
+
 /** Một thông số đã có nhãn và giá trị để hiện (ô thông số, panel thông số) */
 export interface SpecEntry {
   key: string;

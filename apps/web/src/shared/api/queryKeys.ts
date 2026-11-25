@@ -25,6 +25,8 @@ export const queryKeys = {
     productLists: () => ['admin', 'products', 'list'] as const,
     /** Một trang sản phẩm admin theo bộ lọc trên URL và cursor của trang đang xem */
     products: (params: Record<string, unknown>) => ['admin', 'products', 'list', params] as const,
+    /** Một sản phẩm cho trang sửa (#549), kể cả món đã ẩn, đã xoá */
+    product: (productId: string) => ['admin', 'products', 'detail', productId] as const,
   },
   account: {
     all: ['account'] as const,
