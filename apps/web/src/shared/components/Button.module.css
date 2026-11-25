@@ -89,6 +89,15 @@
   background: var(--bg-danger-tint);
 }
 
+/* Nút chính vô hiệu (design-system bảng trạng thái): giữ chữ trắng (base.css button:disabled đổi sang
+   --fg-disabled, thắng .primary), mờ .4. Đang xử lý (aria-busy) thì không mờ, chỉ đổi chữ "Đang …" */
+.primary:disabled {
+  color: var(--fg-on-primary);
+}
+.primary:disabled:not([aria-busy='true']) {
+  opacity: 0.4;
+}
+
 /* Không bấm được: base.css đổi chữ sang --fg-disabled. Đang xử lý (aria-busy) thì con trỏ chờ */
 .button:disabled {
   cursor: not-allowed;

@@ -25,6 +25,8 @@
 }
 /* Vô hiệu kiểu tím nhạt (ô giống tên hiện tại hoặc trống), chỉ riêng nút này; đang gửi thì giữ kiểu chung */
 .update:disabled:not([aria-busy='true']) {
+  /* Kiểu tím nhạt riêng (tai-khoan.md 3.1), không mờ chồng như nút chính vô hiệu thường */
+  opacity: 1;
   border-color: var(--bg-primary-tint-2);
   background: var(--bg-primary-tint-2);
   color: var(--fg-primary-disabled);
