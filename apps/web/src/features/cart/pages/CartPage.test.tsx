@@ -2,24 +2,37 @@
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import alertStyles from '../../../shared/components/Alert.module.css';
+import type { CartItem } from '../../../shared/api/types';
+import buttonStyles from '../../../shared/components/Button.module.css';
+import emptyStyles from '../../../shared/components/EmptyState.module.css';
 import { CartPage } from './CartPage';
 
-// Giỏ của tài khoản đang đăng nhập (B), rỗng; không gọi API
+// Giỏ của tài khoản đang đăng nhập (B), mặc định rỗng; test đổi `cart.items`. Không gọi API
+const cart = vi.hoisted(() => ({ items: [] as unknown[] }));
 vi.mock('../hooks/useCart', () => ({
   useCart: () => ({
     session: 'signedIn',
     isGuest: false,
     status: 'ready',
-    items: [],
-    update: { isPending: false, isError: false, error: null },
-    remove: { isPending: false },
+    items: cart.items,
+    update: { isPending: false, isError: false, error: null, mutate: vi.fn() },
+    remove: { isPending: false, mutate: vi.fn() },
   }),
   useGuestLines: () => [],
 }));
+
+const ITEM: CartItem = {
+  productId: '01K6ZKX9M3V8Q2R4T6W8Y0A2C4',
+  name: 'Card đồ hoạ thử',
+  price: 15_900_000,
+  quantity: 1,
+  stock: 5,
+  status: 'ACTIVE',
+};
 vi.mock('../../home/components/ProductRail', () => ({ ProductRail: () => null }));
 
 const NOTICE =
@@ -38,7 +51,10 @@ function renderCart() {
   );
 }
 
-beforeEach(() => sessionStorage.clear());
+beforeEach(() => {
+  sessionStorage.clear();
+  cart.items = [];
+});
 afterEach(cleanup);
 
 describe('CartPage: câu báo đổi tài khoản ở tab khác (#508)', () => {
@@ -69,5 +85,41 @@ describe('CartPage: câu báo đổi tài khoản ở tab khác (#508)', () => {
 
     // Assert
     expect(screen.queryByText(NOTICE)).toBeNull();
+  });
+});
+
+describe('CartPage: component dùng chung (EmptyState, Button)', () => {
+  it('empty_showsEmptyStateWithLink_andPrimaryContinueButton', () => {
+    // Act
+    renderCart();
+
+    // Assert: khối rỗng là EmptyState, có link sang danh sách
+    const message = screen.getByText(/Chưa có sản phẩm nào trong giỏ/);
+    expect(message).toHaveClass(emptyStyles.message!);
+    expect(screen.getByRole('link', { name: 'xem tất cả sản phẩm' })).toHaveAttribute(
+      'href',
+      '/products',
+    );
+    // Nút "Tiếp tục mua sắm" là link kiểu nút chính lg
+    const next = screen.getByRole('link', { name: 'Tiếp tục mua sắm' });
+    expect(next).toHaveClass(buttonStyles.primary!, buttonStyles.lg!, buttonStyles.block!);
+  });
+
+  it('checkout_isPrimaryButton_disabledWhenNothingSelected', () => {
+    // Arrange
+    cart.items = [ITEM];
+    renderCart();
+    const [summaryButton] = screen.getAllByRole('button', { name: 'Đặt hàng (1)' });
+    expect(summaryButton).toHaveClass(buttonStyles.primary!, buttonStyles.lg!);
+    expect(summaryButton).toBeEnabled();
+
+    // Act: bỏ chọn tất cả
+    fireEvent.click(screen.getByRole('checkbox', { name: /Chọn tất cả/ }));
+
+    // Assert: cả nút ở khối tóm tắt lẫn thanh dính đáy đều vô hiệu
+    const buttons = screen.getAllByRole('button', { name: 'Đặt hàng (0)' });
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) expect(button).toBeDisabled();
+    expect(screen.getByText('Chọn ít nhất 1 sản phẩm để đặt hàng.')).toBeInTheDocument();
   });
 });
