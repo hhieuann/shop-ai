@@ -96,8 +96,8 @@ Select "Sắp xếp" ở thanh kết quả: **Mới nhất**, **Giá tăng dần
 | Đổi bộ lọc, sắp xếp, trang | giữ kết quả cũ (`keepPreviousData`), lưới opacity .6 và `aria-busy="true"` tới khi có kết quả mới |
 | Lỗi | trong cột kết quả: "Chưa tải được sản phẩm. Tải lại trang để thử lần nữa." `role="alert"` |
 | Cursor hỏng (400) | tự về trang 1, không báo lỗi |
-| Không có kết quả tìm kiếm | `EmptyState` trong cột kết quả: "Không có sản phẩm nào có “{q}” trong tên." + link "Xem tất cả sản phẩm"; ẩn thanh kết quả và dải chuyển trang |
-| Loại hàng chưa có sản phẩm | `EmptyState`: "Mục này chưa có sản phẩm." + link "Xem tất cả sản phẩm" |
+| Không có kết quả tìm kiếm | `EmptyState` trong cột kết quả: "Không có sản phẩm nào có “{q}” trong tên." + nút `secondary` "Xem tất cả sản phẩm" (link kiểu nút, như trang chi tiết đơn); ẩn thanh kết quả và dải chuyển trang |
+| Loại hàng chưa có sản phẩm | `EmptyState`: "Mục này chưa có sản phẩm." + nút `secondary` "Xem tất cả sản phẩm" |
 | Sản phẩm hết hàng | vẫn hiện, nằm cuối, `StockBadge` "Hết hàng", ô ảnh mờ .6, nút "Hết hàng" vô hiệu |
 | Thêm vào giỏ | trạng thái trên nút theo design-system §9.23 |
 
@@ -140,6 +140,5 @@ Bố cục, thẻ, chuyển trang giữ nguyên; chỉ thêm:
 - Cần trước: sửa catalog BR-02 (lọc nhiều nhóm) và OpenAPI `GET /api/v1/products` (tham số lọc, `total`, `facets`), An đồng ý cách tìm trong bộ nhớ Lambda. Bản mẫu HTML có nút "Thiết kế 3" (trên máy Hoàng, thư mục bản nháp không vào git).
 
 ## 9. Việc còn lại
-- Tách `EmptyState` thành component dùng chung (giỏ hàng rỗng, chưa có đơn hàng dùng lại).
 - Trang chi tiết dùng `Breadcrumb` (§9.22) khi làm lại.
 - Thêm vùng `aria-live` đọc "Đã hiện trang N" sau khi chuyển trang (tuỳ chọn, ngoài việc chuyển focus vào H1).

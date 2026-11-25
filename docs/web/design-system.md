@@ -247,7 +247,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng, trang chi tiết) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx`; nhãn trạng thái đơn `OrderStatusBadge` ở `features/orders/components/OrderStatusBadge.tsx` | ✅ |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
-| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (giỏ hàng và trang danh sách chưa chuyển sang, vẫn tự viết khối rỗng); thêm prop `title`, `className` cho trang 404 (§9.12) |
+| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (dùng ở đơn hàng, giỏ hàng, trang danh sách, 404); thêm prop `title`, `className` cho trang 404 (§9.12) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |

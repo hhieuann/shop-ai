@@ -6,7 +6,9 @@ import { ApiError, api } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
 import type { ProductListResponse } from '../../../shared/api/types';
 import { Breadcrumb } from '../../../shared/components/Breadcrumb';
+import { buttonClass } from '../../../shared/components/buttonClass';
 import { CursorPager, type PagerTarget } from '../../../shared/components/CursorPager';
+import { EmptyState } from '../../../shared/components/EmptyState';
 import { LiveAnnouncerProvider } from '../../../shared/components/LiveAnnouncer';
 import { DESKTOP_QUERY, useMediaQuery } from '../../../shared/hooks/useMediaQuery';
 import { FilterPanel } from '../components/FilterPanel';
@@ -195,14 +197,18 @@ export function ProductListPage() {
             )}
 
             {empty ? (
-              <div className={styles.empty}>
-                <p>
-                  {filters.q
+              <EmptyState
+                message={
+                  filters.q
                     ? `Không có sản phẩm nào có “${filters.q}” trong tên.`
-                    : 'Mục này chưa có sản phẩm.'}
-                </p>
-                <Link to="/products">Xem tất cả sản phẩm</Link>
-              </div>
+                    : 'Mục này chưa có sản phẩm.'
+                }
+                action={
+                  <Link to="/products" className={buttonClass()}>
+                    Xem tất cả sản phẩm
+                  </Link>
+                }
+              />
             ) : (
               products.length > 0 && (
                 <>
