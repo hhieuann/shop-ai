@@ -250,6 +250,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (dùng ở đơn hàng, giỏ hàng, trang danh sách, 404); thêm prop `title`, `className` cho trang 404 (§9.12) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
+| `AdminLayout` (khung trang quản trị) | `app/AdminLayout.tsx`; khối không có quyền `features/admin/components/AdminForbidden.tsx` | ✅ (§9.29) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
@@ -789,6 +790,18 @@ Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách m
 
 ### 9.28 Ô mã QR (trang bật xác thực hai lớp)
 Chốt 18/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md) 3.4). Ô vuông **176px** (gồm padding và viền), padding **12px** (ảnh QR 150px), nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-xl`. Ảnh tạo trong trình duyệt bằng thư viện `qrcode` (`toDataURL`), chỉ nạp ở trang này. Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục. Chỉ là kích thước bố cục của một trang nên ghi số thẳng trong CSS module, không thêm token.
+
+### 9.29 Khung trang quản trị (`AdminLayout`, ✅; mọi trang `/admin/*`)
+Chốt 25/11/2026 (#542, [pages/admin-don-hang.md](pages/admin-don-hang.md)). Route `admin` có `handle.chrome = 'admin'`: `RootLayout` vẽ `app/AdminLayout.tsx` thay header, hàng danh mục và footer của cửa hàng. Chỉ dùng token có sẵn.
+
+| Phần | Giá trị |
+|---|---|
+| Thanh trên | cao 56px, rộng hết màn, dính đầu trang (z-index 210 như header), nền `--bg-surface`, viền dưới 1px `--border-divider`, padding `0 16px` (≥960: `0 24px`). Trái: link về `/admin` gồm ô 28px `--gradient-brand` bo `--radius-lg` có icon `Sparkles` 16 `--fg-on-primary`, chữ "Black Magic" 18/24/700 `--fg-heading` (ẩn dưới 640px), chip "Quản trị" (nền `--bg-primary-tint`, chữ 14/18/600 `--fg-primary`, bo `--radius-full`). Phải: link "Về cửa hàng" (icon `Store` 20 + chữ 14/20/500; dưới 640px chỉ icon, chữ cho trình đọc màn hình) và menu tài khoản §9.17 (thanh đổi biến `--fg-on-chrome`, `--bg-chrome-hover` sang màu cho nền trắng). Không đường dẫn |
+| Cột trái (≥960) | rộng 232px, nền `--bg-surface`, viền phải 1px `--border-divider`, dính dưới thanh trên, cao `100vh − 56px`, padding `16px 12px`. `<nav aria-label="Quản trị">` chia nhóm; nhãn nhóm chữ hoa 12/16/600 `--fg-subdued`, padding `0 12px`. Mục: link cao 40px, padding `0 12px`, bo `--radius-lg`, icon 20 + chữ 14/20/500 `--fg-default`; hover `--bg-transparent-hover`; mục hiện tại (`aria-current="page"`, `NavLink`) nền `--bg-primary-tint`, chữ `--fg-primary` 600 |
+| Nhóm, mục | "Bán hàng": Đơn hàng (`Receipt`, `/admin`). "Danh mục": Sản phẩm (`Package`, `/admin/products`), ẩn tới khi có trang. Không số đếm (API không trả tổng số) |
+| Dưới 960px | không ngăn kéo: các mục thành hàng chip (kiểu chip đang chọn §6, có icon) dính ngay dưới thanh trên, nền `--bg-surface`, viền dưới, padding `8px 16px`, cuộn ngang khi tràn; nhãn nhóm ẩn |
+| Vùng nội dung | `<main id="main">`, tối đa 1440px, padding `24px 16px 40px` (≥960: `24px 32px 40px`), nền `--bg-canvas`. Đầu trang: h1 24/32/700 + câu mô tả 14/18 `--fg-muted`; nút chính (nếu có) bên phải |
+| Kiểm quyền | chưa đăng nhập → `/login`; không thuộc nhóm `admin` hoặc đọc hồ sơ lỗi → khối rỗng §9.12 "Bạn không có quyền xem trang này." + "Về trang chủ", không vẽ cột trái; admin chưa bật xác thực hai lớp → `/account/two-factor` với `from` là đường dẫn đầy đủ, bật xong quay lại đó. Đang đọc phiên hoặc trạng thái MFA: "Đang tải…" |
 
 ## 10. Token sẽ thêm khi cần
 

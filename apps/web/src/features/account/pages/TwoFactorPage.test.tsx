@@ -56,6 +56,7 @@ function renderPage(state?: unknown) {
           </Route>
           <Route path="/login" element={<Where />} />
           <Route path="/admin" element={<Where />} />
+          <Route path="/admin/products" element={<Where />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -244,6 +245,32 @@ describe('TwoFactorPage: bật xác thực hai lớp', () => {
 
     // Assert
     expect(await screen.findByTestId('where')).toHaveTextContent('/admin null');
+  });
+
+  it('fromOtherAdminPage_returnsToThatPageAfterEnable', async () => {
+    // Arrange: khung quản trị chuyển sang từ một trang admin khác /admin
+    const user = renderPage({ from: '/admin/products', reason: 'admin' });
+    await ready();
+
+    // Act
+    await user.type(codeField(), '123456');
+    await user.click(submitButton());
+
+    // Assert
+    expect(await screen.findByTestId('where')).toHaveTextContent('/admin/products null');
+  });
+
+  it('fromNonAdminPath_goesToAccount', async () => {
+    // Arrange: from không phải trang quản trị (vd. /administrator) thì không quay về đó
+    const user = renderPage({ from: '/administrator', reason: 'admin' });
+    await ready();
+
+    // Act
+    await user.type(codeField(), '123456');
+    await user.click(submitButton());
+
+    // Assert
+    expect(await screen.findByTestId('where')).toHaveTextContent('/account');
   });
 
   it('alreadyEnabled_redirectsToAccount_withoutCreatingSecret', async () => {

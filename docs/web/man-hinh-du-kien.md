@@ -195,6 +195,8 @@ Alternatives: giữ khối tóm tắt đầy đủ ở cuối trang trên điệ
 
 ## 16. Khung trang admin
 
+Đã làm (#542, 25/11/2026): xem design-system §9.29. Phần dưới là phân tích ban đầu, giữ để tra cứu; chỗ khác bản đã làm ghi ở Alternatives.
+
 Confidence: LOW
 
 Phạm vi (đã có trong tài liệu): `project-plan.md` "Admin cơ bản: thêm sản phẩm, xem đơn"; `ordering.md` admin chuyển `SHIPPED`, `DELIVERED` và huỷ đơn (BR-11); `dynamodb-design.md` admin xem cả sản phẩm `INACTIVE` và lọc đơn theo trạng thái. **Chưa có** `docs/business/admin.md`.
@@ -208,9 +210,9 @@ Bố cục và tương tác:
 
 Assumptions: route, nhãn và cách chặn quyền đều chờ `admin.md`.
 
-Alternatives: dùng header đầy đủ của cửa hàng và thêm mục "Quản trị"; hoặc thanh điều hướng bên trái kiểu trang quản trị phổ biến. Không chọn vì cả hai đều thêm kiểu điều hướng mà design-system chưa có.
+Alternatives: dùng header đầy đủ của cửa hàng và thêm mục "Quản trị"; hoặc thanh điều hướng bên trái kiểu trang quản trị phổ biến. Bản đã làm chọn cách thứ hai: thanh trên riêng + cột trái từ 960px, dưới 960px hàng chip (design-system §9.29); route đơn hàng giữ `/admin`; không phải admin thì báo không có quyền (không 404).
 
-Do not introduce: thanh bên trái kiểu dashboard, biểu đồ doanh thu, thẻ số liệu (chưa có trong phạm vi).
+Do not introduce: biểu đồ doanh thu, thẻ số liệu (chưa có trong phạm vi).
 
 ## 17. Admin: danh sách sản phẩm
 
