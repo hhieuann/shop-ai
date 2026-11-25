@@ -1,5 +1,5 @@
 {
-  "_note": "Dữ liệu demo cho dự án shop-ai: tên và hãng là sản phẩm có bán trên thị trường, giá và tồn kho là số tham khảo làm tròn, không phải giá bán thật. Không có ảnh để tránh dùng ảnh có bản quyền.",
+  "_note": "Dữ liệu demo cho dự án shop-ai: tên và hãng là sản phẩm có bán trên thị trường, giá và tồn kho là số tham khảo làm tròn, không phải giá bán thật. Ảnh (imageUrl) chỉ gắn khi nhóm có quyền dùng ảnh (#527).",
   "products": [
     {
       "productId": "01KYXGSD804J5SF7VFV34GBR11",
@@ -9,16 +9,18 @@
       "price": 24990000,
       "stock": 8,
       "status": "ACTIVE",
-      "description": "Laptop gaming 15.6 inch 144Hz, hợp chơi game và học đồ hoạ.",
+      "description": "Laptop gaming 15.6 inch màn 144Hz, Ryzen 7 và RTX 4060 chơi mượt game AAA ở 1080p, đủ sức học đồ hoạ và dựng video. Vỏ đạt chuẩn độ bền quân đội MIL-STD-810H, pin 90Wh lớn trong tầm giá. Nên mua kèm chuột gaming, balo 15.6 inch và đế tản nhiệt khi chơi lâu.",
       "specs": {
         "cpu": "Ryzen 7 7735HS",
         "gpu": "RTX 4060 8GB",
         "ram": "16GB DDR5",
         "ssd": "512GB",
-        "man_hinh": "15.6\" FHD 144Hz"
+        "man_hinh": "15.6\" FHD 144Hz",
+        "pin": "90Wh",
+        "trong_luong": "2.2kg"
       },
       "createdAt": "2026-08-01T02:00:00.000Z",
-      "updatedAt": "2026-08-01T02:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ1FTBC0XZM5Y5E9PDY7WMVX",
@@ -28,16 +30,18 @@
       "price": 20490000,
       "stock": 12,
       "status": "ACTIVE",
-      "description": "Laptop gaming phổ thông cho sinh viên.",
+      "description": "Laptop gaming phổ thông cho sinh viên: Core i5 thế hệ 13 và RTX 4050 đủ chơi game esports, học lập trình và đồ hoạ cơ bản. Màn 144Hz, RAM DDR5 nâng cấp được. Nên mua kèm chuột, tai nghe và balo chống sốc.",
       "specs": {
         "cpu": "Core i5-13420H",
         "gpu": "RTX 4050 6GB",
         "ram": "16GB DDR5",
         "ssd": "512GB",
-        "man_hinh": "15.6\" FHD 144Hz"
+        "man_hinh": "15.6\" FHD 144Hz",
+        "pin": "57Wh",
+        "trong_luong": "2.1kg"
       },
       "createdAt": "2026-08-02T15:00:00.000Z",
-      "updatedAt": "2026-08-02T15:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ5EV9G08AMVQA048RKYAYPY",
@@ -47,16 +51,18 @@
       "price": 36990000,
       "stock": 4,
       "status": "ACTIVE",
-      "description": "Laptop gaming hiệu năng cao, tản nhiệt tốt.",
+      "description": "Laptop gaming hiệu năng cao với Core i7 dòng HX 16 nhân, màn 2.5K 165Hz sắc nét, tản nhiệt tốt nên giữ xung ổn định khi chơi lâu. Hợp cả chơi game lẫn dựng video, chạy máy ảo. Nên mua kèm đế tản nhiệt, chuột không dây và SSD thêm cho thư viện game.",
       "specs": {
         "cpu": "Core i7-14650HX",
         "gpu": "RTX 4060 8GB",
         "ram": "16GB DDR5",
         "ssd": "1TB",
-        "man_hinh": "15.6\" 2.5K 165Hz"
+        "man_hinh": "15.6\" 2.5K 165Hz",
+        "pin": "80Wh",
+        "trong_luong": "2.4kg"
       },
       "createdAt": "2026-08-04T04:00:00.000Z",
-      "updatedAt": "2026-08-04T04:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ9DW7M0AWR79CNDVYGR48H3",
@@ -66,16 +72,17 @@
       "price": 17990000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Laptop văn phòng 14 inch mỏng nhẹ, pin lâu.",
+      "description": "Laptop văn phòng 14 inch mỏng nhẹ, màn tỉ lệ 16:10 nhìn được nhiều nội dung hơn, pin dùng cả ngày làm việc. Hợp nhân viên văn phòng và sinh viên hay di chuyển. Nên mua kèm hub USB-C, chuột không dây và túi chống sốc 14 inch.",
       "specs": {
         "cpu": "Core i5-1334U",
         "ram": "16GB DDR5",
         "ssd": "512GB",
         "man_hinh": "14\" FHD+",
-        "trong_luong": "1.5kg"
+        "trong_luong": "1.5kg",
+        "pin": "54Wh"
       },
       "createdAt": "2026-08-05T17:00:00.000Z",
-      "updatedAt": "2026-08-05T17:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZDCX5R08P79YY6ZCEFQ20KN",
@@ -85,15 +92,17 @@
       "price": 16490000,
       "stock": 10,
       "status": "ACTIVE",
-      "description": "Laptop văn phòng, học tập, bàn phím có số.",
+      "description": "Laptop 15.6 inch cho học tập và văn phòng, có bàn phím số tiện nhập liệu, kế toán. Core i5 thế hệ 13 chạy mượt Office, trình duyệt nhiều tab và họp trực tuyến. Nên mua kèm chuột không dây và balo 15.6 inch.",
       "specs": {
         "cpu": "Core i5-1335U",
         "ram": "16GB",
         "ssd": "512GB",
-        "man_hinh": "15.6\" FHD"
+        "man_hinh": "15.6\" FHD",
+        "pin": "41Wh",
+        "trong_luong": "1.74kg"
       },
       "createdAt": "2026-08-07T06:00:00.000Z",
-      "updatedAt": "2026-08-07T06:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZHBY3W0N4GNW76FCMQHZV0S",
@@ -103,15 +112,17 @@
       "price": 18990000,
       "stock": 9,
       "status": "ACTIVE",
-      "description": "Màn OLED màu đẹp, hợp sinh viên và người làm nội dung.",
+      "description": "Màn OLED 15.6 inch màu sắc rực rỡ, độ tương phản cao, hợp sinh viên và người làm nội dung, chỉnh ảnh. Core i5 dòng H 12 nhân xử lý đa nhiệm tốt. Nên mua kèm hub USB-C, chuột không dây và ổ SSD di động để lưu ảnh, video.",
       "specs": {
         "cpu": "Core i5-13500H",
         "ram": "16GB",
         "ssd": "512GB",
-        "man_hinh": "15.6\" OLED FHD"
+        "man_hinh": "15.6\" OLED FHD",
+        "pin": "50Wh",
+        "trong_luong": "1.7kg"
       },
       "createdAt": "2026-08-08T19:00:00.000Z",
-      "updatedAt": "2026-08-08T19:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZNAZ2003F1XB7FGQBHVBP0Y",
@@ -121,16 +132,17 @@
       "price": 26990000,
       "stock": 0,
       "status": "ACTIVE",
-      "description": "Mỏng nhẹ, pin cả ngày cho dân văn phòng và lập trình.",
+      "description": "MacBook Air chip M3 mỏng nhẹ, không quạt nên chạy hoàn toàn êm, pin dùng cả ngày cho dân văn phòng và lập trình. Màn Liquid Retina 13.6 inch sắc nét. Nên mua kèm hub USB-C (máy chỉ có 2 cổng), ổ SSD di động và túi chống sốc.",
       "specs": {
         "chip": "Apple M3",
         "ram": "8GB",
         "ssd": "256GB",
         "man_hinh": "13.6\" Liquid Retina",
-        "trong_luong": "1.24kg"
+        "trong_luong": "1.24kg",
+        "pin": "52.6Wh, đến 18 giờ"
       },
       "createdAt": "2026-08-10T08:00:00.000Z",
-      "updatedAt": "2026-08-10T08:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZSA00407KFJ5HMX2W0EQVF3",
@@ -140,15 +152,17 @@
       "price": 12990000,
       "stock": 6,
       "status": "INACTIVE",
-      "description": "Laptop giá tốt cho học sinh, sinh viên.",
+      "description": "Laptop 14 inch giá tốt cho học sinh, sinh viên: nhẹ, đủ mạnh cho học online, soạn văn bản và lập trình cơ bản. Nên mua kèm thêm RAM laptop để lên 16GB, chuột không dây và túi chống sốc.",
       "specs": {
         "cpu": "Core i5-1235U",
         "ram": "8GB",
         "ssd": "512GB",
-        "man_hinh": "14\" FHD"
+        "man_hinh": "14\" FHD",
+        "pin": "39.3Wh",
+        "trong_luong": "1.4kg"
       },
       "createdAt": "2026-08-11T21:00:00.000Z",
-      "updatedAt": "2026-08-11T21:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZX90Y80YH0333W0DD3VSJHD",
@@ -158,15 +172,17 @@
       "price": 4290000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "10 nhân 16 luồng, lựa chọn phổ biến cho PC gaming tầm trung.",
+      "description": "CPU 10 nhân 16 luồng phổ biến nhất cho PC gaming tầm trung, chơi tốt mọi game khi ghép với card RTX 4060 đến 4070. Bản F không có đồ hoạ tích hợp nên bắt buộc dùng card rời. Nên mua kèm mainboard B760, RAM DDR4 hoặc DDR5 đúng loại mainboard và tản nhiệt khí.",
       "specs": {
         "socket": "LGA1700",
         "nhan_luong": "10/16",
         "xung_toi_da": "4.7GHz",
-        "tdp": "65W"
+        "tdp": "65W",
+        "bo_nho_dem": "20MB L3",
+        "do_hoa_tich_hop": "Không"
       },
       "createdAt": "2026-08-13T10:00:00.000Z",
-      "updatedAt": "2026-08-13T10:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0181WC0T531V2WYWPSW5PBQ",
@@ -176,15 +192,17 @@
       "price": 9690000,
       "stock": 10,
       "status": "ACTIVE",
-      "description": "20 nhân, mạnh cho chơi game và dựng phim.",
+      "description": "CPU 20 nhân cho người vừa chơi game vừa dựng phim, stream, mở khoá ép xung. Công suất cao nên cần tản nhiệt tốt. Nên mua kèm mainboard Z790, tản nước AIO 240mm trở lên và nguồn từ 750W.",
       "specs": {
         "socket": "LGA1700",
         "nhan_luong": "20/28",
         "xung_toi_da": "5.6GHz",
-        "tdp": "125W"
+        "tdp": "125W",
+        "bo_nho_dem": "33MB L3",
+        "do_hoa_tich_hop": "Intel UHD 770"
       },
       "createdAt": "2026-08-14T23:00:00.000Z",
-      "updatedAt": "2026-08-14T23:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0572TG0VZXVTZHKNQ6CR39C",
@@ -194,15 +212,17 @@
       "price": 1990000,
       "stock": 30,
       "status": "ACTIVE",
-      "description": "4 nhân 8 luồng, cấu hình học tập văn phòng giá rẻ.",
+      "description": "CPU 4 nhân 8 luồng giá rẻ cho máy học tập, văn phòng và chơi game esports nhẹ cùng card rời. Bản F không có đồ hoạ tích hợp. Nên mua kèm mainboard H610 hoặc B760 và RAM DDR4 16GB.",
       "specs": {
         "socket": "LGA1700",
         "nhan_luong": "4/8",
         "xung_toi_da": "4.3GHz",
-        "tdp": "58W"
+        "tdp": "58W",
+        "bo_nho_dem": "12MB L3",
+        "do_hoa_tich_hop": "Không"
       },
       "createdAt": "2026-08-16T12:00:00.000Z",
-      "updatedAt": "2026-08-16T12:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0963RM0WPAZPETZ2CA882Q4",
@@ -212,15 +232,17 @@
       "price": 7490000,
       "stock": 7,
       "status": "ACTIVE",
-      "description": "Kiến trúc Arrow Lake, tiết kiệm điện.",
+      "description": "CPU kiến trúc Arrow Lake trên socket LGA1851 mới, tiết kiệm điện và chạy mát hơn đời trước, có NPU cho tác vụ AI. Không dùng được mainboard LGA1700 cũ. Nên mua kèm mainboard Z890, RAM DDR5 và tản khí tháp đôi.",
       "specs": {
         "socket": "LGA1851",
         "nhan_luong": "14/14",
         "xung_toi_da": "5.2GHz",
-        "tdp": "125W"
+        "tdp": "125W",
+        "bo_nho_dem": "24MB L3",
+        "npu": "Có"
       },
       "createdAt": "2026-08-18T01:00:00.000Z",
-      "updatedAt": "2026-08-18T01:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0D54PR0M597EHNNG06M5YN3",
@@ -230,15 +252,18 @@
       "price": 4890000,
       "stock": 18,
       "status": "ACTIVE",
-      "description": "6 nhân 12 luồng, nền tảng AM5 dễ nâng cấp.",
+      "description": "CPU 6 nhân 12 luồng trên nền tảng AM5, dễ nâng cấp lên Ryzen đời sau mà không đổi mainboard. Có đồ hoạ tích hợp và kèm tản nhiệt trong hộp. Nên mua kèm mainboard B650 và RAM DDR5 6000MHz.",
       "specs": {
         "socket": "AM5",
         "nhan_luong": "6/12",
         "xung_toi_da": "5.1GHz",
-        "tdp": "65W"
+        "tdp": "65W",
+        "bo_nho_dem": "32MB L3",
+        "do_hoa_tich_hop": "Radeon 2 nhân",
+        "tan_kem_theo": "Wraith Stealth"
       },
       "createdAt": "2026-08-19T14:00:00.000Z",
-      "updatedAt": "2026-08-19T14:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0H45MW06A4N4NTK893DC3B2",
@@ -248,15 +273,16 @@
       "price": 10990000,
       "stock": 0,
       "status": "ACTIVE",
-      "description": "CPU chơi game hàng đầu nhờ 3D V-Cache.",
+      "description": "CPU chơi game hàng đầu nhờ bộ nhớ đệm 3D V-Cache 96MB, cho khung hình cao và ổn định ở mọi độ phân giải. Hợp PC gaming cao cấp cùng card RTX 4070 Super trở lên. Nên mua kèm mainboard B650, RAM DDR5 6000MHz và tản khí tháp đôi.",
       "specs": {
         "socket": "AM5",
         "nhan_luong": "8/16",
         "xung_toi_da": "5.0GHz",
-        "tdp": "120W"
+        "tdp": "120W",
+        "bo_nho_dem": "96MB L3"
       },
       "createdAt": "2026-08-21T03:00:00.000Z",
-      "updatedAt": "2026-08-21T03:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0N36K00AX2TSSS630C5853X",
@@ -266,15 +292,17 @@
       "price": 13990000,
       "stock": 5,
       "status": "ACTIVE",
-      "description": "16 nhân cho dựng hình 3D và render video.",
+      "description": "CPU 16 nhân 32 luồng cho dựng hình 3D, render video, biên dịch code lớn và chạy nhiều máy ảo. Nhiệt độ cao khi tải nặng nên cần tản tốt. Nên mua kèm tản nước AIO 360mm, RAM DDR5 64GB và nguồn 850W.",
       "specs": {
         "socket": "AM5",
         "nhan_luong": "16/32",
         "xung_toi_da": "5.7GHz",
-        "tdp": "170W"
+        "tdp": "170W",
+        "bo_nho_dem": "64MB L3",
+        "do_hoa_tich_hop": "Radeon 2 nhân"
       },
       "createdAt": "2026-08-22T16:00:00.000Z",
-      "updatedAt": "2026-08-22T16:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0S27H40KKG176Z3XY84CWES",
@@ -284,15 +312,18 @@
       "price": 2690000,
       "stock": 22,
       "status": "ACTIVE",
-      "description": "6 nhân nền tảng AM4, nâng cấp máy cũ giá tốt.",
+      "description": "CPU 6 nhân trên nền tảng AM4, cách nâng cấp máy cũ giá tốt mà vẫn chơi game mượt. Kèm tản nhiệt trong hộp, không có đồ hoạ tích hợp. Nên mua kèm mainboard B550 và RAM DDR4 3200MHz.",
       "specs": {
         "socket": "AM4",
         "nhan_luong": "6/12",
         "xung_toi_da": "4.4GHz",
-        "tdp": "65W"
+        "tdp": "65W",
+        "bo_nho_dem": "32MB L3",
+        "do_hoa_tich_hop": "Không",
+        "tan_kem_theo": "Wraith Stealth"
       },
       "createdAt": "2026-08-24T05:00:00.000Z",
-      "updatedAt": "2026-08-24T05:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0X18F808HZBMKFVR050B5R6",
@@ -302,15 +333,17 @@
       "price": 17990000,
       "stock": 6,
       "status": "ACTIVE",
-      "description": "Chơi game 1440p mượt, hỗ trợ DLSS 3.",
+      "description": "Card chơi game 1440p mượt ở thiết lập cao, hỗ trợ DLSS 3 và ray tracing, đủ sức dựng video 4K. Bản TUF tản 3 quạt bền bỉ, card dài khoảng 30cm nên cần kiểm tra vỏ case. Nên mua kèm nguồn 750W có cổng 16-pin và màn hình 2K 165Hz.",
       "specs": {
         "vram": "12GB GDDR6X",
         "nguon_de_xuat": "750W",
         "cong_cap": "1x 16-pin",
-        "kich_thuoc": "301mm"
+        "kich_thuoc": "301mm",
+        "kien_truc": "Ada Lovelace",
+        "giao_tiep": "PCIe 4.0 x16"
       },
       "createdAt": "2026-08-25T18:00:00.000Z",
-      "updatedAt": "2026-08-25T18:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1109DC0MD6M1GX6QXV3KRTS",
@@ -320,14 +353,16 @@
       "price": 7990000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Card phổ thông chơi game 1080p, tiết kiệm điện.",
+      "description": "Card phổ thông chơi game 1080p, tiết kiệm điện, chỉ cần một đầu cấp 8-pin. Hỗ trợ DLSS 3 giúp tăng khung hình trong game mới. Nên mua kèm nguồn 550W trở lên và màn hình 1080p 144Hz.",
       "specs": {
         "vram": "8GB GDDR6",
         "nguon_de_xuat": "550W",
-        "cong_cap": "1x 8-pin"
+        "cong_cap": "1x 8-pin",
+        "kien_truc": "Ada Lovelace",
+        "giao_tiep": "PCIe 4.0 x8"
       },
       "createdAt": "2026-08-27T07:00:00.000Z",
-      "updatedAt": "2026-08-27T07:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M14ZABG0GS6597BPKY0S6Y9F",
@@ -337,14 +372,16 @@
       "price": 10490000,
       "stock": 11,
       "status": "ACTIVE",
-      "description": "1080p thiết lập cao, dựng video nhẹ.",
+      "description": "Card chơi game 1080p thiết lập cao và dựng video nhẹ, mạnh hơn RTX 4060 khoảng 20%. Nên mua kèm nguồn 550W trở lên và màn hình 1080p tần số quét cao.",
       "specs": {
         "vram": "8GB GDDR6",
         "nguon_de_xuat": "550W",
-        "cong_cap": "1x 8-pin"
+        "cong_cap": "1x 8-pin",
+        "kien_truc": "Ada Lovelace",
+        "giao_tiep": "PCIe 4.0 x8"
       },
       "createdAt": "2026-08-28T20:00:00.000Z",
-      "updatedAt": "2026-08-28T20:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M18YB9M0VM21MQGTPQF1XEE8",
@@ -354,15 +391,17 @@
       "price": 32990000,
       "stock": 3,
       "status": "ACTIVE",
-      "description": "Card cao cấp cho chơi game 4K và dựng hình 3D.",
+      "description": "Card cao cấp cho chơi game 4K và dựng hình 3D, 16GB VRAM. Card rất dài và nặng, cần vỏ case lớn và giá đỡ card. Nên mua kèm nguồn 850W có cổng 16-pin, màn hình 4K và CPU từ Core i7 hoặc Ryzen 7 trở lên.",
       "specs": {
         "vram": "16GB GDDR6X",
         "nguon_de_xuat": "850W",
         "cong_cap": "1x 16-pin",
-        "kich_thuoc": "357mm"
+        "kich_thuoc": "357mm",
+        "kien_truc": "Ada Lovelace",
+        "giao_tiep": "PCIe 4.0 x16"
       },
       "createdAt": "2026-08-30T09:00:00.000Z",
-      "updatedAt": "2026-08-30T09:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1CXC7R0YBJNQ3B292245B6M",
@@ -372,14 +411,16 @@
       "price": 13490000,
       "stock": 8,
       "status": "ACTIVE",
-      "description": "16GB VRAM, hiệu năng/giá tốt ở 1440p.",
+      "description": "Card AMD hiệu năng trên giá tốt ở 1440p, 16GB VRAM dư dả cho game mới. Hỗ trợ FSR để tăng khung hình. Nên mua kèm nguồn 700W trở lên và màn hình 2K tần số quét cao.",
       "specs": {
         "vram": "16GB GDDR6",
         "nguon_de_xuat": "700W",
-        "cong_cap": "2x 8-pin"
+        "cong_cap": "2x 8-pin",
+        "kien_truc": "RDNA 3",
+        "giao_tiep": "PCIe 4.0 x16"
       },
       "createdAt": "2026-08-31T22:00:00.000Z",
-      "updatedAt": "2026-08-31T22:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1GWD5W0NYQBGHEBF6DRKC6A",
@@ -389,14 +430,16 @@
       "price": 6290000,
       "stock": 14,
       "status": "ACTIVE",
-      "description": "Card AMD giá rẻ cho game esports.",
+      "description": "Card AMD giá rẻ cho game esports và game phổ thông ở 1080p. Nên mua kèm nguồn 550W và màn hình 1080p 144Hz trở lên.",
       "specs": {
         "vram": "8GB GDDR6",
         "nguon_de_xuat": "550W",
-        "cong_cap": "1x 8-pin"
+        "cong_cap": "1x 8-pin",
+        "kien_truc": "RDNA 3",
+        "giao_tiep": "PCIe 4.0 x8"
       },
       "createdAt": "2026-09-02T11:00:00.000Z",
-      "updatedAt": "2026-09-02T11:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1MVE400BF7WB8TAJJ6E4EDY",
@@ -406,14 +449,16 @@
       "price": 6990000,
       "stock": 0,
       "status": "ACTIVE",
-      "description": "12GB VRAM, vẫn hợp chạy AI và dựng hình nhẹ.",
+      "description": "Card đời trước nhưng có 12GB VRAM, vẫn hợp chạy mô hình AI nhỏ, dựng hình và chơi game 1080p. Bản Twin Edge ngắn, vừa vỏ case nhỏ. Nên mua kèm nguồn 550W.",
       "specs": {
         "vram": "12GB GDDR6",
         "nguon_de_xuat": "550W",
-        "cong_cap": "1x 8-pin"
+        "cong_cap": "1x 8-pin",
+        "kien_truc": "Ampere",
+        "giao_tiep": "PCIe 4.0 x16"
       },
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1RTF24017RHK35Q3XXZMJNM",
@@ -423,14 +468,16 @@
       "price": 4490000,
       "stock": 5,
       "status": "INACTIVE",
-      "description": "Card cơ bản cho máy văn phòng chơi game nhẹ.",
+      "description": "Card cơ bản để máy văn phòng chơi được game nhẹ, không cần dây nguồn phụ nên lắp được vào nhiều máy bộ. Nên mua kèm nguồn 300W trở lên nếu máy dùng nguồn quá yếu.",
       "specs": {
         "vram": "6GB GDDR6",
         "nguon_de_xuat": "300W",
-        "cong_cap": "Không cần"
+        "cong_cap": "Không cần",
+        "kien_truc": "Ampere",
+        "giao_tiep": "PCIe 4.0 x8"
       },
       "createdAt": "2026-09-05T13:00:00.000Z",
-      "updatedAt": "2026-09-05T13:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1WSG080QG6E0GXT37MW7V1D",
@@ -440,14 +487,14 @@
       "price": 1190000,
       "stock": 40,
       "status": "ACTIVE",
-      "description": "Kit RAM DDR4 phổ biến cho máy AM4 và Intel đời 12–14.",
+      "description": "Kit RAM DDR4 2 thanh chạy kênh đôi, phổ biến cho máy AM4 và Intel đời 12–14 dùng mainboard DDR4. Nên mua kèm mainboard B550 hoặc B760 DDR4.",
       "specs": {
         "loai": "DDR4",
         "dung_luong": "16GB (2x8GB)",
         "bus": "3200MHz"
       },
       "createdAt": "2026-09-07T02:00:00.000Z",
-      "updatedAt": "2026-09-07T02:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M20RGYC0MNAK1ZECFKDMP0JT",
@@ -457,14 +504,15 @@
       "price": 2290000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "32GB cho lập trình, chạy máy ảo và Docker.",
+      "description": "32GB DDR4 cho lập trình, chạy máy ảo và Docker, tản nhiệt thấp nên không vướng tản CPU lớn. Nên mua kèm mainboard DDR4 và CPU nhiều nhân.",
       "specs": {
         "loai": "DDR4",
         "dung_luong": "32GB (2x16GB)",
-        "bus": "3600MHz"
+        "bus": "3600MHz",
+        "chieu_cao": "Thấp (low profile)"
       },
       "createdAt": "2026-09-08T15:00:00.000Z",
-      "updatedAt": "2026-09-08T15:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M24QHWG07483TQH4C3TY2A0W",
@@ -474,7 +522,7 @@
       "price": 3490000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "DDR5 tốc độ cao có đèn RGB cho PC gaming.",
+      "description": "DDR5 6000MHz tốc độ cao có đèn RGB, mức tốc độ tối ưu cho Ryzen 7000. Nên mua kèm mainboard B650 và CPU Ryzen 7 7800X3D.",
       "specs": {
         "loai": "DDR5",
         "dung_luong": "32GB (2x16GB)",
@@ -482,7 +530,7 @@
         "rgb": "Có"
       },
       "createdAt": "2026-09-10T04:00:00.000Z",
-      "updatedAt": "2026-09-10T04:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M28PJTM0RVFFEB2YWVXQK4RB",
@@ -492,14 +540,14 @@
       "price": 2890000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Kit DDR5 cho nền tảng AM5 và Intel đời mới.",
+      "description": "Kit DDR5 32GB cho nền tảng AM5 và Intel đời mới, đủ cho chơi game và làm việc nặng. Nên mua kèm mainboard DDR5.",
       "specs": {
         "loai": "DDR5",
         "dung_luong": "32GB (2x16GB)",
         "bus": "5600MHz"
       },
       "createdAt": "2026-09-11T17:00:00.000Z",
-      "updatedAt": "2026-09-11T17:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2CNKRR0YJRSQPDP7KVJQ3T8",
@@ -509,14 +557,14 @@
       "price": 5490000,
       "stock": 6,
       "status": "ACTIVE",
-      "description": "64GB cho dựng phim 4K và làm 3D.",
+      "description": "64GB DDR5 cho dựng phim 4K, làm 3D, chạy nhiều máy ảo. Nên mua kèm CPU Ryzen 9 7950X hoặc Core i7-14700K.",
       "specs": {
         "loai": "DDR5",
         "dung_luong": "64GB (2x32GB)",
         "bus": "5600MHz"
       },
       "createdAt": "2026-09-13T06:00:00.000Z",
-      "updatedAt": "2026-09-13T06:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2GMMPW0EFSN9GH47279VPSV",
@@ -526,7 +574,7 @@
       "price": 1890000,
       "stock": 2,
       "status": "ACTIVE",
-      "description": "DDR5 có RGB giá dễ chịu.",
+      "description": "DDR5 6000MHz có RGB với giá dễ chịu, hợp PC gaming tầm trung muốn đẹp. Nên mua kèm mainboard DDR5.",
       "specs": {
         "loai": "DDR5",
         "dung_luong": "16GB (2x8GB)",
@@ -534,7 +582,7 @@
         "rgb": "Có"
       },
       "createdAt": "2026-09-14T19:00:00.000Z",
-      "updatedAt": "2026-09-14T19:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2MKNN00TEKTMAMPEB36EE4A",
@@ -544,14 +592,14 @@
       "price": 1290000,
       "stock": 30,
       "status": "ACTIVE",
-      "description": "Nâng cấp RAM cho laptop đời mới.",
+      "description": "Thanh RAM laptop DDR5 để nâng cấp laptop đời mới có khe trống, chạy đa nhiệm mượt hơn. Kiểm tra laptop có khe RAM rời trước khi mua.",
       "specs": {
         "loai": "DDR5 SO-DIMM",
         "dung_luong": "16GB",
         "bus": "4800MHz"
       },
       "createdAt": "2026-09-16T08:00:00.000Z",
-      "updatedAt": "2026-09-16T08:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2RJPK40A22QBYXNHZPS4DMZ",
@@ -561,14 +609,14 @@
       "price": 590000,
       "stock": 35,
       "status": "ACTIVE",
-      "description": "Nâng cấp RAM laptop cũ giá rẻ.",
+      "description": "Thanh RAM laptop DDR4 giá rẻ để nâng laptop cũ từ 8GB lên 16GB. Kiểm tra laptop có khe RAM trống trước khi mua.",
       "specs": {
         "loai": "DDR4 SO-DIMM",
         "dung_luong": "8GB",
         "bus": "3200MHz"
       },
       "createdAt": "2026-09-17T21:00:00.000Z",
-      "updatedAt": "2026-09-17T21:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2WHQH80B6JK25P1DK6R5T2E",
@@ -578,7 +626,7 @@
       "price": 2790000,
       "stock": 18,
       "status": "ACTIVE",
-      "description": "Đọc 7450MB/s, cho máy gaming và dựng video.",
+      "description": "SSD NVMe đầu bảng, đọc 7450MB/s, cho máy gaming và dựng video, game tải màn rất nhanh. Nên lắp vào khe M.2 PCIe 4.0 trên mainboard đời mới.",
       "specs": {
         "chuan": "M.2 NVMe PCIe 4.0",
         "dung_luong": "1TB",
@@ -586,7 +634,7 @@
         "ghi": "6900MB/s"
       },
       "createdAt": "2026-09-19T10:00:00.000Z",
-      "updatedAt": "2026-09-19T10:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M30GRFC0AP42KF6Q6SBQW4CF",
@@ -596,14 +644,14 @@
       "price": 890000,
       "stock": 40,
       "status": "ACTIVE",
-      "description": "SSD giá rẻ nâng cấp máy cũ, khởi động nhanh.",
+      "description": "SSD NVMe giá rẻ để nâng cấp máy cũ từ HDD, máy khởi động và mở ứng dụng nhanh hơn rõ rệt. Cần mainboard hoặc laptop có khe M.2.",
       "specs": {
         "chuan": "M.2 NVMe PCIe 4.0",
         "dung_luong": "500GB",
         "doc": "3500MB/s"
       },
       "createdAt": "2026-09-20T23:00:00.000Z",
-      "updatedAt": "2026-09-20T23:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M34FSDG0PNJR6JV6T0EPHF0W",
@@ -613,14 +661,14 @@
       "price": 4590000,
       "stock": 9,
       "status": "ACTIVE",
-      "description": "2TB tốc độ cao cho thư viện game lớn.",
+      "description": "SSD 2TB tốc độ cao cho thư viện game lớn, tương thích cả PS5. Nên mua kèm tản nhiệt M.2 nếu mainboard không có sẵn.",
       "specs": {
         "chuan": "M.2 NVMe PCIe 4.0",
         "dung_luong": "2TB",
         "doc": "7300MB/s"
       },
       "createdAt": "2026-09-22T12:00:00.000Z",
-      "updatedAt": "2026-09-22T12:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M38ETBM0WJ54VK1G1VH113CE",
@@ -630,14 +678,14 @@
       "price": 1590000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "SSD 1TB phổ thông, giá tốt.",
+      "description": "SSD 1TB phổ thông giá tốt cho máy học tập và chơi game, đủ chỗ cho hệ điều hành và nhiều phần mềm. Cần khe M.2 NVMe.",
       "specs": {
         "chuan": "M.2 NVMe PCIe 4.0",
         "dung_luong": "1TB",
         "doc": "5000MB/s"
       },
       "createdAt": "2026-09-24T01:00:00.000Z",
-      "updatedAt": "2026-09-24T01:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M3CDV9R0SXFDTT0SCBAD31YN",
@@ -647,14 +695,14 @@
       "price": 1190000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "SSD SATA cho laptop và PC đời cũ không có khe M.2.",
+      "description": "SSD SATA bền bỉ cho laptop và PC đời cũ không có khe M.2, thay HDD là máy nhanh hẳn. Nên mua kèm khung chuyển 2.5 sang 3.5 inch nếu lắp case PC.",
       "specs": {
         "chuan": "SATA 2.5\"",
         "dung_luong": "500GB",
         "doc": "560MB/s"
       },
       "createdAt": "2026-09-25T14:00:00.000Z",
-      "updatedAt": "2026-09-25T14:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M3GCW7W0MGC377NNF5SDGFVF",
@@ -664,14 +712,14 @@
       "price": 1490000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Lưu trữ dung lượng lớn cho ảnh, video.",
+      "description": "Ổ cứng lưu trữ dung lượng lớn giá rẻ cho ảnh, video, tài liệu. Dùng làm ổ phụ bên cạnh SSD chạy hệ điều hành.",
       "specs": {
         "chuan": "SATA 3.5\"",
         "dung_luong": "2TB",
         "toc_do": "7200rpm"
       },
       "createdAt": "2026-09-27T03:00:00.000Z",
-      "updatedAt": "2026-09-27T03:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M3MBX60007TEY2B5KRT89B7A",
@@ -681,14 +729,14 @@
       "price": 2390000,
       "stock": 0,
       "status": "ACTIVE",
-      "description": "4TB lưu trữ dữ liệu, sao lưu dự án.",
+      "description": "4TB lưu trữ dữ liệu, sao lưu dự án và thư viện phim, chạy êm, mát. Dùng làm ổ phụ bên cạnh SSD.",
       "specs": {
         "chuan": "SATA 3.5\"",
         "dung_luong": "4TB",
         "toc_do": "5400rpm"
       },
       "createdAt": "2026-09-28T16:00:00.000Z",
-      "updatedAt": "2026-09-28T16:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KYXV3040HAMZQH2KP7RMCZ9H",
@@ -698,14 +746,14 @@
       "price": 2490000,
       "stock": 12,
       "status": "ACTIVE",
-      "description": "SSD di động nhỏ gọn cho người làm nội dung.",
+      "description": "SSD di động nhỏ như thẻ ngân hàng, chép file nhanh qua USB-C, vỏ kim loại chịu va đập nhẹ. Hợp người làm nội dung, quay dựng video. Nên mua kèm laptop hoặc MacBook có USB-C.",
       "specs": {
         "ket_noi": "USB 3.2 Gen 2 Type-C",
         "dung_luong": "1TB",
         "doc": "1050MB/s"
       },
       "createdAt": "2026-08-01T05:00:00.000Z",
-      "updatedAt": "2026-08-01T05:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ1T3Y80V01B3Q6BH6DMX9AD",
@@ -715,16 +763,17 @@
       "price": 3290000,
       "stock": 14,
       "status": "ACTIVE",
-      "description": "Mainboard mATX cho Intel đời 12–14, có WiFi, dùng RAM DDR4.",
+      "description": "Mainboard mATX cho Intel đời 12 đến 14, có sẵn WiFi, dùng RAM DDR4 nên tận dụng được RAM cũ. Hợp cấu hình Core i3, i5 làm việc và chơi game. Nên mua kèm CPU Core i5-14400F, RAM DDR4 và SSD NVMe.",
       "specs": {
         "socket": "LGA1700",
         "chipset": "B760",
         "ram": "DDR4",
         "kich_thuoc": "mATX",
-        "wifi": "Có"
+        "wifi": "Có",
+        "khe_m2": "2"
       },
       "createdAt": "2026-08-02T18:00:00.000Z",
-      "updatedAt": "2026-08-02T18:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ5S4WC0K0Q1TM4N0A667W9N",
@@ -734,15 +783,16 @@
       "price": 2490000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Mainboard giá tốt cho Core i3, i5.",
+      "description": "Mainboard giá tốt cho Core i3, i5 dùng RAM DDR4, không có WiFi nên cần card mạng nếu không cắm dây. Nên mua kèm CPU Core i3-12100F hoặc i5-14400F và RAM DDR4 16GB.",
       "specs": {
         "socket": "LGA1700",
         "chipset": "B760",
         "ram": "DDR4",
-        "kich_thuoc": "mATX"
+        "kich_thuoc": "mATX",
+        "wifi": "Không"
       },
       "createdAt": "2026-08-04T07:00:00.000Z",
-      "updatedAt": "2026-08-04T07:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ9R5TG0XKDSPSXE2H2A50QT",
@@ -752,16 +802,17 @@
       "price": 6990000,
       "stock": 5,
       "status": "ACTIVE",
-      "description": "Mainboard cao cấp cho Core i7, i9 dòng K, DDR5.",
+      "description": "Mainboard cao cấp cho Core i7, i9 dòng K, cho phép ép xung, dùng RAM DDR5, có WiFi 6E và nhiều khe M.2. Nên mua kèm CPU Core i7-14700K, RAM DDR5 và tản nước AIO.",
       "specs": {
         "socket": "LGA1700",
         "chipset": "Z790",
         "ram": "DDR5",
         "kich_thuoc": "ATX",
-        "wifi": "Có"
+        "wifi": "Có",
+        "wifi_chuan": "WiFi 6E"
       },
       "createdAt": "2026-08-05T20:00:00.000Z",
-      "updatedAt": "2026-08-05T20:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZDQ6RM0A9QEJY24TDHZ0Z4F",
@@ -771,7 +822,7 @@
       "price": 5290000,
       "stock": 9,
       "status": "ACTIVE",
-      "description": "Mainboard AM5 bền bỉ cho Ryzen 7000.",
+      "description": "Mainboard AM5 bền bỉ cho Ryzen 7000, linh kiện cấp nguồn tốt, có WiFi. Nên mua kèm CPU Ryzen 5 7600 hoặc Ryzen 7 7800X3D và RAM DDR5 6000MHz.",
       "specs": {
         "socket": "AM5",
         "chipset": "B650",
@@ -780,7 +831,7 @@
         "wifi": "Có"
       },
       "createdAt": "2026-08-07T09:00:00.000Z",
-      "updatedAt": "2026-08-07T09:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZHP7PR0CV2V2PQF36CDHSZC",
@@ -790,16 +841,17 @@
       "price": 4190000,
       "stock": 12,
       "status": "ACTIVE",
-      "description": "mATX AM5 giá hợp lý, có WiFi 6E.",
+      "description": "Mainboard mATX AM5 giá hợp lý, có WiFi 6E, hợp dàn máy nhỏ gọn chơi game. Nên mua kèm CPU Ryzen 5 7600 và RAM DDR5.",
       "specs": {
         "socket": "AM5",
         "chipset": "B650",
         "ram": "DDR5",
         "kich_thuoc": "mATX",
-        "wifi": "Có"
+        "wifi": "Có",
+        "wifi_chuan": "WiFi 6E"
       },
       "createdAt": "2026-08-08T22:00:00.000Z",
-      "updatedAt": "2026-08-08T22:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZNN8MW0TE28E2SKYDQG18TX",
@@ -809,15 +861,16 @@
       "price": 2290000,
       "stock": 1,
       "status": "ACTIVE",
-      "description": "Mainboard AM4 cho Ryzen 5000.",
+      "description": "Mainboard AM4 cho Ryzen 5000, có 2 khe M.2, cách rẻ để nâng cấp máy cũ. Nên mua kèm CPU Ryzen 5 5600 và RAM DDR4 3200MHz.",
       "specs": {
         "socket": "AM4",
         "chipset": "B550",
         "ram": "DDR4",
-        "kich_thuoc": "mATX"
+        "kich_thuoc": "mATX",
+        "khe_m2": "2"
       },
       "createdAt": "2026-08-10T11:00:00.000Z",
-      "updatedAt": "2026-08-10T11:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZSM9K00M6EQX9FDBKXRFG97",
@@ -827,7 +880,7 @@
       "price": 1690000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "Mainboard cơ bản cho máy văn phòng Intel.",
+      "description": "Mainboard cơ bản cho máy văn phòng, học tập dùng CPU Intel đời 12 đến 14 và RAM DDR4. Không hỗ trợ ép xung. Nên mua kèm CPU Core i3-12100F và RAM DDR4 8–16GB.",
       "specs": {
         "socket": "LGA1700",
         "chipset": "H610",
@@ -835,7 +888,7 @@
         "kich_thuoc": "mATX"
       },
       "createdAt": "2026-08-12T00:00:00.000Z",
-      "updatedAt": "2026-08-12T00:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZXKAH40C4PD7XEK8YXASACA",
@@ -845,16 +898,17 @@
       "price": 10490000,
       "stock": 3,
       "status": "ACTIVE",
-      "description": "Mainboard cho Intel Core Ultra 200S.",
+      "description": "Mainboard cao cấp cho Intel Core Ultra 200S trên socket LGA1851, RAM DDR5, có WiFi 7 và nhiều khe M.2. Nên mua kèm CPU Core Ultra 5 245K, RAM DDR5 và tản nhiệt tốt.",
       "specs": {
         "socket": "LGA1851",
         "chipset": "Z890",
         "ram": "DDR5",
         "kich_thuoc": "ATX",
-        "wifi": "Có"
+        "wifi": "Có",
+        "wifi_chuan": "WiFi 7"
       },
       "createdAt": "2026-08-13T13:00:00.000Z",
-      "updatedAt": "2026-08-13T13:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M01JBF806PSNQ2BYBVNHNA69",
@@ -864,14 +918,14 @@
       "price": 2590000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Nguồn full modular, đủ cho RTX 4070 Super.",
+      "description": "Nguồn 750W full modular chuẩn 80 Plus Gold, chạy êm, đi dây gọn, đủ cho RTX 4070 Super và CPU Core i7. Nên mua kèm card RTX 4070 Super.",
       "specs": {
         "cong_suat": "750W",
         "chuan": "80 Plus Gold",
         "modular": "Full"
       },
       "createdAt": "2026-08-15T02:00:00.000Z",
-      "updatedAt": "2026-08-15T02:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M05HCDC077PH6YJ73D623GPC",
@@ -881,14 +935,14 @@
       "price": 1290000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "Nguồn phổ thông cho cấu hình RTX 4060.",
+      "description": "Nguồn 650W phổ thông cho cấu hình RTX 4060, RX 7600 và CPU tầm trung. Dây liền không tháo được. Nên mua kèm card RTX 4060.",
       "specs": {
         "cong_suat": "650W",
         "chuan": "80 Plus Bronze",
         "modular": "Không"
       },
       "createdAt": "2026-08-16T15:00:00.000Z",
-      "updatedAt": "2026-08-16T15:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M09GDBG04HWZPXHXS7BYVJ9W",
@@ -898,14 +952,14 @@
       "price": 2690000,
       "stock": 10,
       "status": "ACTIVE",
-      "description": "850W cho card cao cấp và CPU nhiều nhân.",
+      "description": "Nguồn 850W chuẩn Gold full modular cho card cao cấp và CPU nhiều nhân. Nên mua kèm card RTX 4080 Super hoặc CPU Ryzen 9.",
       "specs": {
         "cong_suat": "850W",
         "chuan": "80 Plus Gold",
         "modular": "Full"
       },
       "createdAt": "2026-08-18T04:00:00.000Z",
-      "updatedAt": "2026-08-18T04:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0DFE9M06P0JWG4RYE4FBQ29",
@@ -915,14 +969,14 @@
       "price": 4290000,
       "stock": 4,
       "status": "ACTIVE",
-      "description": "1000W bền bỉ, bảo hành dài, cho RTX 4080.",
+      "description": "Nguồn 1000W bền bỉ của Seasonic, bảo hành dài, dư công suất cho RTX 4080 và nâng cấp về sau. Nên mua kèm card cao cấp và CPU nhiều nhân.",
       "specs": {
         "cong_suat": "1000W",
         "chuan": "80 Plus Gold",
         "modular": "Full"
       },
       "createdAt": "2026-08-19T17:00:00.000Z",
-      "updatedAt": "2026-08-19T17:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0HEF7R01D6ZWTWMS5WRZKGP",
@@ -932,14 +986,14 @@
       "price": 990000,
       "stock": 30,
       "status": "ACTIVE",
-      "description": "Nguồn giá rẻ cho máy văn phòng, học tập.",
+      "description": "Nguồn 550W giá rẻ cho máy văn phòng, học tập hoặc cấu hình gaming nhẹ dùng RTX 3050, RX 7600. Nên mua kèm card phổ thông.",
       "specs": {
         "cong_suat": "550W",
         "chuan": "80 Plus Bronze",
         "modular": "Không"
       },
       "createdAt": "2026-08-21T06:00:00.000Z",
-      "updatedAt": "2026-08-21T06:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0NDG5W0400XH8W0M3DTHVVV",
@@ -949,7 +1003,7 @@
       "price": 3890000,
       "stock": 6,
       "status": "ACTIVE",
-      "description": "Nguồn cao cấp có cổng 16-pin cho card RTX 40.",
+      "description": "Nguồn 850W cao cấp có sẵn cổng 16-pin cho card RTX 40, chạy êm, có đèn Aura. Nên mua kèm card RTX 4070 Super hoặc RTX 4080 Super.",
       "specs": {
         "cong_suat": "850W",
         "chuan": "80 Plus Gold",
@@ -957,7 +1011,7 @@
         "cong_16pin": "Có"
       },
       "createdAt": "2026-08-22T19:00:00.000Z",
-      "updatedAt": "2026-08-22T19:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0SCH400JDHQ2Y9FPTJNB4RP",
@@ -967,14 +1021,14 @@
       "price": 890000,
       "stock": 3,
       "status": "ACTIVE",
-      "description": "Nguồn cơ bản cho PC không card rời.",
+      "description": "Nguồn cơ bản cho PC không dùng card rời hoặc card tiêu thụ điện thấp. Nên mua kèm CPU có đồ hoạ tích hợp như Ryzen 5 7600.",
       "specs": {
         "cong_suat": "600W",
         "chuan": "80 Plus White",
         "modular": "Không"
       },
       "createdAt": "2026-08-24T08:00:00.000Z",
-      "updatedAt": "2026-08-24T08:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0XBJ240EQTHZXEGEBCEH7RJ",
@@ -984,14 +1038,14 @@
       "price": 1490000,
       "stock": 18,
       "status": "ACTIVE",
-      "description": "650W đủ cho đa số cấu hình gaming tầm trung.",
+      "description": "Nguồn 650W của Corsair đủ cho đa số cấu hình gaming tầm trung. Nên mua kèm card RTX 4060 hoặc RTX 4060 Ti.",
       "specs": {
         "cong_suat": "650W",
         "chuan": "80 Plus Bronze",
         "modular": "Không"
       },
       "createdAt": "2026-08-25T21:00:00.000Z",
-      "updatedAt": "2026-08-25T21:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M11AK0808SD2T6PRHBBYV7SK",
@@ -1001,14 +1055,15 @@
       "price": 690000,
       "stock": 30,
       "status": "ACTIVE",
-      "description": "Tản khí tháp đơn, đủ mát cho Core i5 và Ryzen 5.",
+      "description": "Tản khí tháp đơn quạt 120mm, đủ mát cho Core i5 và Ryzen 5, chạy êm, lắp đơn giản. Nên mua kèm keo tản nhiệt nếu muốn thay keo có sẵn.",
       "specs": {
         "loai": "Tản khí",
         "tdp_toi_da": "220W",
-        "socket": "LGA1700, AM5, AM4"
+        "socket": "LGA1700, AM5, AM4",
+        "quat": "120mm"
       },
       "createdAt": "2026-08-27T10:00:00.000Z",
-      "updatedAt": "2026-08-27T10:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M159KYC078JFJ76HGAW6R8J1",
@@ -1018,14 +1073,15 @@
       "price": 890000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Tháp đôi hiệu năng cao, giá tốt.",
+      "description": "Tản khí tháp đôi 2 quạt hiệu năng ngang AIO 240mm với giá rẻ, hợp Core i7 và Ryzen 7. Kiểm tra chiều cao tản so với vỏ case.",
       "specs": {
         "loai": "Tản khí",
         "tdp_toi_da": "260W",
-        "socket": "LGA1700, AM5, AM4"
+        "socket": "LGA1700, AM5, AM4",
+        "quat": "2x 120mm"
       },
       "createdAt": "2026-08-28T23:00:00.000Z",
-      "updatedAt": "2026-08-28T23:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M198MWG03Z0ZHV72CQ7G24PA",
@@ -1035,14 +1091,14 @@
       "price": 2790000,
       "stock": 8,
       "status": "ACTIVE",
-      "description": "AIO 240mm cho Core i7, Ryzen 7.",
+      "description": "Tản nước AIO 240mm có màn hình LCD trên block bơm, gọn gàng cho Core i7, Ryzen 7. Cần vỏ case có chỗ gắn radiator 240mm.",
       "specs": {
         "loai": "Tản nước AIO",
         "radiator": "240mm",
         "socket": "LGA1700, AM5"
       },
       "createdAt": "2026-08-30T12:00:00.000Z",
-      "updatedAt": "2026-08-30T12:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1D7NTM09C65YT9KZZPTPNRW",
@@ -1052,14 +1108,14 @@
       "price": 4990000,
       "stock": 4,
       "status": "ACTIVE",
-      "description": "AIO 360mm cho CPU cao cấp ép xung.",
+      "description": "Tản nước AIO 360mm cho CPU cao cấp và ép xung như Core i7-14700K, Ryzen 9. Cần vỏ case lớn có chỗ gắn radiator 360mm.",
       "specs": {
         "loai": "Tản nước AIO",
         "radiator": "360mm",
         "socket": "LGA1700, AM5"
       },
       "createdAt": "2026-09-01T01:00:00.000Z",
-      "updatedAt": "2026-09-01T01:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1H6PRR0DNAR67P0X91Q9SCM",
@@ -1069,14 +1125,15 @@
       "price": 2990000,
       "stock": 2,
       "status": "ACTIVE",
-      "description": "Tản khí đầu bảng, chạy rất êm.",
+      "description": "Tản khí đầu bảng tháp đôi, chạy rất êm, làm mát ngang AIO cao cấp, bản màu đen. Rất cao và to, kiểm tra vỏ case và chiều cao RAM trước khi mua.",
       "specs": {
         "loai": "Tản khí",
         "tdp_toi_da": "250W",
-        "socket": "LGA1700, AM5, AM4"
+        "socket": "LGA1700, AM5, AM4",
+        "quat": "2x 140mm"
       },
       "createdAt": "2026-09-02T14:00:00.000Z",
-      "updatedAt": "2026-09-02T14:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1N5QPW0E2JYNXVKJ4WWPWFP",
@@ -1086,14 +1143,14 @@
       "price": 690000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "Quạt 120mm êm, nối tiếp nhau bằng một dây.",
+      "description": "Bộ 5 quạt 120mm êm, tối ưu áp suất cho cả đẩy gió vào case và gắn radiator, nối tiếp nhau bằng một dây. Nên mua kèm vỏ case nhiều chỗ gắn quạt.",
       "specs": {
         "loai": "Quạt case",
         "kich_thuoc": "120mm",
         "so_luong": "5"
       },
       "createdAt": "2026-09-04T03:00:00.000Z",
-      "updatedAt": "2026-09-04T03:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1S4RN0022VE5VS0WD2BWCXJ",
@@ -1103,13 +1160,13 @@
       "price": 190000,
       "stock": 60,
       "status": "ACTIVE",
-      "description": "Keo tản nhiệt hiệu năng cao, dễ bôi.",
+      "description": "Keo tản nhiệt hiệu năng cao, không dẫn điện nên bôi an toàn, dùng được nhiều lần. Nên mua kèm khi lắp tản CPU mới hoặc vệ sinh máy.",
       "specs": {
         "loai": "Keo tản nhiệt",
         "khoi_luong": "4g"
       },
       "createdAt": "2026-09-05T16:00:00.000Z",
-      "updatedAt": "2026-09-05T16:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1X3SK40MXNPGME61B3XTT7N",
@@ -1119,14 +1176,15 @@
       "price": 590000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Tản khí phổ thông có LED.",
+      "description": "Tản khí phổ thông quen thuộc có LED RGB, đủ cho CPU tầm trung. Nên mua kèm keo tản nhiệt.",
       "specs": {
         "loai": "Tản khí",
         "tdp_toi_da": "180W",
-        "socket": "LGA1700, AM5, AM4"
+        "socket": "LGA1700, AM5, AM4",
+        "quat": "120mm"
       },
       "createdAt": "2026-09-07T05:00:00.000Z",
-      "updatedAt": "2026-09-07T05:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M212TH807349RSRKH8GRMEP1",
@@ -1136,15 +1194,16 @@
       "price": 2490000,
       "stock": 12,
       "status": "ACTIVE",
-      "description": "Bàn phím cơ không dây TKL, hợp Mac và Windows, cho lập trình viên.",
+      "description": "Bàn phím cơ không dây TKL dành cho lập trình viên, có sẵn phím cho Mac và Windows, đổi switch không cần hàn (hot-swap). Tuỳ biến phím bằng phần mềm QMK/VIA. Nên mua kèm chuột không dây và lót chuột lớn.",
       "specs": {
         "layout": "TKL",
         "switch": "Gateron Brown",
         "ket_noi": "Bluetooth, USB-C",
-        "hot_swap": "Có"
+        "hot_swap": "Có",
+        "ung_dung_tuy_bien": "QMK/VIA"
       },
       "createdAt": "2026-09-08T18:00:00.000Z",
-      "updatedAt": "2026-09-08T18:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M251VFC0FRSB5WC1HF2CA8FE",
@@ -1154,14 +1213,15 @@
       "price": 1690000,
       "stock": 18,
       "status": "ACTIVE",
-      "description": "Bàn phím 98 phím, 3 chế độ kết nối.",
+      "description": "Bàn phím 98 phím gọn mà vẫn có cụm số, 3 chế độ kết nối Bluetooth, 2.4GHz và dây, đổi qua lại nhiều máy. Keycap PBT bền, không bóng. Nên mua kèm lót chuột lớn.",
       "specs": {
         "layout": "98 phím",
         "switch": "AKKO CS Jelly Pink",
-        "ket_noi": "Bluetooth, 2.4GHz, USB-C"
+        "ket_noi": "Bluetooth, 2.4GHz, USB-C",
+        "keycap": "PBT"
       },
       "createdAt": "2026-09-10T07:00:00.000Z",
-      "updatedAt": "2026-09-10T07:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M290WDG0HQDH92N97H3JHH0J",
@@ -1171,14 +1231,14 @@
       "price": 4290000,
       "stock": 6,
       "status": "ACTIVE",
-      "description": "Bàn phím gaming không dây cho thi đấu esports.",
+      "description": "Bàn phím gaming không dây TKL cho thi đấu esports, độ trễ thấp, pin lâu. Nên mua kèm chuột Logitech G Pro hoặc G502 cùng hệ Lightspeed.",
       "specs": {
         "layout": "TKL",
         "switch": "GX Brown",
         "ket_noi": "Lightspeed 2.4GHz, Bluetooth"
       },
       "createdAt": "2026-09-11T20:00:00.000Z",
-      "updatedAt": "2026-09-11T20:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2CZXBM0571GGFVFGGBBKWKY",
@@ -1188,14 +1248,15 @@
       "price": 3290000,
       "stock": 8,
       "status": "ACTIVE",
-      "description": "Bàn phím gaming full-size có phím macro.",
+      "description": "Bàn phím gaming full-size có cụm phím macro riêng và núm xoay đa năng, switch Green clicky. Nên mua kèm chuột và tai nghe Razer cùng hệ sinh thái Synapse.",
       "specs": {
         "layout": "Full-size",
         "switch": "Razer Green",
-        "ket_noi": "USB"
+        "ket_noi": "USB",
+        "phim_macro": "6 phím"
       },
       "createdAt": "2026-09-13T09:00:00.000Z",
-      "updatedAt": "2026-09-13T09:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2GYY9R0R6NP1XM2BN4BS3ZA",
@@ -1205,14 +1266,14 @@
       "price": 590000,
       "stock": 35,
       "status": "ACTIVE",
-      "description": "Bàn phím cơ giá rẻ cho học sinh, sinh viên.",
+      "description": "Bàn phím cơ giá rẻ cho học sinh, sinh viên mới dùng phím cơ, switch Blue gõ có tiếng click rõ. Nên mua kèm chuột gaming phổ thông.",
       "specs": {
         "layout": "TKL",
         "switch": "Huano Blue",
         "ket_noi": "USB"
       },
       "createdAt": "2026-09-14T22:00:00.000Z",
-      "updatedAt": "2026-09-14T22:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2MXZ7W0BMHE0ZW94EHBEZF2",
@@ -1222,14 +1283,15 @@
       "price": 2690000,
       "stock": 10,
       "status": "ACTIVE",
-      "description": "Bàn phím văn phòng gõ êm, sạc USB-C.",
+      "description": "Bàn phím văn phòng gõ êm, phím lõm vừa đầu ngón tay, có đèn nền tự bật khi đưa tay lại gần. Kết nối 3 thiết bị và chuyển bằng một phím. Nên mua kèm chuột Logitech MX Master 3S.",
       "specs": {
         "layout": "Full-size",
         "loai": "Phím màng low-profile",
-        "ket_noi": "Bluetooth, Logi Bolt"
+        "ket_noi": "Bluetooth, Logi Bolt",
+        "sac": "USB-C"
       },
       "createdAt": "2026-09-16T11:00:00.000Z",
-      "updatedAt": "2026-09-16T11:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2RX0600CN71QF0PR90F4BH9",
@@ -1239,14 +1301,14 @@
       "price": 490000,
       "stock": 1,
       "status": "ACTIVE",
-      "description": "Bàn phím cơ TKL phổ thông có LED.",
+      "description": "Bàn phím cơ TKL phổ thông có LED, gọn trên bàn, hợp người mới chơi game. Nên mua kèm chuột gaming và lót chuột.",
       "specs": {
         "layout": "TKL",
         "switch": "DareU Blue",
         "ket_noi": "USB"
       },
       "createdAt": "2026-09-18T00:00:00.000Z",
-      "updatedAt": "2026-09-18T00:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M2WW1440GMZ27NG3103KV8CD",
@@ -1256,14 +1318,15 @@
       "price": 3790000,
       "stock": 4,
       "status": "ACTIVE",
-      "description": "Khung nhôm, switch Cherry MX cho game thủ.",
+      "description": "Bàn phím gaming khung nhôm chắc chắn, switch Cherry MX Red nhẹ và nhanh, có kê tay tháo rời. Nên mua kèm chuột và tai nghe Corsair cùng hệ iCUE.",
       "specs": {
         "layout": "Full-size",
         "switch": "Cherry MX Red",
-        "ket_noi": "USB"
+        "ket_noi": "USB",
+        "khung": "Nhôm"
       },
       "createdAt": "2026-09-19T13:00:00.000Z",
-      "updatedAt": "2026-09-19T13:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M30V2280BQMKA1W630JAPWE5",
@@ -1273,15 +1336,16 @@
       "price": 3290000,
       "stock": 10,
       "status": "ACTIVE",
-      "description": "Chuột gaming không dây nhiều nút, có LED.",
+      "description": "Chuột gaming không dây nhiều nút lập trình, cuộn nhanh, có LED RGB và cảm biến HERO 25K chính xác. Nên mua kèm lót chuột lớn và bàn phím Logitech G.",
       "specs": {
         "cam_bien": "HERO 25K",
         "dpi": "25600",
         "ket_noi": "Lightspeed",
-        "trong_luong": "106g"
+        "trong_luong": "106g",
+        "so_nut": "13"
       },
       "createdAt": "2026-09-21T02:00:00.000Z",
-      "updatedAt": "2026-09-21T02:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M34T30C0CM4GMJXCJ8MDASRJ",
@@ -1291,15 +1355,16 @@
       "price": 390000,
       "stock": 50,
       "status": "ACTIVE",
-      "description": "Chuột gaming quốc dân giá rẻ.",
+      "description": "Chuột gaming quốc dân giá rẻ, nhẹ, bền, có LED RGB. Hợp học sinh, sinh viên và phòng net. Nên mua kèm lót chuột và bàn phím cơ phổ thông.",
       "specs": {
         "cam_bien": "Optical",
         "dpi": "8000",
         "ket_noi": "USB",
-        "trong_luong": "85g"
+        "trong_luong": "85g",
+        "so_nut": "6"
       },
       "createdAt": "2026-09-22T15:00:00.000Z",
-      "updatedAt": "2026-09-22T15:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M38S3YG0W6BKTQX75CVACQSM",
@@ -1309,14 +1374,15 @@
       "price": 2290000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Chuột văn phòng công thái học, cuộn siêu nhanh.",
+      "description": "Chuột văn phòng công thái học, cuộn siêu nhanh, có con lăn ngang cho bảng tính và dựng video, bấm gần như không tiếng. Dùng được trên cả mặt kính. Nên mua kèm bàn phím Logitech MX Keys S.",
       "specs": {
         "dpi": "8000",
         "ket_noi": "Bluetooth, Logi Bolt",
-        "pin": "70 ngày"
+        "pin": "70 ngày",
+        "sac": "USB-C"
       },
       "createdAt": "2026-09-24T04:00:00.000Z",
-      "updatedAt": "2026-09-24T04:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M3CR4WM0WPNZNJYN21WDCHGZ",
@@ -1326,7 +1392,7 @@
       "price": 1690000,
       "stock": 12,
       "status": "ACTIVE",
-      "description": "Chuột siêu nhẹ cho FPS.",
+      "description": "Chuột siêu nhẹ cho game bắn súng, hình dáng công thái học cầm thoải mái lâu. Nên mua kèm lót chuột lớn và tai nghe gaming.",
       "specs": {
         "cam_bien": "Focus Pro 30K",
         "dpi": "30000",
@@ -1334,7 +1400,7 @@
         "trong_luong": "59g"
       },
       "createdAt": "2026-09-25T17:00:00.000Z",
-      "updatedAt": "2026-09-25T17:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M3GQ5TR0DH1Z32GWGG764J9X",
@@ -1344,14 +1410,14 @@
       "price": 350000,
       "stock": 40,
       "status": "ACTIVE",
-      "description": "Chuột văn phòng bấm không tiếng ồn.",
+      "description": "Chuột văn phòng bấm gần như không tiếng ồn, pin AA dùng đến 24 tháng, cắm đầu thu USB là dùng. Hợp thư viện, văn phòng yên tĩnh. Nên mua kèm laptop văn phòng.",
       "specs": {
         "dpi": "1000",
         "ket_noi": "2.4GHz",
         "pin": "24 tháng"
       },
       "createdAt": "2026-09-27T06:00:00.000Z",
-      "updatedAt": "2026-09-27T06:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M3MP6RW0MF6C34GP6CR9GE2W",
@@ -1361,7 +1427,7 @@
       "price": 4190000,
       "stock": 0,
       "status": "ACTIVE",
-      "description": "Chuột thi đấu esports cao cấp, siêu nhẹ.",
+      "description": "Chuột thi đấu esports cao cấp, siêu nhẹ, cảm biến 35K DPI, độ trễ thấp qua HyperSpeed. Nên mua kèm lót chuột cỡ lớn và màn hình tần số quét cao.",
       "specs": {
         "cam_bien": "Focus Pro 35K",
         "dpi": "35000",
@@ -1369,7 +1435,7 @@
         "trong_luong": "54g"
       },
       "createdAt": "2026-09-28T19:00:00.000Z",
-      "updatedAt": "2026-09-28T19:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KYY5CK008AG6HZYMDYCJ0RG3",
@@ -1379,14 +1445,14 @@
       "price": 690000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Chuột gaming bền, cảm biến chính xác.",
+      "description": "Chuột gaming bền, cảm biến TrueMove Core chính xác, có LED RGB, giá dễ chịu. Nên mua kèm lót chuột SteelSeries QcK.",
       "specs": {
         "cam_bien": "TrueMove Core",
         "dpi": "8500",
         "ket_noi": "USB"
       },
       "createdAt": "2026-08-01T08:00:00.000Z",
-      "updatedAt": "2026-08-01T08:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ24DH404NV7Z14YQYCARFZH",
@@ -1396,13 +1462,13 @@
       "price": 390000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "Chuột nhỏ gọn mang theo laptop.",
+      "description": "Chuột Bluetooth nhỏ gọn mang theo laptop, không cần đầu thu USB nên không chiếm cổng. Nên mua kèm laptop mỏng nhẹ và túi chống sốc.",
       "specs": {
         "ket_noi": "Bluetooth",
         "pin": "12 tháng"
       },
       "createdAt": "2026-08-02T21:00:00.000Z",
-      "updatedAt": "2026-08-02T21:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZ63EF805Q5GJTDY869BBSPV",
@@ -1412,15 +1478,16 @@
       "price": 6490000,
       "stock": 9,
       "status": "ACTIVE",
-      "description": "Màn gaming IPS 2K tần số quét cao.",
+      "description": "Màn gaming IPS 27 inch độ phân giải 2K, 165Hz, màu đẹp và góc nhìn rộng, hợp card RTX 4060 Ti đến 4070 Super. Nên mua kèm cáp DisplayPort 1.4 và giá treo màn hình.",
       "specs": {
         "kich_thuoc": "27\"",
         "do_phan_giai": "2560x1440",
         "tan_so": "165Hz",
-        "tam_nen": "IPS"
+        "tam_nen": "IPS",
+        "thoi_gian_phan_hoi": "1ms GtG"
       },
       "createdAt": "2026-08-04T10:00:00.000Z",
-      "updatedAt": "2026-08-04T10:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZA2FDC0D7Z3Q12TWA2CN9V5",
@@ -1430,15 +1497,16 @@
       "price": 3290000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Màn gaming 24 inch 180Hz giá tốt.",
+      "description": "Màn gaming 24 inch 180Hz giá tốt cho game bắn súng và esports, tấm nền IPS màu đẹp. Nên mua kèm card RTX 4060 hoặc RX 7600 và cáp DisplayPort.",
       "specs": {
         "kich_thuoc": "23.8\"",
         "do_phan_giai": "1920x1080",
         "tan_so": "180Hz",
-        "tam_nen": "IPS"
+        "tam_nen": "IPS",
+        "thoi_gian_phan_hoi": "1ms GtG"
       },
       "createdAt": "2026-08-05T23:00:00.000Z",
-      "updatedAt": "2026-08-05T23:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZE1GBG00P4K5XQ5VSV1BRXC",
@@ -1448,7 +1516,7 @@
       "price": 9490000,
       "stock": 6,
       "status": "ACTIVE",
-      "description": "Màn màu chuẩn cho thiết kế, có USB-C.",
+      "description": "Màn màu chuẩn cho thiết kế, chỉnh ảnh và lập trình, có cổng USB-C và chân đứng chỉnh cao, xoay dọc. Nên mua kèm laptop văn phòng và hub USB-C.",
       "specs": {
         "kich_thuoc": "27\"",
         "do_phan_giai": "2560x1440",
@@ -1457,7 +1525,7 @@
         "mau": "100% sRGB"
       },
       "createdAt": "2026-08-07T12:00:00.000Z",
-      "updatedAt": "2026-08-07T12:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZJ0H9M0A24ZY0DMVTEZYF8Y",
@@ -1467,15 +1535,16 @@
       "price": 7290000,
       "stock": 5,
       "status": "ACTIVE",
-      "description": "Màn cong 1000R cho trải nghiệm game nhập vai.",
+      "description": "Màn cong 1000R 32 inch cho trải nghiệm game nhập vai và đua xe, 2K 165Hz. Nên mua kèm card từ RTX 4060 Ti trở lên và cáp DisplayPort.",
       "specs": {
         "kich_thuoc": "32\"",
         "do_phan_giai": "2560x1440",
         "tan_so": "165Hz",
-        "tam_nen": "VA cong"
+        "tam_nen": "VA cong",
+        "do_cong": "1000R"
       },
       "createdAt": "2026-08-09T01:00:00.000Z",
-      "updatedAt": "2026-08-09T01:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZNZJ7R0A5FYFZHSJKC3YJFF",
@@ -1485,15 +1554,16 @@
       "price": 9990000,
       "stock": 4,
       "status": "ACTIVE",
-      "description": "Màn 4K HDR cho dựng video và lập trình.",
+      "description": "Màn 4K IPS hỗ trợ HDR, có USB-C sạc laptop, hợp dựng video, chỉnh ảnh và đọc code nhiều cửa sổ. Nên mua kèm MacBook hoặc laptop có USB-C xuất hình.",
       "specs": {
         "kich_thuoc": "27\"",
         "do_phan_giai": "3840x2160",
         "tan_so": "60Hz",
-        "tam_nen": "IPS"
+        "tam_nen": "IPS",
+        "usb_c": "Có, sạc 96W"
       },
       "createdAt": "2026-08-10T14:00:00.000Z",
-      "updatedAt": "2026-08-10T14:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZSYK5W0RF7RQBFFST6W0FME",
@@ -1503,7 +1573,7 @@
       "price": 2190000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "Màn văn phòng 24 inch, viền mỏng, có thể làm màn phụ.",
+      "description": "Màn văn phòng 24 inch viền mỏng, 100Hz cuộn trang mượt, hợp làm màn phụ cho laptop. Nên mua kèm cáp HDMI và laptop văn phòng.",
       "specs": {
         "kich_thuoc": "23.8\"",
         "do_phan_giai": "1920x1080",
@@ -1511,7 +1581,7 @@
         "tam_nen": "IPS"
       },
       "createdAt": "2026-08-12T03:00:00.000Z",
-      "updatedAt": "2026-08-12T03:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01KZXXM4002NS4C63ET15T3HWK",
@@ -1521,7 +1591,7 @@
       "price": 1990000,
       "stock": 3,
       "status": "ACTIVE",
-      "description": "Màn cơ bản cho văn phòng, học tập.",
+      "description": "Màn cơ bản cho văn phòng, học tập, tấm nền IPS góc nhìn rộng, có chế độ giảm ánh sáng xanh. Nên mua kèm cáp HDMI.",
       "specs": {
         "kich_thuoc": "23.8\"",
         "do_phan_giai": "1920x1080",
@@ -1529,7 +1599,7 @@
         "tam_nen": "IPS"
       },
       "createdAt": "2026-08-13T16:00:00.000Z",
-      "updatedAt": "2026-08-13T16:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M01WN24050PZ683MP26PJKCX",
@@ -1539,7 +1609,7 @@
       "price": 4290000,
       "stock": 7,
       "status": "ACTIVE",
-      "description": "Màn phụ di động cắm USB-C cho laptop.",
+      "description": "Màn phụ di động chỉ cần một cáp USB-C để vừa cấp nguồn vừa xuất hình, nhẹ, bỏ vừa balo. Hợp lập trình viên và người hay đi công tác. Nên mua kèm laptop có USB-C xuất hình và balo laptop.",
       "specs": {
         "kich_thuoc": "15.6\"",
         "do_phan_giai": "1920x1080",
@@ -1547,7 +1617,7 @@
         "trong_luong": "0.83kg"
       },
       "createdAt": "2026-08-15T05:00:00.000Z",
-      "updatedAt": "2026-08-15T05:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M05VP08047Q5JW4QKGDK0QRF",
@@ -1557,14 +1627,15 @@
       "price": 2190000,
       "stock": 14,
       "status": "ACTIVE",
-      "description": "Tai nghe gaming đeo êm, mic rõ.",
+      "description": "Tai nghe gaming đeo êm nhiều giờ nhờ đệm mút êm và khung nhôm, mic tháo rời rõ tiếng. Kết nối 3.5mm hoặc USB nên dùng được cho PC, laptop, máy chơi game. Nên mua kèm card âm thanh USB nếu máy có jack kém.",
       "specs": {
         "ket_noi": "3.5mm, USB",
         "mic": "Rời",
-        "trong_luong": "310g"
+        "trong_luong": "310g",
+        "driver": "53mm"
       },
       "createdAt": "2026-08-16T18:00:00.000Z",
-      "updatedAt": "2026-08-16T18:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M09TPYC0J70KCS73Z2TBFS98",
@@ -1574,13 +1645,14 @@
       "price": 5990000,
       "stock": 4,
       "status": "ACTIVE",
-      "description": "Tai nghe không dây thi đấu chuyên nghiệp.",
+      "description": "Tai nghe không dây cho game thủ thi đấu, độ trễ thấp qua Lightspeed, pin rất lâu. Có cả Bluetooth để nghe nhạc trên điện thoại. Nên mua kèm chuột, bàn phím Logitech G cùng hệ sinh thái.",
       "specs": {
         "ket_noi": "Lightspeed, Bluetooth, 3.5mm",
-        "pin": "50 giờ"
+        "pin": "50 giờ",
+        "driver": "50mm graphene"
       },
       "createdAt": "2026-08-18T07:00:00.000Z",
-      "updatedAt": "2026-08-18T07:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0DSQWG0CYHVE52MAEPHFDVD",
@@ -1590,13 +1662,14 @@
       "price": 990000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Tai nghe gaming nhẹ, giá tốt.",
+      "description": "Tai nghe gaming siêu nhẹ, giá tốt, âm thanh định vị rõ cho game bắn súng. Cắm jack 3.5mm dùng được nhiều thiết bị. Nên mua kèm chuột gaming và lót chuột lớn.",
       "specs": {
         "ket_noi": "3.5mm",
-        "trong_luong": "240g"
+        "trong_luong": "240g",
+        "driver": "50mm"
       },
       "createdAt": "2026-08-19T20:00:00.000Z",
-      "updatedAt": "2026-08-19T20:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0HRRTM0DRBQK09E67Q2NJV3",
@@ -1606,14 +1679,15 @@
       "price": 7490000,
       "stock": 6,
       "status": "ACTIVE",
-      "description": "Chống ồn chủ động hàng đầu cho làm việc tập trung.",
+      "description": "Tai nghe chống ồn chủ động hàng đầu, giúp tập trung khi làm việc ở quán cà phê, văn phòng mở hoặc đi máy bay. Mic gọi rõ, kết nối cùng lúc hai thiết bị. Nên mua kèm cho laptop văn phòng, MacBook.",
       "specs": {
         "ket_noi": "Bluetooth 5.2",
         "chong_on": "Có",
-        "pin": "30 giờ"
+        "pin": "30 giờ",
+        "trong_luong": "250g"
       },
       "createdAt": "2026-08-21T09:00:00.000Z",
-      "updatedAt": "2026-08-21T09:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0NQSRR0EC8VGG2YW9EX1RXD",
@@ -1623,13 +1697,14 @@
       "price": 1290000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Tai nghe gaming đa nền tảng.",
+      "description": "Tai nghe gaming nhẹ, đeo thoải mái, chạy trên PC, máy chơi game và điện thoại qua jack 3.5mm. Mic thu gọn vào thân tai khi không dùng. Nên mua kèm chuột SteelSeries và lót chuột QcK.",
       "specs": {
         "ket_noi": "3.5mm",
-        "mic": "Thu gọn được"
+        "mic": "Thu gọn được",
+        "driver": "40mm"
       },
       "createdAt": "2026-08-22T22:00:00.000Z",
-      "updatedAt": "2026-08-22T22:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0SPTPW0G8838Y78RTYF7083",
@@ -1639,13 +1714,14 @@
       "price": 3290000,
       "stock": 0,
       "status": "ACTIVE",
-      "description": "Tai nghe không dây có Dolby Atmos.",
+      "description": "Tai nghe không dây có Dolby Atmos trên PC, mic chất lượng phát sóng, đệm tai thoáng. Nên mua kèm bàn phím Corsair cùng hệ sinh thái iCUE.",
       "specs": {
         "ket_noi": "Slipstream, USB",
-        "pin": "20 giờ"
+        "pin": "20 giờ",
+        "driver": "50mm"
       },
       "createdAt": "2026-08-24T11:00:00.000Z",
-      "updatedAt": "2026-08-24T11:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M0XNVN00KTH0MRAGC0KF6ZHG",
@@ -1655,13 +1731,14 @@
       "price": 1890000,
       "stock": 10,
       "status": "ACTIVE",
-      "description": "Tai nghe họp trực tuyến cho dân văn phòng.",
+      "description": "Tai nghe họp trực tuyến cho dân văn phòng: mic khử ồn giúp đồng nghiệp nghe rõ, cắm USB-C là dùng ngay với Teams, Zoom. Nên mua kèm laptop văn phòng và hub USB-C.",
       "specs": {
         "ket_noi": "USB-C",
-        "mic": "Khử ồn"
+        "mic": "Khử ồn",
+        "kieu": "Chụp tai 2 bên"
       },
       "createdAt": "2026-08-26T00:00:00.000Z",
-      "updatedAt": "2026-08-26T00:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M11MWK40Y5XHK0NNHGHCTRG1",
@@ -1671,13 +1748,13 @@
       "price": 490000,
       "stock": 30,
       "status": "ACTIVE",
-      "description": "Tai nghe gaming giá rẻ có LED.",
+      "description": "Tai nghe gaming giá rẻ có LED, cắm USB, hợp học sinh và phòng net. Nên mua kèm chuột gaming phổ thông như Logitech G102.",
       "specs": {
         "ket_noi": "USB",
         "mic": "Có"
       },
       "createdAt": "2026-08-27T13:00:00.000Z",
-      "updatedAt": "2026-08-27T13:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M15KXH80RJZPHAPA50Y1M37H",
@@ -1687,13 +1764,13 @@
       "price": 690000,
       "stock": 25,
       "status": "ACTIVE",
-      "description": "Balo chống sốc cho laptop 15.6 inch.",
+      "description": "Balo có ngăn chống sốc riêng cho laptop 15.6 inch, nhiều ngăn đựng sạc, chuột, tài liệu. Hợp sinh viên và dân văn phòng. Nên mua kèm laptop 15.6 inch và chuột không dây.",
       "specs": {
         "loai": "Balo",
         "kich_thuoc": "15.6\""
       },
       "createdAt": "2026-08-29T02:00:00.000Z",
-      "updatedAt": "2026-08-29T02:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M19JYFC0Z0T5VHM8ECB6C3C0",
@@ -1703,13 +1780,13 @@
       "price": 590000,
       "stock": 30,
       "status": "ACTIVE",
-      "description": "Túi mỏng nhẹ, góc chống va đập.",
+      "description": "Túi mỏng nhẹ có góc đệm chống va đập khi rơi, bỏ được vào balo hoặc xách tay. Nên mua kèm laptop 14 inch hoặc MacBook Air.",
       "specs": {
         "loai": "Túi chống sốc",
         "kich_thuoc": "14\""
       },
       "createdAt": "2026-08-30T15:00:00.000Z",
-      "updatedAt": "2026-08-30T15:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1DHZDG0GKGEYEMV1XHAANNN",
@@ -1719,13 +1796,13 @@
       "price": 590000,
       "stock": 40,
       "status": "ACTIVE",
-      "description": "Mở rộng cổng cho laptop mỏng nhẹ.",
+      "description": "Mở rộng cổng cho laptop mỏng nhẹ: xuất HDMI 4K, cắm USB, đọc thẻ nhớ, sạc xuyên 100W. Nên mua kèm MacBook hoặc laptop chỉ có USB-C.",
       "specs": {
         "loai": "Hub USB-C",
         "cong": "HDMI 4K, 2x USB-A, SD, microSD, PD 100W"
       },
       "createdAt": "2026-09-01T04:00:00.000Z",
-      "updatedAt": "2026-09-01T04:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1HH0BM0CFGEEF7TD59BYNQH",
@@ -1735,13 +1812,13 @@
       "price": 1290000,
       "stock": 15,
       "status": "ACTIVE",
-      "description": "Hub 8 cổng có LAN, sạc 100W.",
+      "description": "Hub 8 cổng có cả cổng mạng LAN, HDMI 4K và sạc xuyên 100W, biến laptop thành máy làm việc tại bàn. Nên mua kèm màn hình rời và chuột, bàn phím không dây.",
       "specs": {
         "loai": "Hub USB-C",
         "cong": "HDMI 4K, LAN, 2x USB-A, USB-C, SD, PD 100W"
       },
       "createdAt": "2026-09-02T17:00:00.000Z",
-      "updatedAt": "2026-09-02T17:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1NG19R0H2HTPFB2X2ET2NYD",
@@ -1751,14 +1828,14 @@
       "price": 290000,
       "stock": 50,
       "status": "ACTIVE",
-      "description": "Cáp HDMI 2.1 cho màn 4K 120Hz và 8K.",
+      "description": "Cáp HDMI 2.1 băng thông cao cho màn 4K 120Hz, TV và máy chơi game đời mới. Nên mua kèm màn hình hoặc card có cổng HDMI 2.1.",
       "specs": {
         "loai": "Cáp",
         "chuan": "HDMI 2.1",
         "chieu_dai": "2m"
       },
       "createdAt": "2026-09-04T06:00:00.000Z",
-      "updatedAt": "2026-09-04T06:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1SF27W0M62T7F9YY2D4Q6BD",
@@ -1768,14 +1845,14 @@
       "price": 250000,
       "stock": 45,
       "status": "ACTIVE",
-      "description": "Cáp DP cho màn gaming tần số quét cao.",
+      "description": "Cáp DisplayPort 1.4 cho màn gaming tần số quét cao như 2K 165Hz. Nên mua kèm màn hình gaming và card rời.",
       "specs": {
         "loai": "Cáp",
         "chuan": "DisplayPort 1.4",
         "chieu_dai": "2m"
       },
       "createdAt": "2026-09-05T19:00:00.000Z",
-      "updatedAt": "2026-09-05T19:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M1XE3600WAAHQMHERPYRRD0P",
@@ -1785,14 +1862,14 @@
       "price": 590000,
       "stock": 20,
       "status": "ACTIVE",
-      "description": "Đế tản nhiệt có quạt lớn 200mm cho laptop gaming.",
+      "description": "Đế tản nhiệt quạt lớn 200mm giúp laptop gaming mát hơn khi chơi lâu, nâng màn hình cao hơn đỡ mỏi cổ. Nên mua kèm laptop gaming.",
       "specs": {
         "loai": "Đế tản nhiệt",
         "kich_thuoc_toi_da": "17\"",
         "quat": "200mm"
       },
       "createdAt": "2026-09-07T08:00:00.000Z",
-      "updatedAt": "2026-09-07T08:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     },
     {
       "productId": "01M21D4440ZVJX0NJEC9007JB5",
@@ -1802,13 +1879,13 @@
       "price": 890000,
       "stock": 2,
       "status": "ACTIVE",
-      "description": "Lót chuột cỡ lớn cho cả bàn phím và chuột.",
+      "description": "Lót chuột cỡ lớn phủ cả bàn phím và chuột, đế cao su dày không trượt. Nên mua kèm chuột gaming và bàn phím cơ.",
       "specs": {
         "loai": "Lót chuột",
         "kich_thuoc": "900x400mm"
       },
       "createdAt": "2026-09-08T21:00:00.000Z",
-      "updatedAt": "2026-09-08T21:00:00.000Z"
+      "updatedAt": "2026-11-25T02:00:00.000Z"
     }
   ]
 }

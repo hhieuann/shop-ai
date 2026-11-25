@@ -58,6 +58,31 @@ const SPEC_HELP: Readonly<Record<string, string>> = {
   cong: 'Các cổng có trên sản phẩm.',
   chieu_dai: 'Chiều dài của cáp.',
   quat: 'Đường kính quạt, đo bằng mm.',
+  bo_nho_dem:
+    'Bộ nhớ đệm L3 nằm ngay trong CPU, giữ dữ liệu hay dùng để CPU lấy nhanh hơn RAM, đo bằng MB.',
+  chieu_cao: 'Chiều cao của thanh RAM tính cả lá tản nhiệt.',
+  do_cong:
+    'Độ cong của màn hình cong, ghi bằng bán kính: 1000R là cong theo vòng tròn bán kính 1000 mm, số càng nhỏ càng cong.',
+  do_hoa_tich_hop:
+    'Nhân đồ hoạ có sẵn trong CPU để xuất hình khi không có card rời; Không là CPU cần card đồ hoạ rời.',
+  driver: 'Đường kính màng loa trong mỗi bên tai nghe, đo bằng mm.',
+  giao_tiep: 'Chuẩn và số làn PCIe card dùng để nối với bo mạch chủ, ví dụ PCIe 4.0 x16.',
+  keycap: 'Chất liệu nút bàn phím, ví dụ PBT hay ABS.',
+  khe_m2: 'Số khe M.2 trên bo mạch để gắn ổ SSD dạng thanh.',
+  khung: 'Chất liệu khung của sản phẩm.',
+  kien_truc: 'Tên thế hệ kiến trúc chip đồ hoạ do hãng đặt.',
+  kieu: 'Kiểu đeo của tai nghe.',
+  npu: 'CPU có bộ xử lý thần kinh (NPU) riêng cho các tác vụ AI hay không.',
+  phim_macro: 'Số phím riêng để gán chuỗi thao tác (macro).',
+  sac: 'Cổng sạc pin của sản phẩm.',
+  so_nut: 'Tổng số nút bấm trên chuột, tính cả nút trái, phải và con lăn.',
+  tan_kem_theo: 'Bộ tản nhiệt có sẵn trong hộp CPU.',
+  thoi_gian_phan_hoi:
+    'Thời gian một điểm ảnh đổi màu do hãng công bố, đo bằng ms; GtG là đổi từ xám sang xám.',
+  ung_dung_tuy_bien: 'Phần mềm để đổi chức năng phím.',
+  usb_c: 'Màn hình có cổng USB-C nhận hình và sạc ngược cho laptop hay không, kèm công suất sạc.',
+  wifi_chuan: 'Chuẩn Wi-Fi của bo mạch, ví dụ Wi-Fi 6E hay Wi-Fi 7.',
+  'laptop.pin': 'Dung lượng pin của máy theo thông số của hãng, đo bằng Wh (watt-giờ).',
   // Nghĩa riêng theo loại hàng
   'laptop.trong_luong': 'Khối lượng của máy theo thông số của hãng, đo bằng kg.',
   'mainboard.socket': 'Kiểu đế cắm CPU có trên bo mạch chủ.',

@@ -287,8 +287,9 @@ export class ApiStack extends Stack {
     // Sự kiện hành vi cho gợi ý (events.md): ghi VIEW, ADD_TO_CART, cần đăng nhập
     const { eventsFn, events } = this.addEvents(shopEnv, removalPolicy, httpApi);
 
-    // Prod cũng có sản phẩm demo vì chưa có trang admin, nhưng chỉ thêm sản phẩm còn thiếu
-    this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'insert-missing' : 'overwrite');
+    // Prod cũng có sản phẩm demo vì chưa có trang admin thêm sản phẩm: thêm món còn thiếu và cập nhật
+    // nội dung hiển thị, giữ giá và tồn kho đang chạy (#527)
+    this.seedDemoProducts(products, removalPolicy, shopEnv.isProd ? 'sync-content' : 'overwrite');
 
     // Dữ liệu huấn luyện cho pipeline gợi ý mỗi đêm (module recommendation)
     this.trainingDataBucket = new TrainingData(this, 'TrainingData', { shopEnv }).bucket;
@@ -1345,7 +1346,7 @@ export class ApiStack extends Stack {
   private seedDemoProducts(
     products: Table,
     removalPolicy: RemovalPolicy,
-    mode: 'overwrite' | 'insert-missing',
+    mode: 'overwrite' | 'sync-content',
   ) {
     const seedFn = new NodejsFunction(this, 'SeedProductsFunction', {
       entry: path.join(API_SRC, 'modules', 'catalog', 'seedLambda.ts'),
@@ -1383,10 +1384,13 @@ export class ApiStack extends Stack {
         },
       },
     });
-    // Không đọc, không xoá. overwrite: chỉ ghi theo lô. insert-missing (prod): chỉ PutItem có điều kiện
+    // Không đọc, không xoá. overwrite: chỉ ghi theo lô. sync-content (prod): PutItem, UpdateItem có điều kiện
     seedFn.addToRolePolicy(
       new PolicyStatement({
-        actions: [mode === 'overwrite' ? 'dynamodb:BatchWriteItem' : 'dynamodb:PutItem'],
+        actions:
+          mode === 'overwrite'
+            ? ['dynamodb:BatchWriteItem']
+            : ['dynamodb:PutItem', 'dynamodb:UpdateItem'],
         resources: [products.tableArn],
       }),
     );
