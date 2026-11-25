@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { uniqueProduct } from '../../../../test/helpers/catalog.js';
 import {
+  actionOfPatch,
   decodeAdminCursor,
   encodeAdminCursor,
   filterAndSortNewest,
   groupsFor,
+  newProduct,
   paginateNewest,
 } from './adminProduct.js';
 import { InvalidCursorError } from './errors.js';
@@ -147,5 +149,47 @@ describe('paginateNewest', () => {
 
     // Assert
     expect(page).toEqual({ items: [] });
+  });
+});
+
+describe('newProduct', () => {
+  it('newProduct_setsIdAndSameCreatedUpdatedAt', () => {
+    // Arrange
+    const draft = {
+      name: 'Chuột Logitech G304',
+      category: 'mouse' as const,
+      brand: 'Logitech',
+      price: 790_000,
+      stock: 20,
+      status: 'ACTIVE' as const,
+      description: 'Chuột không dây gọn nhẹ.',
+    };
+
+    // Act
+    const product = newProduct(draft, '01K6PZ3Q5G0000000000000042', '2026-11-25T08:00:00.000Z');
+
+    // Assert: BR-11
+    expect(product).toEqual({
+      ...draft,
+      productId: '01K6PZ3Q5G0000000000000042',
+      createdAt: '2026-11-25T08:00:00.000Z',
+      updatedAt: '2026-11-25T08:00:00.000Z',
+    });
+  });
+});
+
+describe('actionOfPatch', () => {
+  it.each([
+    ['chỉ ẩn', { status: 'INACTIVE' as const }, 'HIDE'],
+    ['chỉ hiện lại', { status: 'ACTIVE' as const }, 'SHOW'],
+    ['sửa giá', { price: 1 }, 'UPDATE'],
+    ['sửa giá kèm đổi trạng thái', { price: 1, status: 'INACTIVE' as const }, 'UPDATE'],
+    ['bỏ ảnh', { imageUrl: null }, 'UPDATE'],
+  ])('actionOfPatch_returns_when_%s', (_name, patch, expected) => {
+    // Act
+    const result = actionOfPatch(patch);
+
+    // Assert
+    expect(result).toBe(expected);
   });
 });

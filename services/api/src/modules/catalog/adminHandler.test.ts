@@ -19,6 +19,8 @@ function useCases() {
       .fn()
       .mockResolvedValue({ items: [PRODUCT], nextCursor: 'next', counts: COUNTS }),
     getAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
+    createAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
+    updateAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
   } satisfies AdminProductUseCases;
 }
 
@@ -229,7 +231,7 @@ describe('admin product handler · lỗi khác', () => {
     // Act
     const res = await makeAdminProductHandler(useCases())(
       apiEvent({
-        routeKey: 'DELETE /api/v1/admin/products/{productId}',
+        routeKey: 'PUT /api/v1/admin/products/{productId}',
         userId: ADMIN,
         claims: ADMIN_CLAIMS,
         pathParameters: { productId: PRODUCT_ID },
