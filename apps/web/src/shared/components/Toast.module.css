@@ -1,8 +1,9 @@
-/* Thông báo nổi (docs/web/design-system.md §9.33) */
+/* Thông báo nổi (docs/web/design-system.md §9.33). Trang có thanh dính đáy đặt --toast-offset-bottom
+   (useToastOffset) để thông báo nằm trên thanh, không che nút; không đặt thì như cũ */
 .region {
   position: fixed;
   right: var(--space-300);
-  bottom: var(--space-300);
+  bottom: calc(var(--space-300) + var(--toast-offset-bottom, 0px));
   z-index: 400; /* trên header (210), ngăn kéo (300); dưới hộp thoại <dialog> (lớp trên cùng) */
   display: grid;
   justify-items: end;
@@ -59,7 +60,7 @@
   .region {
     left: var(--space-200);
     right: var(--space-200);
-    bottom: var(--space-200);
+    bottom: calc(var(--space-200) + var(--toast-offset-bottom, 0px));
     justify-items: stretch;
   }
   .toast {

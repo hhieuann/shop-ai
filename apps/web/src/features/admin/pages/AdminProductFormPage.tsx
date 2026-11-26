@@ -20,6 +20,7 @@ import { Field } from '../../../shared/components/Field';
 import { Switch } from '../../../shared/components/Switch';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { useToast } from '../../../shared/components/toastContext';
+import { useToastOffset } from '../../../shared/hooks/useToastOffset';
 import { ProductCard } from '../../catalog/components/ProductCard';
 import { CATEGORIES, categoryLabel } from '../../catalog/lib/productFilters';
 import { specLabel } from '../../catalog/lib/specLabels';
@@ -160,6 +161,9 @@ function ProductForm({
   const queryClient = useQueryClient();
   const toast = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  // Thanh "Lưu sản phẩm" dính đáy: thông báo nổi đứng trên thanh, không che nút Lưu
+  const barRef = useRef<HTMLDivElement>(null);
+  useToastOffset(barRef);
 
   const [category, setCategory] = useState(initialCategory);
   const [original, setOriginal] = useState(product);
@@ -572,7 +576,7 @@ function ProductForm({
         </div>
       </fieldset>
 
-      <div className={styles.bar}>
+      <div ref={barRef} className={styles.bar}>
         {formError && (
           <p role="alert" className={styles.formError}>
             <CircleAlert size={16} aria-hidden="true" />
