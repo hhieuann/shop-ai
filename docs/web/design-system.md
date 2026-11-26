@@ -838,7 +838,7 @@ Chốt 25/11/2026 (#547). Báo kết quả một thao tác vừa xong mà không
 
 | Phần | Giá trị |
 |---|---|
-| Vị trí | `position: fixed`, góc dưới phải cách 24px; dưới 640px rộng hết, cách mép 16px. Lớp trên header và ngăn kéo (`z-index` 400), dưới hộp thoại `<dialog>` |
+| Vị trí | `position: fixed`, góc dưới phải cách 24px; dưới 640px rộng hết, cách mép 16px. Lớp trên header và ngăn kéo (`z-index` 400), dưới hộp thoại `<dialog>`. Trang có thanh dính đáy (vd. form sản phẩm admin) gọi `useToastOffset(ref thanh)`: đặt `--toast-offset-bottom` trên `<html>` bằng chiều cao thanh để thông báo đứng trên thanh, không che nút; rời trang thì gỡ |
 | Khối | nền `--fg-heading`, chữ `--fg-on-primary` 14/20/500, padding `12px 8px 12px 16px`, bo `--radius-xl`, `--shadow-lg`, rộng tối đa 480px; hiện bằng mờ dần + trượt lên 8px trong `--dur-base` (`prefers-reduced-motion`: hiện ngay) |
 | Nút đóng | 32×32 trong suốt, icon `X` 18 màu chữ, `aria-label="Đóng thông báo"`; hover nền chữ trộn 16%; viền focus `--focus-ring-on-chrome` |
 | Đọc | vùng `role="status"` (`aria-live="polite"`) luôn có trên trang, không dời focus của người dùng |

@@ -273,6 +273,22 @@ describe('AdminProductFormPage · thêm (pages/admin-san-pham.md mục 3)', () =
     // Assert
     expect(router.state.location.pathname).toBe('/admin/products');
   });
+
+  it('toastSitsAboveSaveBar_whileFormIsOpen_andResetsAfterLeaving', async () => {
+    // Arrange: thanh "Lưu sản phẩm" dính đáy; thông báo nổi phải đứng trên thanh (không che nút Lưu)
+    const { router } = renderAt('/admin/products/new?category=gpu');
+    await screen.findByText(/Đã điền mẫu/);
+    const offset = () => document.documentElement.style.getPropertyValue('--toast-offset-bottom');
+
+    // Assert: trang mở thì có biến (jsdom đo chiều cao 0px)
+    expect(offset()).toMatch(/^\d+px$/);
+
+    // Act: rời trang
+    await router.navigate('/admin/products');
+
+    // Assert: các trang khác giữ khoảng cách mặc định
+    await waitFor(() => expect(offset()).toBe(''));
+  });
 });
 
 describe('AdminProductFormPage · sửa (BR-12)', () => {
