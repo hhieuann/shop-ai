@@ -50,4 +50,21 @@ describe('getProduct', () => {
     // Verify
     expect(products.findById).toHaveBeenCalledTimes(1);
   });
+
+  it('getProduct_throwsProductNotFound_whenProductIsSoftDeleted', async () => {
+    // Arrange: BR-14, món admin đã xoá mềm khách thấy như món ẩn
+    const products = {
+      findById: vi
+        .fn()
+        .mockResolvedValue(
+          sampleProduct({ status: 'INACTIVE', deletedAt: '2026-11-25T08:00:00.000Z' }),
+        ),
+    };
+
+    // Act
+    const act = getProduct({ products }, { productId: PRODUCT_ID });
+
+    // Assert
+    await expect(act).rejects.toBeInstanceOf(ProductNotFoundError);
+  });
 });

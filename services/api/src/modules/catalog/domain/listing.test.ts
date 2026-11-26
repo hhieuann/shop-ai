@@ -24,6 +24,18 @@ describe('filterProducts', () => {
     expect(names(result)).toEqual(['Đang bán']);
   });
 
+  it('filterProducts_excludesSoftDeleted_evenIfActive', () => {
+    // Arrange: dữ liệu lệch, món đã xoá mềm (BR-14) mà vẫn ACTIVE không được lọt ra danh sách khách
+    const active = cachedProduct({ name: 'Đang bán' });
+    const deleted = cachedProduct({ name: 'Đã xoá', deletedAt: '2026-11-25T08:00:00.000Z' });
+
+    // Act
+    const result = filterProducts([active, deleted], {});
+
+    // Assert
+    expect(names(result)).toEqual(['Đang bán']);
+  });
+
   it('filterProducts_keepsOnlyCategory_whenCategoryGiven', () => {
     // Arrange
     const gpu = cachedProduct({ name: 'RTX 4070', category: 'gpu' });

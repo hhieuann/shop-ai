@@ -5,6 +5,7 @@ import {
   type QueryCommandOutput,
 } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
+import type { AdminProductGroup } from '../domain/adminProduct.js';
 import {
   PRODUCT_CATEGORIES,
   type Product,
@@ -21,8 +22,14 @@ import type { ProductListReader, ProductRepository } from '../ports.js';
  */
 export const PRODUCTS_BY_CATEGORY_INDEX = 'byCategory';
 
-/** Giá trị khoá GSI. Ai ghi sản phẩm vào bảng (seed, admin) cũng phải ghi kèm thuộc tính này. */
-export function categoryStatusKey(category: ProductCategory, status: ProductStatus): string {
+/**
+ * Giá trị khoá GSI. Ai ghi sản phẩm vào bảng (seed, admin) cũng phải ghi kèm thuộc tính này.
+ * Món admin xoá mềm dùng `DELETED` thay cho trạng thái (catalog.md BR-14).
+ */
+export function categoryStatusKey(
+  category: ProductCategory,
+  status: ProductStatus | AdminProductGroup,
+): string {
   return `${category}#${status}`;
 }
 
@@ -41,6 +48,8 @@ export const productItemSchema = z.object({
   specs: z.record(z.string(), z.unknown()).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  // Có khi admin xoá mềm (catalog.md BR-14); categoryStatus của món đó là `<loại>#DELETED`
+  deletedAt: z.string().optional(),
 });
 
 /** Item để ghi vào bảng: sản phẩm kèm khoá GSI categoryStatus. */

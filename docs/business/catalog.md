@@ -115,16 +115,23 @@ API: `/api/v1/admin/products` (contracts/openapi.yaml, tag `admin`). Màn hình:
   - Khôi phục: bỏ `deletedAt`, về trạng thái đã ẩn (`<loại>#INACTIVE`); muốn bán lại thì hiện lại (BR-13).
   - Không xoá hẳn khỏi bảng: seed prod (`sync-content`) sẽ tạo lại món demo nếu thiếu, và đơn cũ trỏ tới `productId`.
 - BR-15: Thay đổi hiện ở cửa hàng chậm tối đa 60 giây (cache CloudFront và cache trong Lambda catalog).
+- BR-16: Admin tải ảnh sản phẩm từ máy (#560, chốt 25/11/2026):
+  - Chỉ nhóm `admin` (như BR-09). Tệp JPG/JPEG, PNG hoặc WebP; tối đa 3 MB. Không nhận SVG, GIF.
+  - Web xin vé `POST /api/v1/admin/product-images` (khai loại và cỡ), rồi trình duyệt gửi tệp thẳng lên bucket ảnh riêng của shop bằng presigned POST. Vé sống 300 giây; S3 tự từ chối tệp rỗng, quá 3 MB hoặc khác loại đã khai.
+  - Tên tệp do server sinh (`products/<ULID>.<jpg|png|webp>`), không dùng tên tệp trên máy admin, không ghi đè ảnh có sẵn.
+  - Ảnh phục vụ qua CloudFront của shop; `imageUrl` là đường dẫn https đầy đủ cùng tên miền shop, `https://<tên miền shop>/images/products/<ULID>.<đuôi>` (vẫn là `https://` như BR-11).
+  - Admin chịu trách nhiệm ảnh có quyền dùng (site và repo công khai).
+  - Bỏ ảnh vừa chọn (nút X ở web) chỉ bỏ khỏi form, không xoá tệp đã tải.
 
 ### Giới hạn đã biết
 
 - Seed dev, staging (`overwrite`) ghi đè món demo mỗi khi `products.json` đổi: sửa của admin trên món demo ở hai môi trường này có thể mất. Món admin tự thêm không bị đụng. Prod (`sync-content`) bỏ qua món đã sửa sau file hoặc đã xoá (dynamodb-design.md).
 - Bấm lưu hai lần có thể tạo hai món (API thêm không có `Idempotency-Key`); web khoá nút khi đang gửi.
-- Ảnh chỉ nhập URL, chưa tải ảnh lên.
+- Ảnh tải lên mà không dùng (bỏ bằng nút X, thay ảnh khác, sản phẩm không lưu) chưa tự xoá khỏi bucket; dọn bằng lifecycle hoặc job sau. Ảnh không tự thu nhỏ hay đổi sang WebP.
 
 ### Log
 
-Ghi `adminId` (sub), `productId`, hành động (`CREATE`, `UPDATE`, `HIDE`, `SHOW`, `DELETE`, `RESTORE`). Không ghi mô tả, thông số hay toàn bộ body.
+Ghi `adminId` (sub), `productId`, hành động (`CREATE`, `UPDATE`, `HIDE`, `SHOW`, `DELETE`, `RESTORE`; xin vé tải ảnh là `UPLOAD_IMAGE` kèm khoá ảnh thay cho `productId`). Không ghi mô tả, thông số hay toàn bộ body.
 
 ### Tiêu chí nghiệm thu
 
@@ -142,6 +149,10 @@ Ghi `adminId` (sub), `productId`, hành động (`CREATE`, `UPDATE`, `HIDE`, `SH
 - Given món đã xoá, When `POST .../restore`, Then 200, `status = INACTIVE`, không có `deletedAt`.
 - Given món đã xoá, When `PATCH` hoặc `DELETE` lần nữa, Then 404.
 - Given prod chạy seed `sync-content` sau khi admin sửa giá hoặc xoá một món demo, When deploy, Then món đó giữ bản của admin (không bị ghi lại, không được tạo lại).
+- Given admin, When `POST /api/v1/admin/product-images` với `{ contentType: image/webp, size: 524288 }`, Then 200 kèm `upload.url`, `upload.fields`, `imageUrl` `https://<tên miền shop>/images/products/<ULID>.webp`, `expiresAt` sau 300 giây; hai lần xin cho ra hai đường dẫn khác nhau.
+- Given `contentType` `image/svg+xml`, hoặc `size` 0, hoặc `size` 3.145.729, When xin vé, Then 400, không cấp vé.
+- Given khách thường hoặc không có token, When xin vé, Then 403 hoặc 401.
+- Given vé hợp lệ, When trình duyệt gửi tệp 4 MB hoặc khác loại đã khai, Then S3 từ chối (thử tay trên dev sau khi có hạ tầng #561).
 
 ## Cách hiện thực tìm kiếm (quyết định 03/10/2026, chờ An đồng ý)
 
