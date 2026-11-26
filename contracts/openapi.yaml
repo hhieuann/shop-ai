@@ -1056,6 +1056,45 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  /api/v1/admin/product-images:
+    post:
+      operationId: createProductImageUpload
+      summary: Admin xin vé tải ảnh sản phẩm thẳng lên S3
+      description: |
+        Chỉ nhóm `admin` (catalog.md BR-16). Trả vé presigned POST sống 300 giây: trình duyệt gửi
+        `multipart/form-data` gồm mọi trường trong `upload.fields` rồi tới trường `file` (tệp ảnh)
+        tới `upload.url`. Vé có điều kiện cỡ 1 B … 3 MB và đúng `Content-Type` đã khai, nên S3 tự từ
+        chối tệp khác. Khoá do server sinh (`products/<ULID>.<đuôi>`), không dùng tên tệp người dùng.
+        Tải xong thì điền `imageUrl` vào sản phẩm rồi lưu (POST, PATCH `/admin/products`).
+        Ảnh tải lên mà không dùng chưa tự xoá (giới hạn đã biết). Không cache (`no-store`).
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductImageUploadRequest'
+      responses:
+        '200':
+          description: Vé tải ảnh
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImageUpload'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Problem'
+
   # ─── Events ────────────────────────────────────────────────────────────────
   /api/v1/events:
     post:
@@ -1787,6 +1826,9 @@ components:
         imageUrl:
           type: string
           format: uri
+          description: |
+            Đường dẫn https. Ảnh tải lên qua `POST /api/v1/admin/product-images` có dạng
+            `https://<tên miền shop>/images/products/<ULID>.<jpg|png|webp>` (BR-16)
           pattern: '^https://'
           maxLength: 500
         specs:
@@ -1844,7 +1886,9 @@ components:
           minLength: 1
           maxLength: 1000
         imageUrl:
-          description: '`null` để bỏ ảnh'
+          description: |
+            `null` để bỏ ảnh. Như AdminProductCreate: đường dẫn https, kể cả ảnh tải lên
+            `https://<tên miền shop>/images/products/<ULID>.<jpg|png|webp>` (BR-16)
           oneOf:
             - type: string
               format: uri
@@ -1943,6 +1987,68 @@ components:
               type: integer
               minimum: 0
               description: Tồn kho hiện tại (khi `STOCK_CHANGED`)
+
+    # ─── Admin: ảnh sản phẩm (catalog.md BR-16) ─────────────────────────────
+    ProductImageUploadRequest:
+      type: object
+      description: Loại và cỡ tệp định tải lên; web kiểm trước, S3 kiểm lại theo điều kiện của vé
+      required: [contentType, size]
+      additionalProperties: false
+      properties:
+        contentType:
+          type: string
+          description: JPG và JPEG cùng là `image/jpeg`
+          enum: [image/jpeg, image/png, image/webp]
+        size:
+          type: integer
+          description: Cỡ tệp (byte), tối đa 3 MB
+          minimum: 1
+          maximum: 3145728
+      example:
+        contentType: image/webp
+        size: 524288
+
+    ProductImageUpload:
+      type: object
+      required: [upload, imageUrl, expiresAt]
+      properties:
+        upload:
+          type: object
+          required: [url, fields]
+          properties:
+            url:
+              type: string
+              format: uri
+              description: Địa chỉ bucket ảnh để POST tệp
+            fields:
+              type: object
+              description: Các trường form phải gửi kèm trước trường `file`
+              additionalProperties:
+                type: string
+        imageUrl:
+          type: string
+          format: uri
+          description: |
+            Đường dẫn https của ảnh sau khi tải xong (`https://<tên miền shop>/images/products/...`),
+            điền vào `imageUrl` của sản phẩm
+        expiresAt:
+          type: string
+          format: date-time
+          description: Lúc vé hết hạn (300 giây sau khi cấp)
+      example:
+        upload:
+          url: 'https://shop-dev-product-images.s3.ap-southeast-1.amazonaws.com/'
+          fields:
+            key: 'products/01KAB3Q5G00000000000000001.webp'
+            Content-Type: image/webp
+            bucket: shop-dev-product-images
+            X-Amz-Algorithm: AWS4-HMAC-SHA256
+            X-Amz-Credential: 'EXAMPLE/20261126/ap-southeast-1/s3/aws4_request'
+            X-Amz-Date: '20261126T090000Z'
+            Policy: eyJleGFtcGxlIjp0cnVlfQ==
+            X-Amz-Signature: example
+        imageUrl: 'https://d111111abcdef8.cloudfront.net/images/products/01KAB3Q5G00000000000000001.webp'
+        expiresAt: '2026-11-26T09:05:00Z'
 
     # ─── Events ─────────────────────────────────────────────────────────────
     EventInput:

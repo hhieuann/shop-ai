@@ -10,6 +10,7 @@ import {
   type HttpResult,
 } from '../../shared/http/response.js';
 import { logger } from '../../shared/logger.js';
+import type { ProductImageUploadResult } from './application/createProductImageUpload.js';
 import type { ListAdminProductsInput } from './application/listAdminProducts.js';
 import type { UpdateAdminProductInput } from './application/updateAdminProduct.js';
 import {
@@ -18,6 +19,11 @@ import {
   type AdminProductPage,
 } from './domain/adminProduct.js';
 import { MAX_PAGE_SIZE } from './domain/listing.js';
+import {
+  IMAGE_CONTENT_TYPES,
+  MAX_IMAGE_BYTES,
+  type ImageContentType,
+} from './domain/productImage.js';
 import { PRODUCT_CATEGORIES, type Product } from './domain/product.js';
 import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH } from './domain/search.js';
 
@@ -38,6 +44,10 @@ export interface AdminProductUseCases {
     readonly adminId: string;
     readonly productId: string;
   }): Promise<Product>;
+  createProductImageUpload(input: {
+    readonly adminId: string;
+    readonly contentType: ImageContentType;
+  }): Promise<ProductImageUploadResult>;
 }
 
 type Route = (
@@ -98,6 +108,7 @@ const imageUrl = z
   .string({ error: 'imageUrl là chuỗi' })
   .trim()
   .max(500, 'imageUrl tối đa 500 ký tự')
+  // Ảnh tải lên (BR-16) cũng là https đầy đủ: https://<tên miền shop>/images/products/<ULID>.<đuôi>
   .regex(/^https:\/\/\S+$/, 'imageUrl là đường dẫn https://');
 const specs = z
   .record(
@@ -144,6 +155,18 @@ const updateBody = z
     message: 'Gửi ít nhất một trường cần sửa',
     path: [],
   });
+
+/** Body POST /api/v1/admin/product-images (catalog.md BR-16): loại và cỡ tệp định tải lên */
+const imageUploadBody = z.strictObject({
+  contentType: z.enum(IMAGE_CONTENT_TYPES, {
+    error: 'contentType là image/jpeg, image/png hoặc image/webp',
+  }),
+  size: z
+    .number({ error: 'size là số byte' })
+    .int('size là số nguyên')
+    .min(1, 'Tệp rỗng')
+    .max(MAX_IMAGE_BYTES, 'Ảnh tối đa 3 MB'),
+});
 
 /** Body JSON; sai cú pháp thì trả undefined để báo lỗi 400 (như ordering/adminHandler.ts) */
 function readJson(event: APIGatewayProxyEventV2WithJWTAuthorizer): unknown {
@@ -228,6 +251,18 @@ export const adminProductRoutes: Readonly<Record<string, Route>> = {
     if (!params.success) return validationProblem(params.error, event.requestContext.requestId);
     // Không có hoặc chưa xoá → 404
     return noStore(200, await restoreAdminProduct({ adminId, productId: params.data.productId }));
+  },
+  'POST /api/v1/admin/product-images': async (event, adminId, { createProductImageUpload }) => {
+    const traceId = event.requestContext.requestId;
+    const raw = readJson(event);
+    if (raw === undefined) return notJson(traceId);
+    const body = imageUploadBody.safeParse(raw);
+    if (!body.success) return validationProblem(body.error, traceId);
+    // Cỡ chỉ dùng để từ chối sớm; S3 tự chặn theo điều kiện ký kèm vé (1 B … 3 MB)
+    return noStore(
+      200,
+      await createProductImageUpload({ adminId, contentType: body.data.contentType }),
+    );
   },
 };
 
