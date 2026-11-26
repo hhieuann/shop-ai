@@ -45,6 +45,8 @@ export type AdminProductList = Schemas['AdminProductList'];
 export type AdminProductCreate = Schemas['AdminProductCreate'];
 export type AdminProductUpdate = Schemas['AdminProductUpdate'];
 export type AdminProductProblem = Schemas['AdminProductProblem'];
+export type ProductImageUpload = Schemas['ProductImageUpload'];
+export type ProductImageUploadRequest = Schemas['ProductImageUploadRequest'];
 /** Lọc trạng thái của danh sách admin; bỏ trống là đang bán và đã ẩn */
 export type AdminProductStatusFilter = NonNullable<
   operations['listAdminProducts']['parameters']['query']['status']

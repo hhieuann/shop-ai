@@ -188,6 +188,14 @@
   color: var(--fg-danger);
   font-weight: 500;
 }
+/* Đang tải ảnh: nút Lưu bị khoá, nói lý do cạnh nút */
+.barHint {
+  flex: 1;
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
 
 @media (max-width: 959px) {
   .grid {
@@ -214,7 +222,8 @@
   .bar > button {
     flex: 1;
   }
-  .formError {
+  .formError,
+  .barHint {
     flex-basis: 100%;
   }
 }
