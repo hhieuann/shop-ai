@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { getTwoFactorEnabled } from '../../../shared/auth/token';
 import type { Account, SessionStatus } from '../../../shared/auth/useSession';
+import { AdminLayout } from '../../../app/AdminLayout';
 import { AdminOrdersPage } from './AdminOrdersPage';
 
 let session: SessionStatus = 'signedIn';
@@ -14,6 +15,10 @@ let account: Account = {
   status: 'signedIn',
   user: { userId: 'sub-an', username: 'an', email: 'an@example.com', isAdmin: true },
 };
+// Menu tài khoản thật có test riêng (AccountMenu.test.tsx), cần ResizeObserver, matchMedia
+vi.mock('../../../app/AccountMenu', () => ({
+  AccountMenu: () => <button type="button">{'Tài khoản'}</button>,
+}));
 vi.mock('../../../shared/auth/useSession', () => ({
   useSession: () => session,
   useAccount: () => account,
@@ -100,7 +105,10 @@ function renderAt(path = '/admin') {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/admin" element={<AdminOrdersPage />} />
+          {/* Kiểm quyền nằm ở khung quản trị: dựng đúng như router.tsx */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminOrdersPage />} />
+          </Route>
           <Route path="/login" element={<LoginStub />} />
           <Route path="/account/two-factor" element={<TwoFactorStub />} />
         </Routes>
