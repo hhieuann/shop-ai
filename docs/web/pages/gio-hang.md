@@ -87,7 +87,7 @@ column-gap: 16px;  align-items: start;
 |---|---|
 | Đang tải | khung chờ 3 dòng cao 144px trong khối danh sách + khối tóm tắt cao 280px |
 | Lỗi tải | "Chưa tải được giỏ hàng. Tải lại trang để thử lần nữa." `role="alert"` |
-| Giỏ rỗng | **Giữ bố cục hai cột** để trang không đổi khung khi giỏ có hàng. Tiêu đề đổi thành "Giỏ hàng của bạn đang trống". Cột trái: `EmptyState` (icon `ShoppingCart` 48px, "Chưa có sản phẩm nào trong giỏ. Xem hàng mới về bên dưới, hoặc xem tất cả sản phẩm." có link `/products`), dưới là `ProductRail` "Hàng mới về" như trang chủ. Cột phải: `OrderSummary` không có dòng tạm tính, Tổng cộng 0₫, nút `primary lg` "Tiếp tục mua sắm" → `/products`. Điện thoại: không có thanh dính đáy, khối tóm tắt nằm dưới |
+| Giỏ rỗng | **Giữ bố cục hai cột** để trang không đổi khung khi giỏ có hàng. Tiêu đề đổi thành "Giỏ hàng của bạn đang trống". Cột trái: `EmptyState` (icon `ShoppingCart` 48px, "Chưa có sản phẩm nào trong giỏ. Xem hàng mới về bên dưới, hoặc xem tất cả sản phẩm." có link `/products`), dưới là `ProductRail` "Hàng mới về" như trang chủ ("Xem tất cả" → `/new-arrivals`, #567). Cột phải: `OrderSummary` không có dòng tạm tính, Tổng cộng 0₫, nút `primary lg` "Tiếp tục mua sắm" → `/products`. Điện thoại: không có thanh dính đáy, khối tóm tắt nằm dưới |
 | Có món không đặt được | như 3.2; số trong "Chọn tất cả" chỉ đếm món tick được |
 | Mọi món đều không đặt được | nút Đặt hàng vô hiệu, dòng gợi ý "Các sản phẩm trong giỏ hiện chưa đặt được." |
 | Giỏ đủ 50 dòng | không hiện gì ở đây; lỗi `CART_FULL` hiện ở trang chi tiết khi thêm |
