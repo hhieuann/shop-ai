@@ -74,8 +74,16 @@ describe('Ảnh sản phẩm · tên dùng chung hai stack', () => {
     ).toBe('shop-sbx-hoang-product-images-111111111111');
   });
 
-  it('baseUrlParameter_followsRepoPattern', () => {
-    expect(shopBaseUrlParameterName(staging)).toBe('/shop/staging/web/base-url');
+  it('baseUrlParameter_followsStackPrefix_soSandboxesDoNotClash', () => {
+    expect(shopBaseUrlParameterName(staging)).toBe('/shop-stg/web/base-url');
+    // Hai sandbox cùng tài khoản: tên khác nhau (review #564)
+    const sbx = (owner: string): ShopEnvironment => ({
+      name: 'sbx',
+      stackPrefix: `shop-sbx-${owner}`,
+      isProd: false,
+    });
+    expect(shopBaseUrlParameterName(sbx('hoang'))).toBe('/shop-sbx-hoang/web/base-url');
+    expect(shopBaseUrlParameterName(sbx('an'))).not.toBe(shopBaseUrlParameterName(sbx('hoang')));
   });
 
   it('stacks_haveNoCycle_apiDoesNotReferenceWeb', () => {
@@ -235,7 +243,7 @@ describe('Ảnh sản phẩm · CloudFront (stack web)', () => {
 
     // Assert
     web.hasResourceProperties('AWS::SSM::Parameter', {
-      Name: '/shop/staging/web/base-url',
+      Name: '/shop-stg/web/base-url',
       Type: 'String',
       Value: {
         'Fn::Join': [
@@ -258,7 +266,7 @@ describe('Ảnh sản phẩm · Lambda admin sản phẩm (stack api)', () => {
       Environment: {
         Variables: Match.objectLike({
           PRODUCT_IMAGES_BUCKET: 'shop-stg-product-images-111111111111',
-          PRODUCT_IMAGES_BASE_URL_PARAM: '/shop/staging/web/base-url',
+          PRODUCT_IMAGES_BASE_URL_PARAM: '/shop-stg/web/base-url',
         }),
       },
     });
@@ -303,7 +311,7 @@ describe('Ảnh sản phẩm · Lambda admin sản phẩm (stack api)', () => {
     // Assert
     expect(ssm).toHaveLength(1);
     expect(ssm[0]?.Action).toBe('ssm:GetParameter');
-    expect(JSON.stringify(ssm[0]?.Resource)).toContain(':parameter/shop/staging/web/base-url');
+    expect(JSON.stringify(ssm[0]?.Resource)).toContain(':parameter/shop-stg/web/base-url');
     expect(JSON.stringify(statements)).not.toMatch(/ssm:GetParameters|ssm:PutParameter|kms:/);
   });
 });

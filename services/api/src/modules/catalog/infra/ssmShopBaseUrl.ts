@@ -4,8 +4,8 @@ import type { ShopBaseUrlSource } from '../ports.js';
 
 /**
  * Tên miền shop (`https://<cloudfront>`) đọc từ tham số SSM do stack web ghi (hạ tầng #561), vd.
- * `/shop/<env>/web/base-url`. Stack API không nhận thẳng tên miền vì stack web phụ thuộc stack API
- * (vòng phụ thuộc). Đọc ở lần xin vé đầu rồi giữ trong bộ nhớ Lambda như khoá HMAC
+ * `/<tiền tố stack>/web/base-url` (vd. `/shop-dev/web/base-url`). Stack API không nhận thẳng tên miền
+ * vì stack web phụ thuộc stack API (vòng phụ thuộc). Đọc ở lần xin vé đầu rồi giữ trong bộ nhớ Lambda như khoá HMAC
  * (shared/userIdHash.ts); đọc lỗi hoặc giá trị không phải https thì lần sau đọc lại, không giữ lỗi.
  */
 export class SsmShopBaseUrl implements ShopBaseUrlSource {

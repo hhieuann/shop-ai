@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { imageKey, imagePublicUrl, isShopBaseUrl } from './domain/productImage.js';
 import { productImagesConfig } from './productImagesConfig.js';
 
-const PARAM = '/shop/dev/web/base-url';
+const PARAM = '/shop-dev/web/base-url';
 
 describe('productImagesConfig', () => {
   it('enabled_withBucketAndSsmParameterName', () => {
@@ -11,7 +11,7 @@ describe('productImagesConfig', () => {
     ).toEqual({ enabled: true, config: { bucket: 'b', baseUrlParameter: PARAM } });
   });
 
-  it.each(['', 'shop/dev/web/base-url', 'https://d111111abcdef8.cloudfront.net', '/a b'])(
+  it.each(['', 'shop-dev/web/base-url', 'https://d111111abcdef8.cloudfront.net', '/a b'])(
     'disabled_whenParamIsNotSsmName_%s',
     (param) => {
       expect(

@@ -29,9 +29,13 @@ export function productImagesBucketName(shopEnv: ShopEnvironment, account: strin
   return `${shopEnv.stackPrefix}-product-images-${account}`;
 }
 
-/** Tham số SSM chứa tên miền shop `https://<cloudfront>`; stack web ghi, Lambda admin sản phẩm đọc */
+/**
+ * Tham số SSM chứa tên miền shop `https://<cloudfront>`; stack web ghi, Lambda admin sản phẩm đọc.
+ * Đặt theo tiền tố stack (`/shop-dev/…`, `/shop-sbx-hoang/…`), không theo tên môi trường: mọi sandbox
+ * đều là `sbx`, hai sandbox chung một tài khoản sẽ ghi đè tham số của nhau (review #564).
+ */
 export function shopBaseUrlParameterName(shopEnv: ShopEnvironment): string {
-  return `/shop/${shopEnv.name}/web/base-url`;
+  return `/${shopEnv.stackPrefix}/web/base-url`;
 }
 
 export interface ProductImagesProps {

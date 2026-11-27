@@ -3,8 +3,8 @@ export interface ProductImagesConfig {
   /** Bucket ảnh riêng (hạ tầng #561) */
   readonly bucket: string;
   /**
-   * Tên tham số SSM chứa tên miền shop `https://<cloudfront>` (vd. `/shop/<env>/web/base-url`, stack
-   * web ghi). Chỉ là tên tham số; giá trị đọc lúc xin vé đầu (infra/ssmShopBaseUrl.ts)
+   * Tên tham số SSM chứa tên miền shop `https://<cloudfront>` (vd. `/<tiền tố stack>/web/base-url`,
+   * stack web ghi). Chỉ là tên tham số; giá trị đọc lúc xin vé đầu (infra/ssmShopBaseUrl.ts)
    */
   readonly baseUrlParameter: string;
 }
