@@ -6,7 +6,7 @@ A serverless e-commerce shop for PC components and electronics on AWS, with "fre
 
 [![Deploy dev](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml/badge.svg?branch=develop)](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml?query=branch%3Adevelop)
 
-**Live demo (v0.1.0):** https://d1e2x1capwqhry.cloudfront.net. This is a demo shop: no real orders, payments or deliveries.
+**Live demo (production, v1.0.1):** https://d1e2x1capwqhry.cloudfront.net. This is a demo shop: no real orders, payments or deliveries.
 
 ## The problem
 
@@ -16,9 +16,11 @@ Small PC component shops do not have enough staff to answer "if I buy this, what
 
 | Version | Date | Contents |
 |---|---|---|
-| **v0.1.0** (released) | 22 Oct 2026 | Browse, filter and search products; sign up and sign in; guest cart and account cart, merged on sign-in; monitoring with alarms, dashboard and runbooks. Accepted by the team on staging, then deployed to production. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
-| v0.2.0 (in progress) | planned 2 Nov 2026 | Ordering with asynchronous processing and email confirmation; behaviour events; nightly recommendation pipeline and the recommendation widgets |
-| Later | Nov 2026 | Admin pages, WAF and security headers, load and security testing |
+| v0.1.0 (released) | 22 Oct 2026 | Browse, filter and search products; sign up and sign in; guest cart and account cart, merged on sign-in; monitoring with alarms, dashboard and runbooks. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
+| v0.2.0 (released) | 5 Nov 2026 | Ordering with asynchronous processing (SQS) and email confirmation (SES); behaviour events; nightly recommendation pipeline and the recommendation widgets. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v0.2.0) |
+| v1.0.0 (released) | 23 Nov 2026 | New order pages; admin order management and cancellation; forgot password with sign-out on every device; account page (change password and username); WAF with the core rule set and security headers in front of CloudFront; load and security testing. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.0) |
+| **v1.0.1** (released, in production) | 28 Nov 2026 | Two-factor authentication (TOTP); sign-in changes in another tab are picked up at once; longer product descriptions and specs. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.1) |
+| Next | Dec 2026 | Admin product management with image upload (in review) |
 
 ## What this project demonstrates
 
@@ -30,7 +32,7 @@ Small PC component shops do not have enough staff to answer "if I buy this, what
 
 ## Architecture
 
-A static React web app on S3 + CloudFront. The API is an HTTP API with Lambda (TypeScript) and DynamoDB, with sign-in through Amazon Cognito. Orders go through SQS and confirmation emails through SES. Recommendations come from models the team built (association rules and item-based collaborative filtering), computed nightly and written to DynamoDB. WAF in front of CloudFront is planned for November.
+A static React web app on S3 + CloudFront. The API is an HTTP API with Lambda (TypeScript) and DynamoDB, with sign-in through Amazon Cognito. Orders go through SQS and confirmation emails through SES. Recommendations come from models the team built (association rules and item-based collaborative filtering), computed nightly and written to DynamoDB. In production, AWS WAF in front of CloudFront blocks common attacks with the core rule set.
 
 The AWS architecture diagram, drawn by the team, will be placed in `docs/architecture/`. The reasons for each choice are in [docs/adr/](docs/adr/).
 
@@ -41,7 +43,7 @@ The AWS architecture diagram, drawn by the team, will be placed in `docs/archite
 | Web | React, Vite, TypeScript, TanStack Query |
 | API | AWS Lambda (Node.js 24, arm64), API Gateway HTTP API, Powertools for AWS Lambda |
 | Data | DynamoDB; S3 for training data |
-| Recommendations | Python 3.13: association rules, item-based collaborative filtering; nightly run on Lambda with EventBridge Scheduler (in progress) |
+| Recommendations | Python (3.13 locally, 3.14 on Lambda): association rules, item-based collaborative filtering; nightly run on Lambda with EventBridge Scheduler |
 | Infrastructure | AWS CDK v2, cdk-nag |
 | CI/CD | GitHub Actions + OIDC |
 | Testing | Vitest (including API E2E), Testcontainers, pytest, k6, OWASP ZAP, Schemathesis |
@@ -113,7 +115,7 @@ Most documents are written in Vietnamese, the team's working language.
 - [Engineering plan](docs/engineering-plan.md): process, layers, build, CI/CD, operations
 - [Project plan](docs/project-plan.md): problem, personas, scope
 - [Threat model](docs/security/threat-model.md)
-- [v0.1.0 release checklist](docs/releases/v0.1.0.md): acceptance tests and results
+- [Release checklists](docs/releases/): acceptance tests and results for every release
 - [ADRs](docs/adr/) · [Business rules](docs/business/) · [Runbooks](docs/runbooks/) · [FCAJ workshop](docs/workshop/)
 - [Repository setup](docs/setup-checklist.md)
 - [Contributing](CONTRIBUTING.md)
