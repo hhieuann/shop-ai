@@ -62,7 +62,9 @@ export async function updateAdminProduct(
     now: deps.now(),
   });
   if (!saved) {
-    const latest = await deps.products.findById(input.productId);
+    // Đọc nhất quán: đọc thường có thể ra bản cũ (vd. tồn kho vừa trừ 12 → 10 mà updatedAt không đổi)
+    // rồi trả PRODUCT_CHANGED thay vì STOCK_CHANGED
+    const latest = await deps.products.findById(input.productId, { consistent: true });
     if (!latest || latest.deletedAt !== undefined) throw new ProductNotFoundError(input.productId);
     // Không rõ lý do (vd. đổi rồi đổi lại đúng giá trị cũ): coi như vừa được sửa ở nơi khác
     throw conflictOf(latest, input) ?? new ProductChangedError(latest);

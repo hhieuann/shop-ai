@@ -44,6 +44,18 @@ describe('DynamoProductRepository', () => {
     expect(result).toEqual(product);
   });
 
+  it('findById_readsLatestWrite_withConsistentRead', async () => {
+    // Arrange: ghi rồi đọc ngay bằng đọc nhất quán (lần đọc lại sau khi ghi bị chặn, #555)
+    const product = sampleProduct({ productId: '01K6PZ3Q5G0000000000000003', stock: 10 });
+    await dynamo.doc.send(new PutCommand({ TableName: TABLE, Item: product }));
+
+    // Act
+    const result = await repo.findById(product.productId, { consistent: true });
+
+    // Assert
+    expect(result).toMatchObject({ productId: product.productId, stock: 10 });
+  });
+
   it('findById_returnsNull_whenItemMissing', async () => {
     // Act
     const result = await repo.findById('01K6PZ3Q5G0000000000000099');
