@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../../shared/api/client';
 import { recordEvent } from '../../../shared/api/events';
@@ -85,6 +85,18 @@ export function useCart() {
 
   // ── Giỏ khách ──
   const lines = useGuestLines();
+
+  // Tab khác vừa đăng nhập rồi gộp giỏ khách vào tài khoản (dang-nhap.md "Nhiều tab", #573): tin đăng
+  // nhập tới trước khi gộp xong nên tab này có thể đã đọc giỏ tài khoản thiếu món vừa gộp. Giỏ khách
+  // chuyển từ có món về rỗng là lúc gộp xong: đọc lại giỏ tài khoản. Chỉ khi đã đăng nhập, chỉ lúc chuyển
+  const hadGuestLines = useRef(lines.length > 0);
+  useEffect(() => {
+    const hasGuestLines = lines.length > 0;
+    if (session === 'signedIn' && hadGuestLines.current && !hasGuestLines) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+    }
+    hadGuestLines.current = hasGuestLines;
+  }, [session, lines.length, queryClient]);
   const products = useQueries({
     queries: (isGuest ? lines : []).map((line) => ({
       queryKey: queryKeys.products.detail(line.productId),
