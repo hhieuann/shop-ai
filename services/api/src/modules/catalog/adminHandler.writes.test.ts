@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { sampleProduct } from '../../../test/helpers/catalog.js';
 import { apiEvent, parseBody } from '../../../test/helpers/http.js';
+import type { HttpResult } from '../../shared/http/response.js';
 import { makeAdminProductHandler, type AdminProductUseCases } from './adminHandler.js';
 import {
   InvalidSpecKeysError,
@@ -334,5 +335,68 @@ describe('admin product handler · DELETE, restore (BR-14)', () => {
 
     // Assert
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe('admin product handler · mọi phản hồi đều no-store (catalog.md BR-09)', () => {
+  const failing = (error: unknown) => {
+    const uc = useCases();
+    uc.updateAdminProduct.mockRejectedValue(error);
+    return uc;
+  };
+  it.each<[string, () => Promise<HttpResult>, number]>([
+    [
+      '400 body sai',
+      () => makeAdminProductHandler(useCases())(writeEvent(UPDATE, { updatedAt: SEEN, price: -1 })),
+      400,
+    ],
+    [
+      '401 thiếu sub',
+      () =>
+        makeAdminProductHandler(useCases())(
+          apiEvent({
+            routeKey: UPDATE,
+            claims: ADMIN_CLAIMS,
+            pathParameters: { productId: PRODUCT_ID },
+          }),
+        ),
+      401,
+    ],
+    [
+      '403 khách thường',
+      () => makeAdminProductHandler(useCases())(writeEvent(UPDATE, { updatedAt: SEEN }, {})),
+      403,
+    ],
+    [
+      '404 không thấy',
+      () =>
+        makeAdminProductHandler(failing(new ProductNotFoundError(PRODUCT_ID)))(
+          writeEvent(UPDATE, { updatedAt: SEEN, price: 2 }),
+        ),
+      404,
+    ],
+    [
+      '409 tồn kho đổi',
+      () =>
+        makeAdminProductHandler(failing(new StockChangedError(10)))(
+          writeEvent(UPDATE, { updatedAt: SEEN, stock: 20, expectedStock: 12 }),
+        ),
+      409,
+    ],
+    [
+      '500 lỗi lạ',
+      () =>
+        makeAdminProductHandler(failing(new Error('boom')))(
+          writeEvent(UPDATE, { updatedAt: SEEN, price: 2 }),
+        ),
+      500,
+    ],
+  ])('returnsNoStore_for_%s', async (_name, call, status) => {
+    // Act
+    const res = await call();
+
+    // Assert
+    expect(res.statusCode).toBe(status);
+    expect(res.headers).toMatchObject({ 'cache-control': 'no-store' });
   });
 });

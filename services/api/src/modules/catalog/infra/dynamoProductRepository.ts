@@ -69,9 +69,16 @@ export class DynamoProductRepository implements ProductRepository, ProductListRe
     private readonly options: DynamoProductRepositoryOptions = {},
   ) {}
 
-  async findById(productId: string): Promise<Product | null> {
+  async findById(
+    productId: string,
+    options: { readonly consistent?: boolean } = {},
+  ): Promise<Product | null> {
     const { Item } = await this.db.send(
-      new GetCommand({ TableName: this.tableName, Key: { productId } }),
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { productId },
+        ...(options.consistent && { ConsistentRead: true }),
+      }),
     );
     if (!Item) return null;
     // Dữ liệu trong bảng sai kiểu thì báo lỗi ngay, không trả dữ liệu hỏng cho web.
