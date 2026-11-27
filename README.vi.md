@@ -19,7 +19,7 @@ Shop nhỏ bán linh kiện máy tính không đủ người tư vấn "mua món
 | v0.1.0 (đã phát hành) | 22/10/2026 | Xem, lọc, tìm sản phẩm; đăng ký, đăng nhập; giỏ khách và giỏ tài khoản, gộp giỏ khi đăng nhập; giám sát gồm alarm, dashboard, runbook. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
 | v0.2.0 (đã phát hành) | 05/11/2026 | Đặt hàng xử lý bất đồng bộ (SQS), email xác nhận (SES); ghi sự kiện hành vi; pipeline gợi ý mỗi đêm và các widget gợi ý. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v0.2.0) |
 | v1.0.0 (đã phát hành) | 23/11/2026 | Trang đơn hàng mới; admin quản lý và huỷ đơn; quên mật khẩu kèm đăng xuất mọi thiết bị; trang tài khoản (đổi mật khẩu, username); WAF với bộ luật core và header bảo mật trước CloudFront; kiểm thử tải và bảo mật. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.0) |
-| **v1.0.1** (đã phát hành, đang chạy prod) | 28/11/2026 | Xác thực hai lớp (TOTP); đổi người đăng nhập ở tab khác thì tab cũ cập nhật ngay; mô tả và thông số sản phẩm đầy đủ hơn. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.1) |
+| **v1.0.1** (đã phát hành, đang chạy prod) | 27/11/2026 | Xác thực hai lớp (TOTP); đổi người đăng nhập ở tab khác thì tab cũ cập nhật ngay; mô tả và thông số sản phẩm đầy đủ hơn. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.1) |
 | Tiếp theo | 12/2026 | Admin quản lý sản phẩm, tải ảnh lên (đang review) |
 
 ## Dự án thể hiện được gì
