@@ -3,7 +3,11 @@ import type { Product, ProductCategory } from './domain/product.js';
 
 /** Use case chỉ biết interface này; adapter DynamoDB nằm trong infra/. */
 export interface ProductRepository {
-  findById(id: string): Promise<Product | null>;
+  /**
+   * `consistent`: đọc nhất quán (ConsistentRead), dùng khi vừa ghi có điều kiện bị chặn và cần bản mới
+   * nhất để chọn lỗi đúng (vd. API admin sửa sản phẩm, #555). Mặc định đọc thường.
+   */
+  findById(id: string, options?: { readonly consistent?: boolean }): Promise<Product | null>;
 }
 
 /** Đọc danh sách cho GET /api/v1/products. */

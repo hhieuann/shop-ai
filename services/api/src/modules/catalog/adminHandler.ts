@@ -154,8 +154,7 @@ function notJson(traceId: string): HttpResult {
 
 /** Dữ liệu quản trị: không cache ở CloudFront hay trình duyệt (catalog.md BR-09) */
 function noStore(status: number, body: unknown): HttpResult {
-  const result = json(status, body);
-  return { ...result, headers: { ...result.headers, 'cache-control': 'no-store' } };
+  return withNoStore(json(status, body));
 }
 
 /** Bảng route → use case. Khoá trùng route trong contracts/openapi.yaml và HTTP API ở infra/. */
@@ -211,9 +210,10 @@ export const adminProductRoutes: Readonly<Record<string, Route>> = {
  * API admin sản phẩm (catalog.md BR-09 … BR-15), chạy ở Lambda riêng (adminLambda.ts).
  * Route gắn JWT authorizer của Cognito nên token đã được kiểm; thiếu `sub` vẫn chặn 401.
  * Không thuộc nhóm `admin` → 403 trước khi đọc bảng: kiểm ở đây, không dựa vào giao diện.
+ * Mọi phản hồi, kể cả lỗi 400, 401, 403, 404, 409, đều `cache-control: no-store` (BR-09).
  */
 export function makeAdminProductHandler(useCases: AdminProductUseCases) {
-  return async (event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<HttpResult> => {
+  const handle = async (event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<HttpResult> => {
     const traceId = event.requestContext.requestId;
     const claims = event.requestContext.authorizer?.jwt?.claims;
     const sub = claims?.sub;
@@ -249,4 +249,10 @@ export function makeAdminProductHandler(useCases: AdminProductUseCases) {
       return errorToProblem(error, traceId);
     }
   };
+  return async (event: APIGatewayProxyEventV2WithJWTAuthorizer): Promise<HttpResult> =>
+    withNoStore(await handle(event));
+}
+
+function withNoStore(result: HttpResult): HttpResult {
+  return { ...result, headers: { ...result.headers, 'cache-control': 'no-store' } };
 }
