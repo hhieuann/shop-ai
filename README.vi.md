@@ -6,7 +6,7 @@ Shop linh kiện và thiết bị điện tử chạy serverless trên AWS, có 
 
 [![Deploy dev](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml/badge.svg?branch=develop)](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml?query=branch%3Adevelop)
 
-**Bản demo (v0.1.0):** https://d1e2x1capwqhry.cloudfront.net. Đây là shop demo: không có đơn hàng, thanh toán hay giao hàng thật.
+**Bản demo (production, v1.0.0):** https://d1e2x1capwqhry.cloudfront.net. Đây là shop demo: không có đơn hàng, thanh toán hay giao hàng thật.
 
 ## Bài toán
 
@@ -16,9 +16,11 @@ Shop nhỏ bán linh kiện máy tính không đủ người tư vấn "mua món
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
-| **v0.1.0** (đã phát hành) | 22/10/2026 | Xem, lọc, tìm sản phẩm; đăng ký, đăng nhập; giỏ khách và giỏ tài khoản, gộp giỏ khi đăng nhập; giám sát gồm alarm, dashboard, runbook. Cả nhóm nghiệm thu trên staging rồi mới deploy prod. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
-| v0.2.0 (đang làm) | dự kiến 02/11/2026 | Đặt hàng xử lý bất đồng bộ, email xác nhận; ghi sự kiện hành vi; pipeline gợi ý mỗi đêm và các widget gợi ý |
-| Sau đó | 11/2026 | Trang admin, WAF và header bảo mật, kiểm thử tải và bảo mật |
+| v0.1.0 (đã phát hành) | 22/10/2026 | Xem, lọc, tìm sản phẩm; đăng ký, đăng nhập; giỏ khách và giỏ tài khoản, gộp giỏ khi đăng nhập; giám sát gồm alarm, dashboard, runbook. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
+| v0.2.0 (đã phát hành) | 05/11/2026 | Đặt hàng xử lý bất đồng bộ (SQS), email xác nhận (SES); ghi sự kiện hành vi; pipeline gợi ý mỗi đêm và các widget gợi ý. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v0.2.0) |
+| **v1.0.0** (đã phát hành, đang chạy prod) | 23/11/2026 | Trang đơn hàng mới; admin quản lý và huỷ đơn; quên mật khẩu kèm đăng xuất mọi thiết bị; trang tài khoản (đổi mật khẩu, username); WAF với bộ luật core và header bảo mật trước CloudFront; kiểm thử tải và bảo mật. [Release note](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.0) |
+| v1.0.1 (đang nghiệm thu) | dự kiến 28/11/2026 | Xác thực hai lớp (TOTP); đổi người đăng nhập ở tab khác thì tab cũ cập nhật ngay; mô tả và thông số sản phẩm đầy đủ hơn. [Checklist](docs/releases/v1.0.1.md) |
+| Tiếp theo | 12/2026 | Admin quản lý sản phẩm, tải ảnh lên (đang review) |
 
 ## Dự án thể hiện được gì
 
@@ -30,7 +32,7 @@ Shop nhỏ bán linh kiện máy tính không đủ người tư vấn "mua món
 
 ## Kiến trúc
 
-Web React tĩnh trên S3 + CloudFront. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý do mô hình nhóm tự xây (luật mua kèm, gợi ý theo món tương tự) tính mỗi đêm rồi ghi vào DynamoDB. WAF trước CloudFront làm trong tháng 11.
+Web React tĩnh trên S3 + CloudFront. API là HTTP API + Lambda (TypeScript) + DynamoDB, đăng nhập bằng Cognito. Đơn hàng đi qua SQS, email gửi bằng SES. Gợi ý do mô hình nhóm tự xây (luật mua kèm, gợi ý theo món tương tự) tính mỗi đêm rồi ghi vào DynamoDB. Trên prod, AWS WAF đặt trước CloudFront chặn các kiểu tấn công phổ biến bằng bộ luật core.
 
 Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture/`. Lý do cho từng lựa chọn nằm trong [docs/adr/](docs/adr/).
 
@@ -41,7 +43,7 @@ Sơ đồ kiến trúc AWS do nhóm tự vẽ sẽ đặt ở `docs/architecture
 | Web | React, Vite, TypeScript, TanStack Query |
 | API | AWS Lambda (Node.js 24, arm64), HTTP API, Powertools for AWS Lambda |
 | Dữ liệu | DynamoDB; S3 cho dữ liệu train |
-| Gợi ý | Python 3.13: luật mua kèm, gợi ý theo món tương tự; chạy mỗi đêm trên Lambda bằng EventBridge Scheduler (đang làm) |
+| Gợi ý | Python (3.13 trên máy, 3.14 trên Lambda): luật mua kèm, gợi ý theo món tương tự; chạy mỗi đêm trên Lambda bằng EventBridge Scheduler |
 | Hạ tầng | AWS CDK v2, cdk-nag |
 | CI/CD | GitHub Actions + OIDC |
 | Kiểm thử | Vitest (cả E2E API), Testcontainers, pytest, k6, OWASP ZAP, Schemathesis |
@@ -112,7 +114,7 @@ Chi tiết: [infra/README.md](infra/README.md).
 - [Góp ý kế hoạch 30/09](docs/review-2026-09-30.md): các chỗ đã sửa trong kế hoạch ban đầu, link lab theo vai
 - [Kế hoạch dự án](docs/project-plan.md): bài toán, persona, phạm vi
 - [Threat model](docs/security/threat-model.md)
-- [Checklist phát hành v0.1.0](docs/releases/v0.1.0.md): các bước nghiệm thu và kết quả
+- [Checklist phát hành](docs/releases/): các bước nghiệm thu và kết quả của từng bản
 - [ADR](docs/adr/) · [Nghiệp vụ](docs/business/) · [Runbook](docs/runbooks/) · [Workshop FCAJ](docs/workshop/)
 - [Việc thiết lập repo](docs/setup-checklist.md)
 - [Cách đóng góp](CONTRIBUTING.md)
