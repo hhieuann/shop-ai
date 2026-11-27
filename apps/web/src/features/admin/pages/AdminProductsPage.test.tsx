@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AdminProductsPage } from './AdminProductsPage';
 
 const UPDATED_AT = '2026-11-20T03:15:00.000Z';
@@ -84,8 +84,10 @@ function Where() {
   return <p data-testid="where">{`${location.pathname}${location.search}`}</p>;
 }
 
-function renderAt(path = '/admin/products') {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderAt(
+  path = '/admin/products',
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
@@ -194,6 +196,88 @@ describe('AdminProductsPage · danh sách (pages/admin-san-pham.md mục 2)', ()
     // Assert: chờ ngừng gõ 300 ms rồi mới đổi URL
     await waitFor(() =>
       expect(screen.getByTestId('where')).toHaveTextContent('/admin/products?q=legion'),
+    );
+  });
+
+  it('search_keepsFocusAndText_whileTypingAfterUrlUpdates', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderAt();
+    await screen.findByText(ACTIVE.name);
+    const box = screen.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' });
+
+    // Act: gõ, chờ URL đổi (ngừng gõ 300 ms), gõ tiếp
+    await user.type(box, 'leg');
+    await waitFor(() =>
+      expect(screen.getByTestId('where')).toHaveTextContent('/admin/products?q=leg'),
+    );
+    await user.type(screen.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' }), 'ion');
+
+    // Assert: vẫn là ô cũ, giữ focus, đủ chữ (review #558)
+    const after = screen.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' });
+    expect(after).toBe(box);
+    expect(after).toHaveFocus();
+    expect(after).toHaveValue('legion');
+    await waitFor(() =>
+      expect(screen.getByTestId('where')).toHaveTextContent('/admin/products?q=legion'),
+    );
+  });
+
+  it('search_showsUrlKeyword_afterBrowserBack', async () => {
+    // Arrange: lịch sử có hai từ khoá, đang ở từ khoá sau
+    const user = userEvent.setup();
+    function Back() {
+      const navigate = useNavigate();
+      return (
+        <button type="button" onClick={() => navigate(-1)}>
+          Quay lại
+        </button>
+      );
+    }
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MemoryRouter
+          initialEntries={['/admin/products?q=acer', '/admin/products?q=dell']}
+          initialIndex={1}
+        >
+          <Routes>
+            <Route
+              path="/admin/products"
+              element={
+                <>
+                  <AdminProductsPage />
+                  <Back />
+                </>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const box = await screen.findByRole('searchbox', { name: 'Tìm sản phẩm theo tên' });
+    expect(box).toHaveValue('dell');
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Quay lại' }));
+
+    // Assert: ô ra từ khoá cũ của URL
+    await waitFor(() =>
+      expect(screen.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' })).toHaveValue('acer'),
+    );
+  });
+
+  it('emptyLaterPage_goesBackToFirstPage_keepingFilters', async () => {
+    // Arrange: trang 2 rỗng (vd. vừa xoá món cuối của trang)
+    listResponse = () => json({ items: [], counts: COUNTS });
+
+    // Act
+    renderAt('/admin/products?status=INACTIVE&cursor=abc&page=2');
+
+    // Assert: về trang 1 cùng bộ lọc, không báo "chưa có sản phẩm" ở trang 2
+    await waitFor(() =>
+      expect(screen.getByTestId('where')).toHaveTextContent(/^\/admin\/products\?status=INACTIVE$/),
     );
   });
 
@@ -330,6 +414,27 @@ describe('AdminProductsPage · thao tác (BR-13, BR-14)', () => {
       await screen.findByText(`Đã khôi phục "${DELETED.name}". Sản phẩm đang ở trạng thái đã ẩn.`),
     ).toBeInTheDocument();
     expect(calls('POST')[0]?.[0]).toBe(`/api/v1/admin/products/${DELETED.productId}/restore`);
+  });
+
+  it('restore_putsReturnedProductIntoDetailCache', async () => {
+    // Arrange: cache chi tiết còn bản đã xoá (trang sửa từng mở)
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const detailKey = ['admin', 'products', 'detail', DELETED.productId];
+    queryClient.setQueryData(detailKey, DELETED);
+    const restored = { ...DELETED, deletedAt: undefined, updatedAt: '2026-11-27T09:00:00.000Z' };
+    listResponse = () => json({ items: [DELETED], counts: COUNTS });
+    writeResponse = () => json(restored);
+    renderAt('/admin/products?status=DELETED', queryClient);
+    await screen.findByText(DELETED.name);
+
+    // Act
+    await user.click(
+      within(row(DELETED.name)).getByRole('button', { name: `Khôi phục: ${DELETED.name}` }),
+    );
+
+    // Assert: trang sửa mở ngay sau đó dùng bản vừa khôi phục (review #559)
+    await waitFor(() => expect(queryClient.getQueryData(detailKey)).toEqual(restored));
   });
 
   it('conflict409_tellsChangedElsewhere_andReloads', async () => {

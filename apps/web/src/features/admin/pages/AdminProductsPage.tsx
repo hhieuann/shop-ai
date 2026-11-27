@@ -109,6 +109,15 @@ function AdminProducts() {
       { replace },
     );
 
+  // Trang sau trang 1 tải xong mà rỗng (vd. vừa xoá món cuối của trang): về trang 1, giữ bộ lọc,
+  // thay mục lịch sử thay vì thêm (review #558)
+  const emptyLaterPage =
+    filters.page > 1 && data !== undefined && !error && data.items.length === 0;
+  useEffect(() => {
+    if (emptyLaterPage) go({}, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- go tạo mới mỗi lần vẽ; chỉ chạy khi cờ đổi
+  }, [emptyLaterPage]);
+
   // Thao tác đang chờ hỏi lại (chỉ xoá mới hỏi lại; ẩn, hiện, khôi phục làm ngay)
   const [toDelete, setToDelete] = useState<AdminProduct | null>(null);
   const action = useMutation({
@@ -127,8 +136,12 @@ function AdminProducts() {
         status: kind === 'hide' ? 'INACTIVE' : 'ACTIVE',
       });
     },
-    onSuccess: (_result, { kind, product }) => {
+    onSuccess: (result, { kind, product }) => {
       setToDelete(null);
+      // Khôi phục trả bản mới: trang sửa mở ngay sau đó dùng luôn bản này (review #559)
+      if (kind === 'restore' && result) {
+        queryClient.setQueryData(queryKeys.admin.product(result.productId), result);
+      }
       toast.show(
         {
           hide: `Đã ẩn "${product.name}" khỏi cửa hàng.`,
@@ -156,7 +169,8 @@ function AdminProducts() {
 
   /** Tải lại danh sách và số đếm; dòng vừa đổi rời danh sách thì focus về tiêu đề */
   async function reload() {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.admin.productLists() });
+    // Cả danh sách lẫn chi tiết: trang sửa mở sau đó không được dùng bản cũ (#559)
+    await queryClient.invalidateQueries({ queryKey: queryKeys.admin.productsAll() });
     requestAnimationFrame(() => {
       const lost = document.activeElement === null || document.activeElement === document.body;
       if (lost) headingRef.current?.focus();
@@ -225,11 +239,7 @@ function AdminProducts() {
 
       <section className={styles.block} aria-label="Danh sách sản phẩm">
         <div className={styles.toolbar}>
-          <SearchBox
-            key={filters.q ?? ''}
-            initial={filters.q ?? ''}
-            onSearch={(q) => go({ q: q || undefined }, true)}
-          />
+          <SearchBox initial={filters.q ?? ''} onSearch={(q) => go({ q: q || undefined }, true)} />
           <Select
             label="Loại hàng"
             hideLabel
@@ -260,7 +270,7 @@ function AdminProducts() {
           </nav>
         </div>
 
-        {isPending ? (
+        {isPending || emptyLaterPage ? (
           <p className={styles.message}>Đang tải sản phẩm…</p>
         ) : error ? (
           <p role="alert" className={styles.message}>
@@ -345,19 +355,34 @@ function AdminProducts() {
 /** Ô tìm theo tên: gửi khi Enter hoặc sau 300 ms ngừng gõ (pages/admin-san-pham.md mục 2) */
 function SearchBox({ initial, onSearch }: { initial: string; onSearch: (q: string) => void }) {
   const [value, setValue] = useState(initial);
+  // Từ khoá ô này vừa gửi lên URL. URL đổi đúng bằng từ khoá này là do chính ô gửi: giữ nguyên chữ
+  // đang gõ (không tạo lại ô, không mất focus, review #558)
+  const sentRef = useRef(initial);
   const onSearchRef = useRef(onSearch);
   onSearchRef.current = onSearch;
 
+  // URL đổi từ ngoài (back, forward, bấm link): ô hiện từ khoá của URL
+  useEffect(() => {
+    if (initial === sentRef.current) return;
+    sentRef.current = initial;
+    setValue(initial);
+  }, [initial]);
+
+  const send = (q: string) => {
+    sentRef.current = q;
+    onSearchRef.current(q);
+  };
+
   useEffect(() => {
     const q = value.trim();
-    if (q === initial) return;
-    const timer = setTimeout(() => onSearchRef.current(q), SEARCH_DELAY_MS);
+    if (q === sentRef.current) return;
+    const timer = setTimeout(() => send(q), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [value, initial]);
+  }, [value]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (value.trim() !== initial) onSearch(value.trim());
+    if (value.trim() !== sentRef.current) send(value.trim());
   };
 
   return (

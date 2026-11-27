@@ -135,8 +135,10 @@ function NewLoader() {
 }
 
 function EditLoader({ productId }: { productId: string }) {
-  const { data, error } = useAdminProduct(productId);
-  if (!data) return <LoadState error={error} />;
+  const { data, error, isFetchedAfterMount } = useAdminProduct(productId);
+  // Form chép giá trị một lần: chờ bản mới đọc sau khi mở trang, không vẽ từ bản cũ trong cache
+  // (gửi updatedAt cũ sẽ bị 409, review #559). Lần tải lại ngầm sau đó không vẽ lại form
+  if (!data || !isFetchedAfterMount) return <LoadState error={error} />;
   return <ProductForm key={productId} initialCategory={data.category} product={data} />;
 }
 
