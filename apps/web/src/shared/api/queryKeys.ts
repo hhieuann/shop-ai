@@ -21,7 +21,9 @@ export const queryKeys = {
     all: ['admin'] as const,
     /** Một trang đơn theo trạng thái; cursor của trang đang xem (undefined: trang 1) */
     orders: (status: string, cursor?: string) => ['admin', 'orders', status, cursor ?? ''] as const,
-    /** Mọi danh sách sản phẩm admin (tải lại sau khi ẩn, xoá, khôi phục) */
+    /** Mọi dữ liệu sản phẩm admin, cả danh sách lẫn chi tiết (tải lại sau khi ẩn, hiện, xoá, khôi phục) */
+    productsAll: () => ['admin', 'products'] as const,
+    /** Mọi danh sách sản phẩm admin */
     productLists: () => ['admin', 'products', 'list'] as const,
     /** Một trang sản phẩm admin theo bộ lọc trên URL và cursor của trang đang xem */
     products: (params: Record<string, unknown>) => ['admin', 'products', 'list', params] as const,

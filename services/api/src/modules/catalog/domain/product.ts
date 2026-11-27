@@ -37,6 +37,8 @@ export interface Product {
   /** ISO 8601 UTC */
   readonly createdAt: string;
   readonly updatedAt: string;
+  /** Lúc admin xoá mềm (BR-14); không có trường này nghĩa là chưa xoá. Không trả ra API khách */
+  readonly deletedAt?: string;
 }
 
 /** Thông tin rút gọn cho danh sách, khớp schema ProductSummary trong OpenAPI. */
@@ -53,9 +55,12 @@ export interface ProductSummary {
   readonly specs?: Readonly<Record<string, unknown>>;
 }
 
-/** BR-04: sản phẩm INACTIVE không hiển thị cho khách, kể cả ở trang chi tiết. */
-export function isVisibleToCustomers(product: Pick<Product, 'status'>): boolean {
-  return product.status === 'ACTIVE';
+/**
+ * BR-04: sản phẩm INACTIVE không hiển thị cho khách, kể cả ở trang chi tiết. Món đã xoá mềm (BR-14)
+ * luôn là INACTIVE; kiểm thêm `deletedAt` để dữ liệu lệch (có `deletedAt` mà vẫn ACTIVE) cũng không lộ.
+ */
+export function isVisibleToCustomers(product: Pick<Product, 'status' | 'deletedAt'>): boolean {
+  return product.status === 'ACTIVE' && product.deletedAt === undefined;
 }
 
 /** BR-08: hết hàng vẫn hiển thị nhưng xếp cuối danh sách. */
