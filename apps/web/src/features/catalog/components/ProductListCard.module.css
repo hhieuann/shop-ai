@@ -18,7 +18,6 @@
   display: grid;
   place-items: center;
   aspect-ratio: 259 / 236;
-  padding: 28px var(--space-100) var(--space-100);
   border-radius: var(--radius-lg);
   background: var(--bg-subtle);
   overflow: hidden;
@@ -29,15 +28,22 @@
 }
 .badge {
   position: absolute;
+  z-index: 1; /* nổi trên ảnh phủ kín ô */
   top: var(--space-100);
   left: var(--space-100);
   line-height: 0;
 }
 .image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  mix-blend-mode: multiply; /* nền trắng của ảnh hoà vào ô xám */
+  object-fit: cover; /* ô 259/236 cắt ~4,4% trên dưới, nằm trong lề dọc 5% của ảnh */
+  mix-blend-mode: multiply; /* ảnh demo phủ kín ô, lề đã nằm trong ảnh (§9.34); nền trắng của ảnh hoà vào ô xám */
+}
+.image[data-source='api'] {
+  padding: 28px var(--space-100) var(--space-100); /* dải trên 28px cho nhãn tồn kho, nhãn không che ảnh */
+  object-fit: contain; /* ảnh API (admin tải lên, mọi tỉ lệ): giữ contain và lề như trước, không cắt mất sản phẩm */
 }
 .noImage {
   display: grid;

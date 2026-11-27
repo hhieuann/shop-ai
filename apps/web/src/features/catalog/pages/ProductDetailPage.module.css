@@ -42,12 +42,13 @@
 
 /* ── Ảnh ── */
 .media {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
   max-width: var(--pdp-media-max);
   aspect-ratio: 1;
-  padding: var(--space-300);
+  overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--bg-subtle);
 }
@@ -55,10 +56,16 @@
   opacity: 0.6;
 }
 .image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  mix-blend-mode: multiply;
+  object-fit: cover;
+  mix-blend-mode: multiply; /* ảnh demo phủ kín ô, lề đã nằm trong ảnh (§9.34); nền trắng của ảnh hoà vào ô xám */
+}
+.image[data-source='api'] {
+  padding: var(--space-300);
+  object-fit: contain; /* ảnh API (admin tải lên, mọi tỉ lệ): giữ contain và lề như trước, không cắt mất sản phẩm */
 }
 .placeholder {
   display: grid;

@@ -29,7 +29,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
   Mỗi màn hình chỉ có **một** nút chàm chính.
 - **Giá màu đen** `--fg-price` (`#1A1A1A`), đậm 700, luôn qua component `Price`. Không tô giá bằng màu thương hiệu.
-- **Ảnh sản phẩm nằm trên ô nền xám nhạt** `--bg-subtle` (`#F5F5F5`) với `mix-blend-mode: multiply`.
+- **Ảnh sản phẩm nằm trên ô nền xám nhạt** `--bg-subtle` (`#F5F5F5`) với `mix-blend-mode: multiply`. Hai trường hợp (§9.34): **ảnh demo** phủ kín ô (`object-fit: cover`, không padding), lề quanh sản phẩm nằm sẵn trong ảnh, ảnh nền màu (xám, tối) tô kín cả ảnh bằng màu nền đó nên ô chỉ có một màu nền; **ảnh `imageUrl` từ API** (mọi tỉ lệ) giữ `contain` và lề của ô để không cắt mất sản phẩm.
 - **Trang danh sách nền trắng** (chốt 13/10/2026): vùng giữa header và footer của `/products` nền `--bg-surface`; lưới thẻ không khung, ô ảnh xám `--bg-subtle` nổi trên nền trắng (trên nền xám ô ảnh sẽ chìm). Các trang khác giữ nền `--bg-canvas`.
 - **Khối sản phẩm không có khung** (chốt 11/10/2026, bản mẫu 9, theo ảnh tham khảo của Hoàng): tiêu đề và hàng thẻ nằm thẳng trên nền trang xám; mỗi **thẻ** là một ô trắng bo 12px có viền mảnh. Bóng chỉ dùng cho thứ nổi lên (thẻ khi rê chuột, nút tròn, menu, hộp thoại) và hàng 2 của header.
 
@@ -222,7 +222,7 @@ Quy tắc:
 
 - Icon: **`lucide-react`**, nét `strokeWidth={1.75}`, màu theo `currentColor`. Cỡ: 16 (trong chữ), 20 (trong chip), 24 (mặc định, nút tròn), 28 (header máy tính), 32 (ô danh mục), 48–56 (minh hoạ, ảnh thay thế).
 - Mỗi loại hàng có một icon cố định trong `CategoryIcon` (laptop → `Laptop`, gpu → `Gpu`, psu → `PlugZap`…). Dùng icon này ở mọi chỗ hiện loại hàng.
-- Ảnh sản phẩm: ô vuông (`aspect-ratio: 1`), `object-fit: contain`, `mix-blend-mode: multiply` trên `--bg-subtle`, `loading="lazy" decoding="async"` và có `width`/`height`. Ô ảnh trong thẻ vuông, chạm sát mép thẻ (§9.9). Không có ảnh → icon loại hàng 48–56px màu `--fg-icon-soft` giữa ô.
+- Ảnh sản phẩm: ô vuông (`aspect-ratio: 1`), ô không padding; ảnh demo phủ kín ô (`position: absolute; inset: 0; object-fit: cover`), ảnh API `contain` với lề đặt bằng padding trên `<img>` (`data-source="api"`, §9.34), `mix-blend-mode: multiply` trên `--bg-subtle`, `loading="lazy" decoding="async"` và có `width`/`height`. Ô ảnh trong thẻ vuông, chạm sát mép thẻ (§9.9). Không có ảnh → icon loại hàng 48–56px màu `--fg-icon-soft` giữa ô.
 - `alt=""` khi tên sản phẩm đã có ngay cạnh ảnh (tránh đọc lặp).
 
 ## 9. Component dùng chung
@@ -453,7 +453,7 @@ Chốt 11/10/2026 theo **ảnh tham khảo của Hoàng** (bản mẫu 9), thay 
 | Hover | viền `--border-default` + `--shadow-card-hover` (200ms); icon/ảnh trong ô phóng 105% (300ms) |
 | Bấm | cả thẻ bấm được nhờ `::after` của link tiêu đề phủ kín thẻ; chỉ tiêu đề là link thật |
 | Focus | viền focus quanh cả thẻ (`:focus-within`) |
-| Ô ảnh | **vuông, chạm sát mép thẻ** (không padding), nền `--bg-subtle`; ảnh `contain` + `multiply`, lazy. Không có ảnh → icon loại hàng 56px `--fg-icon-soft` giữa ô |
+| Ô ảnh | **vuông, chạm sát mép thẻ** (không padding), nền `--bg-subtle`; ảnh demo phủ kín ô (`cover`); ảnh API `contain` 84% ô (padding 8% trên `<img>`, như trước) + `multiply`, lazy. Không có ảnh → icon loại hàng 56px `--fg-icon-soft` giữa ô |
 | Phần chữ | viền trên 1px `--border-divider`, padding `12px 14px 14px` (<1280: `10px 10px 12px`), xếp dọc gap 8px |
 | Tên | `<h3>` **13/20/600** `--fg-default`, **một dòng**, dài thì cắt `…` (<1280: 12/18) |
 | Dòng cuối | `Price md` bên trái, `StockBadge` cỡ nhỏ bên phải (11/16/600, padding `1px 6px`, bo 4px), `justify-content: space-between`. Dưới 1280px xếp dọc: giá rồi nhãn |
@@ -590,7 +590,7 @@ Chốt 13/10/2026 (bản mẫu trang danh sách, kiểu thẻ của trang tham k
 | Phần | Giá trị |
 |---|---|
 | Thẻ | `<article>`, `position: relative; display: flex; flex-direction: column; gap: 8px; height: 100%` |
-| Ô ảnh | `aspect-ratio: 259 / 236`, nền `--bg-subtle`, bo `--radius-lg` (8px), padding `28px 8px 8px`, ảnh `contain` + `multiply`, lazy; không có ảnh → `CategoryIcon` 64px `--fg-icon-soft` giữa ô |
+| Ô ảnh | `aspect-ratio: 259 / 236`, nền `--bg-subtle`, bo `--radius-lg` (8px), không padding (trước đây `28px 8px 8px`), ảnh demo phủ kín ô (`cover`, cắt khoảng 4,4% trên dưới, nằm trong lề dọc 5% của ảnh), nhãn tồn kho nổi trên ảnh (`z-index: 1`); ảnh API `contain` với padding `28px 8px 8px` trên `<img>` như trước, nhãn nằm ở dải 28px phía trên nên không che sản phẩm; cả hai `multiply`, lazy; không có ảnh → `CategoryIcon` 64px `--fg-icon-soft` giữa ô |
 | Nhãn tồn kho | `StockBadge` cỡ thường (12/18/500) ở góc trên trái ô ảnh, cách mép 8px (`position: absolute`) |
 | Hãng | 13/20/700 `--fg-default`, cách ô ảnh 12px (gap 8 + margin 4) |
 | Tên | `<h3>` 14/20/400 `--fg-default`, **tối đa 2 dòng** (`-webkit-line-clamp: 2`, `min-height: 40px`). Link tên có `::after` phủ kín thẻ để cả thẻ bấm được |
@@ -798,8 +798,8 @@ Chốt 27/11/2026 (#530, [pages/nguon-anh.md](pages/nguon-anh.md)). Đánh số 
 |---|---|
 | Nguồn ảnh | 1. `imageUrl` từ API (admin đặt, luôn ưu tiên); 2. ảnh demo `/product-images/<productId>.webp` nếu món có trong `PRODUCT_IMAGE_CREDITS` (104 món của seed); 3. `fallback` |
 | Ảnh lỗi | Nguồn đang dùng tải lỗi thì thử nguồn sau; hết nguồn thì hiện `fallback`: `CategoryIcon` ở thẻ, trang chi tiết, trang Nguồn ảnh; icon `Package` ở dòng giỏ hàng |
-| Ảnh demo | 600×600 WebP, sản phẩm căn giữa trong khung 560px, nền trắng, không EXIF; tổng khoảng 1,9 MB, nằm ở `apps/web/public/product-images/` (Vite chép nguyên, không vào gói JS) |
-| Hiển thị | Giữ `width`, `height`, `loading`, `fetchPriority` của từng chỗ dùng; `object-fit: contain`; ảnh nền trắng trên ô `--bg-subtle` dùng `mix-blend-mode: multiply` để nền trắng hoà vào ô |
+| Ảnh demo | 600×600 WebP, không EXIF. Cắt sát sản phẩm (bỏ bóng mờ, vạch mảnh của ảnh gốc), căn giữa với lề ngang 4% và lề dọc 5% (sản phẩm tối đa 552×540). Nền theo ảnh gốc: trắng hoặc trong suốt → nền trắng; nền màu đồng nhất (7 ảnh: 6 xám nhạt, 1 tối) → tô kín bằng màu nền đó. Tổng khoảng 2,1 MB, nằm ở `apps/web/public/product-images/` (Vite chép nguyên, không vào gói JS) |
+| Hiển thị | Giữ `width`, `height`, `loading`, `fetchPriority` của từng chỗ dùng. `<img>` có `data-source` theo nguồn đang hiện (`api` hoặc `demo`). Ô không padding, ảnh `position: absolute; inset: 0`. Ảnh demo (`demo`): `object-fit: cover`, lề nằm trong ảnh. Ảnh API (`api`, admin tải lên, mọi tỉ lệ): `object-fit: contain` và lề cũ đặt bằng padding trên `<img>`: thẻ trang chủ 8% (ảnh 84% ô), thẻ danh sách `28px 8px 8px`, trang chi tiết 24px, giỏ hàng 8px. Ảnh nền trắng trên ô `--bg-subtle` dùng `mix-blend-mode: multiply` để nền trắng hoà vào ô |
 | Ghi nguồn | Không ghi chú dưới ảnh. Ảnh thuộc về nhà sản xuất, ghi ở dòng cuối footer và trang Nguồn ảnh |
 
 ## 10. Token sẽ thêm khi cần

@@ -70,6 +70,49 @@ describe('ProductImage (design-system §9.34, #530)', () => {
     expect(screen.getByTestId('fallback')).toBeInTheDocument();
   });
 
+  it('marksSourceApi_whenShowingImageUrl', () => {
+    // Act
+    render(
+      <ProductImage
+        productId={DEMO_ID}
+        imageUrl="https://shop.example/a.webp"
+        alt=""
+        fallback={fallback}
+      />,
+    );
+
+    // Assert: ảnh API giữ contain và lề của ô (CSS theo data-source)
+    expect(document.querySelector('img')).toHaveAttribute('data-source', 'api');
+  });
+
+  it('marksSourceDemo_whenShowingDemoImage', () => {
+    // Act
+    render(<ProductImage productId={DEMO_ID} alt="" fallback={fallback} />);
+
+    // Assert: ảnh demo phủ kín ô
+    expect(document.querySelector('img')).toHaveAttribute('data-source', 'demo');
+  });
+
+  it('switchesSourceToDemo_afterImageUrlFails', () => {
+    // Arrange
+    render(
+      <ProductImage
+        productId={DEMO_ID}
+        imageUrl="https://shop.example/hong.webp"
+        alt=""
+        fallback={fallback}
+      />,
+    );
+
+    // Act
+    fireEvent.error(document.querySelector('img')!);
+
+    // Assert
+    const img = document.querySelector('img')!;
+    expect(img).toHaveAttribute('src', `/product-images/${DEMO_ID}.webp`);
+    expect(img).toHaveAttribute('data-source', 'demo');
+  });
+
   it('passesImgAttributesThrough', () => {
     // Act
     render(

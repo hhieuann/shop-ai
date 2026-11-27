@@ -7,6 +7,7 @@ Chốt 27/11/2026 (#530). Nhóm đồng ý dùng ảnh chính thức của nhà 
 - `/image-credits`, nền trắng như trang danh sách (`handle.surface = 'plain'`). Link "Nguồn ảnh" ở dòng cuối footer (design-system §9.2).
 - Dữ liệu tĩnh ở web: `features/catalog/lib/productImages.ts` (`PRODUCT_IMAGE_CREDITS`: mã, tên, loại, hãng, trang sản phẩm của hãng nếu có), sinh bằng script từ seed và bảng nguồn ảnh của nhóm. Không gọi API.
 - Ảnh: `apps/web/public/product-images/<productId>.webp`. Không đổi API, contract, seed: web tự gắn ảnh theo `productId` khi API không có `imageUrl` (design-system §9.34).
+- Cách xuất ảnh: cắt sát sản phẩm, lề ngang 4% và dọc 5% nằm trong ảnh; ảnh nền màu tô kín bằng màu nền của nó, nên ở mọi ô ảnh demo phủ kín ô và chỉ có một màu nền. Ảnh admin tải lên (`imageUrl`) không qua bước này nên vẫn hiện `contain` với lề của ô (design-system §9.34).
 
 ## 2. Bố cục
 
