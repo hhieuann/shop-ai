@@ -31,7 +31,8 @@ function writer() {
 
 /** findById trả lần lượt từng bản trong `reads` (lần đọc đầu, lần đọc lại sau khi ghi hỏng) */
 function products(...reads: (Product | null)[]) {
-  const findById = vi.fn<(id: string) => Promise<Product | null>>();
+  const findById =
+    vi.fn<(id: string, options?: { consistent?: boolean }) => Promise<Product | null>>();
   for (const read of reads) findById.mockResolvedValueOnce(read);
   return { findById };
 }
@@ -230,11 +231,40 @@ describe('updateAdminProduct (BR-12, BR-13)', () => {
 
       // Assert
       await expect(act).rejects.toBeInstanceOf(expected);
-      // Verify: đọc 2 lần, ghi 1 lần
+      // Verify: đọc 2 lần (lần đọc lại là đọc nhất quán), ghi 1 lần
       expect(repo.findById).toHaveBeenCalledTimes(2);
+      expect(repo.findById).toHaveBeenLastCalledWith(ID, { consistent: true });
       expect(w.update).toHaveBeenCalledTimes(1);
     },
   );
+
+  it('updateAdminProduct_throwsStockChanged_fromConsistentReread_whenEventualReadIsStale', async () => {
+    // Arrange: khách vừa mua làm tồn kho 12 → 10, updatedAt giữ nguyên (giao dịch đặt hàng).
+    // Đọc thường vẫn ra bản cũ (12); chỉ đọc nhất quán mới thấy 10
+    const w = writer();
+    w.update.mockResolvedValue(null);
+    const fresh = { ...CURRENT, stock: 10 };
+    const findById = vi.fn(async (_id: string, options?: { consistent?: boolean }) =>
+      options?.consistent ? fresh : CURRENT,
+    );
+
+    // Act
+    const act = updateAdminProduct(
+      { products: { findById }, writer: w, now: () => NOW },
+      input({ patch: { stock: 20 }, expectedStock: 12 }),
+    );
+
+    // Assert: STOCK_CHANGED với tồn kho mới, không phải PRODUCT_CHANGED với bản cũ
+    await expect(act).rejects.toMatchObject({
+      constructor: StockChangedError,
+      code: 'STOCK_CHANGED',
+      extensions: { currentStock: 10 },
+    });
+    // Verify
+    expect(findById).toHaveBeenCalledTimes(2);
+    expect(findById).toHaveBeenNthCalledWith(1, ID);
+    expect(findById).toHaveBeenNthCalledWith(2, ID, { consistent: true });
+  });
 });
 
 describe('deleteAdminProduct, restoreAdminProduct (BR-14)', () => {
