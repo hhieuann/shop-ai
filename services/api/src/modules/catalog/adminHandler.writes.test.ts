@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { sampleProduct } from '../../../test/helpers/catalog.js';
 import { apiEvent, parseBody } from '../../../test/helpers/http.js';
+import type { HttpResult } from '../../shared/http/response.js';
 import { makeAdminProductHandler, type AdminProductUseCases } from './adminHandler.js';
 import {
   InvalidSpecKeysError,
@@ -281,9 +282,7 @@ describe('admin product handler · mọi phản hồi đều no-store (catalog.m
     uc.updateAdminProduct.mockRejectedValue(error);
     return uc;
   };
-  it.each<
-    [string, () => Promise<{ statusCode: number; headers?: Record<string, unknown> }>, number]
-  >([
+  it.each<[string, () => Promise<HttpResult>, number]>([
     [
       '400 body sai',
       () => makeAdminProductHandler(useCases())(writeEvent(UPDATE, { updatedAt: SEEN, price: -1 })),
