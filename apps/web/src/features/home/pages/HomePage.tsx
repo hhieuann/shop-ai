@@ -148,7 +148,7 @@ export function HomePage() {
       </div>
 
       <PopularProducts />
-      <ProductRail title="Hàng mới về" filters={{}} seeAllTo="/products" />
+      <ProductRail title="Hàng mới về" filters={{}} seeAllTo="/new-arrivals" />
       <ProductRail
         title="Card đồ hoạ"
         filters={{ category: 'gpu' }}

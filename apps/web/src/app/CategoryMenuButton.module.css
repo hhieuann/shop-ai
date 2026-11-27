@@ -1,4 +1,4 @@
-/* Nút "Danh mục" và bảng / ngăn kéo menu danh mục (design-system §9.1, §9.18) */
+/* Nút menu "Danh mục" và ngăn kéo danh mục, chỉ dưới 1280px (design-system §9.1, §9.18; #567) */
 .root {
   position: relative;
   flex-shrink: 0;
@@ -27,20 +27,6 @@
   color: var(--fg-on-chrome);
   box-shadow: inset 0 0 0 1px var(--border-on-chrome);
 }
-.label {
-  display: none;
-  white-space: nowrap;
-}
-@media (min-width: 1280px) {
-  .trigger {
-    width: auto;
-    height: 44px;
-    padding: 10px var(--space-200);
-  }
-  .label {
-    display: inline;
-  }
-}
 
 /* ── Vùng tối ── */
 .scrim {
@@ -62,17 +48,6 @@
 /* Ngăn kéo phủ cả header */
 .scrimTop {
   z-index: 300;
-}
-
-/* ── Bảng thả xuống (≥1280) ── */
-.dropdown {
-  position: absolute;
-  top: calc(100% + 12px);
-  left: 0;
-  z-index: 3;
-  width: 300px;
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--radius-xl);
 }
 
 /* ── Ngăn kéo (<1280) ── */

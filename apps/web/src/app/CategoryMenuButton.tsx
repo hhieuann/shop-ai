@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type FocusEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Menu, Package, X } from 'lucide-react';
@@ -8,15 +8,14 @@ import { trapTabKey } from '../shared/lib/focusTrap';
 import styles from './CategoryMenuButton.module.css';
 
 /**
- * Nút "Danh mục" trên header (design-system §9.1, §9.18).
- * ≥1280px: bảng thả xuống dưới nút, vùng tối phủ dưới header (như menu tài khoản).
- * <1280px: chỉ icon; mở ngăn kéo từ trái có link "Đơn hàng" và 13 loại hàng.
+ * Nút menu "Danh mục" trên header (design-system §9.1, §9.18), chỉ dưới 1280px: icon ☰ mở ngăn kéo
+ * từ trái có link "Đơn hàng" và 13 loại hàng. Từ 1280px không vẽ gì (#567): lối vào loại hàng là
+ * cột danh mục ở trang chủ, cột lọc ở trang danh sách và hàng 2 của header.
  */
 export function CategoryMenuButton() {
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -48,16 +47,12 @@ export function CategoryMenuButton() {
     };
   }, [open, close]);
 
-  // Bảng thả xuống: Tab ra khỏi nút và bảng thì đóng (không đưa focus về nút)
-  const onBlur = (e: FocusEvent<HTMLDivElement>) => {
-    const next = e.relatedTarget as Node | null;
-    if (open && desktop && next && !rootRef.current?.contains(next)) setOpen(false);
-  };
-
   const onNavigate = () => close(false);
 
+  if (desktop) return null;
+
   return (
-    <div className={styles.root} ref={rootRef} onBlur={onBlur}>
+    <div className={styles.root}>
       <button
         ref={buttonRef}
         type="button"
@@ -69,37 +64,9 @@ export function CategoryMenuButton() {
         onClick={() => setOpen((v) => !v)}
       >
         <Menu size={24} aria-hidden="true" />
-        <span className={styles.label} aria-hidden="true">
-          Danh mục
-        </span>
       </button>
 
-      {desktop ? (
-        <>
-          {/* Vùng tối phủ dưới header (header z-index 210 nằm trên) */}
-          {createPortal(
-            <div
-              className={`${styles.scrim} ${open ? styles.scrimOpen : ''}`}
-              onClick={() => close(true)}
-              aria-hidden="true"
-            />,
-            document.body,
-          )}
-          {open && (
-            <div
-              ref={panelRef}
-              id={panelId}
-              role="dialog"
-              aria-modal="false"
-              aria-label="Danh mục"
-              className={styles.dropdown}
-            >
-              <CategoryMenu onNavigate={onNavigate} />
-            </div>
-          )}
-        </>
-      ) : (
-        open &&
+      {open &&
         createPortal(
           <>
             <div
@@ -138,8 +105,7 @@ export function CategoryMenuButton() {
             </div>
           </>,
           document.body,
-        )
-      )}
+        )}
     </div>
   );
 }

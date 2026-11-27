@@ -31,19 +31,27 @@ import styles from './Header.module.css';
 // Ô bay chỉ cần sau khi khách bấm thêm vào giỏ: tải riêng, tải lỗi thì chỉ mất hiệu ứng
 const FlyToCart = lazy(loadFlyToCart);
 
-/** Hàng 2 của header: mua theo nhu cầu (design-system §9.1), đường dẫn là bộ lọc đã có */
-const NEEDS: { label: string; icon: LucideIcon; search: string }[] = [
-  { label: 'Hàng mới về', icon: Sparkles, search: '?sort=newest' },
-  { label: 'Chơi game', icon: Gamepad2, search: '?category=gpu' },
-  { label: 'Làm văn phòng', icon: Briefcase, search: '?category=laptop' },
-  { label: 'Học lập trình', icon: CodeXml, search: '?category=ram' },
-  { label: 'Thiết kế, dựng phim', icon: Clapperboard, search: '?category=monitor' },
-  { label: 'Tất cả sản phẩm', icon: LayoutGrid, search: '' },
+/**
+ * Hàng 2 của header: mua theo nhu cầu (design-system §9.1). "Hàng mới về" là trang riêng (#567);
+ * các mục khác là bộ lọc của trang danh sách (`search`).
+ */
+const NEEDS: { label: string; icon: LucideIcon; path: string; search: string }[] = [
+  { label: 'Hàng mới về', icon: Sparkles, path: '/new-arrivals', search: '' },
+  { label: 'Chơi game', icon: Gamepad2, path: '/products', search: '?category=gpu' },
+  { label: 'Làm văn phòng', icon: Briefcase, path: '/products', search: '?category=laptop' },
+  { label: 'Học lập trình', icon: CodeXml, path: '/products', search: '?category=ram' },
+  {
+    label: 'Thiết kế, dựng phim',
+    icon: Clapperboard,
+    path: '/products',
+    search: '?category=monitor',
+  },
+  { label: 'Tất cả sản phẩm', icon: LayoutGrid, path: '/products', search: '' },
 ];
 
 /**
  * Header chung, hai hàng, dính đầu trang (design-system §9.1).
- * Hàng 1 nền chàm: logo, nút Danh mục + ô tìm kiếm, Đơn hàng, tài khoản, giỏ.
+ * Hàng 1 nền chàm: logo, ô tìm kiếm, Đơn hàng, tài khoản, giỏ (từ 1280px không còn nút Danh mục, #567).
  * Hàng 2 nền trắng (≥1280px): 6 link mua theo nhu cầu.
  * Dưới 1280px: nút menu, logo giữa, tài khoản, giỏ; ô tìm kiếm xuống hàng riêng.
  *
@@ -138,14 +146,16 @@ export function Header({ collapseNeeds = false }: { collapseNeeds?: boolean }) {
 
       <nav ref={needsRef} className={styles.needs} aria-label="Mua theo nhu cầu">
         <ul className={styles.needList}>
-          {NEEDS.map(({ label, icon: Icon, search }) => {
+          {NEEDS.map(({ label, icon: Icon, path, search }) => {
             // Bỏ cursor, page khi so: đang ở trang 2 của "Chơi game" vẫn đánh dấu "Chơi game"
-            const current = onProducts && searchWithoutPaging(location.search) === search;
+            const current =
+              location.pathname === path &&
+              (path !== '/products' || searchWithoutPaging(location.search) === search);
             return (
               <li key={label}>
                 {/* Link thường: NavLink coi mọi link /products là trang hiện tại vì bỏ qua query */}
                 <Link
-                  to={`/products${search}`}
+                  to={`${path}${search}`}
                   className={styles.need}
                   aria-current={current ? 'page' : undefined}
                 >
