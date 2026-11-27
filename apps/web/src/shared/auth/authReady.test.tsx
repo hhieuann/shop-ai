@@ -90,6 +90,7 @@ describe('#499 chờ nối Cognito xong rồi mới xét phiên', () => {
     // Act: Cognito nạp xong, phiên (cookie) còn
     setTokenProvider(() => 'access-token-thu');
     setProfileProvider(() => ({
+      userId: 'sub-hoangnm',
       username: 'hoangnm',
       email: 'hoangnm@example.com',
       isAdmin: false,

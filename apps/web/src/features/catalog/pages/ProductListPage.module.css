@@ -145,16 +145,6 @@
 .loadingFirst {
   min-height: 100vh;
 }
-.empty {
-  padding: var(--space-500) var(--space-200);
-  border: 1px solid var(--border-divider);
-  border-radius: var(--radius-2xl);
-  background: var(--bg-surface);
-  text-align: center;
-}
-.empty p {
-  margin: 0 0 var(--space-100);
-}
 
 @media (min-width: 640px) {
   .heading {

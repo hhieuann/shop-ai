@@ -1,11 +1,17 @@
 /**
  * Nạp danh sách sản phẩm từ file JSON vào bảng products.
  * - sandbox, dev, staging: writeProducts ghi đè theo productId.
- * - prod: insertMissingProducts chỉ thêm sản phẩm chưa có, không đụng tồn kho và giá đang chạy.
+ * - prod: syncProductContent thêm sản phẩm chưa có và cập nhật nội dung (tên, mô tả, specs, ảnh)
+ *   của sản phẩm đã có, không đụng tồn kho và giá đang chạy (#527).
  * CLI ở scripts/seed-products.ts; file này chứa phần kiểm file và ghi bảng để test được.
  */
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { BatchWriteCommand, PutCommand, type DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import {
+  BatchWriteCommand,
+  PutCommand,
+  UpdateCommand,
+  type DynamoDBDocumentClient,
+} from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
 import type { Product } from '../domain/product.js';
 import { productItemSchema, toProductItem } from './dynamoProductRepository.js';
@@ -150,6 +156,73 @@ export async function insertMissingProducts(
     }
   }
   return { inserted, skipped: products.length - inserted };
+}
+
+export interface SyncResult {
+  readonly inserted: number;
+  /** Sản phẩm đã có, được cập nhật nội dung (giữ giá, tồn kho, trạng thái, loại) */
+  readonly updated: number;
+}
+
+/**
+ * Prod (#527): thêm sản phẩm chưa có như insertMissingProducts; sản phẩm đã có thì chỉ cập nhật
+ * phần nội dung hiển thị: tên, hãng, mô tả, specs, ảnh. Giữ nguyên price, stock (đơn hàng đã trừ,
+ * admin có thể đã đổi), status và category (đổi hai trường này làm lệch khoá GSI categoryStatus).
+ * UpdateItem có điều kiện attribute_exists nên không tạo item mới nếu sản phẩm vừa bị xoá.
+ */
+export async function syncProductContent(
+  db: DynamoDBDocumentClient,
+  tableName: string,
+  products: readonly Product[],
+): Promise<SyncResult> {
+  let inserted = 0;
+  let updated = 0;
+  for (const product of products) {
+    try {
+      await db.send(
+        new PutCommand({
+          TableName: tableName,
+          Item: toProductItem(product),
+          ConditionExpression: 'attribute_not_exists(productId)',
+        }),
+      );
+      inserted += 1;
+      continue;
+    } catch (error) {
+      if (!(error instanceof ConditionalCheckFailedException)) throw error;
+    }
+
+    const set = ['#name = :name', 'brand = :brand', 'description = :description'];
+    const remove: string[] = [];
+    const values: Record<string, unknown> = {
+      ':name': product.name,
+      ':brand': product.brand,
+      ':description': product.description,
+    };
+    if (product.specs !== undefined) {
+      set.push('specs = :specs');
+      values[':specs'] = product.specs;
+    } else remove.push('specs');
+    if (product.imageUrl !== undefined) {
+      set.push('imageUrl = :imageUrl');
+      values[':imageUrl'] = product.imageUrl;
+    } else remove.push('imageUrl');
+    set.push('updatedAt = :updatedAt');
+    values[':updatedAt'] = product.updatedAt;
+
+    await db.send(
+      new UpdateCommand({
+        TableName: tableName,
+        Key: { productId: product.productId },
+        UpdateExpression: `SET ${set.join(', ')}${remove.length ? ` REMOVE ${remove.join(', ')}` : ''}`,
+        ConditionExpression: 'attribute_exists(productId)',
+        ExpressionAttributeNames: { '#name': 'name' },
+        ExpressionAttributeValues: values,
+      }),
+    );
+    updated += 1;
+  }
+  return { inserted, updated };
 }
 
 /** Danh sách PutRequest của một bảng trong BatchWriteCommand */

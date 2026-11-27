@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Banknote, ShoppingCart } from 'lucide-react';
 import { ApiError } from '../../../shared/api/client';
 import { Alert } from '../../../shared/components/Alert';
+import { Button } from '../../../shared/components/Button';
+import { buttonClass } from '../../../shared/components/buttonClass';
 import { Checkbox } from '../../../shared/components/Checkbox';
+import { EmptyState } from '../../../shared/components/EmptyState';
 import { FreeShipping, OrderSummary } from '../../../shared/components/OrderSummary';
 import { Price } from '../../../shared/components/Price';
 import { formatVnd } from '../../../shared/lib/format';
+import {
+  ACCOUNT_SWITCHED_NOTICE,
+  peekAccountSwitchedNotice,
+  takeAccountSwitchedNotice,
+} from '../../account/lib/crossTabSession';
 import { ProductRail } from '../../home/components/ProductRail';
 import { CartLine } from '../components/CartLine';
 import { useCart, useGuestLines } from '../hooks/useCart';
@@ -27,6 +35,15 @@ import styles from './CartPage.module.css';
  */
 export function CartPage() {
   const navigate = useNavigate();
+  // Tab này đang đặt hàng thì tab khác đổi người (#508): báo một lần, F5 không hiện lại
+  // Đọc cờ lúc vẽ, xoá cờ sau khi đã vẽ (StrictMode gọi hàm khởi tạo hai lần nên không xoá ở đó)
+  const [accountSwitched] = useState(peekAccountSwitchedNotice);
+  useEffect(() => {
+    takeAccountSwitchedNotice();
+  }, []);
+  const switchedNotice = accountSwitched ? (
+    <Alert tone="warning">{ACCOUNT_SWITCHED_NOTICE}</Alert>
+  ) : null;
 
   const queryClient = useQueryClient();
   const {
@@ -55,14 +72,9 @@ export function CartPage() {
       <Alert
         tone={mergeState === 'failed' ? 'danger' : 'warning'}
         action={
-          <button
-            type="button"
-            className={styles.inlineButton}
-            onClick={retryMerge}
-            disabled={mergeState === 'pending'}
-          >
+          <Button size="sm" onClick={retryMerge} busy={mergeState === 'pending'}>
             {mergeState === 'pending' ? 'Đang gộp…' : 'Gộp vào giỏ'}
-          </button>
+          </Button>
         }
       >
         {mergeState === 'failed'
@@ -135,18 +147,24 @@ export function CartPage() {
         <h1 className={styles.title}>Giỏ hàng của bạn đang trống</h1>
         <div className={styles.layout}>
           <div className={styles.main}>
+            {switchedNotice}
             {leftoverNotice}
-            <section className={styles.empty} aria-label="Giỏ hàng trống">
-              <ShoppingCart size={48} strokeWidth={1.75} aria-hidden="true" />
-              <p className={styles.emptyText}>
-                Chưa có sản phẩm nào trong giỏ. Xem hàng mới về bên dưới, hoặc{' '}
-                <Link to="/products">xem tất cả sản phẩm</Link>.
-              </p>
-            </section>
+            <EmptyState
+              icon={ShoppingCart}
+              message={
+                <>
+                  Chưa có sản phẩm nào trong giỏ. Xem hàng mới về bên dưới, hoặc{' '}
+                  <Link to="/products">xem tất cả sản phẩm</Link>.
+                </>
+              }
+            />
             <ProductRail title="Hàng mới về" filters={{}} seeAllTo="/products" />
           </div>
           <OrderSummary title="Tóm tắt đơn hàng" rows={[]} total={0}>
-            <Link to="/products" className={styles.primaryButton}>
+            <Link
+              to="/products"
+              className={buttonClass({ variant: 'primary', size: 'lg', block: true })}
+            >
               Tiếp tục mua sắm
             </Link>
           </OrderSummary>
@@ -179,6 +197,7 @@ export function CartPage() {
       )}
       <div className={styles.layout}>
         <div className={styles.main}>
+          {switchedNotice}
           {leftoverNotice}
           <section className={styles.list} aria-label="Sản phẩm trong giỏ">
             <label className={styles.selectAll}>
@@ -220,14 +239,15 @@ export function CartPage() {
           ]}
           total={selectedTotal}
         >
-          <button
-            type="button"
-            className={styles.primaryButton}
+          <Button
+            variant="primary"
+            size="lg"
+            block
             onClick={checkout}
             disabled={selectedItems.length === 0}
           >
             {checkoutLabel}
-          </button>
+          </Button>
           {checkoutHint && <p className={styles.hint}>{checkoutHint}</p>}
           {signInHint && !checkoutHint && <p className={styles.hint}>{signInHint}</p>}
           <p className={styles.hint}>
@@ -242,14 +262,14 @@ export function CartPage() {
           <span className={styles.mobileBarLabel}>Tổng ({selectedItems.length})</span>
           <Price amount={selectedTotal} />
         </div>
-        <button
-          type="button"
-          className={styles.primaryButton}
+        <Button
+          variant="primary"
+          size="lg"
           onClick={checkout}
           disabled={selectedItems.length === 0}
         >
           {checkoutLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -70,7 +70,7 @@ Không có logo trong thẻ (header đã có), không có ô "Ghi nhớ đăng n
 | Quên mật khẩu | nút `ghost md` căn giữa ngay dưới nút "Đăng nhập" (như "Gửi lại mã" ở 3.3): "Quên mật khẩu?" → `/forgot-password`, mang theo email đang gõ và `from`, `reason`. Đặt dưới nút chứ không dưới ô mật khẩu, để Tab từ ô mật khẩu tới thẳng nút "Đăng nhập" (mục 6) |
 | Chân thẻ | "Chưa có tài khoản? **Tạo tài khoản**" → `/register` |
 
-Tài khoản admin (nhóm `admin`, bắt buộc MFA theo ADR-0007): sau mật khẩu hiện bước nhập mã MFA, dùng chung bố cục với bước nhập mã ở 3.3 (tiêu đề "Xác thực hai lớp", không có "Gửi lại mã"). Loại MFA (ứng dụng xác thực hay SMS) do An chọn.
+Tài khoản đã bật xác thực hai lớp (khách tự bật ở [tai-khoan.md](tai-khoan.md) 3.4; admin bắt buộc, account.md BR-10): sau mật khẩu hiện bước nhập mã, dùng chung bố cục với bước nhập mã ở 3.3 (tiêu đề "Xác thực hai lớp", không có "Gửi lại mã"). Mã lấy từ ứng dụng xác thực (TOTP), không dùng SMS. Dưới ô mã có dòng gợi ý "Mã trong ứng dụng xác thực của bạn" (12/18 `--fg-subdued`, thêm 18/11/2026).
 
 Mở `/login` với `state.email` và `state.notice` (từ bước 2 của 3.4, hoặc sau khi đổi mật khẩu ở [tai-khoan.md](tai-khoan.md) 3.2): điền sẵn email, hiện `Alert success` với nội dung `notice`, focus vào ô Mật khẩu thay vì ô Email.
 
@@ -172,6 +172,21 @@ Lỗi từ Cognito hiện bằng `Alert danger` ở đầu form (dưới dòng p
 
 Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhập username", "Vui lòng nhập email"), username sai ký tự, email sai dạng ("Email không hợp lệ"), mật khẩu chưa đạt điều kiện, nhập lại không khớp. Đang gửi: nút `aria-busy`, các ô `readOnly`.
 
+### Nhiều tab (#508)
+
+Phiên đăng nhập dùng chung cho mọi tab của trình duyệt. Tab nơi khách bấm Đăng nhập hoặc Đăng xuất báo các tab khác (tin không kèm token, email); tab khác cũng tự kiểm lại khi được mở lại. So người bằng `sub`, không bằng email.
+
+| Tab khác vừa làm gì | Tab này |
+|---|---|
+| Đăng xuất | Dọn dữ liệu phiên như bấm Đăng xuất ở tab này (giỏ, mục đặt dở, đơn, gợi ý); đang ở trang bắt buộc đăng nhập thì về `/`. Không gọi đăng xuất Cognito lần nữa, không báo lại các tab khác |
+| Đăng nhập người khác, tab đang ở trang thường | Dọn rồi tải lại trang đang xem |
+| Đăng nhập người khác, tab đang ở `/checkout` (kể cả đang ẩn) | Dọn (gồm mục đặt dở), không tải lại `/checkout` mà sang `/cart` với Alert warning: "Tài khoản đăng nhập vừa đổi ở tab khác nên đơn đang đặt dở chưa được gửi. Hãy kiểm tra lại giỏ hàng trước khi đặt." Câu này chỉ hiện ở đúng tab đó và một lần (F5 không hiện lại) |
+| Đăng nhập (tab này đang là khách) | Chỉ tải lại, **không** xoá giỏ khách: giỏ khách dùng chung mọi tab, tab vừa đăng nhập lo gộp vào tài khoản rồi tự xoá |
+| Đăng nhập lại đúng người đang hiện | Không làm gì |
+
+- Ngay trước khi gửi đơn, trang đặt hàng đọc lại người trong phiên; khác người trang đang hiện thì không gửi, xử lý như dòng `/checkout` ở trên.
+- Tải lại xong mà phiên vẫn không phải người cần tới thì không tự tải lại nữa; nếu khách bấm đặt hàng thì `/checkout` hiện Alert danger: "Tài khoản vừa đổi ở tab khác. Tải lại trang để đặt hàng bằng tài khoản đang đăng nhập."
+
 ## 5. Responsive
 
 | Màn | Khác biệt |
@@ -207,7 +222,7 @@ Kiểm tra trước khi gửi (ở trình duyệt): ô trống ("Vui lòng nhậ
 - Đăng nhập bằng **email**; username chỉ để hiển thị, lưu ở `preferred_username`, đọc từ ID token.
 - Username: 3–20 ký tự, chữ thường không dấu, số, `.`, `_`. Lambda Pre sign-up chặn sai luật và trùng; web nhận lỗi `UserLambdaValidationException` có mã `USERNAME_TAKEN`, `USERNAME_INVALID`, `USERNAME_REQUIRED` và hiện câu ở mục 4.
 - **Quên mật khẩu**: có từ bản sau v1.0.0, xem 3.4 và mục Đã chốt 11/11.
-- **Admin** đăng nhập chung `/login`; tài khoản đã bật MFA (ứng dụng xác thực, TOTP) thì thêm bước "Xác thực hai lớp". Bắt buộc admin bật MFA làm cùng trang quản trị.
+- **Admin** đăng nhập chung `/login`; tài khoản đã bật MFA (ứng dụng xác thực, TOTP) thì thêm bước "Xác thực hai lớp". Admin chưa bật mà mở `/admin` thì web chuyển sang trang bật (tai-khoan.md 3.4); chỉ là chặn ở web.
 - Token lưu cookie `Secure; SameSite=Strict` (không dùng localStorage). Cấu hình Cognito đọc lúc chạy từ `/config.json`; chạy `vite dev` trên mock (không có `/config.json`) thì vẫn dùng token giả như cũ.
 - Chưa có `FocusLayout`: trang đăng nhập tạm nằm trong layout thường như checkout.
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { toAuthError, toChangePasswordError, toResetPasswordError } from './authErrors';
+import {
+  toAuthError,
+  toChangePasswordError,
+  toResetPasswordError,
+  toTwoFactorError,
+} from './authErrors';
 
 const err = (name: string, message = '') => Object.assign(new Error(message), { name });
 
@@ -169,6 +174,47 @@ describe('toChangePasswordError', () => {
     ]) {
       expect(toChangePasswordError(named(name))).toEqual(toAuthError(named(name)));
     }
+  });
+});
+
+describe('toTwoFactorError', () => {
+  const named = (name: string, message = name) => Object.assign(new Error(message), { name });
+
+  it('toTwoFactorError_codeTarget_whenCodeWrong', () => {
+    // Act
+    const mismatch = toTwoFactorError(named('CodeMismatchException'));
+    const enable = toTwoFactorError(named('EnableSoftwareTokenMFAException'));
+
+    // Assert: cả hai mã lỗi Cognito của mã sai đều báo dưới ô mã
+    const expected = {
+      target: 'code',
+      message: 'Mã không đúng. Nhập mã đang hiện trong ứng dụng (mã đổi mỗi 30 giây).',
+    };
+    expect(mismatch).toEqual(expected);
+    expect(enable).toEqual(expected);
+  });
+
+  it('toTwoFactorError_session_whenSignedOutOrTokenRevoked', () => {
+    expect(toTwoFactorError(named('UserUnAuthenticatedException')).target).toBe('session');
+    expect(
+      toTwoFactorError(named('NotAuthorizedException', 'Access Token has been revoked')).target,
+    ).toBe('session');
+  });
+
+  it('toTwoFactorError_tooManyMessage_whenRateLimited', () => {
+    expect(toTwoFactorError(named('LimitExceededException'))).toEqual({
+      target: 'alert',
+      message: 'Bạn thử quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.',
+    });
+  });
+
+  it('toTwoFactorError_networkMessage_whenNetworkOrUnknown', () => {
+    const expected = {
+      target: 'alert',
+      message: 'Không kết nối được máy chủ, vui lòng thử lại.',
+    };
+    expect(toTwoFactorError(named('NetworkError'))).toEqual(expected);
+    expect(toTwoFactorError(new TypeError('Failed to fetch'))).toEqual(expected);
   });
 });
 

@@ -111,6 +111,11 @@ function removeDevToken() {
 // và setSignOutHandler(() => <đăng xuất Cognito>) lúc khởi động app.
 
 export interface UserProfile {
+  /**
+   * `sub` của Cognito: định danh không bao giờ đổi, dùng để biết tab này còn là cùng một người không
+   * (#508). Không dùng email để so vì email đổi được khi gọi thẳng Cognito (threat model L14).
+   */
+  userId: string;
   /** Tên điền lúc tạo tài khoản, hiện trên header (dang-nhap.md §3.2) */
   username: string;
   email: string;
@@ -134,6 +139,8 @@ function readDevProfile(): UserProfile | null {
   };
   const username = get('shop-ai:dev-username') || 'khachthu';
   return {
+    // Đổi trong DevTools để thử đổi người giữa các tab: localStorage.setItem('shop-ai:dev-user-id', 'b')
+    userId: get('shop-ai:dev-user-id') || 'dev-user',
     username,
     email: `${username}@example.com`,
     isAdmin: get('shop-ai:dev-admin') === '1',
@@ -151,6 +158,52 @@ export function setProfileProvider(next: ProfileProvider) {
 export async function getUserProfile(): Promise<UserProfile | null> {
   await ready;
   return profileProvider();
+}
+
+/** `sub` của người đang đăng nhập, đọc mới từ phiên (cookie dùng chung mọi tab); khách là null (#508) */
+export async function getCurrentUserId(): Promise<string | null> {
+  return (await getUserProfile())?.userId ?? null;
+}
+
+// ── Báo cho các tab khác cùng trình duyệt (#508) ────────────────────────────────────────────────
+// Phiên nằm trong cookie dùng chung mọi tab, nhưng notifyAuthChanged() chỉ báo trong tab này. Tab nơi
+// khách bấm Đăng nhập hoặc Đăng xuất gửi một tin không kèm gì (không token, email, sub); tab nhận tự đọc
+// lại phiên. Trình duyệt không có BroadcastChannel thì bỏ qua: tab kia vẫn kiểm lại khi được mở lại.
+
+const AUTH_CHANNEL = 'shop-ai-auth';
+const AUTH_MESSAGE = 'auth-changed';
+let authChannel: BroadcastChannel | null | undefined;
+
+function getAuthChannel(): BroadcastChannel | null {
+  if (authChannel === undefined) {
+    try {
+      authChannel =
+        typeof BroadcastChannel === 'function' ? new BroadcastChannel(AUTH_CHANNEL) : null;
+    } catch {
+      authChannel = null;
+    }
+  }
+  return authChannel;
+}
+
+/** Chỉ gọi sau khi khách bấm Đăng nhập hoặc Đăng xuất ở tab này; tab nhận tin không gọi lại hàm này */
+export function announceAuthChanged() {
+  try {
+    getAuthChannel()?.postMessage({ type: AUTH_MESSAGE });
+  } catch {
+    // kênh đã đóng: tab kia vẫn kiểm lại khi được mở lại
+  }
+}
+
+/** Nghe tin đăng nhập, đăng xuất từ tab khác; trả về hàm huỷ. Tin của chính tab này không tới đây */
+export function onOtherTabAuthChange(listener: () => void): () => void {
+  const channel = getAuthChannel();
+  if (!channel) return () => {};
+  const handle = (event: MessageEvent) => {
+    if ((event.data as { type?: unknown } | null)?.type === AUTH_MESSAGE) listener();
+  };
+  channel.addEventListener('message', handle);
+  return () => channel.removeEventListener('message', handle);
 }
 
 // ── Đăng xuất, đổi mật khẩu, làm mới hồ sơ (trang tài khoản, pages/tai-khoan.md) ──────────
@@ -268,4 +321,93 @@ export function setRefreshProfileHandler(next: RefreshProfileHandler) {
 export async function refreshProfile(hint?: ProfileHint): Promise<void> {
   await refreshProfileHandler(hint);
   notifyAuthChanged();
+}
+
+// ── Xác thực hai lớp bằng ứng dụng xác thực (account.md BR-10, pages/tai-khoan.md 3.1, 3.4, 3.5) ─────
+// Cùng kiểu với đổi mật khẩu: file này giữ hàm gọi và bản mock, cognito.ts đặt bản Cognito trong initAuth().
+
+export interface TwoFactorHandlers {
+  /** Đã bật xác thực hai lớp (TOTP) chưa */
+  isEnabled: () => Promise<boolean>;
+  /** Tạo mã bí mật mới để thêm tài khoản vào ứng dụng xác thực. Mã chỉ để hiện, không lưu, không ghi log */
+  setUp: () => Promise<string>;
+  /** Kiểm mã 6 số đầu tiên từ ứng dụng (mã sai: CodeMismatchException) */
+  verify: (code: string) => Promise<void>;
+  /** Bật hoặc tắt hỏi mã khi đăng nhập */
+  setEnabled: (enabled: boolean) => Promise<void>;
+}
+
+const DEV_MFA_KEY = 'shop-ai:dev-mfa';
+
+/** Mã bí mật giả cho bản mock: 32 ký tự base32, sinh lúc chạy */
+function randomBase32(length = 32): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+}
+
+/** Bản mock chỉ chạy khi `vite dev` có token giả; bản build không có Cognito thì báo lỗi */
+async function devTwoFactorGuard(): Promise<void> {
+  if (!import.meta.env.DEV) throw namedError('AuthNotConfigured', 'Chưa cấu hình Cognito');
+  await devDelay();
+  if (!readDevToken()) throw namedError('UserUnAuthenticatedException');
+}
+
+/**
+ * Bản mock: mã "000000" là sai (CodeMismatchException), 6 số khác là đúng; bật, tắt ghi vào
+ * localStorage 'shop-ai:dev-mfa' để thấy nhãn đổi.
+ */
+const devTwoFactor: TwoFactorHandlers = {
+  isEnabled: async () => {
+    await devTwoFactorGuard();
+    try {
+      return localStorage.getItem(DEV_MFA_KEY) === '1';
+    } catch {
+      return false;
+    }
+  },
+  setUp: async () => {
+    await devTwoFactorGuard();
+    return randomBase32();
+  },
+  verify: async (code) => {
+    await devTwoFactorGuard();
+    if (code === '000000') throw namedError('CodeMismatchException');
+  },
+  setEnabled: async (enabled) => {
+    await devTwoFactorGuard();
+    try {
+      if (enabled) localStorage.setItem(DEV_MFA_KEY, '1');
+      else localStorage.removeItem(DEV_MFA_KEY);
+    } catch {
+      // bỏ qua
+    }
+  },
+};
+
+let twoFactorHandlers: TwoFactorHandlers = devTwoFactor;
+
+export function setTwoFactorHandlers(next: TwoFactorHandlers) {
+  twoFactorHandlers = next;
+}
+
+/** Xác thực hai lớp đang bật hay tắt (tai-khoan.md 3.1; trang admin chặn admin chưa bật) */
+export async function getTwoFactorEnabled(): Promise<boolean> {
+  await ready;
+  return twoFactorHandlers.isEnabled();
+}
+
+/** Bắt đầu bật: trả mã bí mật (`sharedSecret`) để hiện mã QR và mã chữ (tai-khoan.md 3.4) */
+export async function setUpTwoFactor(): Promise<string> {
+  return twoFactorHandlers.setUp();
+}
+
+/** Xác nhận mã 6 số từ ứng dụng; đúng thì mới bật được */
+export async function verifyTwoFactorCode(code: string): Promise<void> {
+  await twoFactorHandlers.verify(code);
+}
+
+/** Bật (sau khi xác nhận mã) hoặc tắt (tai-khoan.md 3.5) */
+export async function setTwoFactorEnabled(enabled: boolean): Promise<void> {
+  await twoFactorHandlers.setEnabled(enabled);
 }

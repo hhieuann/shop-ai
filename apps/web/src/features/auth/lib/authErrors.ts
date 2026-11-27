@@ -118,3 +118,24 @@ export function toChangePasswordError(error: unknown): AuthErrorView {
   }
   return toAuthError(error);
 }
+
+/**
+ * Lỗi khi bật, tắt xác thực hai lớp ở trang tài khoản (pages/tai-khoan.md mục 4). Khách đã đăng nhập nên:
+ * - mã sai lúc xác nhận (CodeMismatchException, EnableSoftwareTokenMFAException) báo dưới ô mã;
+ * - NotAuthorizedException ở các lệnh này là access token bị thu hồi hoặc hết hạn: phiên hết;
+ * - lỗi khác không có câu riêng (kể cả lỗi mạng) báo "Không kết nối được máy chủ".
+ */
+export function toTwoFactorError(error: unknown): AuthErrorView {
+  const name = typeof error === 'object' && error && 'name' in error ? String(error.name) : '';
+  if (name === 'CodeMismatchException' || name === 'EnableSoftwareTokenMFAException') {
+    return {
+      target: 'code',
+      message: 'Mã không đúng. Nhập mã đang hiện trong ứng dụng (mã đổi mỗi 30 giây).',
+    };
+  }
+  if (name === 'UserUnAuthenticatedException' || name === 'NotAuthorizedException') {
+    return { target: 'session', message: '' };
+  }
+  if (TOO_MANY.has(name)) return toAuthError(error);
+  return { target: 'alert', message: 'Không kết nối được máy chủ, vui lòng thử lại.' };
+}

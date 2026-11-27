@@ -6,7 +6,7 @@ Tài liệu đầy đủ của hệ giao diện. Bản tóm tắt ở [giao-dien
 
 - **Phạm vi:** chỉ những gì có trong tài liệu dự án (`docs/business/`, `project-plan.md`). Những tính năng cửa hàng điện tử lớn thường có nhưng dự án **không làm** được liệt kê ở [ngoai-pham-vi.md](ngoai-pham-vi.md).
 - **Giá trị:** sau khi code theo kịp, `tokens.css` và `base.css` là chuẩn; lệch thì sửa tài liệu. Trong đợt chuyển sang giao diện chàm, tài liệu này là chuẩn.
-- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`); trang tài khoản ([pages/tai-khoan.md](pages/tai-khoan.md), 16/11/2026, code đã đổi theo: §9.17 mục "Tài khoản của tôi", §9.27 cột mục và bảng chọn mục (#485), token `--fg-primary-disabled` ở §10 (#497)).
+- **Đổi giao diện 11/10/2026:** bố cục theo một trang bán linh kiện máy tính trong nước làm tham khảo chính; màu chủ đạo đổi từ tím "Áo choàng phù thủy" sang **chàm**; font đổi sang **Inter**. Code đã đổi theo tài liệu này (token, font, header, menu danh mục, footer, thẻ sản phẩm, khối sản phẩm, trang chủ). Bản mẫu đã duyệt: trang chủ ([pages/trang-chu.md](pages/trang-chu.md)); trang danh sách sản phẩm ([pages/danh-sach-san-pham.md](pages/danh-sach-san-pham.md), 13/10/2026, code đã đổi theo: §4 Thanh cuộn, §9.5 Radio, §9.8 cỡ `title`, §9.19–§9.23); trang chi tiết sản phẩm ([pages/chi-tiet-san-pham.md](pages/chi-tiet-san-pham.md), 03/11/2026, code đã đổi theo: §9.1 hàng 2 thu lại khi cuộn, §9.24 ô thông số và panel thông số, token ở §10); trang đơn hàng ([pages/don-hang.md](pages/don-hang.md), 09/11/2026, code đã đổi theo: §9.7 nhãn trạng thái đơn, §9.12 `EmptyState`, §9.14 nút `danger`, §9.16 bố cục tập trung cho trang đặt hàng, §9.26 thanh trạng thái đơn); trang 404 ([pages/khong-tim-thay.md](pages/khong-tim-thay.md), 10/11/2026, **code chưa đổi**: §9.12 `EmptyState` có tiêu đề); ô mật khẩu và ô mã ([pages/dang-nhap.md](pages/dang-nhap.md), 10/11/2026, **code chưa đổi**: §9.4 `PasswordField` và `OtpInput`); trang tài khoản ([pages/tai-khoan.md](pages/tai-khoan.md), 16/11/2026, code đã đổi theo: §9.17 mục "Tài khoản của tôi", §9.27 cột mục và bảng chọn mục (#485), token `--fg-primary-disabled` ở §10 (#497), §9.7 nhãn xác thực hai lớp, §9.28 ô mã QR (#183)).
 - **Lịch sử:** 06/10/2026 đổi từ nền tối "Midnight Violet" sang nền sáng tím (issue #49).
 - **Đơn vị:** viết bằng px. Root font-size giữ mặc định của trình duyệt (16px).
 
@@ -247,7 +247,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `QuantityStepper` | `shared/components/QuantityStepper.tsx` | ✅ (giỏ hàng, trang chi tiết) |
 | `Badge` (tổng quát, gồm trạng thái đơn) | `shared/components/Badge.tsx`; nhãn trạng thái đơn `OrderStatusBadge` ở `features/orders/components/OrderStatusBadge.tsx` | ✅ |
 | `Alert` (lỗi, cảnh báo, thành công) | `shared/components/Alert.tsx` | ✅ |
-| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (giỏ hàng và trang danh sách chưa chuyển sang, vẫn tự viết khối rỗng); thêm prop `title`, `className` cho trang 404 (§9.12) |
+| `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (dùng ở đơn hàng, giỏ hàng, trang danh sách, 404); thêm prop `title`, `className` cho trang 404 (§9.12) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
@@ -425,6 +425,8 @@ Nhãn có trong nghiệp vụ:
 | Đang giao | `SHIPPED` | accent |
 | Đã giao | `DELIVERED` | success |
 | Đã huỷ | `CANCELLED` | danger |
+| Đang bật | xác thực hai lớp đã bật (account.md BR-10, trang tài khoản) | success |
+| Đang tắt | xác thực hai lớp chưa bật | neutral |
 
 (Chữ trạng thái đơn lấy từ `STATUS_LABEL` trong `features/orders/types.ts`.)
 
@@ -492,8 +494,8 @@ Khung bo 8px, padding `12px 16px`, viền trái 4px theo màu trạng thái, n�
 | Loại | Ví dụ trong nghiệp vụ | Vai trò ARIA |
 |---|---|---|
 | success | "Đã thêm vào giỏ", "Đặt hàng thành công!" (chi tiết đơn ngay sau khi đặt), "Đã huỷ đơn." | `status` |
-| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT`, `TOO_MANY_OPEN_ORDERS` (kèm link "Xem đơn hàng") | `alert` |
-| danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL` | `alert` |
+| warning | `PRICE_CHANGED` ("Giá đã thay đổi. Vui lòng kiểm tra rồi bấm xác nhận lại."), `QUANTITY_LIMIT`, `TOO_MANY_OPEN_ORDERS` (kèm link "Xem đơn hàng"); đầu trang `/cart` khi tab đang đặt hàng thì tab khác đổi người: "Tài khoản đăng nhập vừa đổi ở tab khác nên đơn đang đặt dở chưa được gửi. Hãy kiểm tra lại giỏ hàng trước khi đặt." (chỉ ở đúng tab đó, một lần, #508) | `alert` |
+| danger | `OUT_OF_STOCK` (kèm danh sách món và số còn lại), `CART_FULL`, lỗi mạng, `CANNOT_CANCEL`; `/checkout` khi đã tải lại vì đổi người mà vẫn lệch: "Tài khoản vừa đổi ở tab khác. Tải lại trang để đặt hàng bằng tài khoản đang đăng nhập." (#508) | `alert` |
 
 ### 9.14 Hộp thoại xác nhận (`ConfirmDialog`, ✅; trang admin, huỷ đơn)
 Dùng `<dialog>` gốc của trình duyệt (tự giữ focus, Esc để đóng). Rộng tối đa 480px (điện thoại: `calc(100% - 32px)`), nền `--bg-surface`, viền 1px `--border-divider`, bo 16px, padding 24px, `--shadow-lg`; `::backdrop` là `--scrim`. Tiêu đề 20/28/600, nội dung 14/20 `--fg-muted`, hàng nút căn phải cách 24px: "Giữ đơn" (secondary) + "Huỷ đơn" (danger). Trang admin dùng nút xác nhận `primary` ("Chuyển sang Đang giao"). Dưới 640px hai nút xếp dọc rộng hết hộp, nút xác nhận ở trên. Đang xử lý: nút xác nhận đổi chữ "Đang …" (§9.3), Esc và nút phụ không đóng hộp; lỗi hiện bằng `Alert` ngay trên hàng nút.
@@ -685,21 +687,21 @@ Chốt 03/11/2026 theo trang tham khảo phụ (khối ô thông số, bấm ô 
 
 | Loại | Thứ tự (`SPEC_ORDER`) |
 |---|---|
-| laptop | `cpu`, `chip`, `gpu`, `ram`, `ssd`, `man_hinh`, `trong_luong` |
-| cpu | `socket`, `nhan_luong`, `xung_toi_da`, `tdp` |
-| gpu | `vram`, `nguon_de_xuat`, `cong_cap`, `kich_thuoc` |
-| ram | `loai`, `dung_luong`, `bus`, `rgb` |
+| laptop | `cpu`, `chip`, `gpu`, `ram`, `ssd`, `man_hinh`, `pin`, `trong_luong` |
+| cpu | `socket`, `nhan_luong`, `xung_toi_da`, `bo_nho_dem`, `tdp`, `do_hoa_tich_hop`, `npu`, `tan_kem_theo` |
+| gpu | `kien_truc`, `vram`, `giao_tiep`, `nguon_de_xuat`, `cong_cap`, `kich_thuoc` |
+| ram | `loai`, `dung_luong`, `bus`, `rgb`, `chieu_cao` |
 | storage | `dung_luong`, `chuan`, `ket_noi`, `doc`, `ghi`, `toc_do` |
-| mainboard | `socket`, `chipset`, `ram`, `kich_thuoc`, `wifi` |
+| mainboard | `socket`, `chipset`, `ram`, `kich_thuoc`, `khe_m2`, `wifi`, `wifi_chuan` |
 | psu | `cong_suat`, `chuan`, `modular`, `cong_16pin` |
-| cooling | `loai`, `socket`, `tdp_toi_da`, `radiator`, `kich_thuoc`, `so_luong`, `khoi_luong` |
-| keyboard | `layout`, `loai`, `switch`, `ket_noi`, `hot_swap` |
-| mouse | `cam_bien`, `dpi`, `ket_noi`, `trong_luong`, `pin` |
-| monitor | `kich_thuoc`, `do_phan_giai`, `tan_so`, `tam_nen`, `mau`, `ket_noi`, `trong_luong` |
-| headset | `ket_noi`, `mic`, `chong_on`, `pin`, `trong_luong` |
+| cooling | `loai`, `socket`, `tdp_toi_da`, `radiator`, `quat`, `kich_thuoc`, `so_luong`, `khoi_luong` |
+| keyboard | `layout`, `loai`, `switch`, `ket_noi`, `hot_swap`, `keycap`, `khung`, `phim_macro`, `ung_dung_tuy_bien`, `sac` |
+| mouse | `cam_bien`, `dpi`, `so_nut`, `ket_noi`, `trong_luong`, `pin`, `sac` |
+| monitor | `kich_thuoc`, `do_phan_giai`, `tan_so`, `tam_nen`, `thoi_gian_phan_hoi`, `do_cong`, `mau`, `ket_noi`, `usb_c`, `trong_luong` |
+| headset | `kieu`, `ket_noi`, `driver`, `mic`, `chong_on`, `pin`, `trong_luong` |
 | accessory | `loai`, `kich_thuoc`, `kich_thuoc_toi_da`, `cong`, `chuan`, `chieu_dai`, `quat` |
 
-(Bảng phủ đủ 49 khoá có trong bộ dữ liệu demo, theo từng loại.)
+(Bảng phủ đủ 69 khoá có trong bộ dữ liệu demo, theo từng loại; cập nhật 25/11/2026 theo #527.)
 
 **`SpecTiles`:**
 
@@ -784,6 +786,9 @@ Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách m
 | Danh sách | như `AccountNav`, padding `4px 8px`; mỗi mục cao tối thiểu 48px, chữ 16/24/500 |
 | Hiện, ẩn | trượt lên 200ms (`--dur-base`, `--ease-standard`); `prefers-reduced-motion` thì hiện ngay |
 | Hành vi | bấm một mục: đóng bảng rồi chuyển trang (Đăng xuất: đăng xuất như §9.17). Đóng bằng ×, Esc, bấm vùng tối. Mở: focus vào mục đang xem; giữ focus trong bảng; khoá cuộn trang; đóng xong trả focus về nút "Đổi mục" (trừ khi đã chuyển trang) |
+
+### 9.28 Ô mã QR (trang bật xác thực hai lớp)
+Chốt 18/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md) 3.4). Ô vuông **176px** (gồm padding và viền), padding **12px** (ảnh QR 150px), nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-xl`. Ảnh tạo trong trình duyệt bằng thư viện `qrcode` (`toDataURL`), chỉ nạp ở trang này. Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục. Chỉ là kích thước bố cục của một trang nên ghi số thẳng trong CSS module, không thêm token.
 
 ## 10. Token sẽ thêm khi cần
 

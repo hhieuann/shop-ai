@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation, type InitialEntry } from 'react-router-dom';
 import { ProductListPage } from './ProductListPage';
+import buttonStyles from '../../../shared/components/Button.module.css';
 
 vi.mock('../../cart/hooks/useCart', () => ({
   useCart: () => ({ add: { isPending: false, mutate: vi.fn() } }),
@@ -217,10 +218,10 @@ describe('ProductListPage', () => {
     expect(
       await screen.findByText('Không có sản phẩm nào có “khongco” trong tên.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Xem tất cả sản phẩm' })).toHaveAttribute(
-      'href',
-      '/products',
-    );
+    const all = screen.getByRole('link', { name: 'Xem tất cả sản phẩm' });
+    expect(all).toHaveAttribute('href', '/products');
+    // Khối rỗng dùng chung (EmptyState), link đi tiếp kiểu nút secondary như trang chi tiết đơn
+    expect(all).toHaveClass(buttonStyles.button!, buttonStyles.secondary!);
     expect(screen.queryByRole('group', { name: 'Sắp xếp' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Phân trang' })).toBeNull();
   });

@@ -9,6 +9,7 @@ import { toSearchText } from '../../src/modules/catalog/domain/search.js';
 import { DynamoProductRepository } from '../../src/modules/catalog/infra/dynamoProductRepository.js';
 import {
   insertMissingProducts,
+  syncProductContent,
   parseSeedFile,
   writeProducts,
 } from '../../src/modules/catalog/infra/productSeed.js';
@@ -97,5 +98,63 @@ describe('insertMissingProducts (prod)', () => {
     expect(result).toEqual({ inserted: 0, skipped: seed.length });
     const prodRepo = new DynamoProductRepository(dynamo.doc, PROD_TABLE);
     expect(await prodRepo.findById(first.productId)).toMatchObject({ stock: 1, price: 123_000 });
+  });
+});
+
+describe('syncProductContent (prod, #527)', () => {
+  const SYNC_TABLE = 'shop-prd-api-ProductsTable-sync';
+
+  beforeAll(async () => {
+    await dynamo.client.send(new CreateTableCommand(productsTableDefinition(SYNC_TABLE)));
+  });
+
+  it('syncProductContent_insertsAll_whenTableEmpty', async () => {
+    // Act
+    const result = await syncProductContent(dynamo.doc, SYNC_TABLE, seed);
+
+    // Assert
+    expect(result).toEqual({ inserted: seed.length, updated: 0 });
+  });
+
+  it('syncProductContent_updatesContent_keepsStockPriceStatus_whenProductExists', async () => {
+    // Arrange: đơn hàng đã trừ tồn kho, giá đã đổi, sản phẩm đã ngừng bán trên prod
+    const first = seed[0];
+    if (!first) throw new Error('file mẫu phải có sản phẩm');
+    await dynamo.doc.send(
+      new UpdateCommand({
+        TableName: SYNC_TABLE,
+        Key: { productId: first.productId },
+        UpdateExpression: 'SET stock = :stock, price = :price, #status = :status',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ':stock': 1, ':price': 123_000, ':status': 'INACTIVE' },
+      }),
+    );
+    const edited = seed.map((p, i) =>
+      i === 0
+        ? {
+            ...p,
+            description: 'Mô tả mới, dài hơn.',
+            specs: { bao_hanh: '24 tháng' },
+            imageUrl: `/products/${p.productId}.webp`,
+            price: 999,
+            stock: 99,
+          }
+        : p,
+    );
+
+    // Act: deploy lại với products.json đã thêm mô tả, specs, ảnh
+    const result = await syncProductContent(dynamo.doc, SYNC_TABLE, edited);
+
+    // Assert: nội dung mới, còn giá, tồn kho, trạng thái giữ như trên prod
+    expect(result).toEqual({ inserted: 0, updated: seed.length });
+    const repo = new DynamoProductRepository(dynamo.doc, SYNC_TABLE);
+    expect(await repo.findById(first.productId)).toMatchObject({
+      description: 'Mô tả mới, dài hơn.',
+      specs: { bao_hanh: '24 tháng' },
+      imageUrl: `/products/${first.productId}.webp`,
+      stock: 1,
+      price: 123_000,
+      status: 'INACTIVE',
+    });
   });
 });

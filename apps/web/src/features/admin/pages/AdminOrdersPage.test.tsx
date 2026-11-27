@@ -5,18 +5,24 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { getTwoFactorEnabled } from '../../../shared/auth/token';
 import type { Account, SessionStatus } from '../../../shared/auth/useSession';
 import { AdminOrdersPage } from './AdminOrdersPage';
 
 let session: SessionStatus = 'signedIn';
 let account: Account = {
   status: 'signedIn',
-  user: { username: 'an', email: 'an@example.com', isAdmin: true },
+  user: { userId: 'sub-an', username: 'an', email: 'an@example.com', isAdmin: true },
 };
 vi.mock('../../../shared/auth/useSession', () => ({
   useSession: () => session,
   useAccount: () => account,
 }));
+// Trạng thái xác thực hai lớp (account.md BR-10): mặc định admin đã bật
+vi.mock('../../../shared/auth/token', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/auth/token')>();
+  return { ...actual, getTwoFactorEnabled: vi.fn() };
+});
 
 const ORDER = {
   orderId: '01K9B7Q2M4X8T6V3N5P7R9S1W3',
@@ -63,11 +69,12 @@ beforeEach(() => {
   session = 'signedIn';
   account = {
     status: 'signedIn',
-    user: { username: 'an', email: 'an@example.com', isAdmin: true },
+    user: { userId: 'sub-an', username: 'an', email: 'an@example.com', isAdmin: true },
   };
   listResponse = () => json({ items: [ORDER] });
   patchResponse = () => json({ ...ORDER, status: 'SHIPPED' });
   deleteResponse = () => json({ ...ORDER, status: 'CANCELLED' });
+  vi.mocked(getTwoFactorEnabled).mockReset().mockResolvedValue(true);
   fetchMock.mockClear();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -82,6 +89,11 @@ function LoginStub() {
   return <p>Trang đăng nhập, quay lại {state?.from}</p>;
 }
 
+function TwoFactorStub() {
+  const { state } = useLocation();
+  return <p>Trang bật xác thực hai lớp {JSON.stringify(state)}</p>;
+}
+
 function renderAt(path = '/admin') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -90,11 +102,62 @@ function renderAt(path = '/admin') {
         <Routes>
           <Route path="/admin" element={<AdminOrdersPage />} />
           <Route path="/login" element={<LoginStub />} />
+          <Route path="/account/two-factor" element={<TwoFactorStub />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
+
+describe('AdminOrdersPage · admin chưa bật xác thực hai lớp (chặn ở web)', () => {
+  it('adminWithoutMfa_redirectsToTwoFactorSetup_andAdminApiNotCalled', async () => {
+    // Arrange
+    vi.mocked(getTwoFactorEnabled).mockResolvedValue(false);
+
+    // Act
+    renderAt();
+
+    // Assert: sang trang bật, bật xong quay lại /admin, có câu cho admin
+    expect(
+      await screen.findByText('Trang bật xác thực hai lớp {"from":"/admin","reason":"admin"}'),
+    ).toBeInTheDocument();
+    // Verify
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('adminWithMfa_seesOrders', async () => {
+    // Act
+    renderAt();
+
+    // Assert
+    expect(await screen.findByText(ORDER.orderId)).toBeInTheDocument();
+  });
+
+  it('mfaStatusUnreadable_stillShowsOrders', async () => {
+    // Arrange: chặn ở web không phải lớp bảo vệ; đọc lỗi thì không khoá admin ngoài trang
+    vi.mocked(getTwoFactorEnabled).mockRejectedValue(new TypeError('offline'));
+
+    // Act
+    renderAt();
+
+    // Assert
+    expect(await screen.findByText(ORDER.orderId)).toBeInTheDocument();
+  });
+
+  it('customer_doesNotReadMfaStatus', () => {
+    // Arrange
+    account = {
+      status: 'signedIn',
+      user: { userId: 'sub-khach', username: 'khach', email: 'khach@example.com', isAdmin: false },
+    };
+
+    // Act
+    renderAt();
+
+    // Verify: khách thường không cần đọc
+    expect(getTwoFactorEnabled).not.toHaveBeenCalled();
+  });
+});
 
 describe('AdminOrdersPage · ai thấy gì', () => {
   it('guest_redirectsToLogin_withFrom', async () => {
@@ -114,7 +177,7 @@ describe('AdminOrdersPage · ai thấy gì', () => {
     // Arrange
     account = {
       status: 'signedIn',
-      user: { username: 'khach', email: 'khach@example.com', isAdmin: false },
+      user: { userId: 'sub-khach', username: 'khach', email: 'khach@example.com', isAdmin: false },
     };
 
     // Act

@@ -23,7 +23,7 @@ describe('specHelp', () => {
     const pairs = new Set(
       seed.products.flatMap((p) => Object.keys(p.specs ?? {}).map((k) => `${p.category}.${k}`)),
     );
-    expect(pairs.size).toBe(70);
+    expect(pairs.size).toBe(93);
     for (const pair of pairs) {
       const [category, key] = pair.split('.') as [string, string];
       expect(specHelp(category, key), pair).toBeTruthy();

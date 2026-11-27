@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../../../shared/api/client';
 import { queryKeys } from '../../../shared/api/queryKeys';
 import type {
@@ -20,6 +20,7 @@ import { LiveAnnouncerProvider } from '../../../shared/components/LiveAnnouncer'
 import { Price } from '../../../shared/components/Price';
 import { useAnnounce } from '../../../shared/hooks/useAnnounce';
 import { formatDateTime, formatVnd } from '../../../shared/lib/format';
+import { useTwoFactorStatus } from '../../account/lib/useTwoFactorStatus';
 import { STATUS_LABEL } from '../../orders/types';
 import styles from './AdminOrdersPage.module.css';
 
@@ -99,6 +100,10 @@ export function AdminOrdersPage() {
   // Chưa đăng nhập thì sang /login, đăng nhập xong quay lại đây (như /orders)
   const session = useRequireSignIn();
   const account = useAccount();
+  const isAdmin = session === 'signedIn' && account.status === 'signedIn' && account.user?.isAdmin;
+  // Admin bắt buộc bật xác thực hai lớp (account.md BR-10). Chỉ chặn ở web: backend kiểm nhóm admin,
+  // không kiểm MFA; bảo vệ thật là bật MFA cho tài khoản admin trên Cognito (threat model L5)
+  const twoFactor = useTwoFactorStatus(isAdmin ? account.user?.email : undefined);
 
   useEffect(() => {
     const previous = document.title;
@@ -114,6 +119,13 @@ export function AdminOrdersPage() {
   }
   // Nhóm admin đọc từ token; đọc hồ sơ lỗi hoặc không phải admin thì không gọi API admin
   if (account.status !== 'signedIn' || !account.user?.isAdmin) return <Forbidden />;
+  if (twoFactor.isPending) return <p className={styles.message}>Đang tải…</p>;
+  // Chưa bật thì sang trang bật, bật xong quay lại đây; đọc trạng thái lỗi thì vẫn hiện trang
+  if (twoFactor.data === false) {
+    return (
+      <Navigate to="/account/two-factor" replace state={{ from: '/admin', reason: 'admin' }} />
+    );
+  }
 
   return (
     <LiveAnnouncerProvider>

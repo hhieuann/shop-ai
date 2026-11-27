@@ -109,4 +109,3 @@ column-gap: 16px;  align-items: start;
 ## 7. Việc còn lại
 - Widget "Thường mua kèm" (mục 3.4) chờ An làm `GET /api/v1/recs`.
 - Sau khi xoá một dòng, chuyển focus tới dòng kế tiếp (mục 6) chưa làm.
-- Nút trong trang đang là class riêng `primaryButton`; khi có component `Button` (design-system §9.3) thì thay.

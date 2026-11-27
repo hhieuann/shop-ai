@@ -5,7 +5,9 @@
  * products.json đổi (stack truyền mã băm). SEED_MODE do CDK đặt:
  * - overwrite (sandbox, dev, staging): ghi đè theo productId, chạy lại không nhân đôi;
  *   writeProducts còn tự chặn bảng prod.
- * - insert-missing (prod): chỉ thêm sản phẩm chưa có, giữ tồn kho và giá đang chạy.
+ * - sync-content (prod): thêm sản phẩm chưa có; sản phẩm đã có thì cập nhật tên, hãng, mô tả,
+ *   specs, ảnh, giữ tồn kho, giá, trạng thái và loại đang chạy (#527).
+ * - insert-missing: chỉ thêm sản phẩm chưa có (chế độ cũ của prod, giữ để quay lại nếu cần).
  * Delete: không làm gì; bảng bị xoá cùng stack ở môi trường không phải prod, prod giữ lại bảng.
  */
 import { readFile } from 'node:fs/promises';
@@ -14,7 +16,12 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import type { CloudFormationCustomResourceEvent } from 'aws-lambda';
 import { requiredEnv } from '../../shared/config.js';
-import { insertMissingProducts, parseSeedFile, writeProducts } from './infra/productSeed.js';
+import {
+  insertMissingProducts,
+  parseSeedFile,
+  syncProductContent,
+  writeProducts,
+} from './infra/productSeed.js';
 
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -31,6 +38,10 @@ export async function handler(
   const products = parseSeedFile(JSON.parse(await readFile(file, 'utf8')));
   const table = requiredEnv('PRODUCTS_TABLE');
   const mode = requiredEnv('SEED_MODE');
+  if (mode === 'sync-content') {
+    const { inserted, updated } = await syncProductContent(db, table, products);
+    return { PhysicalResourceId: physicalId, Data: { written: inserted + updated } };
+  }
   if (mode === 'insert-missing') {
     const { inserted } = await insertMissingProducts(db, table, products);
     return { PhysicalResourceId: physicalId, Data: { written: inserted } };

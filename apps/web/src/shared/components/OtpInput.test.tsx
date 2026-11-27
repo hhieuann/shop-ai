@@ -158,3 +158,32 @@ describe('OtpInput', () => {
     expect(boxes().some((box) => box.classList.contains(styles.active))).toBe(false);
   });
 });
+
+describe('OtpInput gợi ý', () => {
+  it('hint_isShownAndDescribesInput_untilErrorReplacesIt', () => {
+    // Arrange + Act: có gợi ý, chưa lỗi
+    const { rerender } = render(
+      <OtpInput label="Mã xác thực" value="" onChange={() => {}} hint="Mã trong ứng dụng" />,
+    );
+    const input = screen.getByLabelText('Mã xác thực');
+
+    // Assert: gợi ý nối vào ô
+    const hint = screen.getByText('Mã trong ứng dụng');
+    expect(input).toHaveAttribute('aria-describedby', hint.id);
+
+    // Act: có lỗi thì lỗi thay chỗ gợi ý
+    rerender(
+      <OtpInput
+        label="Mã xác thực"
+        value=""
+        onChange={() => {}}
+        hint="Mã trong ứng dụng"
+        error="Nhập đủ 6 số."
+      />,
+    );
+
+    // Assert
+    expect(screen.queryByText('Mã trong ứng dụng')).toBeNull();
+    expect(input).toHaveAttribute('aria-describedby', screen.getByText('Nhập đủ 6 số.').id);
+  });
+});

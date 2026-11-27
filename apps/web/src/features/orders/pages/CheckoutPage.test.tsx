@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { SessionStatus } from '../../../shared/auth/useSession';
 import alertStyles from '../../../shared/components/Alert.module.css';
+import { resetCrossTabSessionForTests } from '../../account/lib/crossTabSession';
 import { CheckoutPage } from './CheckoutPage';
 
 let session: SessionStatus = 'signedIn';
@@ -27,6 +28,7 @@ const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(
 
 beforeEach(() => {
   session = 'signedIn';
+  resetCrossTabSessionForTests();
   fetchMock.mockClear();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -35,6 +37,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sessionStorage.clear();
+  localStorage.clear();
 });
 
 function renderCheckout() {
@@ -94,5 +97,65 @@ describe('CheckoutPage: màu thông báo lỗi đặt hàng (dat-hang.md mục 4
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveClass(alertStyles.danger!);
     expect(alert).not.toHaveClass(alertStyles.warning!);
+  });
+});
+
+function CartProbe() {
+  return <p data-testid="where">{useLocation().pathname}</p>;
+}
+
+describe('CheckoutPage: chốt chặn trước khi gửi đơn (#508)', () => {
+  it('accountSwitchedInOtherTab_doesNotPostOrder_andGoesToCart', async () => {
+    // Arrange: trang đặt hàng đang hiện A (token giả, sub giả của bản mock)
+    localStorage.setItem('shop-ai:dev-token', 'dev');
+    localStorage.setItem('shop-ai:dev-user-id', 'sub-a');
+    orderProblem = { status: 409, code: 'OUT_OF_STOCK' };
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={[{ pathname: '/checkout', state: { selectedItems: ITEMS } }]}>
+          <Routes>
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/cart" element={<CartProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    // Tab khác đăng nhập B, tin giữa các tab bị lỡ
+    localStorage.setItem('shop-ai:dev-user-id', 'sub-b');
+
+    // Act
+    submitValidAddress();
+
+    // Assert: không gửi đơn, sang /cart, mục đặt dở đã bỏ, có cờ câu báo
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/cart'));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('shop-ai:checkout-items')).toBeNull();
+    expect(sessionStorage.getItem('shop-ai:account-switched-notice')).toBe('1');
+  });
+
+  it('stuckAfterReload_showsFallbackAlert_andDoesNotPost', async () => {
+    // Arrange: đã tải lại vì đổi người mà vẫn lệch
+    localStorage.setItem('shop-ai:dev-token', 'dev');
+    localStorage.setItem('shop-ai:dev-user-id', 'sub-a');
+    renderCheckout();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    // giả trạng thái "tải lại xong vẫn lệch": cờ tải lại trỏ người khác, nạp lại module trạng thái
+    sessionStorage.setItem('shop-ai:auth-reload', 'sub-x');
+    cleanup();
+    resetCrossTabSessionForTests();
+    renderCheckout();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    localStorage.setItem('shop-ai:dev-user-id', 'sub-b');
+
+    // Act
+    submitValidAddress();
+
+    // Assert
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(
+      'Tài khoản vừa đổi ở tab khác. Tải lại trang để đặt hàng bằng tài khoản đang đăng nhập.',
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -100,6 +100,8 @@ export function CodeStep({ title, subtitle, onSubmit, onResend, alert }: CodeSte
           onComplete={(value) => void send(value)}
           readOnly={busy}
           error={codeError}
+          // Bước xác thực hai lớp khi đăng nhập có dòng gợi ý (dang-nhap.md 3.1)
+          hint={onResend ? undefined : 'Mã trong ứng dụng xác thực của bạn'}
           autoFocus
           inputRef={inputRef}
         />
