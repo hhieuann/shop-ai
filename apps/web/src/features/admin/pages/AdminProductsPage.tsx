@@ -136,8 +136,12 @@ function AdminProducts() {
         status: kind === 'hide' ? 'INACTIVE' : 'ACTIVE',
       });
     },
-    onSuccess: (_result, { kind, product }) => {
+    onSuccess: (result, { kind, product }) => {
       setToDelete(null);
+      // Khôi phục trả bản mới: trang sửa mở ngay sau đó dùng luôn bản này (review #559)
+      if (kind === 'restore' && result) {
+        queryClient.setQueryData(queryKeys.admin.product(result.productId), result);
+      }
       toast.show(
         {
           hide: `Đã ẩn "${product.name}" khỏi cửa hàng.`,

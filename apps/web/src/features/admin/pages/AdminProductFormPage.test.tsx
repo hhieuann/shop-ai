@@ -29,7 +29,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 /** Trả lời theo method; GET chi tiết mặc định trả PRODUCT */
-let getResponse: (url: string) => Response;
+let getResponse: (url: string) => Response | Promise<Response>;
 let writeResponse: () => Response;
 const respond = async (url: string, init?: RequestInit) =>
   (init?.method ?? 'GET') === 'GET' ? getResponse(url) : writeResponse();
@@ -66,8 +66,10 @@ function Where() {
   return <p data-testid="where">{`${location.pathname}${location.search}`}</p>;
 }
 
-function renderAt(path: string) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderAt(
+  path: string,
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const router = createMemoryRouter(
     [
       { path: '/admin/products/new', element: <AdminProductFormPage /> },
@@ -304,6 +306,30 @@ describe('AdminProductFormPage · sửa (BR-12)', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('radiogroup')).toBeNull();
     expect(screen.getByText(/Loại hàng không đổi được/)).toBeInTheDocument();
+    expect(field(/Giá bán/)).toHaveValue('8290000');
+  });
+
+  it('edit_waitsForFreshProduct_insteadOfDrawingStaleCache', async () => {
+    // Arrange: cache còn bản cũ (mở trang sửa lần trước); API trả bản mới sau một nhịp
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const stale = { ...PRODUCT, name: 'Tên cũ trong cache', price: 1_000_000 };
+    queryClient.setQueryData(['admin', 'products', 'detail', PRODUCT.productId], stale);
+    let release!: () => void;
+    getResponse = () =>
+      new Promise<Response>((resolve) => {
+        release = () => resolve(json(PRODUCT));
+      });
+
+    // Act
+    renderAt(editPath, queryClient);
+
+    // Assert: chưa có bản mới thì chưa vẽ form từ bản cũ (review #559)
+    expect(await screen.findByText('Đang tải sản phẩm…')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: stale.name })).toBeNull();
+    release();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: PRODUCT.name }),
+    ).toBeInTheDocument();
     expect(field(/Giá bán/)).toHaveValue('8290000');
   });
 

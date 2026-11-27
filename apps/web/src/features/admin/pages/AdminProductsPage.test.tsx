@@ -84,8 +84,10 @@ function Where() {
   return <p data-testid="where">{`${location.pathname}${location.search}`}</p>;
 }
 
-function renderAt(path = '/admin/products') {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderAt(
+  path = '/admin/products',
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
@@ -412,6 +414,27 @@ describe('AdminProductsPage · thao tác (BR-13, BR-14)', () => {
       await screen.findByText(`Đã khôi phục "${DELETED.name}". Sản phẩm đang ở trạng thái đã ẩn.`),
     ).toBeInTheDocument();
     expect(calls('POST')[0]?.[0]).toBe(`/api/v1/admin/products/${DELETED.productId}/restore`);
+  });
+
+  it('restore_putsReturnedProductIntoDetailCache', async () => {
+    // Arrange: cache chi tiết còn bản đã xoá (trang sửa từng mở)
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const detailKey = ['admin', 'products', 'detail', DELETED.productId];
+    queryClient.setQueryData(detailKey, DELETED);
+    const restored = { ...DELETED, deletedAt: undefined, updatedAt: '2026-11-27T09:00:00.000Z' };
+    listResponse = () => json({ items: [DELETED], counts: COUNTS });
+    writeResponse = () => json(restored);
+    renderAt('/admin/products?status=DELETED', queryClient);
+    await screen.findByText(DELETED.name);
+
+    // Act
+    await user.click(
+      within(row(DELETED.name)).getByRole('button', { name: `Khôi phục: ${DELETED.name}` }),
+    );
+
+    // Assert: trang sửa mở ngay sau đó dùng bản vừa khôi phục (review #559)
+    await waitFor(() => expect(queryClient.getQueryData(detailKey)).toEqual(restored));
   });
 
   it('conflict409_tellsChangedElsewhere_andReloads', async () => {

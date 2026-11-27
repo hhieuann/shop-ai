@@ -98,10 +98,15 @@ export function copyFrom(product: AdminProduct): ProductFormValues {
   return { ...fromProduct(product), name: '', price: '', stock: '', imageUrl: '' };
 }
 
-/** Giá nhập có thể có dấu chấm, phẩy, khoảng trắng ngăn nghìn; sai dạng thì NaN */
+/**
+ * Giá, tồn kho là số nguyên: viết liền ("1500000") hoặc ngăn nghìn bằng dấu chấm, phẩy, khoảng trắng
+ * đúng nhóm 3 chữ số ("1.500.000", "1,500,000"). Có phần thập phân ("1,5", "1.50") hay sai dạng thì NaN
+ * để form báo lỗi, không tự bỏ dấu thành số khác (review #559: "1,5" từng thành 15).
+ */
 export function parseAmount(text: string): number {
-  const digits = text.replace(/[.,\s]/g, '');
-  return /^\d+$/.test(digits) ? Number(digits) : Number.NaN;
+  const trimmed = text.trim();
+  if (!/^\d+$/.test(trimmed) && !/^\d{1,3}([.,\s]\d{3})+$/.test(trimmed)) return Number.NaN;
+  return Number(trimmed.replace(/[.,\s]/g, ''));
 }
 
 /** Hiện giá có dấu chấm ngăn nghìn khi rời ô */
@@ -147,10 +152,18 @@ export function validateProduct(values: ProductFormValues): ProductFormErrors {
   return errors;
 }
 
-/** Thông số có giá trị (ô trống không lưu) */
-function filledSpecs(specs: Readonly<Record<string, string>>): Record<string, string> {
+/**
+ * Thông số sẽ lưu: chỉ khoá thuộc SPEC_ORDER của loại (khoá lạ của dữ liệu cũ bị bỏ, API từ chối khoá lạ,
+ * BR-11), bỏ ô trống
+ */
+function filledSpecs(
+  category: ProductCategory,
+  specs: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const allowed = new Set<string>(SPEC_ORDER[category]);
   return Object.fromEntries(
     Object.entries(specs)
+      .filter(([key]) => allowed.has(key))
       .map(([key, value]) => [key, value.trim()] as const)
       .filter(([, value]) => value !== ''),
   );
@@ -161,7 +174,7 @@ export function toCreateBody(
   category: ProductCategory,
   values: ProductFormValues,
 ): AdminProductCreate {
-  const specs = filledSpecs(values.specs);
+  const specs = filledSpecs(category, values.specs);
   const imageUrl = values.imageUrl.trim();
   return {
     name: values.name.trim(),
@@ -207,7 +220,7 @@ export function toPatchBody(
   if (status !== original.status) body.status = status;
   const imageUrl = values.imageUrl.trim();
   if (imageUrl !== (original.imageUrl ?? '')) body.imageUrl = imageUrl === '' ? null : imageUrl;
-  const specs = filledSpecs(values.specs);
+  const specs = filledSpecs(original.category, values.specs);
   if (!sameSpecs(specs, original.specs ?? {})) body.specs = specs;
 
   if (Object.keys(body).length === 0) return null;

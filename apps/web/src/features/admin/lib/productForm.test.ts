@@ -44,7 +44,15 @@ describe('parseAmount, formatAmount', () => {
     ['0', 0],
     ['abc', Number.NaN],
     ['-5', Number.NaN],
-    ['1.5', 15],
+    ['1500000', 1_500_000],
+    ['1.500.000', 1_500_000],
+    ['1,500,000', 1_500_000],
+    ['1 500 000', 1_500_000],
+    // Có phần thập phân hoặc nhóm không đủ 3 chữ số: báo lỗi, không tự thành số khác (review #559)
+    ['1.5', Number.NaN],
+    ['1,5', Number.NaN],
+    ['1.50', Number.NaN],
+    ['1.5000', Number.NaN],
   ])('parseAmount(%s)', (text, expected) => {
     expect(parseAmount(text)).toBe(expected);
   });
@@ -141,6 +149,31 @@ describe('toPatchBody (catalog.md BR-12)', () => {
 
     // Assert
     expect(body).toEqual({ updatedAt: PRODUCT.updatedAt, specs: { vram: '8GB GDDR6 (bản OC)' } });
+  });
+});
+
+describe('thông số lạ của dữ liệu cũ (review #559)', () => {
+  it('toPatchBody_dropsSpecKeysNotInSpecOrder', () => {
+    // Arrange: món cũ có khoá không thuộc SPEC_ORDER của gpu
+    const old = { ...PRODUCT, specs: { ...PRODUCT.specs, khoa_cu: 'x' } };
+    const values = {
+      ...fromProduct(old),
+      specs: { ...fromProduct(old).specs, vram: '16GB GDDR6' },
+    };
+
+    // Act
+    const body = toPatchBody(old, values);
+
+    // Assert: gửi cả bảng thông số, không có khoá lạ
+    expect(body?.specs).toEqual({ vram: '16GB GDDR6', nguon_de_xuat: '550W' });
+  });
+
+  it('toCreateBody_dropsSpecKeysNotInSpecOrder', () => {
+    // Act
+    const body = toCreateBody('gpu', valid({ specs: { vram: '8GB GDDR6', khoa_cu: 'x' } }));
+
+    // Assert
+    expect(body.specs).toEqual({ vram: '8GB GDDR6' });
   });
 });
 
