@@ -1,0 +1,657 @@
+import type { ProductCategory } from '../../../shared/api/types';
+
+/**
+ * Ảnh sản phẩm demo (#530): 104 món của seed có ảnh ở `public/product-images/<productId>.webp`
+ * (600×600, WebP). Ảnh thuộc về nhà sản xuất, chỉ dùng minh hoạ cho dự án học tập; trang
+ * "Nguồn ảnh" (`/image-credits`) liệt kê từng món. Tệp sinh bằng script, không sửa tay.
+ */
+export interface ProductImageCredit {
+  readonly productId: string;
+  readonly name: string;
+  readonly category: ProductCategory;
+  /** Hãng sản xuất, chủ sở hữu ảnh */
+  readonly brand: string;
+  /** Trang sản phẩm chính thức của hãng, nếu có */
+  readonly page?: string;
+}
+
+export const PRODUCT_IMAGE_CREDITS: readonly ProductImageCredit[] = [
+  {
+    productId: '01KYXGSD804J5SF7VFV34GBR11',
+    name: 'Laptop ASUS TUF Gaming A15 FA507NV (Ryzen 7 7735HS, RTX 4060)',
+    category: 'laptop',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01KZ1FTBC0XZM5Y5E9PDY7WMVX',
+    name: 'Laptop Acer Nitro V 15 ANV15-51 (i5-13420H, RTX 4050)',
+    category: 'laptop',
+    brand: 'Acer',
+  },
+  {
+    productId: '01KZ5EV9G08AMVQA048RKYAYPY',
+    name: 'Laptop Lenovo Legion 5 16IRX9 (i7-14650HX, RTX 4060)',
+    category: 'laptop',
+    brand: 'Lenovo',
+  },
+  {
+    productId: '01KZ9DW7M0AWR79CNDVYGR48H3',
+    name: 'Laptop Dell Inspiron 14 5440 (i5-1334U)',
+    category: 'laptop',
+    brand: 'Dell',
+  },
+  {
+    productId: '01KZDCX5R08P79YY6ZCEFQ20KN',
+    name: 'Laptop HP Pavilion 15-eg3000 (i5-1335U)',
+    category: 'laptop',
+    brand: 'HP',
+  },
+  {
+    productId: '01KZHBY3W0N4GNW76FCMQHZV0S',
+    name: 'Laptop ASUS Vivobook 15 OLED A1505VA (i5-13500H)',
+    category: 'laptop',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01KZNAZ2003F1XB7FGQBHVBP0Y',
+    name: 'MacBook Air 13 M3 8GB 256GB',
+    category: 'laptop',
+    brand: 'Apple',
+  },
+  {
+    productId: '01KZSA00407KFJ5HMX2W0EQVF3',
+    name: 'Laptop MSI Modern 14 C12MO (i5-1235U)',
+    category: 'laptop',
+    brand: 'MSI',
+  },
+  {
+    productId: '01KZX90Y80YH0333W0DD3VSJHD',
+    name: 'Bộ vi xử lý Intel Core i5-14400F',
+    category: 'cpu',
+    brand: 'Intel',
+  },
+  {
+    productId: '01M0181WC0T531V2WYWPSW5PBQ',
+    name: 'Bộ vi xử lý Intel Core i7-14700K',
+    category: 'cpu',
+    brand: 'Intel',
+  },
+  {
+    productId: '01M0572TG0VZXVTZHKNQ6CR39C',
+    name: 'Bộ vi xử lý Intel Core i3-12100F',
+    category: 'cpu',
+    brand: 'Intel',
+  },
+  {
+    productId: '01M0963RM0WPAZPETZ2CA882Q4',
+    name: 'Bộ vi xử lý Intel Core Ultra 5 245K',
+    category: 'cpu',
+    brand: 'Intel',
+  },
+  {
+    productId: '01M0D54PR0M597EHNNG06M5YN3',
+    name: 'Bộ vi xử lý AMD Ryzen 5 7600',
+    category: 'cpu',
+    brand: 'AMD',
+  },
+  {
+    productId: '01M0H45MW06A4N4NTK893DC3B2',
+    name: 'Bộ vi xử lý AMD Ryzen 7 7800X3D',
+    category: 'cpu',
+    brand: 'AMD',
+  },
+  {
+    productId: '01M0N36K00AX2TSSS630C5853X',
+    name: 'Bộ vi xử lý AMD Ryzen 9 7950X',
+    category: 'cpu',
+    brand: 'AMD',
+  },
+  {
+    productId: '01M0S27H40KKG176Z3XY84CWES',
+    name: 'Bộ vi xử lý AMD Ryzen 5 5600',
+    category: 'cpu',
+    brand: 'AMD',
+  },
+  {
+    productId: '01M0X18F808HZBMKFVR050B5R6',
+    name: 'Card màn hình ASUS TUF Gaming GeForce RTX 4070 Super 12GB',
+    category: 'gpu',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01M1109DC0MD6M1GX6QXV3KRTS',
+    name: 'Card màn hình MSI GeForce RTX 4060 Ventus 2X 8GB',
+    category: 'gpu',
+    brand: 'MSI',
+  },
+  {
+    productId: '01M14ZABG0GS6597BPKY0S6Y9F',
+    name: 'Card màn hình Gigabyte GeForce RTX 4060 Ti Eagle 8GB',
+    category: 'gpu',
+    brand: 'Gigabyte',
+  },
+  {
+    productId: '01M18YB9M0VM21MQGTPQF1XEE8',
+    name: 'Card màn hình ASUS ROG Strix GeForce RTX 4080 Super 16GB',
+    category: 'gpu',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01M1CXC7R0YBJNQ3B292245B6M',
+    name: 'Card màn hình Sapphire Pulse Radeon RX 7800 XT 16GB',
+    category: 'gpu',
+    brand: 'Sapphire',
+  },
+  {
+    productId: '01M1GWD5W0NYQBGHEBF6DRKC6A',
+    name: 'Card màn hình PowerColor Fighter Radeon RX 7600 8GB',
+    category: 'gpu',
+    brand: 'PowerColor',
+  },
+  {
+    productId: '01M1MVE400BF7WB8TAJJ6E4EDY',
+    name: 'Card màn hình Zotac Gaming GeForce RTX 3060 Twin Edge 12GB',
+    category: 'gpu',
+    brand: 'Zotac',
+  },
+  {
+    productId: '01M1RTF24017RHK35Q3XXZMJNM',
+    name: 'Card màn hình MSI GeForce RTX 3050 Ventus 2X 6GB',
+    category: 'gpu',
+    brand: 'MSI',
+  },
+  {
+    productId: '01M1WSG080QG6E0GXT37MW7V1D',
+    name: 'RAM Kingston Fury Beast 16GB (2x8GB) DDR4 3200MHz',
+    category: 'ram',
+    brand: 'Kingston',
+  },
+  {
+    productId: '01M20RGYC0MNAK1ZECFKDMP0JT',
+    name: 'RAM Corsair Vengeance LPX 32GB (2x16GB) DDR4 3600MHz',
+    category: 'ram',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M24QHWG07483TQH4C3TY2A0W',
+    name: 'RAM G.Skill Trident Z5 RGB 32GB (2x16GB) DDR5 6000MHz',
+    category: 'ram',
+    brand: 'G.Skill',
+  },
+  {
+    productId: '01M28PJTM0RVFFEB2YWVXQK4RB',
+    name: 'RAM Kingston Fury Beast 32GB (2x16GB) DDR5 5600MHz',
+    category: 'ram',
+    brand: 'Kingston',
+  },
+  {
+    productId: '01M2CNKRR0YJRSQPDP7KVJQ3T8',
+    name: 'RAM Corsair Vengeance 64GB (2x32GB) DDR5 5600MHz',
+    category: 'ram',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M2GMMPW0EFSN9GH47279VPSV',
+    name: 'RAM TeamGroup T-Force Delta RGB 16GB (2x8GB) DDR5 6000MHz',
+    category: 'ram',
+    brand: 'TeamGroup',
+  },
+  {
+    productId: '01M2MKNN00TEKTMAMPEB36EE4A',
+    name: 'RAM Laptop Samsung 16GB DDR5 4800MHz SO-DIMM',
+    category: 'ram',
+    brand: 'Samsung',
+  },
+  {
+    productId: '01M2RJPK40A22QBYXNHZPS4DMZ',
+    name: 'RAM Laptop Kingston 8GB DDR4 3200MHz SO-DIMM',
+    category: 'ram',
+    brand: 'Kingston',
+  },
+  {
+    productId: '01M2WHQH80B6JK25P1DK6R5T2E',
+    name: 'Ổ cứng SSD Samsung 990 Pro 1TB NVMe PCIe 4.0',
+    category: 'storage',
+    brand: 'Samsung',
+  },
+  {
+    productId: '01M30GRFC0AP42KF6Q6SBQW4CF',
+    name: 'Ổ cứng SSD Kingston NV2 500GB NVMe',
+    category: 'storage',
+    brand: 'Kingston',
+  },
+  {
+    productId: '01M34FSDG0PNJR6JV6T0EPHF0W',
+    name: 'Ổ cứng SSD WD Black SN850X 2TB NVMe',
+    category: 'storage',
+    brand: 'Western Digital',
+    page: 'https://www.sandisk.com/products/ssd/internal-ssd/wd-black-sn850x-nvme-ssd',
+  },
+  {
+    productId: '01M38ETBM0WJ54VK1G1VH113CE',
+    name: 'Ổ cứng SSD Crucial P3 Plus 1TB NVMe',
+    category: 'storage',
+    brand: 'Crucial',
+  },
+  {
+    productId: '01M3CDV9R0SXFDTT0SCBAD31YN',
+    name: 'Ổ cứng SSD Samsung 870 EVO 500GB SATA 2.5 inch',
+    category: 'storage',
+    brand: 'Samsung',
+  },
+  {
+    productId: '01M3GCW7W0MGC377NNF5SDGFVF',
+    name: 'Ổ cứng HDD Seagate BarraCuda 2TB 7200rpm',
+    category: 'storage',
+    brand: 'Seagate',
+  },
+  {
+    productId: '01M3MBX60007TEY2B5KRT89B7A',
+    name: 'Ổ cứng HDD WD Blue 4TB 5400rpm',
+    category: 'storage',
+    brand: 'Western Digital',
+  },
+  {
+    productId: '01KYXV3040HAMZQH2KP7RMCZ9H',
+    name: 'Ổ cứng di động SSD Samsung T7 1TB USB-C',
+    category: 'storage',
+    brand: 'Samsung',
+  },
+  {
+    productId: '01KZ1T3Y80V01B3Q6BH6DMX9AD',
+    name: 'Bo mạch chủ ASUS PRIME B760M-A WIFI D4',
+    category: 'mainboard',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01KZ5S4WC0K0Q1TM4N0A667W9N',
+    name: 'Bo mạch chủ MSI PRO B760M-P DDR4',
+    category: 'mainboard',
+    brand: 'MSI',
+  },
+  {
+    productId: '01KZ9R5TG0XKDSPSXE2H2A50QT',
+    name: 'Bo mạch chủ Gigabyte Z790 AORUS ELITE AX',
+    category: 'mainboard',
+    brand: 'Gigabyte',
+  },
+  {
+    productId: '01KZDQ6RM0A9QEJY24TDHZ0Z4F',
+    name: 'Bo mạch chủ ASUS TUF GAMING B650-PLUS WIFI',
+    category: 'mainboard',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01KZHP7PR0CV2V2PQF36CDHSZC',
+    name: 'Bo mạch chủ MSI B650M GAMING PLUS WIFI',
+    category: 'mainboard',
+    brand: 'MSI',
+  },
+  {
+    productId: '01KZNN8MW0TE28E2SKYDQG18TX',
+    name: 'Bo mạch chủ ASRock B550M Pro4',
+    category: 'mainboard',
+    brand: 'ASRock',
+  },
+  {
+    productId: '01KZSM9K00M6EQX9FDBKXRFG97',
+    name: 'Bo mạch chủ Gigabyte H610M S2H DDR4',
+    category: 'mainboard',
+    brand: 'Gigabyte',
+  },
+  {
+    productId: '01KZXKAH40C4PD7XEK8YXASACA',
+    name: 'Bo mạch chủ ASUS ROG STRIX Z890-A GAMING WIFI',
+    category: 'mainboard',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01M01JBF806PSNQ2BYBVNHNA69',
+    name: 'Nguồn máy tính Corsair RM750e 750W 80 Plus Gold',
+    category: 'psu',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M05HCDC077PH6YJ73D623GPC',
+    name: 'Nguồn máy tính MSI MAG A650BN 650W 80 Plus Bronze',
+    category: 'psu',
+    brand: 'MSI',
+  },
+  {
+    productId: '01M09GDBG04HWZPXHXS7BYVJ9W',
+    name: 'Nguồn máy tính Cooler Master MWE Gold 850 V2',
+    category: 'psu',
+    brand: 'Cooler Master',
+  },
+  {
+    productId: '01M0DFE9M06P0JWG4RYE4FBQ29',
+    name: 'Nguồn máy tính Seasonic Focus GX-1000 1000W',
+    category: 'psu',
+    brand: 'Seasonic',
+  },
+  {
+    productId: '01M0HEF7R01D6ZWTWMS5WRZKGP',
+    name: 'Nguồn máy tính Deepcool PK550D 550W 80 Plus Bronze',
+    category: 'psu',
+    brand: 'Deepcool',
+  },
+  {
+    productId: '01M0NDG5W0400XH8W0M3DTHVVV',
+    name: 'Nguồn máy tính ASUS ROG Strix 850W Gold Aura',
+    category: 'psu',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01M0SCH400JDHQ2Y9FPTJNB4RP',
+    name: 'Nguồn máy tính Thermaltake Smart 600W 80 Plus White',
+    category: 'psu',
+    brand: 'Thermaltake',
+  },
+  {
+    productId: '01M0XBJ240EQTHZXEGEBCEH7RJ',
+    name: 'Nguồn máy tính Corsair CX650 650W 80 Plus Bronze',
+    category: 'psu',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M11AK0808SD2T6PRHBBYV7SK',
+    name: 'Tản nhiệt khí Deepcool AK400',
+    category: 'cooling',
+    brand: 'Deepcool',
+    page: 'https://www.deepcool.com/products/Cooling/cpuaircoolers/AK400-Performance-CPU-Cooler-1851-1700-AM5/2024/15222.shtml',
+  },
+  {
+    productId: '01M159KYC078JFJ76HGAW6R8J1',
+    name: 'Tản nhiệt khí Thermalright Peerless Assassin 120 SE',
+    category: 'cooling',
+    brand: 'Thermalright',
+  },
+  {
+    productId: '01M198MWG03Z0ZHV72CQ7G24PA',
+    name: 'Tản nhiệt nước AIO NZXT Kraken 240',
+    category: 'cooling',
+    brand: 'NZXT',
+  },
+  {
+    productId: '01M1D7NTM09C65YT9KZZPTPNRW',
+    name: 'Tản nhiệt nước AIO Corsair iCUE H150i Elite 360',
+    category: 'cooling',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M1H6PRR0DNAR67P0X91Q9SCM',
+    name: 'Tản nhiệt khí Noctua NH-D15 chromax.black',
+    category: 'cooling',
+    brand: 'Noctua',
+  },
+  {
+    productId: '01M1N5QPW0E2JYNXVKJ4WWPWFP',
+    name: 'Quạt case Arctic P12 PWM PST (bộ 5 cái)',
+    category: 'cooling',
+    brand: 'Arctic',
+    page: 'https://www.arctic.de/en/P12-PWM-PST/ACFAN00170A',
+  },
+  {
+    productId: '01M1S4RN0022VE5VS0WD2BWCXJ',
+    name: 'Keo tản nhiệt Arctic MX-6 4g',
+    category: 'cooling',
+    brand: 'Arctic',
+  },
+  {
+    productId: '01M1X3SK40MXNPGME61B3XTT7N',
+    name: 'Tản nhiệt khí Cooler Master Hyper 212 Spectrum V3',
+    category: 'cooling',
+    brand: 'Cooler Master',
+  },
+  {
+    productId: '01M212TH807349RSRKH8GRMEP1',
+    name: 'Bàn phím cơ Keychron K8 Pro (Gateron Brown)',
+    category: 'keyboard',
+    brand: 'Keychron',
+  },
+  {
+    productId: '01M251VFC0FRSB5WC1HF2CA8FE',
+    name: 'Bàn phím cơ AKKO 3098B Multi-modes',
+    category: 'keyboard',
+    brand: 'AKKO',
+  },
+  {
+    productId: '01M290WDG0HQDH92N97H3JHH0J',
+    name: 'Bàn phím cơ Logitech G Pro X TKL Lightspeed',
+    category: 'keyboard',
+    brand: 'Logitech',
+  },
+  {
+    productId: '01M2CZXBM0571GGFVFGGBBKWKY',
+    name: 'Bàn phím cơ Razer BlackWidow V4 X',
+    category: 'keyboard',
+    brand: 'Razer',
+  },
+  {
+    productId: '01M2GYY9R0R6NP1XM2BN4BS3ZA',
+    name: 'Bàn phím cơ E-DRA EK387 Pro',
+    category: 'keyboard',
+    brand: 'E-DRA',
+  },
+  {
+    productId: '01M2MXZ7W0BMHE0ZW94EHBEZF2',
+    name: 'Bàn phím không dây Logitech MX Keys S',
+    category: 'keyboard',
+    brand: 'Logitech',
+    page: 'https://www.logitech.com/en-us/shop/p/mx-keys-s.920-011406',
+  },
+  {
+    productId: '01M2RX0600CN71QF0PR90F4BH9',
+    name: 'Bàn phím cơ DareU EK87 V2',
+    category: 'keyboard',
+    brand: 'DareU',
+  },
+  {
+    productId: '01M2WW1440GMZ27NG3103KV8CD',
+    name: 'Bàn phím cơ Corsair K70 RGB PRO',
+    category: 'keyboard',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M30V2280BQMKA1W630JAPWE5',
+    name: 'Chuột gaming Logitech G502 X Plus không dây',
+    category: 'mouse',
+    brand: 'Logitech',
+  },
+  {
+    productId: '01M34T30C0CM4GMJXCJ8MDASRJ',
+    name: 'Chuột gaming Logitech G102 Lightsync',
+    category: 'mouse',
+    brand: 'Logitech',
+  },
+  {
+    productId: '01M38S3YG0W6BKTQX75CVACQSM',
+    name: 'Chuột không dây Logitech MX Master 3S',
+    category: 'mouse',
+    brand: 'Logitech',
+  },
+  {
+    productId: '01M3CR4WM0WPNZNJYN21WDCHGZ',
+    name: 'Chuột gaming Razer DeathAdder V3',
+    category: 'mouse',
+    brand: 'Razer',
+  },
+  {
+    productId: '01M3GQ5TR0DH1Z32GWGG764J9X',
+    name: 'Chuột không dây Logitech M331 Silent Plus',
+    category: 'mouse',
+    brand: 'Logitech',
+  },
+  {
+    productId: '01M3MP6RW0MF6C34GP6CR9GE2W',
+    name: 'Chuột gaming Razer Viper V3 Pro không dây',
+    category: 'mouse',
+    brand: 'Razer',
+  },
+  {
+    productId: '01KYY5CK008AG6HZYMDYCJ0RG3',
+    name: 'Chuột gaming SteelSeries Rival 3',
+    category: 'mouse',
+    brand: 'SteelSeries',
+  },
+  {
+    productId: '01KZ24DH404NV7Z14YQYCARFZH',
+    name: 'Chuột không dây Microsoft Bluetooth Mouse',
+    category: 'mouse',
+    brand: 'Microsoft',
+  },
+  {
+    productId: '01KZ63EF805Q5GJTDY869BBSPV',
+    name: 'Màn hình LG UltraGear 27GR75Q-B 27 inch 2K 165Hz',
+    category: 'monitor',
+    brand: 'LG',
+  },
+  {
+    productId: '01KZA2FDC0D7Z3Q12TWA2CN9V5',
+    name: 'Màn hình ASUS TUF Gaming VG249Q3A 24 inch 180Hz',
+    category: 'monitor',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01KZE1GBG00P4K5XQ5VSV1BRXC',
+    name: 'Màn hình Dell UltraSharp U2724D 27 inch 2K',
+    category: 'monitor',
+    brand: 'Dell',
+  },
+  {
+    productId: '01KZJ0H9M0A24ZY0DMVTEZYF8Y',
+    name: 'Màn hình Samsung Odyssey G5 32 inch 2K 165Hz cong',
+    category: 'monitor',
+    brand: 'Samsung',
+  },
+  {
+    productId: '01KZNZJ7R0A5FYFZHSJKC3YJFF',
+    name: 'Màn hình LG 27UP850N-W 27 inch 4K',
+    category: 'monitor',
+    brand: 'LG',
+    page: 'https://www.lg.com/us/monitors/lg-27up850n-w-4k-uhd-monitor',
+  },
+  {
+    productId: '01KZSYK5W0RF7RQBFFST6W0FME',
+    name: 'Màn hình Xiaomi Monitor A24i 24 inch',
+    category: 'monitor',
+    brand: 'Xiaomi',
+    page: 'https://www.mi.com/global/product/xiaomi-monitor-a24i/',
+  },
+  {
+    productId: '01KZXXM4002NS4C63ET15T3HWK',
+    name: 'Màn hình ViewSonic VA2432-H 24 inch',
+    category: 'monitor',
+    brand: 'ViewSonic',
+  },
+  {
+    productId: '01M01WN24050PZ683MP26PJKCX',
+    name: 'Màn hình di động ASUS ZenScreen MB16ACV 15.6 inch',
+    category: 'monitor',
+    brand: 'ASUS',
+  },
+  {
+    productId: '01M05VP08047Q5JW4QKGDK0QRF',
+    name: 'Tai nghe gaming HyperX Cloud III',
+    category: 'headset',
+    brand: 'HyperX',
+  },
+  {
+    productId: '01M09TPYC0J70KCS73Z2TBFS98',
+    name: 'Tai nghe gaming Logitech G Pro X 2 Lightspeed',
+    category: 'headset',
+    brand: 'Logitech',
+    page: 'https://www.logitechg.com/en-us/shop/p/pro-x-2-wireless-headset.981-001262',
+  },
+  {
+    productId: '01M0DSQWG0CYHVE52MAEPHFDVD',
+    name: 'Tai nghe gaming Razer BlackShark V2 X',
+    category: 'headset',
+    brand: 'Razer',
+  },
+  {
+    productId: '01M0HRRTM0DRBQK09E67Q2NJV3',
+    name: 'Tai nghe không dây Sony WH-1000XM5',
+    category: 'headset',
+    brand: 'Sony',
+  },
+  {
+    productId: '01M0NQSRR0EC8VGG2YW9EX1RXD',
+    name: 'Tai nghe gaming SteelSeries Arctis Nova 1',
+    category: 'headset',
+    brand: 'SteelSeries',
+  },
+  {
+    productId: '01M0SPTPW0G8838Y78RTYF7083',
+    name: 'Tai nghe gaming Corsair HS80 RGB Wireless',
+    category: 'headset',
+    brand: 'Corsair',
+  },
+  {
+    productId: '01M0XNVN00KTH0MRAGC0KF6ZHG',
+    name: 'Tai nghe Jabra Evolve2 30 USB-C',
+    category: 'headset',
+    brand: 'Jabra',
+  },
+  {
+    productId: '01M11MWK40Y5XHK0NNHGHCTRG1',
+    name: 'Tai nghe gaming Rapoo VH160',
+    category: 'headset',
+    brand: 'Rapoo',
+  },
+  {
+    productId: '01M15KXH80RJZPHAPA50Y1M37H',
+    name: 'Balo laptop Targus 15.6 inch Classic',
+    category: 'accessory',
+    brand: 'Targus',
+  },
+  {
+    productId: '01M19JYFC0Z0T5VHM8ECB6C3C0',
+    name: 'Túi chống sốc laptop Tomtoc A13 14 inch',
+    category: 'accessory',
+    brand: 'Tomtoc',
+  },
+  {
+    productId: '01M1DHZDG0GKGEYEMV1XHAANNN',
+    name: 'Hub USB-C Ugreen 6 trong 1 (HDMI 4K, USB 3.0, SD)',
+    category: 'accessory',
+    brand: 'Ugreen',
+  },
+  {
+    productId: '01M1HH0BM0CFGEEF7TD59BYNQH',
+    name: 'Hub USB-C Anker PowerExpand 8 trong 1',
+    category: 'accessory',
+    brand: 'Anker',
+  },
+  {
+    productId: '01M1NG19R0H2HTPFB2X2ET2NYD',
+    name: 'Cáp HDMI 2.1 Ugreen 2m 8K',
+    category: 'accessory',
+    brand: 'Ugreen',
+  },
+  {
+    productId: '01M1SF27W0M62T7F9YY2D4Q6BD',
+    name: 'Cáp DisplayPort 1.4 Vention 2m',
+    category: 'accessory',
+    brand: 'Vention',
+  },
+  {
+    productId: '01M1XE3600WAAHQMHERPYRRD0P',
+    name: 'Đế tản nhiệt laptop Cooler Master NotePal X3',
+    category: 'accessory',
+    brand: 'Cooler Master',
+  },
+  {
+    productId: '01M21D4440ZVJX0NJEC9007JB5',
+    name: 'Lót chuột SteelSeries QcK Heavy XXL',
+    category: 'accessory',
+    brand: 'SteelSeries',
+  },
+];
+
+const DEMO_IDS: ReadonlySet<string> = new Set(PRODUCT_IMAGE_CREDITS.map((c) => c.productId));
+
+/** Đường dẫn ảnh demo của một món, hoặc `undefined` nếu món không có (vd. món admin thêm sau) */
+export function demoImageSrc(productId: string): string | undefined {
+  return DEMO_IDS.has(productId) ? `/product-images/${productId}.webp` : undefined;
+}

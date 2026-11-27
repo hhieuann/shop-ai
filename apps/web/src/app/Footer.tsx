@@ -70,7 +70,8 @@ export function Footer({ flush = false }: { flush?: boolean }) {
           </div>
         </div>
         <p className={styles.legal}>
-          © 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo.
+          © 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo. Ảnh sản phẩm thuộc về nhà
+          sản xuất · <Link to="/image-credits">Nguồn ảnh</Link>
         </p>
       </div>
     </footer>

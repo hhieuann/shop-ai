@@ -8,6 +8,7 @@ import { Price } from '../../../shared/components/Price';
 import { AddToCart } from '../../cart/components/AddToCart';
 import { AlsoBought } from '../components/AlsoBought';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { ProductImage } from '../components/ProductImage';
 import { SpecPanel } from '../components/SpecPanel';
 import { SpecTiles } from '../components/SpecTiles';
 import { StockBadge } from '../components/StockBadge';
@@ -68,21 +69,21 @@ export function ProductDetailPage() {
       <div className={styles.layout}>
         <div className={`${styles.block} ${styles.product}`}>
           <div className={`${styles.media} ${soldOut ? styles.soldOut : ''}`}>
-            {data.imageUrl ? (
-              // Phần tử lớn nhất đầu trang: tải ngay, không lazy (§3.2)
-              <img
-                src={data.imageUrl}
-                alt={data.name}
-                width={MEDIA_SIZE}
-                height={MEDIA_SIZE}
-                fetchPriority="high"
-                className={styles.image}
-              />
-            ) : (
-              <span className={styles.placeholder}>
-                <CategoryIcon category={data.category} size={56} />
-              </span>
-            )}
+            {/* Phần tử lớn nhất đầu trang: tải ngay, không lazy (§3.2) */}
+            <ProductImage
+              productId={data.productId}
+              imageUrl={data.imageUrl}
+              alt={data.name}
+              width={MEDIA_SIZE}
+              height={MEDIA_SIZE}
+              fetchPriority="high"
+              className={styles.image}
+              fallback={
+                <span className={styles.placeholder}>
+                  <CategoryIcon category={data.category} size={56} />
+                </span>
+              }
+            />
           </div>
 
           <div className={styles.info}>

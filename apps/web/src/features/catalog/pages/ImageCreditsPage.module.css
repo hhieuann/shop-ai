@@ -1,0 +1,87 @@
+/* Trang Nguồn ảnh (docs/web/pages/nguon-anh.md); nền trắng do RootLayout lo */
+.page {
+  max-width: 960px;
+  padding-bottom: var(--space-800);
+}
+.heading {
+  margin: 0 0 var(--space-150);
+  color: var(--fg-default);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+  font-weight: 600;
+}
+.notice {
+  margin-bottom: var(--space-300);
+  padding: var(--space-200);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  color: var(--fg-default);
+}
+.notice p {
+  margin: 0;
+}
+.notice p + p {
+  margin-top: var(--space-100);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+}
+.row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-150);
+  align-items: center;
+  padding: var(--space-150) var(--space-200);
+}
+.row + .row {
+  border-top: 1px solid var(--border-divider);
+}
+.thumb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  color: var(--fg-icon-soft);
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* nền trắng của ảnh hoà vào ô xám */
+}
+.info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.name {
+  color: var(--fg-heading);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.meta {
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fg-primary);
+}
+
+@media (min-width: 640px) {
+  .heading {
+    font-size: var(--text-title-md);
+    line-height: var(--leading-title-md);
+  }
+}

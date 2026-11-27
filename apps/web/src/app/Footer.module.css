@@ -81,6 +81,10 @@
   line-height: 16px;
   font-weight: 500;
 }
+.legal a {
+  color: var(--fg-on-chrome);
+  text-decoration: underline;
+}
 
 @media (min-width: 1280px) {
   .inner {
