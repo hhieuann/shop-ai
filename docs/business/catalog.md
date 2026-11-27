@@ -47,7 +47,7 @@ Là khách truy cập, tôi muốn xem danh sách sản phẩm, lọc theo loạ
 | `stock` | number | ✅ | Số lượng tồn kho |
 | `status` | ACTIVE / INACTIVE | ✅ | Mặc định ACTIVE |
 | `description` | string | ✅ | Mô tả ngắn |
-| `imageUrl` | string (URL) | ❌ | URL ảnh sản phẩm |
+| `imageUrl` | string (URL) | ❌ | URL ảnh sản phẩm. Seed demo không có; 104 món demo hiện ảnh của nhà sản xuất do web tự gắn theo `productId` (#530, docs/web/pages/nguon-anh.md), `imageUrl` admin đặt luôn được ưu tiên |
 | `specs` | object | ❌ | Thông số kỹ thuật (tuỳ category) |
 | `createdAt` | ISO 8601 UTC | ✅ | Tự điền khi tạo |
 | `updatedAt` | ISO 8601 UTC | ✅ | Cập nhật khi sửa |

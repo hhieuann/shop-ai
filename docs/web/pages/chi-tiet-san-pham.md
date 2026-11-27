@@ -69,7 +69,7 @@ Dưới 640px chỉ hiện một link "‹ {tên loại}" (icon `ChevronLeft` 16
 ### 3.2 Ảnh sản phẩm
 - Ô vuông (`aspect-ratio: 1`), nền `--bg-subtle`, bo `--radius-lg` (8px), padding 24px, rộng tối đa `--pdp-media-max` (560px).
 - Có ảnh: `<img>` `object-fit: contain`, `mix-blend-mode: multiply`, `alt` = tên sản phẩm (ảnh lớn đứng riêng). Đây là phần tử lớn nhất đầu trang nên **không** `loading="lazy"`; thêm `fetchpriority="high"` và `width`/`height` để không giật bố cục.
-- Không có ảnh (toàn bộ dữ liệu demo): icon loại hàng (`CategoryIcon`) 56px màu `--fg-icon-soft` giữa ô, không ghi chữ "Không có ảnh".
+- Ảnh theo `ProductImage` (design-system §9.34, #530): ảnh admin đặt, không có thì ảnh demo của 104 món; không có ảnh hoặc ảnh tải lỗi thì icon loại hàng (`CategoryIcon`) 56px màu `--fg-icon-soft` giữa ô, không ghi chữ "Không có ảnh". Không có chú thích dưới ảnh.
 - Hết hàng: ô ảnh `opacity: .6`.
 - Không có dải ảnh nhỏ, không phóng to (chỉ có một ảnh).
 

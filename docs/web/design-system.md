@@ -237,6 +237,7 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `StoryBlock` | `shared/components/StoryBlock.tsx` | ✅ |
 | `Carousel`, `CarouselItem` | `shared/components/Carousel.tsx` | ✅ |
 | `ProductCard` | `features/catalog/components/ProductCard.tsx` | ✅ |
+| `ProductImage` (ảnh sản phẩm: ảnh API → ảnh demo → icon) | `features/catalog/components/ProductImage.tsx`; dữ liệu ảnh demo ở `features/catalog/lib/productImages.ts` | ✅ (§9.34; thẻ, trang chi tiết, giỏ, trang Nguồn ảnh) |
 | `StockBadge` | `features/catalog/components/StockBadge.tsx` | ✅ |
 | `CategoryIcon` | `features/catalog/components/CategoryIcon.tsx` | ✅ |
 | `Button` (biến thể, cỡ, đang tải) | `shared/components/Button.tsx`; `buttonClass()` ở `shared/components/buttonClass.ts` cho `<Link>` trông như nút | ✅ (hộp xác nhận; trang cũ vẫn dùng class nút riêng) |
@@ -331,7 +332,7 @@ Hàng chip 13 loại hàng trên nền chàm của bản trước **bỏ**: 13 l
 - Lưới 4 cột `1.4fr 1fr 1fr 1.2fr`, gap `32px 40px` (<1280: 2 cột, cột đầu chiếm cả hàng; gap `24px 16px`).
 - Cột 1: logo (như header, chữ 20px) + đoạn giới thiệu 14/20 `--fg-on-chrome-muted`, rộng tối đa 34 ký tự: "Laptop và linh kiện PC, có gợi ý món thường mua kèm. Dự án thực tập FCAJ 2026, dữ liệu sản phẩm là giả lập."
 - Cột 2–4: tiêu đề 16/20/600 trắng, cách danh sách 12px; mục 14/18/500 trắng, cách nhau 8px. "Mua sắm": Tất cả sản phẩm, Hàng mới về, Card đồ hoạ, Laptop. "Tài khoản": Đăng nhập, Tạo tài khoản, Đơn hàng. "Giao hàng và thanh toán": icon `Truck` 18 + "Giao hàng miễn phí mọi đơn"; icon `Banknote` 18 + "Thanh toán khi nhận hàng (COD)" (icon màu `--fg-on-chrome-muted`).
-- Dòng cuối: viền trên 1px `--border-on-chrome-subtle`, padding trên 20px, chữ 12/16/500 `--fg-on-chrome-muted`: "© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo."
+- Dòng cuối: viền trên 1px `--border-on-chrome-subtle`, padding trên 20px, chữ 12/16/500 `--fg-on-chrome-muted`: "© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo. Ảnh sản phẩm thuộc về nhà sản xuất · Nguồn ảnh"; "Nguồn ảnh" là link `/image-credits` màu `--fg-on-chrome`, gạch chân (#530).
 - Link gạch chân khi hover; viền focus trắng. Không có mạng xã hội, tổng đài, showroom, chứng nhận (không có trong phạm vi).
 
 ### 9.3 Nút (`Button`, ✅)
@@ -789,6 +790,17 @@ Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách m
 
 ### 9.28 Ô mã QR (trang bật xác thực hai lớp)
 Chốt 18/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md) 3.4). Ô vuông **176px** (gồm padding và viền), padding **12px** (ảnh QR 150px), nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-xl`. Ảnh tạo trong trình duyệt bằng thư viện `qrcode` (`toDataURL`), chỉ nạp ở trang này. Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục. Chỉ là kích thước bố cục của một trang nên ghi số thẳng trong CSS module, không thêm token.
+
+### 9.34 Ảnh sản phẩm (`ProductImage`, ✅)
+Chốt 27/11/2026 (#530, [pages/nguon-anh.md](pages/nguon-anh.md)). Đánh số 9.34 vì các mục 9.29–9.33 là của trang quản trị đang chờ merge.
+
+| Phần | Giá trị |
+|---|---|
+| Nguồn ảnh | 1. `imageUrl` từ API (admin đặt, luôn ưu tiên); 2. ảnh demo `/product-images/<productId>.webp` nếu món có trong `PRODUCT_IMAGE_CREDITS` (104 món của seed); 3. `fallback` |
+| Ảnh lỗi | Nguồn đang dùng tải lỗi thì thử nguồn sau; hết nguồn thì hiện `fallback`: `CategoryIcon` ở thẻ, trang chi tiết, trang Nguồn ảnh; icon `Package` ở dòng giỏ hàng |
+| Ảnh demo | 600×600 WebP, sản phẩm căn giữa trong khung 560px, nền trắng, không EXIF; tổng khoảng 1,9 MB, nằm ở `apps/web/public/product-images/` (Vite chép nguyên, không vào gói JS) |
+| Hiển thị | Giữ `width`, `height`, `loading`, `fetchPriority` của từng chỗ dùng; `object-fit: contain`; ảnh nền trắng trên ô `--bg-subtle` dùng `mix-blend-mode: multiply` để nền trắng hoà vào ô |
+| Ghi nguồn | Không ghi chú dưới ảnh. Ảnh thuộc về nhà sản xuất, ghi ở dòng cuối footer và trang Nguồn ảnh |
 
 ## 10. Token sẽ thêm khi cần
 
