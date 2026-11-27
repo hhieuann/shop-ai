@@ -1,66 +1,85 @@
-/* Quản trị đơn hàng (docs/web/pages/admin-don-hang.md) */
-.page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--gutter) var(--space-800);
+/* Quản trị đơn hàng (docs/web/pages/admin-don-hang.md), trong khung quản trị (design-system §9.29) */
+.head {
+  margin-bottom: var(--space-300);
 }
 .title {
-  margin: var(--space-100) 0 var(--space-50);
+  margin: 0;
   color: var(--fg-heading);
   font-size: var(--text-title-md);
   line-height: var(--leading-title-md);
   font-weight: 700;
 }
+.title:focus {
+  outline: none;
+}
+.title:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
 .lead {
-  margin: 0 0 var(--space-300);
+  margin: var(--space-50) 0 0;
   color: var(--fg-muted);
-  font-size: var(--text-body-md);
-  line-height: var(--leading-body-md);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
 }
 .message {
-  margin: var(--space-300) 0;
+  margin: 0;
+  padding: var(--space-500) var(--space-200);
   color: var(--fg-subdued);
+  text-align: center;
 }
 
-/* Tab trạng thái: hình chip (design-system §6) */
-.tabs {
+/* Khối danh sách: nền trắng, viền, bo 12 */
+.block {
+  overflow: hidden;
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+}
+
+/* Thanh công cụ: nút phân đoạn Chờ giao, Đang giao (link đổi URL) */
+.toolbar {
   display: flex;
-  gap: var(--space-100);
-  margin-bottom: var(--space-200);
+  align-items: center;
+  gap: var(--space-150);
+  padding: var(--space-150) var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+}
+.tabs {
+  display: inline-flex;
+  gap: var(--space-25);
+  padding: var(--space-25);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
 }
 .tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
-  padding: 0 var(--space-200);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-full);
-  background: var(--bg-surface);
-  color: var(--fg-heading);
-  font-size: var(--text-body-md);
-  line-height: var(--leading-body-md);
+  min-height: 32px;
+  padding: 0 var(--space-150);
+  border-radius: var(--radius-md);
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
   font-weight: 600;
+  white-space: nowrap;
   text-decoration: none;
-  transition: background-color var(--dur-fast) var(--ease-standard);
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
 }
 .tab:hover {
-  background: var(--bg-primary-tint);
+  color: var(--fg-heading);
+  text-decoration: none;
 }
 .tab[aria-current='page'] {
-  /* Viền 2px, bớt 1px padding để chữ không nhảy */
-  padding: 0 calc(var(--space-200) - 1px);
-  border: 2px solid var(--border-primary);
-  background: var(--bg-primary-tint-2);
-  color: var(--fg-primary);
+  background: var(--bg-surface);
+  color: var(--fg-heading);
+  box-shadow: var(--shadow-xs);
 }
 
-/* Bảng đơn trong khối trắng bo 16 */
-.block {
-  padding: var(--space-100) var(--space-300);
-  border-radius: var(--radius-2xl);
-  background: var(--bg-surface);
-}
+/* Bảng */
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -68,19 +87,28 @@
   line-height: var(--leading-body-md);
 }
 .table th {
-  padding: var(--space-150) var(--space-100);
+  padding: var(--space-100) var(--space-200);
   border-bottom: 1px solid var(--border-divider);
-  color: var(--fg-muted);
+  background: var(--bg-surface-raised);
+  color: var(--fg-subdued);
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 600;
+  letter-spacing: 0.04em;
   text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 .table td {
-  padding: 14px var(--space-100);
+  padding: 10px var(--space-200);
   border-bottom: 1px solid var(--border-divider);
   vertical-align: middle;
 }
 .row:last-child td {
   border-bottom: 0;
+}
+.row:hover td {
+  background: var(--bg-surface-raised);
 }
 .table .num {
   text-align: right;
@@ -92,6 +120,10 @@
   color: var(--fg-default);
   overflow-wrap: anywhere;
 }
+.date {
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
 .unit {
   display: none;
 }
@@ -102,15 +134,24 @@
   color: var(--fg-price);
 }
 
-/* Nhãn trạng thái đơn (design-system §9.7) */
+/* Nhãn trạng thái dạng viên có chấm màu (design-system §9.7, biến thể của khung quản trị) */
 .badge {
-  display: inline-block;
-  padding: 2px var(--space-100);
-  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-25) 10px;
+  border-radius: var(--radius-full);
   font-size: var(--text-body-sm);
   line-height: var(--leading-body-sm);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
+}
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .CONFIRMED {
   background: var(--bg-primary-tint);
@@ -121,32 +162,6 @@
   color: var(--fg-accent);
 }
 
-/* Nút phụ cỡ sm (design-system §9.3) */
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  padding: var(--space-50) var(--space-150);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface-raised);
-  color: var(--fg-default);
-  font: inherit;
-  font-size: var(--text-body-md);
-  line-height: var(--leading-body-md);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease-standard);
-}
-.button:hover:not(:disabled) {
-  background: var(--bg-surface-pressed);
-}
-.button:disabled {
-  cursor: not-allowed;
-}
-
 /* Hai nút trên dòng: chuyển trạng thái, huỷ đơn (mục 3b) */
 .actions {
   display: inline-flex;
@@ -154,42 +169,40 @@
   justify-content: flex-end;
 }
 
-/* Rỗng, không có quyền (design-system §9.12) */
-.empty {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-150);
-  padding: var(--space-500) var(--space-200);
-  border: 1px solid var(--border-divider);
-  border-radius: var(--radius-2xl);
-  background: var(--bg-surface);
-  text-align: center;
+/* Chân khối: số đơn bên trái, Trước/Sau bên phải */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  min-height: 56px;
+  padding: var(--space-100) var(--space-200);
+  border-top: 1px solid var(--border-divider);
 }
-.emptyText {
+.footCount {
   margin: 0;
-  color: var(--fg-default);
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
 }
-.emptyLink {
-  color: var(--fg-primary);
-  font-weight: 600;
-  text-decoration: none;
-}
-.emptyLink:hover {
-  color: var(--fg-primary-hover);
-  text-decoration: underline;
+.foot > nav {
+  margin-top: 0;
 }
 
 /*
- * Điện thoại: mỗi dòng bảng thành một thẻ trắng bo 12 (vẫn là bảng với trình đọc màn hình).
+ * Điện thoại: mỗi dòng bảng thành một thẻ trong khối (vẫn là bảng với trình đọc màn hình).
  * Hàng 1 mã đơn (đủ 26 ký tự), hàng 2 ngày + nhãn, hàng 3 số món + tổng tiền, cuối là nút rộng hết thẻ.
  */
 @media (max-width: 767px) {
-  .tab {
+  .toolbar {
+    padding: var(--space-150);
+  }
+  .tabs {
+    display: flex;
     flex: 1;
   }
-  .block {
-    padding: 0;
-    background: none;
+  .tab {
+    flex: 1;
   }
   .table thead {
     position: absolute;
@@ -199,8 +212,7 @@
     clip-path: inset(50%);
   }
   .table tbody {
-    display: grid;
-    gap: var(--space-150);
+    display: block;
   }
   .row {
     display: grid;
@@ -213,12 +225,17 @@
     column-gap: var(--space-100);
     row-gap: var(--space-50);
     padding: var(--space-200);
-    border-radius: var(--radius-xl);
-    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-divider);
+  }
+  .row:last-child {
+    border-bottom: 0;
   }
   .table td {
     padding: 0;
     border: 0;
+  }
+  .row:hover td {
+    background: none;
   }
   .table .num {
     text-align: left;
@@ -255,7 +272,10 @@
   .actions {
     display: flex;
   }
-  .button {
+  .actions > :first-child {
     flex: 1;
+  }
+  .foot {
+    padding: var(--space-100) var(--space-150);
   }
 }
