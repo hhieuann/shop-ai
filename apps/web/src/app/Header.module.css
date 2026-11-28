@@ -36,10 +36,8 @@
   padding: var(--space-100) var(--gutter) var(--space-150);
 }
 .logo {
-  --logo-mark: 30px;
-  --logo-icon: 18px;
-  --logo-text: 18px;
-  --logo-leading: 24px;
+  --logo-mark: 36px;
+  --logo-name: 25px;
   margin: 0 auto;
 }
 /* Điện thoại: cụm giữa tan ra để nút menu đứng đầu hàng và ô tìm xuống hàng riêng */
@@ -215,16 +213,15 @@
     padding: var(--space-200) var(--gutter);
   }
   .logo {
-    --logo-mark: 36px;
-    --logo-icon: 20px;
-    --logo-text: 22px;
-    --logo-leading: 28px;
+    --logo-mark: 56px;
+    --logo-name: 34px;
     margin: 0;
   }
-  /* Nút Danh mục + ô tìm thành một cụm, căn giữa khoảng trống giữa logo và nhóm nút phải */
+  /* Từ 1280px không còn nút Danh mục (#567): cụm giữa rộng đúng bằng ô tìm (tối đa 720px) để ô tìm
+     nằm giữa logo và nhóm nút phải, hai bên cách đều (#579) */
   .middle {
     display: flex;
-    flex: 0 1 872px;
+    flex: 0 1 720px;
     align-items: center;
     gap: var(--space-150);
     min-width: 0;

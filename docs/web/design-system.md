@@ -93,8 +93,7 @@ Bảng màu chàm (chốt 11/10/2026). Cột "Tương phản" là tỉ lệ WCAG
 | Token | Giá trị | Dùng ở đâu |
 |---|---|---|
 | `--gradient-brand` | `linear-gradient(135deg, #1E1B4B 0%, #3730A3 35%, #4F46E5 70%, #22D3EE 100%)` | **Chỉ** hero trang chủ. Chữ trắng chỉ đặt trên khoảng 60% phía tối (trái, trên) |
-| `--gradient-logo` | `linear-gradient(135deg, #C7D2FE, #FFFFFF)` | Ô logo trên header và footer |
-| `--hero-ink` | `#1E1B4B` | Chữ của nút trắng trên hero, icon trong ô logo |
+| `--hero-ink` | `#1E1B4B` | Chữ của nút trắng trên hero |
 
 ## 3. Chữ
 
@@ -280,9 +279,9 @@ Hai hàng, dính đầu trang (`position: sticky; top: 0; z-index: 210`). Hàng 
 
 | Phần | Giá trị |
 |---|---|
-| Hàng 1 | cao **76px**, padding 16px dọc, lề `--gutter` trong khung `--content-max`; phần tử cao **44px**, cách nhau 12px |
-| Logo | ô 36px nền `--gradient-logo` bo 8px, icon `--hero-ink` + chữ "Black Magic" 22/28/700 trắng; cả cụm là link về `/`. Favicon `apps/web/public/favicon.svg`: ô nền `--bg-chrome`, icon `Sparkles` `--fg-on-primary`; mã màu ghi thẳng trong file (svg không đọc token), đổi token thì sửa cả file này |
-| Cụm giữa | chỉ còn ô tìm kiếm (bỏ nút "Danh mục" từ 1280px, #567, 27/11/2026), cụm `flex: 0 1 872px`, `margin-inline: auto`: ô tìm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải, rộng tối đa 720px. Lối vào loại hàng trên máy tính: cột danh mục ở trang chủ, cột lọc ở `/products`, hàng 2 |
+| Hàng 1 | cao **76px**, padding 16px dọc, lề `--gutter` trong khung `--content-max`; phần tử cao **44px** (trừ logo: huy hiệu cao 56px, vẫn gọn trong hàng 76px), cách nhau 12px |
+| Logo | (#579, 28/11/2026) hai ảnh nền trong suốt hoà vào nền chàm, không khung, không bo: huy hiệu (`assets/logo-mark.webp`, mũ phù thuỷ) cao `--logo-mark` **56px** + chữ tên shop (`assets/logo-name.webp`, "BLACKMAGIC" vàng viền tím) cao `--logo-name` **34px** (điện thoại 36px + 25px), cách 8px; rộng theo tỉ lệ ảnh. Ảnh alt rỗng, cả cụm là link về `/` có `aria-label` "Black Magic, về trang chủ". Ảnh xuất cỡ 2x (huy hiệu 115×112, chữ 250×68, WebP ~11 KB mỗi tệp). Favicon `apps/web/public/favicon.png` (64px): huy hiệu trên nền trong suốt. `apple-touch-icon.png` (180px): huy hiệu giữa nền màu `--bg-chrome`, lề khoảng 12% (iOS tô nền trong suốt thành đen); màu nền nằm sẵn trong ảnh, đổi token `--bg-chrome` thì xuất lại ảnh này |
+| Cụm giữa | chỉ còn ô tìm kiếm (bỏ nút "Danh mục" từ 1280px, #567, 27/11/2026), cụm `flex: 0 1 720px` (bằng ô tìm, trước đây 872px khi còn nút Danh mục, #579), `margin-inline: auto`: ô tìm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải, hai bên cách đều, rộng tối đa 720px. Lối vào loại hàng trên máy tính: cột danh mục ở trang chủ, cột lọc ở `/products`, hàng 2 |
 | Ô tìm kiếm | Theo ảnh tham khảo của Hoàng (11/10/2026), dạng **viên thuốc**: `role="search"`, co giãn, **rộng tối đa 720px**; cao **48px**, nền `--bg-surface-raised` (`#FAFAFA`), **không viền**, bo `--radius-full`, padding `0 6px 0 22px`; chữ 16px `--fg-default`, placeholder "Tìm laptop, card đồ hoạ, RAM…" `--fg-placeholder` (4,54), `maxLength=30`. Nút tìm **tròn 36px nền `#1A1A1A`** (`--fg-default`), icon `Search` 18 trắng, sát phải trong ô, `aria-label="Tìm"`; hover nền `--bg-chrome-strong`. Focus: viền trắng 2px quanh cả ô (`:focus-within`) |
 | Đơn hàng | đầu nhóm nút bên phải; `NavLink` cao 44px, padding `0 10px`, bo 10px, icon `Package` 28 + nhãn 16/24/500, gap 8px; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn |
 | Đăng nhập | nút mở menu tài khoản, cùng kích thước với Đơn hàng: icon `User` 28 + nhãn + `ChevronDown` 16 (§9.17) |
@@ -307,7 +306,7 @@ Sáu link hàng 2 (nhóm khách theo project-plan, đường dẫn là bộ lọ
 |---|---|
 | Hàng 1 | cao **56px**, padding `8px` dọc, lề `--gutter`; phần tử 40×40 |
 | Trái | nút menu: ô 40px nền `--bg-chrome-strong`, bo 10px, icon `Menu` 24, `aria-label="Danh mục"`; mở `CategoryMenu` dạng ngăn kéo (§9.18) |
-| Giữa | logo (ô 30px + chữ 18/24/700), căn giữa |
+| Giữa | logo (huy hiệu 36px + chữ tên shop 25px, §9.1), căn giữa |
 | Phải | nút Đăng nhập (chỉ icon `User` 28, mở §9.17) + Giỏ hàng (icon 30). Nút Đơn hàng không ở hàng này (xem ghi chú dưới) |
 | Hàng tìm | ô tìm viên thuốc rộng hết, cao **44px**, padding `0 4px 0 18px`, nút tìm tròn 36px; nằm trong nền chàm, padding `0 var(--gutter) 12px` |
 | Hàng 2 (6 link) | **không hiện** |
@@ -333,7 +332,7 @@ Hàng chip 13 loại hàng trên nền chàm của bản trước **bỏ**: 13 l
 ### 9.2 Footer (`app/Footer`)
 **Cùng màu với header**: nền `--bg-chrome` (chàm), cách nội dung 32px; khung `--content-max` với lề `--gutter`, padding `64px` trên, `32px` dưới (<1280: `40px` / `24px`).
 - Lưới 4 cột `1.4fr 1fr 1fr 1.2fr`, gap `32px 40px` (<1280: 2 cột, cột đầu chiếm cả hàng; gap `24px 16px`).
-- Cột 1: logo (như header, chữ 20px) + đoạn giới thiệu 14/20 `--fg-on-chrome-muted`, rộng tối đa 34 ký tự: "Laptop và linh kiện PC, có gợi ý món thường mua kèm. Dự án thực tập FCAJ 2026, dữ liệu sản phẩm là giả lập."
+- Cột 1: logo (huy hiệu 44px + chữ tên shop 26px) + đoạn giới thiệu 14/20 `--fg-on-chrome-muted`, rộng tối đa 34 ký tự: "Laptop và linh kiện PC, có gợi ý món thường mua kèm. Dự án thực tập FCAJ 2026, dữ liệu sản phẩm là giả lập."
 - Cột 2–4: tiêu đề 16/20/600 trắng, cách danh sách 12px; mục 14/18/500 trắng, cách nhau 8px. "Mua sắm": Tất cả sản phẩm, Hàng mới về, Card đồ hoạ, Laptop. "Tài khoản": Đăng nhập, Tạo tài khoản, Đơn hàng. "Giao hàng và thanh toán": icon `Truck` 18 + "Giao hàng miễn phí mọi đơn"; icon `Banknote` 18 + "Thanh toán khi nhận hàng (COD)" (icon màu `--fg-on-chrome-muted`).
 - Dòng cuối: viền trên 1px `--border-on-chrome-subtle`, padding trên 20px, chữ 12/16/500 `--fg-on-chrome-muted`: "© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo."
 - Link gạch chân khi hover; viền focus trắng. Không có mạng xã hội, tổng đài, showroom, chứng nhận (không có trong phạm vi).
@@ -519,7 +518,7 @@ Khối `<section aria-labelledby>`: `--bg-surface`, viền `--border-divider`, b
 
 ### 9.16 Bố cục tập trung (`FocusLayout` + `MiniHeader`, ✅ đặt hàng; đăng nhập, tạo tài khoản chưa dùng)
 Thay `RootLayout` ở những trang khách cần tập trung hoàn tất một việc: bỏ ô tìm kiếm, nút Danh mục, hàng 2 và các nút bên phải.
-- `MiniHeader`: nền `--bg-chrome`, **không dính**, **không có nút tài khoản** (§9.17), cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (ô 40px + chữ "Black Magic" 20/28/700; <640 chỉ ô logo), là link về `/`; phải là **một** link 14/20/500 `--fg-on-chrome` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `--bg-chrome-hover`. Không có đường kẻ ở đáy.
+- `MiniHeader`: nền `--bg-chrome`, **không dính**, **không có nút tài khoản** (§9.17), cao 64px (<640: 56px), khung `--content-max` với lề như header; trái là logo (huy hiệu 44px + chữ tên shop 26px; <640 chỉ huy hiệu), là link về `/`; phải là **một** link 14/20/500 `--fg-on-chrome` có icon 20px ("Quay lại giỏ hàng", "Quay lại"), cao 40px, padding `0 8px`, bo 8px, hover nền `--bg-chrome-hover`. Không có đường kẻ ở đáy.
 - Vẫn có link "Bỏ qua tới nội dung chính", `<main id="main">` và `Footer`.
 - Bấm logo khi đang điền form không hỏi lại (form ngắn, dữ liệu món đã lưu `sessionStorage`).
 
@@ -798,7 +797,7 @@ Chốt 25/11/2026 (#542, [pages/admin-don-hang.md](pages/admin-don-hang.md)). Ro
 
 | Phần | Giá trị |
 |---|---|
-| Thanh trên | cao 56px, rộng hết màn, dính đầu trang (z-index 210 như header), nền `--bg-surface`, viền dưới 1px `--border-divider`, padding `0 16px` (≥960: `0 24px`). Trái: link về `/admin` gồm ô 28px `--gradient-brand` bo `--radius-lg` có icon `Sparkles` 16 `--fg-on-primary`, chữ "Black Magic" 18/24/700 `--fg-heading` (ẩn dưới 640px), chip "Quản trị" (nền `--bg-primary-tint`, chữ 14/18/600 `--fg-primary`, bo `--radius-full`). Phải: link "Về cửa hàng" (icon `Store` 20 + chữ 14/20/500; dưới 640px chỉ icon, chữ cho trình đọc màn hình) và menu tài khoản §9.17 (thanh đổi biến `--fg-on-chrome`, `--bg-chrome-hover` sang màu cho nền trắng). Không đường dẫn |
+| Thanh trên | cao 56px, rộng hết màn, dính đầu trang (z-index 210 như header), nền `--bg-surface`, viền dưới 1px `--border-divider`, padding `0 16px` (≥960: `0 24px`). Trái: link về `/admin` gồm huy hiệu logo cao 32px (ảnh `assets/logo-mark.webp`, #579; nền trắng nên không dùng ảnh chữ tên shop), chữ "Black Magic" 18/24/700 `--fg-heading` (ẩn dưới 640px), chip "Quản trị" (nền `--bg-primary-tint`, chữ 14/18/600 `--fg-primary`, bo `--radius-full`). Phải: link "Về cửa hàng" (icon `Store` 20 + chữ 14/20/500; dưới 640px chỉ icon, chữ cho trình đọc màn hình) và menu tài khoản §9.17 (thanh đổi biến `--fg-on-chrome`, `--bg-chrome-hover` sang màu cho nền trắng). Không đường dẫn |
 | Cột trái (≥960) | rộng 232px, nền `--bg-surface`, viền phải 1px `--border-divider`, dính dưới thanh trên, cao `100vh − 56px`, padding `16px 12px`. `<nav aria-label="Quản trị">` chia nhóm; nhãn nhóm chữ hoa 12/16/600 `--fg-subdued`, padding `0 12px`. Mục: link cao 40px, padding `0 12px`, bo `--radius-lg`, icon 20 + chữ 14/20/500 `--fg-default`; hover `--bg-transparent-hover`; mục hiện tại (`aria-current="page"`, `NavLink`) nền `--bg-primary-tint`, chữ `--fg-primary` 600 |
 | Nhóm, mục | "Bán hàng": Đơn hàng (`Receipt`, `/admin`). "Danh mục": Sản phẩm (`Package`, `/admin/products`), ẩn tới khi có trang. Không số đếm (API không trả tổng số) |
 | Dưới 960px | không ngăn kéo: các mục thành hàng chip (kiểu chip đang chọn §6, có icon) dính ngay dưới thanh trên, nền `--bg-surface`, viền dưới, padding `8px 16px`, cuộn ngang khi tràn; nhãn nhóm ẩn |
@@ -848,7 +847,7 @@ Chốt 25/11/2026 (#547). Báo kết quả một thao tác vừa xong mà không
 **Đã đưa vào `tokens.css` (đổi giao diện 11/10/2026):**
 - Thêm: `--bg-subtle`, `--bg-chrome-strong`, `--bg-primary-tint-2`, `--fg-heading`, `--fg-icon-soft`, `--fg-price`, `--hero-ink`, `--radius-btn`, `--shadow-card-hover`, `--shadow-glass`, `--radius-2xl`, `--shadow-sm`.
 - Đổi giá trị: mọi màu ở §2 (tím → chàm, nền và chữ theo bảng mới), bóng ở §4, `--font-sans` sang Inter, thang chữ ở §3.
-- Bỏ: `--bg-image-plate` (thay bằng `--bg-subtle`), `--glow-primary` (nút chính chỉ tối đi khi hover), `--gradient-line`, `--bg-primary-tint-hover` (thay bằng `--bg-primary-tint-2`).
+- Bỏ: `--gradient-logo` (logo thành ảnh nền trong suốt, #579), `--bg-image-plate` (thay bằng `--bg-subtle`), `--glow-primary` (nút chính chỉ tối đi khi hover), `--gradient-line`, `--bg-primary-tint-hover` (thay bằng `--bg-primary-tint-2`).
 - `--radius-xl` đổi 16 → 12px. Chỗ đang bo 16px giữ nguyên bằng `--radius-2xl`; thẻ sản phẩm, menu danh mục, hero, ô thông tin chuyển sang `--radius-xl` khi làm lại các component đó.
 
 **Đã đưa vào `tokens.css` khi làm trang danh sách (chốt 13/10/2026):** `--scrollbar-size` 10px, `--scrollbar-thumb` `#D4D4D4`, `--scrollbar-thumb-area-hover` `#A3A3A3`, `--scrollbar-thumb-hover` `#737373`, `--scrollbar-track` `transparent` (§4 Thanh cuộn). Giá trị trỏ vào token màu đã có (`--border-default`, `--fg-icon-soft`, `--fg-subdued`), không thêm màu mới.

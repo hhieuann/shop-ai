@@ -44,14 +44,11 @@
   text-decoration: none;
 }
 .mark {
-  display: grid;
+  /* Huy hiệu logo (#579); nền trắng nên giữ chữ "Black Magic" thường bên cạnh, không dùng ảnh chữ */
+  display: block;
   flex-shrink: 0;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-lg);
-  background: var(--gradient-brand);
-  color: var(--fg-on-primary);
+  width: auto;
+  height: 32px;
 }
 .wordmark {
   font-size: 18px;
