@@ -162,6 +162,8 @@ export interface SyncResult {
   readonly inserted: number;
   /** Sản phẩm đã có, được cập nhật nội dung (giữ giá, tồn kho, trạng thái, loại) */
   readonly updated: number;
+  /** Bỏ qua vì admin đã sửa sau file (`updatedAt` trong bảng mới hơn) hoặc đã xoá mềm (#554) */
+  readonly skipped: number;
 }
 
 /**
@@ -169,6 +171,8 @@ export interface SyncResult {
  * phần nội dung hiển thị: tên, hãng, mô tả, specs, ảnh. Giữ nguyên price, stock (đơn hàng đã trừ,
  * admin có thể đã đổi), status và category (đổi hai trường này làm lệch khoá GSI categoryStatus).
  * UpdateItem có điều kiện attribute_exists nên không tạo item mới nếu sản phẩm vừa bị xoá.
+ * Không ghi đè việc admin làm (catalog.md giới hạn đã biết, dynamodb-design.md): món admin đã xoá
+ * mềm, hoặc có `updatedAt` trong bảng mới hơn trong file, thì bỏ qua và đếm `skipped`.
  */
 export async function syncProductContent(
   db: DynamoDBDocumentClient,
@@ -177,6 +181,7 @@ export async function syncProductContent(
 ): Promise<SyncResult> {
   let inserted = 0;
   let updated = 0;
+  let skipped = 0;
   for (const product of products) {
     try {
       await db.send(
@@ -210,19 +215,26 @@ export async function syncProductContent(
     set.push('updatedAt = :updatedAt');
     values[':updatedAt'] = product.updatedAt;
 
-    await db.send(
-      new UpdateCommand({
-        TableName: tableName,
-        Key: { productId: product.productId },
-        UpdateExpression: `SET ${set.join(', ')}${remove.length ? ` REMOVE ${remove.join(', ')}` : ''}`,
-        ConditionExpression: 'attribute_exists(productId)',
-        ExpressionAttributeNames: { '#name': 'name' },
-        ExpressionAttributeValues: values,
-      }),
-    );
-    updated += 1;
+    try {
+      await db.send(
+        new UpdateCommand({
+          TableName: tableName,
+          Key: { productId: product.productId },
+          UpdateExpression: `SET ${set.join(', ')}${remove.length ? ` REMOVE ${remove.join(', ')}` : ''}`,
+          ConditionExpression:
+            'attribute_exists(productId) AND attribute_not_exists(deletedAt) AND updatedAt <= :updatedAt',
+          ExpressionAttributeNames: { '#name': 'name' },
+          ExpressionAttributeValues: values,
+        }),
+      );
+      updated += 1;
+    } catch (error) {
+      // Một món hỏng điều kiện không làm hỏng cả lượt deploy
+      if (!(error instanceof ConditionalCheckFailedException)) throw error;
+      skipped += 1;
+    }
   }
-  return { inserted, updated };
+  return { inserted, updated, skipped };
 }
 
 /** Danh sách PutRequest của một bảng trong BatchWriteCommand */

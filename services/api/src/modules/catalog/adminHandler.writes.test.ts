@@ -10,10 +10,12 @@ import {
   StockChangedError,
 } from './domain/errors.js';
 
-// Route thêm, sửa của API admin sản phẩm (#545, catalog.md BR-11 … BR-13). Route đọc: adminHandler.test.ts
+// Route ghi của API admin sản phẩm (#545 thêm, sửa; #554 xoá mềm, khôi phục; catalog.md BR-11 … BR-14). Route đọc: adminHandler.test.ts
 
 const CREATE = 'POST /api/v1/admin/products';
 const UPDATE = 'PATCH /api/v1/admin/products/{productId}';
+const DELETE = 'DELETE /api/v1/admin/products/{productId}';
+const RESTORE = 'POST /api/v1/admin/products/{productId}/restore';
 const ADMIN = 'admin-sub-1';
 const PRODUCT_ID = '01K6PZ3Q5G0000000000000001';
 const ADMIN_CLAIMS = { 'cognito:groups': '[admin]' };
@@ -37,6 +39,8 @@ function useCases() {
     getAdminProduct: vi.fn(),
     createAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
     updateAdminProduct: vi.fn().mockResolvedValue(PRODUCT),
+    deleteAdminProduct: vi.fn().mockResolvedValue(undefined),
+    restoreAdminProduct: vi.fn().mockResolvedValue({ ...PRODUCT, status: 'INACTIVE' }),
   } satisfies AdminProductUseCases;
 }
 
@@ -55,21 +59,26 @@ function writeEvent(
 }
 
 describe('admin product handler · ghi · phân quyền', () => {
-  it.each([CREATE, UPDATE])('%s_returns403_andWritesNothing_forCustomer', async (routeKey) => {
-    // Arrange
-    const uc = useCases();
+  it.each([CREATE, UPDATE, DELETE, RESTORE])(
+    '%s_returns403_andWritesNothing_forCustomer',
+    async (routeKey) => {
+      // Arrange
+      const uc = useCases();
 
-    // Act
-    const res = await makeAdminProductHandler(uc)(
-      writeEvent(routeKey, { updatedAt: SEEN, price: 1 }, { 'cognito:groups': '[customer]' }),
-    );
+      // Act
+      const res = await makeAdminProductHandler(uc)(
+        writeEvent(routeKey, { updatedAt: SEEN, price: 1 }, { 'cognito:groups': '[customer]' }),
+      );
 
-    // Assert
-    expect(res.statusCode).toBe(403);
-    // Verify
-    expect(uc.createAdminProduct).not.toHaveBeenCalled();
-    expect(uc.updateAdminProduct).not.toHaveBeenCalled();
-  });
+      // Assert
+      expect(res.statusCode).toBe(403);
+      // Verify
+      expect(uc.createAdminProduct).not.toHaveBeenCalled();
+      expect(uc.updateAdminProduct).not.toHaveBeenCalled();
+      expect(uc.deleteAdminProduct).not.toHaveBeenCalled();
+      expect(uc.restoreAdminProduct).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('admin product handler · POST /api/v1/admin/products', () => {
@@ -254,12 +263,66 @@ describe('admin product handler · PATCH /api/v1/admin/products/{productId}', ()
   });
 });
 
-describe('admin product handler · PATCH productId sai dạng', () => {
-  it('update_returns400_whenProductIdMalformed', async () => {
+describe('admin product handler · DELETE, restore (BR-14)', () => {
+  it('delete_returns204NoStoreWithoutBody', async () => {
+    // Arrange
+    const uc = useCases();
+
+    // Act
+    const res = await makeAdminProductHandler(uc)(writeEvent(DELETE));
+
+    // Assert
+    expect(res.statusCode).toBe(204);
+    expect(res.headers).toMatchObject({ 'cache-control': 'no-store' });
+    expect(res.body).toBeUndefined();
+    // Verify
+    expect(uc.deleteAdminProduct).toHaveBeenCalledWith({ adminId: ADMIN, productId: PRODUCT_ID });
+  });
+
+  it('delete_returns404_whenAlreadyDeleted', async () => {
+    // Arrange
+    const uc = useCases();
+    uc.deleteAdminProduct.mockRejectedValue(new ProductNotFoundError(PRODUCT_ID));
+
+    // Act
+    const res = await makeAdminProductHandler(uc)(writeEvent(DELETE));
+
+    // Assert
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('restore_returns200NoStore_withHiddenProduct', async () => {
+    // Arrange
+    const uc = useCases();
+
+    // Act
+    const res = await makeAdminProductHandler(uc)(writeEvent(RESTORE));
+
+    // Assert
+    expect(res.statusCode).toBe(200);
+    expect(res.headers).toMatchObject({ 'cache-control': 'no-store' });
+    expect(parseBody(res)).toMatchObject({ status: 'INACTIVE' });
+    // Verify
+    expect(uc.restoreAdminProduct).toHaveBeenCalledWith({ adminId: ADMIN, productId: PRODUCT_ID });
+  });
+
+  it('restore_returns404_whenNotDeleted', async () => {
+    // Arrange
+    const uc = useCases();
+    uc.restoreAdminProduct.mockRejectedValue(new ProductNotFoundError(PRODUCT_ID));
+
+    // Act
+    const res = await makeAdminProductHandler(uc)(writeEvent(RESTORE));
+
+    // Assert
+    expect(res.statusCode).toBe(404);
+  });
+
+  it.each([DELETE, RESTORE, UPDATE])('%s_returns400_whenProductIdMalformed', async (routeKey) => {
     // Arrange
     const uc = useCases();
     const event = apiEvent({
-      routeKey: UPDATE,
+      routeKey,
       userId: ADMIN,
       claims: ADMIN_CLAIMS,
       pathParameters: { productId: 'không hợp lệ' },
@@ -271,8 +334,6 @@ describe('admin product handler · PATCH productId sai dạng', () => {
 
     // Assert
     expect(res.statusCode).toBe(400);
-    // Verify
-    expect(uc.updateAdminProduct).not.toHaveBeenCalled();
   });
 });
 

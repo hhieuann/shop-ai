@@ -1,5 +1,5 @@
 import { CreateTableCommand, ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DynamoAdminProductWriter } from '../../src/modules/catalog/infra/dynamoAdminProductWriter.js';
 import { DynamoProductRepository } from '../../src/modules/catalog/infra/dynamoProductRepository.js';
@@ -123,15 +123,7 @@ describe('DynamoAdminProductWriter.update', () => {
   it('update_returnsNull_whenSoftDeleted', async () => {
     // Arrange
     const product = await created();
-    // Món đã xoá mềm như PR xoá (BR-14) sẽ ghi
-    await dynamo.doc.send(
-      new UpdateCommand({
-        TableName: TABLE,
-        Key: { productId: product.productId },
-        UpdateExpression: 'SET deletedAt = :at',
-        ExpressionAttributeValues: { ':at': T1 },
-      }),
-    );
+    await writer.softDelete(product, T1);
 
     // Act
     const saved = await writer.update({
@@ -157,5 +149,64 @@ describe('DynamoAdminProductWriter.update', () => {
     // Assert: không tạo item mới
     expect(saved).toBeNull();
     expect(await rawItem('01K6PZ3Q5G9999999999999999')).toBeUndefined();
+  });
+});
+
+describe('DynamoAdminProductWriter.softDelete, restore (BR-14)', () => {
+  it('softDelete_marksDeleted_movesToDeletedKey_onlyOnce', async () => {
+    // Arrange
+    const product = await created();
+
+    // Act
+    const first = await writer.softDelete(product, T2);
+    const second = await writer.softDelete(product, T2);
+
+    // Assert
+    expect(first).toBe(true);
+    expect(second).toBe(false);
+    expect(await rawItem(product.productId)).toMatchObject({
+      status: 'INACTIVE',
+      deletedAt: T2,
+      updatedAt: T2,
+      categoryStatus: 'gpu#DELETED',
+    });
+  });
+
+  it('softDelete_returnsFalse_whenProductMissing', async () => {
+    // Act
+    const result = await writer.softDelete(
+      { productId: '01K6PZ3Q5G9999999999999998', category: 'gpu' },
+      T2,
+    );
+
+    // Assert: không tạo item mới
+    expect(result).toBe(false);
+    expect(await rawItem('01K6PZ3Q5G9999999999999998')).toBeUndefined();
+  });
+
+  it('restore_removesDeletedAt_andReturnsHidden', async () => {
+    // Arrange
+    const product = await created();
+    await writer.softDelete(product, T1);
+
+    // Act
+    const restored = await writer.restore(product, T2);
+
+    // Assert
+    expect(restored).toMatchObject({ status: 'INACTIVE', updatedAt: T2 });
+    expect(restored).not.toHaveProperty('deletedAt');
+    expect(await rawItem(product.productId)).toMatchObject({ categoryStatus: 'gpu#INACTIVE' });
+  });
+
+  it('restore_returnsNull_whenNotDeleted', async () => {
+    // Arrange
+    const product = await created();
+
+    // Act
+    const restored = await writer.restore(product, T2);
+
+    // Assert
+    expect(restored).toBeNull();
+    expect(await rawItem(product.productId)).toMatchObject({ categoryStatus: 'gpu#ACTIVE' });
   });
 });

@@ -121,7 +121,7 @@ export function newProduct(draft: AdminProductDraft, productId: string, now: str
 }
 
 /** Hành động ghi log (catalog.md mục Log) */
-export type AdminProductAction = 'CREATE' | 'UPDATE' | 'HIDE' | 'SHOW';
+export type AdminProductAction = 'CREATE' | 'UPDATE' | 'HIDE' | 'SHOW' | 'DELETE' | 'RESTORE';
 
 /** Chỉ đổi trạng thái là ẩn hoặc hiện lại (BR-13); có trường khác thì là sửa */
 export function actionOfPatch(patch: AdminProductPatch): AdminProductAction {

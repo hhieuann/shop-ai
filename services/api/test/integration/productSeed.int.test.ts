@@ -113,7 +113,7 @@ describe('syncProductContent (prod, #527)', () => {
     const result = await syncProductContent(dynamo.doc, SYNC_TABLE, seed);
 
     // Assert
-    expect(result).toEqual({ inserted: seed.length, updated: 0 });
+    expect(result).toEqual({ inserted: seed.length, updated: 0, skipped: 0 });
   });
 
   it('syncProductContent_updatesContent_keepsStockPriceStatus_whenProductExists', async () => {
@@ -146,7 +146,7 @@ describe('syncProductContent (prod, #527)', () => {
     const result = await syncProductContent(dynamo.doc, SYNC_TABLE, edited);
 
     // Assert: nội dung mới, còn giá, tồn kho, trạng thái giữ như trên prod
-    expect(result).toEqual({ inserted: 0, updated: seed.length });
+    expect(result).toEqual({ inserted: 0, updated: seed.length, skipped: 0 });
     const repo = new DynamoProductRepository(dynamo.doc, SYNC_TABLE);
     expect(await repo.findById(first.productId)).toMatchObject({
       description: 'Mô tả mới, dài hơn.',
@@ -156,5 +156,55 @@ describe('syncProductContent (prod, #527)', () => {
       price: 123_000,
       status: 'INACTIVE',
     });
+  });
+});
+
+describe('syncProductContent không ghi đè việc admin làm (#554)', () => {
+  const ADMIN_TABLE = 'shop-prd-api-ProductsTable-admin';
+
+  beforeAll(async () => {
+    await dynamo.client.send(new CreateTableCommand(productsTableDefinition(ADMIN_TABLE)));
+    await syncProductContent(dynamo.doc, ADMIN_TABLE, seed);
+  });
+
+  it('syncProductContent_skipsEditedAfterFile_andSoftDeleted_updatesTheRest', async () => {
+    // Arrange: admin sửa tên món 1 sau ngày trong file, xoá mềm món 2
+    const [edited, removed] = seed;
+    if (!edited || !removed) throw new Error('file mẫu phải có ít nhất 2 sản phẩm');
+    await dynamo.doc.send(
+      new UpdateCommand({
+        TableName: ADMIN_TABLE,
+        Key: { productId: edited.productId },
+        UpdateExpression: 'SET #name = :name, updatedAt = :at',
+        ExpressionAttributeNames: { '#name': 'name' },
+        ExpressionAttributeValues: { ':name': 'Tên admin đặt', ':at': '2099-01-01T00:00:00.000Z' },
+      }),
+    );
+    await dynamo.doc.send(
+      new UpdateCommand({
+        TableName: ADMIN_TABLE,
+        Key: { productId: removed.productId },
+        UpdateExpression: 'SET deletedAt = :at',
+        ExpressionAttributeValues: { ':at': '2026-11-25T08:00:00.000Z' },
+      }),
+    );
+    const newer = seed.map((p) => ({ ...p, description: 'Mô tả bản deploy mới.' }));
+
+    // Act
+    const result = await syncProductContent(dynamo.doc, ADMIN_TABLE, newer);
+
+    // Assert: 2 món bỏ qua, còn lại cập nhật, không lỗi cả lượt
+    expect(result).toEqual({ inserted: 0, updated: seed.length - 2, skipped: 2 });
+    const products = new DynamoProductRepository(dynamo.doc, ADMIN_TABLE);
+    expect(await products.findById(edited.productId)).toMatchObject({ name: 'Tên admin đặt' });
+    expect((await products.findById(edited.productId))?.description).not.toBe(
+      'Mô tả bản deploy mới.',
+    );
+    expect(await products.findById(removed.productId)).toMatchObject({
+      deletedAt: '2026-11-25T08:00:00.000Z',
+    });
+    expect((await products.findById(seed[2]?.productId ?? ''))?.description).toBe(
+      'Mô tả bản deploy mới.',
+    );
   });
 });
