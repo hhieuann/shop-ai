@@ -33,7 +33,8 @@
   grid-column: 1 / -1;
 }
 .logo {
-  --logo-text: 20px;
+  --logo-mark: 56px;
+  --logo-name: 34px;
   width: fit-content;
 }
 .logo:hover {

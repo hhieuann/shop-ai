@@ -62,7 +62,6 @@
   --focus-ring-on-chrome: #ffffff;
 
   --gradient-brand: linear-gradient(135deg, #1e1b4b 0%, #3730a3 35%, #4f46e5 70%, #22d3ee 100%);
-  --gradient-logo: linear-gradient(135deg, #c7d2fe, #ffffff);
   --hero-ink: #1e1b4b;
 
   --shadow-xs: 0 2px 3px rgba(0, 0, 0, 0.05);

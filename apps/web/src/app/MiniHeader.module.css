@@ -14,11 +14,10 @@
   padding: 0 var(--gutter);
 }
 
-/* Logo dùng lại, cỡ ô 40px, chữ 20/28 */
+/* Logo dùng lại: huy hiệu cao 44px, chữ tên shop cao 26px (#579) */
 .logo {
-  --logo-mark: 40px;
-  --logo-text: 20px;
-  --logo-leading: 28px;
+  --logo-mark: 44px;
+  --logo-name: 26px;
 }
 .logo:focus-visible,
 .back:focus-visible {
@@ -46,12 +45,12 @@
   text-decoration: none;
 }
 
-/* Điện thoại: cao 56px, chỉ ô logo (chữ "Black Magic" ẩn, tên link vẫn đọc qua aria-label) */
+/* Điện thoại: cao 56px, chỉ huy hiệu (ảnh chữ tên shop ẩn, tên link vẫn đọc qua aria-label) */
 @media (max-width: 639px) {
   .inner {
     height: 56px;
   }
-  .logo span:last-child {
+  .logo img:last-child {
     display: none;
   }
 }

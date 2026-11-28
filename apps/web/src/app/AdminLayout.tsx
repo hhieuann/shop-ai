@@ -1,5 +1,6 @@
 import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Package, Receipt, Sparkles, Store, type LucideIcon } from 'lucide-react';
+import { Package, Receipt, Store, type LucideIcon } from 'lucide-react';
+import markUrl from '../assets/logo-mark.webp';
 import { useTwoFactorStatus } from '../features/account/lib/useTwoFactorStatus';
 import { AdminForbidden } from '../features/admin/components/AdminForbidden';
 import { useRequireSignIn } from '../shared/auth/useRequireSignIn';
@@ -75,9 +76,14 @@ export function AdminLayout() {
     <div className={`${styles.shell} ${navReady ? styles.withNav : ''}`}>
       <header className={styles.topbar}>
         <Link to="/admin" className={styles.brand} aria-label="Black Magic, trang quản trị">
-          <span className={styles.mark} aria-hidden="true">
-            <Sparkles size={16} aria-hidden="true" />
-          </span>
+          <img
+            className={styles.mark}
+            src={markUrl}
+            alt=""
+            width={115}
+            height={112}
+            decoding="async"
+          />
           <span className={styles.wordmark} aria-hidden="true">
             Black Magic
           </span>
