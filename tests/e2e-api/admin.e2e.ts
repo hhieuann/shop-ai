@@ -122,7 +122,7 @@ describe.skipIf(!ready)('E2E API admin sản phẩm: phân quyền', () => {
     product = first;
   });
 
-  /** 6 route theo contracts/openapi.yaml (tag admin) */
+  /** 7 route theo contracts/openapi.yaml (tag admin) */
   const routes = () => [
     { path: `/admin/products?category=${product.category}` },
     {
@@ -146,6 +146,12 @@ describe.skipIf(!ready)('E2E API admin sản phẩm: phân quyền', () => {
     },
     { path: `/admin/products/${product.productId}`, method: 'DELETE' },
     { path: `/admin/products/${product.productId}/restore`, method: 'POST' },
+    // Xin vé tải ảnh (BR-16, #561): khách thường không được cấp vé
+    {
+      path: '/admin/product-images',
+      method: 'POST',
+      body: { contentType: 'image/jpeg', size: 1024 },
+    },
   ];
 
   it('adminProductRoutes_return401_withoutToken', async () => {

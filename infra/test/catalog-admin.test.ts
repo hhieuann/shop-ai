@@ -111,6 +111,8 @@ describe('ApiStack · API admin sản phẩm (catalog.md BR-09 … BR-15, #546)'
       'PATCH /api/v1/admin/products/{productId}',
       'DELETE /api/v1/admin/products/{productId}',
       'POST /api/v1/admin/products/{productId}/restore',
+      // Xin vé tải ảnh (BR-16, #561)
+      'POST /api/v1/admin/product-images',
     ];
     for (const routeKey of routeKeys) {
       const route = routes.find((r) => r.Properties.RouteKey === routeKey);
@@ -119,7 +121,7 @@ describe('ApiStack · API admin sản phẩm (catalog.md BR-09 … BR-15, #546)'
         'CatalogAdminIntegration',
       );
     }
-    // Verify: chỉ đúng 6 route này trỏ vào Lambda admin sản phẩm
+    // Verify: chỉ đúng 7 route này trỏ vào Lambda admin sản phẩm
     const adminProductRoutes = routes.filter((r) =>
       JSON.stringify(r.Properties.Target).includes('CatalogAdminIntegration'),
     );
