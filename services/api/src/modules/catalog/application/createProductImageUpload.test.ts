@@ -71,7 +71,7 @@ describe('createProductImageUpload (catalog.md BR-16)', () => {
   it('throws_andSignsNothing_whenBaseUrlUnavailable', async () => {
     // Arrange: không đọc được tên miền shop (SSM lỗi hoặc giá trị sai)
     const d = deps();
-    d.baseUrl.get.mockRejectedValue(new Error('Tham số /shop/dev/web/base-url không phải https'));
+    d.baseUrl.get.mockRejectedValue(new Error('Tham số /shop-dev/web/base-url không phải https'));
 
     // Act + Assert: lỗi thường, handler trả 500
     await expect(

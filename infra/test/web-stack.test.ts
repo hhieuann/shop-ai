@@ -35,6 +35,28 @@ function synthUncached(shopEnv: ShopEnvironment): Template {
   return Template.fromStack(web);
 }
 
+/**
+ * CSP ghép với tên miền bucket ảnh (token) nên ra Fn::Join; nối lại thành chuỗi, phần token ghi dạng
+ * `{"Fn::GetAtt":[...]}` để test so khớp được
+ */
+function cspOf(template: Template): string {
+  const [policy] = Object.values(
+    template.findResources('AWS::CloudFront::ResponseHeadersPolicy'),
+  ) as {
+    Properties: {
+      ResponseHeadersPolicyConfig: {
+        SecurityHeadersConfig: { ContentSecurityPolicy: { ContentSecurityPolicy: unknown } };
+      };
+    };
+  }[];
+  const value =
+    policy!.Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.ContentSecurityPolicy
+      .ContentSecurityPolicy;
+  if (typeof value === 'string') return value;
+  const [, parts] = (value as { 'Fn::Join': [string, unknown[]] })['Fn::Join'];
+  return parts.map((p) => (typeof p === 'string' ? p : JSON.stringify(p))).join('');
+}
+
 // Synth một stack CDK mất vài giây; các test chỉ đọc template nên synth một lần cho mỗi môi trường
 const templates = new Map<string, Template>();
 function synth(shopEnv: ShopEnvironment): Template {
@@ -74,7 +96,8 @@ describe('WebStack', () => {
     const template = synth(dev);
 
     // Assert
-    template.resourceCountIs('AWS::CloudFront::OriginAccessControl', 1);
+    // Một OAC cho bucket web, một cho bucket ảnh sản phẩm (#561)
+    template.resourceCountIs('AWS::CloudFront::OriginAccessControl', 2);
     template.hasResourceProperties('AWS::CloudFront::Distribution', {
       DistributionConfig: Match.objectLike({
         DefaultRootObject: 'index.html',
@@ -158,12 +181,7 @@ describe('WebStack', () => {
     template.hasResourceProperties('AWS::CloudFront::ResponseHeadersPolicy', {
       ResponseHeadersPolicyConfig: Match.objectLike({
         SecurityHeadersConfig: {
-          ContentSecurityPolicy: {
-            ContentSecurityPolicy: Match.stringLikeRegexp(
-              "default-src 'self'.*connect-src 'self' https://cognito-idp\\.ap-southeast-1\\.amazonaws\\.com.*frame-ancestors 'none'",
-            ),
-            Override: true,
-          },
+          ContentSecurityPolicy: { ContentSecurityPolicy: Match.anyValue(), Override: true },
           ContentTypeOptions: { Override: true },
           FrameOptions: { FrameOption: 'DENY', Override: true },
           ReferrerPolicy: { ReferrerPolicy: 'strict-origin-when-cross-origin', Override: true },
@@ -179,6 +197,21 @@ describe('WebStack', () => {
         RemoveHeadersConfig: { Items: [{ Header: 'Server' }] },
       }),
     });
+    expect(cspOf(template)).toMatch(
+      /default-src 'self'.*connect-src 'self' https:\/\/cognito-idp\.ap-southeast-1\.amazonaws\.com.*frame-ancestors 'none'/,
+    );
+  });
+
+  it('responseHeaders_connectSrcAllowsOnlyProductImagesBucket_forPresignedPost', () => {
+    // Act
+    const csp = cspOf(synth(dev));
+
+    // Assert: trang admin POST ảnh thẳng lên S3 (BR-16); chỉ thêm đúng bucket ảnh, không mở *.amazonaws.com
+    const connectSrc = csp.split(';').find((d) => d.trim().startsWith('connect-src'));
+    expect(connectSrc).toMatch(
+      /https:\/\/\{"Fn::GetAtt":\["ProductImagesBucket\w+","RegionalDomainName"\]\}/,
+    );
+    expect(connectSrc).not.toContain('*');
   });
 
   it('responseHeaders_cspHasNoUnsafeDirectives', () => {
@@ -211,11 +244,11 @@ describe('WebStack', () => {
     }[];
     const config = distribution!.Properties.DistributionConfig;
 
-    // Assert: web, /api/v1/products* và /api/* đều có header
+    // Assert: web, ảnh sản phẩm, /api/v1/products* và /api/* đều có header
     for (const behavior of [config.DefaultCacheBehavior, ...config.CacheBehaviors]) {
       expect(behavior.ResponseHeadersPolicyId).toBeDefined();
     }
-    expect(config.CacheBehaviors).toHaveLength(2);
+    expect(config.CacheBehaviors).toHaveLength(3);
   });
 
   it('stack_exposesWebUrl', () => {
@@ -230,15 +263,20 @@ describe('WebStack', () => {
     // Act
     const template = synth(dev);
 
-    // Assert: /api/v1/products* đứng trước /api/* (CloudFront so khớp theo thứ tự), chỉ GET và HEAD
+    // Assert: /api/v1/products* đứng trước /api/* (CloudFront so khớp theo thứ tự), chỉ GET và HEAD;
+    // /images/products/* không đè lên đường dẫn API nào
     const dist = Object.values(template.findResources('AWS::CloudFront::Distribution'))[0] as {
       Properties: {
         DistributionConfig: { CacheBehaviors: { PathPattern: string; AllowedMethods: string[] }[] };
       };
     };
     const behaviors = dist.Properties.DistributionConfig.CacheBehaviors;
-    expect(behaviors.map((b) => b.PathPattern)).toEqual(['/api/v1/products*', '/api/*']);
-    expect(behaviors[0]?.AllowedMethods).toEqual(['GET', 'HEAD']);
+    expect(behaviors.map((b) => b.PathPattern)).toEqual([
+      '/images/products/*',
+      '/api/v1/products*',
+      '/api/*',
+    ]);
+    expect(behaviors[1]?.AllowedMethods).toEqual(['GET', 'HEAD']);
 
     // Assert: TTL 60 giây; khoá cache gồm mọi query string (q, category, sort, limit, cursor)
     template.hasResourceProperties('AWS::CloudFront::CachePolicy', {

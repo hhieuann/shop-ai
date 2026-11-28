@@ -2,7 +2,7 @@ import { GetParameterCommand, type SSMClient } from '@aws-sdk/client-ssm';
 import { describe, expect, it, vi } from 'vitest';
 import { SsmShopBaseUrl } from './ssmShopBaseUrl.js';
 
-const PARAM = '/shop/dev/web/base-url';
+const PARAM = '/shop-dev/web/base-url';
 const BASE = 'https://d111111abcdef8.cloudfront.net';
 
 function ssmReturning(...results: Array<string | undefined | Error>) {
