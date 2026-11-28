@@ -332,7 +332,7 @@ Hàng chip 13 loại hàng trên nền chàm của bản trước **bỏ**: 13 l
 ### 9.2 Footer (`app/Footer`)
 **Cùng màu với header**: nền `--bg-chrome` (chàm), cách nội dung 32px; khung `--content-max` với lề `--gutter`, padding `64px` trên, `32px` dưới (<1280: `40px` / `24px`).
 - Lưới 4 cột `1.4fr 1fr 1fr 1.2fr`, gap `32px 40px` (<1280: 2 cột, cột đầu chiếm cả hàng; gap `24px 16px`).
-- Cột 1: logo (huy hiệu 44px + chữ tên shop 26px) + đoạn giới thiệu 14/20 `--fg-on-chrome-muted`, rộng tối đa 34 ký tự: "Laptop và linh kiện PC, có gợi ý món thường mua kèm. Dự án thực tập FCAJ 2026, dữ liệu sản phẩm là giả lập."
+- Cột 1: logo (huy hiệu 56px + chữ tên shop 34px, bằng header máy tính) + đoạn giới thiệu 14/20 `--fg-on-chrome-muted`, rộng tối đa 34 ký tự: "Laptop và linh kiện PC, có gợi ý món thường mua kèm. Dự án thực tập FCAJ 2026, dữ liệu sản phẩm là giả lập."
 - Cột 2–4: tiêu đề 16/20/600 trắng, cách danh sách 12px; mục 14/18/500 trắng, cách nhau 8px. "Mua sắm": Tất cả sản phẩm, Hàng mới về, Card đồ hoạ, Laptop. "Tài khoản": Đăng nhập, Tạo tài khoản, Đơn hàng. "Giao hàng và thanh toán": icon `Truck` 18 + "Giao hàng miễn phí mọi đơn"; icon `Banknote` 18 + "Thanh toán khi nhận hàng (COD)" (icon màu `--fg-on-chrome-muted`).
 - Dòng cuối: viền trên 1px `--border-on-chrome-subtle`, padding trên 20px, chữ 12/16/500 `--fg-on-chrome-muted`: "© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo."
 - Link gạch chân khi hover; viền focus trắng. Không có mạng xã hội, tổng đài, showroom, chứng nhận (không có trong phạm vi).
