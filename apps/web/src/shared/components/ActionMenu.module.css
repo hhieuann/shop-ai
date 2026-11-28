@@ -1,0 +1,75 @@
+/* Nút ba chấm và menu thao tác (docs/web/design-system.md §9.32) */
+.root {
+  position: relative;
+  display: inline-flex;
+}
+/* Nút vuông 32px kiểu nút phụ cỡ sm (§9.3) */
+.trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+}
+.trigger:hover:not(:disabled),
+.trigger[aria-expanded='true'] {
+  background: var(--bg-surface-pressed);
+}
+.trigger:disabled {
+  color: var(--fg-disabled);
+}
+
+/* Menu nổi dưới nút, canh mép phải */
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-50));
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--fg-default);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  text-align: left;
+  white-space: nowrap;
+}
+.item:hover:not(:disabled),
+.item:focus-visible {
+  background: var(--bg-transparent-hover);
+}
+/* Trong menu, mục đang focus đã có nền: viền focus nằm trong mục cho gọn */
+.item:focus-visible {
+  outline-offset: -2px;
+}
+.item svg {
+  flex-shrink: 0;
+  color: var(--fg-muted);
+}
+.danger,
+.danger svg {
+  color: var(--fg-danger);
+}
+.separator {
+  margin: 6px 0;
+  border-top: 1px solid var(--border-divider);
+}
