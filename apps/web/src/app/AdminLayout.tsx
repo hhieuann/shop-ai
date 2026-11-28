@@ -23,8 +23,7 @@ const GROUPS: { label: string; items: AdminSection[] }[] = [
   },
   {
     label: 'Danh mục',
-    // Hiện khi có trang quản lý sản phẩm
-    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: Package, ready: false }],
+    items: [{ to: '/admin/products', label: 'Sản phẩm', icon: Package, ready: true }],
   },
 ];
 
