@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router-dom';
+import { FakeXhr } from '../lib/fakeXhr';
 import { AdminProductFormPage } from './AdminProductFormPage';
 
 const UPDATED_AT = '2026-11-20T03:15:00.000Z';
@@ -304,7 +305,7 @@ describe('AdminProductFormPage · sửa (BR-12)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: PRODUCT.name }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: 'Loại hàng' })).toBeNull();
     expect(screen.getByText(/Loại hàng không đổi được/)).toBeInTheDocument();
     expect(field(/Giá bán/)).toHaveValue('8290000');
   });
@@ -429,5 +430,62 @@ describe('AdminProductFormPage · sửa (BR-12)', () => {
 
     // Assert
     expect(await screen.findByText(message)).toBeInTheDocument();
+  });
+});
+
+describe('AdminProductFormPage · ảnh (BR-16, #562)', () => {
+  const editPath = `/admin/products/${PRODUCT.productId}/edit`;
+  const UPLOADED =
+    'https://d111111abcdef8.cloudfront.net/images/products/01KAB3Q5G00000000000000001.jpg';
+
+  beforeEach(() => {
+    FakeXhr.reset();
+    vi.stubGlobal('XMLHttpRequest', FakeXhr);
+    URL.createObjectURL = vi.fn(() => 'blob:preview');
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it('edit_removeImageThenSave_sendsImageUrlNull', async () => {
+    // Arrange: món đang có ảnh trong bucket
+    getResponse = () => json({ ...PRODUCT, imageUrl: UPLOADED });
+    writeResponse = () => json({ ...PRODUCT, updatedAt: '2026-11-26T09:00:00.000Z' });
+    const { user } = renderAt(editPath);
+
+    // Act
+    await user.click(await screen.findByRole('button', { name: 'Bỏ ảnh này' }));
+    await user.click(save());
+
+    // Assert
+    expect(await screen.findByText('Đã lưu thay đổi.')).toBeInTheDocument();
+    expect(bodyOf('PATCH')).toEqual({ updatedAt: UPDATED_AT, imageUrl: null });
+  });
+
+  it('new_uploadingLocksSave_thenUploadedUrlIsSent', async () => {
+    // Arrange
+    writeResponse = () =>
+      json({
+        upload: { url: 'https://bucket.s3.ap-southeast-1.amazonaws.com/', fields: { key: 'k' } },
+        imageUrl: UPLOADED,
+        expiresAt: '2026-11-26T05:05:00.000Z',
+      });
+    const { user } = renderAt('/admin/products/new?category=gpu');
+    await screen.findByText(/Đã điền mẫu/);
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+
+    // Act
+    await user.upload(input, new File([new Uint8Array(10)], 'a.png', { type: 'image/png' }));
+    await waitFor(() => expect(FakeXhr.last()).toBeDefined());
+
+    // Assert: đang tải thì không lưu được, có câu nói lý do
+    expect(save()).toBeDisabled();
+    expect(screen.getByText('Chờ tải ảnh xong rồi lưu.')).toBeInTheDocument();
+
+    // Act: S3 nhận tệp
+    await act(async () => FakeXhr.last()!.respond(204));
+
+    // Assert
+    await waitFor(() => expect(save()).toBeEnabled());
+    expect(screen.queryByText('Chờ tải ảnh xong rồi lưu.')).toBeNull();
+    expect(calls('POST')[0]?.[0]).toBe('/api/v1/admin/product-images');
   });
 });

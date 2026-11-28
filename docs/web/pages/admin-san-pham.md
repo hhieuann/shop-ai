@@ -97,7 +97,16 @@ Lưới `minmax(0,1fr) | 360px`, cách 24px; dưới 960px một cột (cột ph
 
 **Cột phải:**
 1. **Đang bán:** `Switch` (mặc định bật). Gợi ý "Tắt để lưu ở trạng thái đã ẩn".
-2. **Ảnh:** ô "Đường dẫn ảnh (https)" + khung xem 4:3 (`--bg-subtle`, "Chưa có ảnh"; ảnh tải lỗi thì "Không tải được ảnh từ đường dẫn này").
+2. **Ảnh** (catalog.md BR-16): nút phân đoạn hai lựa chọn "Tải ảnh lên" (mặc định) và "Dán đường dẫn" (nhóm radio, mũi tên trái phải đổi lựa chọn). Trang sửa có ảnh https không nằm trong bucket ảnh (không có `/images/products/`) thì mở sẵn "Dán đường dẫn".
+   - **Tải ảnh lên:** khung 4:3 (`--bg-subtle`, bo `--radius-lg`) cũng là vùng kéo thả.
+     - Chưa có ảnh: viền đứt `--border-input`, icon `ImagePlus`, "Kéo ảnh vào đây hoặc", nút phụ `sm` "Tải ảnh từ máy" (nút thật, dùng được bằng bàn phím), dòng mờ "JPG, PNG hoặc WebP, tối đa 3 MB". Kéo tệp vào: viền đứt 2px `--border-primary`, nền `--bg-primary-tint`.
+     - Kiểm ở web trước khi xin vé: chỉ JPG/JPEG, PNG, WebP ("Chỉ nhận ảnh JPG, PNG hoặc WebP."), không rỗng, tối đa 3 MB ("Ảnh tối đa 3 MB. Chọn ảnh nhỏ hơn.").
+     - Đang tải: ảnh của tệp mờ 40%, giữa khung "Đang tải ảnh… N%" và thanh tiến độ (`--bg-primary`, `role="progressbar"`). "Lưu sản phẩm" bị khoá, cạnh nút có câu "Chờ tải ảnh xong rồi lưu.".
+     - Có ảnh: ảnh `contain`, dưới khung nút phụ `sm` "Đổi ảnh".
+     - Nút X tròn 32px ở góc phải trên khung (`aria-label` "Bỏ ảnh này", nền trắng mờ, `--shadow-glass`): đang tải thì huỷ lượt tải; đã có ảnh thì bỏ ảnh khỏi form (trang sửa: lưu gửi `imageUrl: null`). Tệp đã lên bucket nhưng bị bỏ thì chưa tự xoá (catalog.md giới hạn đã biết).
+     - Lỗi mạng, API vé hoặc S3 từ chối: "Chưa tải được ảnh. Thử lại." dưới khung (`--fg-danger`, `role="alert"`), ảnh đang có giữ nguyên.
+   - **Dán đường dẫn:** ô "Đường dẫn ảnh (https)" + khung xem 4:3 ("Chưa có ảnh"; ảnh tải lỗi thì "Không tải được ảnh từ đường dẫn này").
+   - Đổi lựa chọn khi đang tải thì huỷ lượt tải; giá trị ảnh dùng chung cho hai lựa chọn.
 3. **Xem trước:** thẻ sản phẩm như ở cửa hàng (`ProductCard`), đổi theo ô đang nhập.
 
 **Thanh cuối trang:** dính đáy, nền trắng, viền trên, nút "Huỷ" (secondary, về danh sách) + "Lưu sản phẩm" (primary). Điện thoại: hai nút chia đều. Đang gửi: "Đang lưu…" (`aria-busy`), khoá nút (bấm hai lần có thể tạo hai món, BR-11).
@@ -120,7 +129,7 @@ Lưới `minmax(0,1fr) | 360px`, cách 24px; dưới 960px một cột (cột ph
 
 ## 5. Không làm
 
-Tải ảnh lên (chỉ nhập URL), đổi loại hàng của món đã có, xoá hẳn, sửa nhiều món một lúc, nhập từ file, lịch sử thay đổi.
+Thu nhỏ, cắt, chuyển định dạng ảnh; nhiều ảnh mỗi món; tự xoá ảnh không dùng; đổi loại hàng của món đã có, xoá hẳn, sửa nhiều món một lúc, nhập từ file, lịch sử thay đổi.
 
 ## 6. Trợ năng
 

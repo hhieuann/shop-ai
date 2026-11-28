@@ -1,0 +1,150 @@
+/* Khối Ảnh của form sản phẩm admin: tải lên hoặc dán đường dẫn (pages/admin-san-pham.md mục 3, BR-16) */
+.root {
+  display: grid;
+  gap: var(--space-150);
+}
+
+/* Nút phân đoạn như thanh trạng thái của danh sách sản phẩm admin */
+.segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-25);
+  padding: var(--space-25);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+.segment {
+  min-height: 32px;
+  padding: 0 var(--space-150);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.segment:hover:not(:disabled) {
+  color: var(--fg-heading);
+}
+.segment[aria-checked='true'] {
+  background: var(--bg-surface);
+  color: var(--fg-heading);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Khung 4:3, cũng là vùng kéo thả */
+.frame {
+  position: relative;
+  display: grid;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+.frame > * {
+  grid-area: 1 / 1;
+}
+.empty {
+  border: 1px dashed var(--border-input);
+}
+.dragging {
+  border: 2px dashed var(--border-primary);
+  background: var(--bg-primary-tint);
+}
+.placeholder {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-100);
+  padding: var(--space-200);
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  text-align: center;
+}
+.hint {
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* Đang tải: ảnh của tệp mờ đi, thẻ tiến độ trắng ở đáy khung để chữ luôn đọc được */
+.uploadingImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.4;
+}
+.progress {
+  /* Ảnh mờ (opacity) tạo lớp xếp chồng riêng, vẽ đè khối thường; định vị để thẻ nằm trên ảnh */
+  position: relative;
+  display: grid;
+  align-self: end;
+  gap: var(--space-100);
+  margin: var(--space-150);
+  padding: var(--space-150);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-heading);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.track {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--fg-muted) 20%, transparent);
+}
+.bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bg-primary);
+  transition: width var(--dur-fast) var(--ease-standard);
+}
+
+/* Nút X góc phải trên khung */
+.remove {
+  position: absolute;
+  top: var(--space-100);
+  right: var(--space-100);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  color: var(--fg-heading);
+  box-shadow: var(--shadow-glass);
+}
+.remove:hover:not(:disabled) {
+  background: var(--bg-surface);
+  color: var(--fg-danger);
+}
+
+.change {
+  justify-self: start;
+}
+.input {
+  display: none;
+}
+.error {
+  margin: 0;
+  color: var(--fg-danger);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}

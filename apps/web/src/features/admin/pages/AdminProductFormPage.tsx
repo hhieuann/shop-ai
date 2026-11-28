@@ -26,7 +26,7 @@ import { CATEGORIES, categoryLabel } from '../../catalog/lib/productFilters';
 import { specLabel } from '../../catalog/lib/specLabels';
 import { AdminForbidden } from '../components/AdminForbidden';
 import { CopyFromPanel } from '../components/CopyFromPanel';
-import { ImagePreview } from '../components/ImagePreview';
+import { ImageUploader } from '../components/ImageUploader';
 import {
   copyFrom,
   emptyForm,
@@ -181,6 +181,8 @@ function ProductForm({
   const [forbidden, setForbidden] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Ảnh đang tải lên S3: khoá "Lưu sản phẩm" tới khi có imageUrl (BR-16)
+  const [imageUploading, setImageUploading] = useState(false);
   // Vừa lưu xong và đang chuyển trang: không hỏi "Rời trang?"
   const leaving = useRef(false);
 
@@ -347,7 +349,7 @@ function ProductForm({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (save.isPending || deleted) return;
+    if (save.isPending || deleted || imageUploading) return;
     const found = validateProduct(values);
     setErrors(found);
     if (Object.keys(found).length > 0) {
@@ -551,18 +553,13 @@ function ProductForm({
               <h2 id="image-title" className={styles.blockTitle}>
                 Ảnh
               </h2>
-              <div className={styles.fields}>
-                <Field
-                  label="Đường dẫn ảnh (https)"
-                  type="url"
-                  placeholder="https://…"
-                  value={values.imageUrl}
-                  maxLength={LIMITS.imageUrl}
-                  error={errors.imageUrl}
-                  onChange={(e) => set('imageUrl', e.target.value)}
-                />
-                <ImagePreview url={values.imageUrl} />
-              </div>
+              <ImageUploader
+                value={values.imageUrl}
+                onChange={(url) => set('imageUrl', url)}
+                urlError={errors.imageUrl}
+                disabled={deleted}
+                onUploadingChange={setImageUploading}
+              />
             </section>
             <section className={styles.block} aria-labelledby="preview-title">
               <h2 id="preview-title" className={styles.blockTitle}>
@@ -588,10 +585,15 @@ function ProductForm({
             {formError}
           </p>
         )}
+        {imageUploading && !formError && (
+          <p className={styles.barHint} aria-live="polite">
+            Chờ tải ảnh xong rồi lưu.
+          </p>
+        )}
         <Link to="/admin/products" className={buttonClass({})}>
           Huỷ
         </Link>
-        <Button type="submit" variant="primary" busy={busy} disabled={deleted}>
+        <Button type="submit" variant="primary" busy={busy} disabled={deleted || imageUploading}>
           {busy ? 'Đang lưu…' : 'Lưu sản phẩm'}
         </Button>
       </div>
