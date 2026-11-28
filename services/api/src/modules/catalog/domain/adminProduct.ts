@@ -5,7 +5,7 @@
  */
 import { InvalidCursorError } from './errors.js';
 import type { Page } from './listing.js';
-import type { Product } from './product.js';
+import type { Product, ProductCategory, ProductStatus } from './product.js';
 import { matchesSearch, withSearchText } from './search.js';
 
 /** Nhóm của món trong index `byCategory`: khoá `<loại>#ACTIVE`, `<loại>#INACTIVE`, `<loại>#DELETED` */
@@ -86,4 +86,48 @@ export function paginateNewest(
   return start + limit < sorted.length && last
     ? { items, nextCursor: encodeAdminCursor(last.productId) }
     : { items };
+}
+
+// ─── Ghi (BR-11 … BR-14) ───────────────────────────────────────────────────
+
+/** Nội dung thêm sản phẩm, đã qua kiểm kiểu và độ dài ở handler (chuỗi đã bỏ khoảng trắng hai đầu) */
+export interface AdminProductDraft {
+  readonly name: string;
+  readonly category: ProductCategory;
+  readonly brand: string;
+  readonly price: number;
+  readonly stock: number;
+  readonly status: ProductStatus;
+  readonly description: string;
+  readonly imageUrl?: string;
+  readonly specs?: Readonly<Record<string, string>>;
+}
+
+/** Các trường admin sửa được (BR-12): mọi trường trừ `category`; `imageUrl: null` là bỏ ảnh */
+export interface AdminProductPatch {
+  readonly name?: string;
+  readonly brand?: string;
+  readonly price?: number;
+  readonly stock?: number;
+  readonly status?: ProductStatus;
+  readonly description?: string;
+  readonly imageUrl?: string | null;
+  readonly specs?: Readonly<Record<string, string>>;
+}
+
+/** Sản phẩm mới từ bản nháp: server sinh `productId`, `createdAt` bằng `updatedAt` (BR-11) */
+export function newProduct(draft: AdminProductDraft, productId: string, now: string): Product {
+  return { ...draft, productId, createdAt: now, updatedAt: now };
+}
+
+/** Hành động ghi log (catalog.md mục Log) */
+export type AdminProductAction = 'CREATE' | 'UPDATE' | 'HIDE' | 'SHOW';
+
+/** Chỉ đổi trạng thái là ẩn hoặc hiện lại (BR-13); có trường khác thì là sửa */
+export function actionOfPatch(patch: AdminProductPatch): AdminProductAction {
+  const keys = Object.keys(patch).filter((k) => patch[k as keyof AdminProductPatch] !== undefined);
+  if (keys.length === 1 && patch.status !== undefined) {
+    return patch.status === 'INACTIVE' ? 'HIDE' : 'SHOW';
+  }
+  return 'UPDATE';
 }
