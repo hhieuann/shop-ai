@@ -32,6 +32,14 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // Hàng mới về: 20 món mới nhất, không lọc, không phân trang (pages/hang-moi-ve.md, #567)
+        path: 'new-arrivals',
+        handle: { surface: 'plain' } satisfies RouteHandle,
+        lazy: async () => ({
+          Component: (await import('./features/catalog/pages/NewArrivalsPage')).NewArrivalsPage,
+        }),
+      },
+      {
         path: 'products/:productId',
         // Từ 1280px hàng 2 header thu lại khi cuộn (§3.8); breadcrumb sát header (§2)
         handle: { headerNeeds: 'collapse', flushTop: true } satisfies RouteHandle,

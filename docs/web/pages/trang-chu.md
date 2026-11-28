@@ -87,7 +87,7 @@ Mỗi khối là `StoryBlock` + `Carousel` + `ProductCard` theo design-system §
 | Thứ tự | Tiêu đề | "Xem tất cả" | Dữ liệu |
 |---|---|---|---|
 | 1 | Đang được mua nhiều | không | widget gợi ý của An (mục 3.6) |
-| 2 | Hàng mới về | `/products` | `GET /products?sort=newest` |
+| 2 | Hàng mới về | `/new-arrivals` (#567) | `GET /products?sort=newest` |
 | 3 | Card đồ hoạ | `/products?category=gpu` | `GET /products?category=gpu` |
 | 4 | Laptop | `/products?category=laptop` | `GET /products?category=laptop` |
 

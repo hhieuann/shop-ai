@@ -111,6 +111,13 @@ describe('HomePage', () => {
       .filter((t) => t !== 'Mua card đồ hoạ, xem luôn món thường mua kèm');
     expect(titles).toEqual(['Đang được mua nhiều', 'Hàng mới về', 'Card đồ hoạ', 'Laptop']);
 
+    // Khối Hàng mới về: "Xem tất cả" sang trang riêng (#567)
+    expect(
+      within(screen.getByRole('region', { name: 'Hàng mới về' })).getByRole('link', {
+        name: 'Xem tất cả',
+      }),
+    ).toHaveAttribute('href', '/new-arrivals');
+
     const laptop = screen.getByRole('region', { name: 'Laptop' });
     expect(within(laptop).getByRole('link', { name: 'Xem tất cả' })).toHaveAttribute(
       'href',

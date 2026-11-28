@@ -47,7 +47,7 @@ Bảng màu chàm (chốt 11/10/2026). Cột "Tương phản" là tỉ lệ WCAG
 | `--bg-surface-raised` | `#FAFAFA` | Ô tìm kiếm trên header, ô nhập, nút phụ, hàng lẻ của bảng thông số |
 | `--bg-surface-pressed` | `#EEEEEE` | Nhấn, hover của nút phụ |
 | `--bg-chrome` | `#4338CA` | **Header hàng 1 và footer** (chữ trắng 7,90) |
-| `--bg-chrome-strong` | `#3730A3` | Nút "Danh mục" trên header, nút menu trên điện thoại (chữ trắng 9,93) |
+| `--bg-chrome-strong` | `#3730A3` | Nút menu "Danh mục" trên header dưới 1280px (chữ trắng 9,93) |
 | `--bg-chrome-hover` | `rgba(255,255,255,.12)` | Hover của nút trên header |
 | `--bg-primary` / `-hover` / `-pressed` | `#4F46E5` / `#4338CA` / `#3730A3` | Nút chính; hover và nhấn **tối đi** (chữ trắng 6,29 / 7,90 / 9,93) |
 | `--bg-primary-tint` / `-tint-2` | `#EEF2FF` / `#E0E7FF` | Hover của mục menu và link nav; ô icon (`-tint-2`), mục đang chọn |
@@ -138,7 +138,7 @@ Hay dùng nhất: **8** (giữa các ô ở hàng đầu trang chủ, gap trong 
 |---|---|---|
 | `--radius-md` | 4px | Nhãn, badge, ô icon trong menu danh mục |
 | `--radius-lg` | 8px | **Nút, ô nhập, mục menu, ô icon** |
-| `--radius-btn` | 10px | Nút trên header (Danh mục, Đơn hàng, Đăng nhập, Giỏ hàng) |
+| `--radius-btn` | 10px | Nút trên header (nút menu, Đơn hàng, Đăng nhập, Giỏ hàng) |
 | `--radius-xl` | 12px | **Thẻ sản phẩm**, menu danh mục, hero, ô thông tin, ô "Thường mua kèm" |
 | `--radius-2xl` | 16px | Hộp thoại, menu tài khoản, ô trạng thái rỗng |
 | `--radius-full` | 9999px | **Ô tìm kiếm** (viên thuốc), nút tìm tròn, chip, nút tròn, nhãn tròn |
@@ -282,8 +282,7 @@ Hai hàng, dính đầu trang (`position: sticky; top: 0; z-index: 210`). Hàng 
 |---|---|
 | Hàng 1 | cao **76px**, padding 16px dọc, lề `--gutter` trong khung `--content-max`; phần tử cao **44px**, cách nhau 12px |
 | Logo | ô 36px nền `--gradient-logo` bo 8px, icon `--hero-ink` + chữ "Black Magic" 22/28/700 trắng; cả cụm là link về `/`. Favicon `apps/web/public/favicon.svg`: ô nền `--bg-chrome`, icon `Sparkles` `--fg-on-primary`; mã màu ghi thẳng trong file (svg không đọc token), đổi token thì sửa cả file này |
-| Cụm giữa | nút "Danh mục" + ô tìm kiếm thành **một cụm** `flex`, gap 12px, `flex: 0 1 872px`, `margin-inline: auto`: cụm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải (màn 1920: nút Danh mục bắt đầu khoảng 440px). Màn hẹp thì ô tìm co lại |
-| Nút "Danh mục" | `<button>` nền `--bg-chrome-strong`, chữ trắng 16/24/500, padding `10px 16px`, bo `--radius-btn` (10px), icon `Menu` 24 + chữ, gap 8px. Mở `CategoryMenu` (§9.18) dạng bảng thả xuống. Có ở mọi trang có header đầy đủ, kể cả trang chủ |
+| Cụm giữa | chỉ còn ô tìm kiếm (bỏ nút "Danh mục" từ 1280px, #567, 27/11/2026), cụm `flex: 0 1 872px`, `margin-inline: auto`: ô tìm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải, rộng tối đa 720px. Lối vào loại hàng trên máy tính: cột danh mục ở trang chủ, cột lọc ở `/products`, hàng 2 |
 | Ô tìm kiếm | Theo ảnh tham khảo của Hoàng (11/10/2026), dạng **viên thuốc**: `role="search"`, co giãn, **rộng tối đa 720px**; cao **48px**, nền `--bg-surface-raised` (`#FAFAFA`), **không viền**, bo `--radius-full`, padding `0 6px 0 22px`; chữ 16px `--fg-default`, placeholder "Tìm laptop, card đồ hoạ, RAM…" `--fg-placeholder` (4,54), `maxLength=30`. Nút tìm **tròn 36px nền `#1A1A1A`** (`--fg-default`), icon `Search` 18 trắng, sát phải trong ô, `aria-label="Tìm"`; hover nền `--bg-chrome-strong`. Focus: viền trắng 2px quanh cả ô (`:focus-within`) |
 | Đơn hàng | đầu nhóm nút bên phải; `NavLink` cao 44px, padding `0 10px`, bo 10px, icon `Package` 28 + nhãn 16/24/500, gap 8px; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn |
 | Đăng nhập | nút mở menu tài khoản, cùng kích thước với Đơn hàng: icon `User` 28 + nhãn + `ChevronDown` 16 (§9.17) |
@@ -295,7 +294,7 @@ Sáu link hàng 2 (nhóm khách theo project-plan, đường dẫn là bộ lọ
 
 | Link | Icon | Tới |
 |---|---|---|
-| Hàng mới về | `Sparkles` | `/products` (mới nhất) |
+| Hàng mới về | `Sparkles` | `/new-arrivals` (trang riêng, 20 món mới nhất; pages/hang-moi-ve.md) |
 | Chơi game | `Gamepad2` | `/products?category=gpu` |
 | Làm văn phòng | `Briefcase` | `/products?category=laptop` |
 | Học lập trình | `CodeXml` | `/products?category=ram` |
@@ -571,17 +570,16 @@ Nội dung **khi đã đăng nhập**:
 
 **Không có:** ảnh đại diện, phương thức thanh toán, danh sách yêu thích, hỗ trợ, quyền lợi "miễn phí vận chuyển" (mọi đơn đều miễn phí, ordering BR-06). Trang tài khoản (đổi username, đổi mật khẩu) có từ 16/11/2026, vào bằng mục "Tài khoản của tôi".
 
-### 9.18 Menu danh mục (`CategoryMenu`, ✅; trang chủ và nút "Danh mục")
-Theo kiểu menu danh mục cột trái của trang tham khảo. Một danh sách 13 loại hàng (`CATEGORIES`, cùng thứ tự với `CategoryIcon`), dùng ở 3 chỗ:
+### 9.18 Menu danh mục (`CategoryMenu`, ✅; trang chủ và nút menu dưới 1280px)
+Theo kiểu menu danh mục cột trái của trang tham khảo. Một danh sách 13 loại hàng (`CATEGORIES`, cùng thứ tự với `CategoryIcon`), dùng ở 2 chỗ (bảng thả xuống của nút "Danh mục" từ 1280px đã bỏ ở #567):
 
 | Chỗ | Dạng |
 |---|---|
 | Trang chủ ≥1280 | **luôn hiện** ở cột trái hàng đầu trang (trang-chu.md §3.1) |
-| Nút "Danh mục" trên header ≥1280 (mọi trang) | bảng thả xuống ngay dưới nút, cách 12px, cùng kiểu vùng tối và cách đóng như menu tài khoản (§9.17) |
 | Nút menu trên header <1280 | ngăn kéo trượt từ trái, rộng `min(320px, 85vw)`, cao hết màn, nền `--bg-surface`, `--shadow-lg`, vùng tối `--scrim`; trên cùng có nút × và link "Đơn hàng" (icon `Package`), dưới là 13 loại hàng |
 
 Hình dạng danh sách:
-- Khung rộng 300px (trang chủ) hoặc 300px (bảng thả xuống), nền `--bg-surface`, viền 1px `--border-divider`, bo 12px, padding 8px.
+- Khung rộng 300px (trang chủ), nền `--bg-surface`, viền 1px `--border-divider`, bo 12px, padding 8px.
 - Mỗi mục là link tới `/products?category=…`: cao 36px, padding `4px 8px`, bo 8px, gap 12px; ô icon 28×28 nền `--bg-primary-tint-2`, bo 4px, `CategoryIcon` 20 `--fg-primary`; chữ 14/18/500 `--fg-heading`; `ChevronRight` 16 `--fg-icon-soft` sát phải.
 - Hover nền `--bg-primary-tint`. Loại đang xem (`aria-current="page"`): nền `--bg-primary-tint-2`, chữ `--fg-primary` đậm 600.
 - `<nav aria-label="Danh mục">` + `<ul>`.

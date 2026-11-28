@@ -21,7 +21,7 @@ describe('Footer', () => {
         .map((a) => a.getAttribute('href')),
     ).toEqual([
       '/products',
-      '/products?sort=newest',
+      '/new-arrivals',
       '/products?category=gpu',
       '/products?category=laptop',
     ]);
