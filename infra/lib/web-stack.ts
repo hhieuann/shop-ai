@@ -30,8 +30,14 @@ import {
 import { HttpOrigin, S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { BlockPublicAccess, Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
+import {
+  PRODUCT_IMAGES_PATH_PATTERN,
+  ProductImages,
+  shopBaseUrlParameterName,
+} from './product-images.js';
 
 export interface WebStackProps extends StackProps {
   readonly shopEnv: ShopEnvironment;
@@ -50,6 +56,7 @@ export interface WebStackProps extends StackProps {
  * Web của shop theo ADR-0006: một CloudFront cho mỗi môi trường.
  * `/` đọc bucket S3 riêng tư qua Origin Access Control; `/api/*` sang API Gateway, cùng tên miền nên không có CORS.
  * WAF chỉ gắn ở prod, trả theo dùng (ADR-0006, cập nhật 29/10/2026); dev, staging không có WAF.
+ * `/images/products/*` đọc bucket ảnh sản phẩm do admin tải lên (catalog.md BR-16, #561).
  */
 export class WebStack extends Stack {
   constructor(scope: Construct, id: string, props: WebStackProps) {
@@ -64,6 +71,10 @@ export class WebStack extends Stack {
       removalPolicy: shopEnv.isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       autoDeleteObjects: !shopEnv.isProd,
     });
+
+    // Ảnh sản phẩm admin tải lên (BR-16): bucket nằm ở stack này để OAC ghi được bucket policy theo đúng
+    // ARN distribution; stack api tính cùng tên bucket từ cấu hình (product-images.ts)
+    const productImages = new ProductImages(this, 'ProductImages', { shopEnv });
 
     // Đường dẫn không có đuôi file (vd. /products/abc) là route của React, trả index.html
     const spaRewrite = new CloudFrontFunction(this, 'SpaRewrite', {
@@ -97,6 +108,8 @@ export class WebStack extends Stack {
     // Header bảo mật (threat model L4). Bản build không có script, style inline và font tự host, nên CSP
     // không cần 'unsafe-inline'; web gọi Cognito trực tiếp nên connect-src phải có cognito-idp.
     // img-src mở https: vì imageUrl của sản phẩm do admin nhập, có thể ở tên miền khác.
+    // connect-src có bucket ảnh: trang admin POST ảnh thẳng lên S3 bằng vé ký sẵn (BR-16). URL vé do
+    // SDK sinh theo kiểu virtual-hosted có vùng, trùng bucketRegionalDomainName.
     const securityHeaders = new ResponseHeadersPolicy(this, 'SecurityHeaders', {
       comment: `shop-ai header bảo mật (${shopEnv.name})`,
       securityHeadersBehavior: {
@@ -107,7 +120,7 @@ export class WebStack extends Stack {
             "style-src 'self'",
             "img-src 'self' data: https:",
             "font-src 'self'",
-            `connect-src 'self' https://cognito-idp.${this.region}.amazonaws.com`,
+            `connect-src 'self' https://cognito-idp.${this.region}.amazonaws.com https://${productImages.bucket.bucketRegionalDomainName}`,
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
@@ -156,6 +169,21 @@ export class WebStack extends Stack {
       },
       // CloudFront so khớp theo thứ tự: /api/v1/products* phải đứng trước /api/*
       additionalBehaviors: {
+        // Tên tệp là ULID, không bao giờ ghi đè, nên cache dài (managed CachingOptimized). Chỉ đọc
+        [PRODUCT_IMAGES_PATH_PATTERN]: {
+          // OAC riêng cho origin này; giữ nguyên OAC của bucket web để không thay tài nguyên đang chạy
+          origin: S3BucketOrigin.withOriginAccessControl(productImages.bucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: securityHeaders,
+          functionAssociations: [
+            {
+              function: productImages.pathRewrite,
+              eventType: FunctionEventType.VIEWER_REQUEST,
+            },
+          ],
+        },
         '/api/v1/products*': {
           origin: apiOrigin,
           viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
@@ -189,6 +217,14 @@ export class WebStack extends Stack {
       distributionPaths: ['/index.html', '/config.json'],
       prune: false,
       memoryLimit: 512,
+    });
+
+    // Tên miền shop cho Lambda admin sản phẩm ghép đường dẫn ảnh (#560). Stack api không nhận thẳng
+    // tên miền vì sẽ thành vòng phụ thuộc, nên đọc tham số này lúc chạy
+    new StringParameter(this, 'ShopBaseUrlParameter', {
+      parameterName: shopBaseUrlParameterName(shopEnv),
+      description: `shop-ai: tên miền web (${shopEnv.name}), gốc của đường dẫn ảnh sản phẩm`,
+      stringValue: `https://${distribution.distributionDomainName}`,
     });
 
     Validations.of(this).acknowledge(
@@ -269,5 +305,6 @@ export class WebStack extends Stack {
     new CfnOutput(this, 'WebUrl', { value: `https://${distribution.distributionDomainName}` });
     new CfnOutput(this, 'WebBucketName', { value: bucket.bucketName });
     new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+    new CfnOutput(this, 'ProductImagesBucketName', { value: productImages.bucket.bucketName });
   }
 }

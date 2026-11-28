@@ -6,7 +6,7 @@ A serverless e-commerce shop for PC components and electronics on AWS, with "fre
 
 [![Deploy dev](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml/badge.svg?branch=develop)](https://github.com/hhieuann/shop-ai/actions/workflows/deploy.yml?query=branch%3Adevelop)
 
-**Live demo (production, v1.0.0):** https://d1e2x1capwqhry.cloudfront.net. This is a demo shop: no real orders, payments or deliveries.
+**Live demo (production, v1.0.1):** https://d1e2x1capwqhry.cloudfront.net. This is a demo shop: no real orders, payments or deliveries.
 
 ## The problem
 
@@ -18,8 +18,8 @@ Small PC component shops do not have enough staff to answer "if I buy this, what
 |---|---|---|
 | v0.1.0 (released) | 22 Oct 2026 | Browse, filter and search products; sign up and sign in; guest cart and account cart, merged on sign-in; monitoring with alarms, dashboard and runbooks. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v0.1.0) |
 | v0.2.0 (released) | 5 Nov 2026 | Ordering with asynchronous processing (SQS) and email confirmation (SES); behaviour events; nightly recommendation pipeline and the recommendation widgets. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v0.2.0) |
-| **v1.0.0** (released, in production) | 23 Nov 2026 | New order pages; admin order management and cancellation; forgot password with sign-out on every device; account page (change password and username); WAF with the core rule set and security headers in front of CloudFront; load and security testing. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.0) |
-| v1.0.1 (acceptance testing) | planned 28 Nov 2026 | Two-factor authentication (TOTP); sign-in changes in another tab are picked up at once; longer product descriptions and specs. [Checklist](docs/releases/v1.0.1.md) |
+| v1.0.0 (released) | 23 Nov 2026 | New order pages; admin order management and cancellation; forgot password with sign-out on every device; account page (change password and username); WAF with the core rule set and security headers in front of CloudFront; load and security testing. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.0) |
+| **v1.0.1** (released, in production) | 27 Nov 2026 | Two-factor authentication (TOTP); sign-in changes in another tab are picked up at once; longer product descriptions and specs. [Release notes](https://github.com/hhieuann/shop-ai/releases/tag/v1.0.1) |
 | Next | Dec 2026 | Admin product management with image upload (in review) |
 
 ## What this project demonstrates

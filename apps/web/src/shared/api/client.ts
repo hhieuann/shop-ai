@@ -25,6 +25,8 @@ export class ApiError extends Error {
   readonly maxAddable?: number;
   /** Trạng thái hiện tại của đơn khi admin chuyển sai bước (409 INVALID_STATUS_TRANSITION) */
   readonly currentStatus?: string;
+  /** Tồn kho hiện tại khi admin sửa tồn kho mà số vừa đổi (409 STOCK_CHANGED, catalog.md BR-12) */
+  readonly currentStock?: number;
 
   constructor(status: number, problem: Record<string, unknown>, fallbackTitle: string) {
     const title = typeof problem.title === 'string' ? problem.title : fallbackTitle;
@@ -41,6 +43,7 @@ export class ApiError extends Error {
     this.maxAddable = typeof problem.maxAddable === 'number' ? problem.maxAddable : undefined;
     this.currentStatus =
       typeof problem.currentStatus === 'string' ? problem.currentStatus : undefined;
+    this.currentStock = typeof problem.currentStock === 'number' ? problem.currentStock : undefined;
   }
 }
 

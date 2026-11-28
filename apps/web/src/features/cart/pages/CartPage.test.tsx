@@ -123,3 +123,34 @@ describe('CartPage: component dùng chung (EmptyState, Button)', () => {
     expect(screen.getByText('Chọn ít nhất 1 sản phẩm để đặt hàng.')).toBeInTheDocument();
   });
 });
+
+describe('CartPage: món đổi sau khi trang giỏ đã mở (#573)', () => {
+  it('newItems_areSelected_andSubtotalCountsThem', () => {
+    // Arrange: trang giỏ mở khi giỏ tài khoản còn trống (tab khác chưa gộp xong)
+    const view = renderCart();
+    const second: CartItem = {
+      ...ITEM,
+      productId: '01K6ZKX9M3V8Q2R4T6W8Y0A2C5',
+      name: 'RAM thử',
+      price: 1_000_000,
+    };
+
+    // Act: tab khác gộp xong, giỏ có 2 món
+    cart.items = [ITEM, second];
+    view.rerender(
+      <StrictMode>
+        <QueryClientProvider client={new QueryClient()}>
+          <MemoryRouter initialEntries={['/cart']}>
+            <CartPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </StrictMode>,
+    );
+
+    // Assert: cả 2 món được tick, tạm tính đủ 2 món
+    expect(screen.getByRole('checkbox', { name: 'Chọn Card đồ hoạ thử' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Chọn RAM thử' })).toBeChecked();
+    expect(screen.getByText('Tạm tính (2 sản phẩm)')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Đặt hàng (2)' })[0]).toBeEnabled();
+  });
+});

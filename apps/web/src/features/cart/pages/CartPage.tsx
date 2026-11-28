@@ -158,7 +158,7 @@ export function CartPage() {
                 </>
               }
             />
-            <ProductRail title="Hàng mới về" filters={{}} seeAllTo="/products" />
+            <ProductRail title="Hàng mới về" filters={{}} seeAllTo="/new-arrivals" />
           </div>
           <OrderSummary title="Tóm tắt đơn hàng" rows={[]} total={0}>
             <Link

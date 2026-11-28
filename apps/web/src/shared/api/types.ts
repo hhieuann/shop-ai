@@ -39,6 +39,18 @@ export type AdminListStatus = operations['listAdminOrders']['parameters']['query
 export type AdminTargetStatus = NonNullable<
   operations['updateOrderStatus']['requestBody']
 >['content']['application/json']['status'];
+/** API admin sản phẩm (catalog.md BR-09 … BR-15): món đã xoá mềm có `deletedAt` */
+export type AdminProduct = Schemas['AdminProduct'];
+export type AdminProductList = Schemas['AdminProductList'];
+export type AdminProductCreate = Schemas['AdminProductCreate'];
+export type AdminProductUpdate = Schemas['AdminProductUpdate'];
+export type AdminProductProblem = Schemas['AdminProductProblem'];
+export type ProductImageUpload = Schemas['ProductImageUpload'];
+export type ProductImageUploadRequest = Schemas['ProductImageUploadRequest'];
+/** Lọc trạng thái của danh sách admin; bỏ trống là đang bán và đã ẩn */
+export type AdminProductStatusFilter = NonNullable<
+  operations['listAdminProducts']['parameters']['query']['status']
+>;
 export type OrderListResponse =
   operations['listOrders']['responses'][200]['content']['application/json'];
 export type CreateOrderRequest =

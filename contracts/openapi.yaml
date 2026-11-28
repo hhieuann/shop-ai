@@ -787,6 +787,314 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  /api/v1/admin/products:
+    get:
+      operationId: listAdminProducts
+      summary: Admin xem sản phẩm của một loại, gồm cả món đã ẩn hoặc đã xoá
+      description: |
+        Chỉ nhóm `admin` của Cognito (catalog.md BR-09). Một loại mỗi lần (`category` bắt buộc),
+        mới nhất trước (BR-10). Đọc index `byCategory` với `<loại>#ACTIVE`, `<loại>#INACTIVE`,
+        `<loại>#DELETED`; không Scan. Không truyền `status` thì trả món đang bán và đã ẩn (không
+        gồm đã xoá). `counts` là số món của loại đó theo từng nhóm, không phụ thuộc `q`, `status`.
+        Không cache (`no-store`).
+      tags: [admin]
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/ProductCategory'
+        - name: status
+          in: query
+          description: |
+            `ACTIVE` đang bán · `INACTIVE` đã ẩn · `DELETED` đã xoá mềm. Bỏ trống: đang bán và đã ẩn
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, DELETED]
+        - name: q
+          in: query
+          description: Tìm trong tên như catalog.md BR-03 (không phân biệt hoa thường và dấu)
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 30
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            $ref: '#/components/schemas/PageCursor'
+      responses:
+        '200':
+          description: Sản phẩm của loại đã chọn
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductList'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createAdminProduct
+      summary: Admin thêm sản phẩm
+      description: |
+        Chỉ nhóm `admin` (catalog.md BR-11). Server sinh `productId` (ULID), `createdAt` bằng
+        `updatedAt`, ghi `categoryStatus`. Trùng tên được phép. Bấm lưu hai lần có thể tạo hai món
+        (web khoá nút khi đang gửi). Hiện ở cửa hàng chậm tối đa 60 giây (BR-15).
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductCreate'
+      responses:
+        '201':
+          description: Sản phẩm vừa tạo
+          headers:
+            Location:
+              description: Đường dẫn của sản phẩm mới, vd. `/api/v1/admin/products/{productId}`
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProduct'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/admin/products/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ProductId'
+    get:
+      operationId: getAdminProduct
+      summary: Admin xem một sản phẩm, kể cả món đã ẩn hoặc đã xoá
+      tags: [admin]
+      responses:
+        '200':
+          description: Sản phẩm; món đã xoá có `deletedAt`
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProduct'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AdminProductNotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateAdminProduct
+      summary: Admin sửa, ẩn hoặc hiện lại sản phẩm
+      description: |
+        Chỉ nhóm `admin` (catalog.md BR-12, BR-13). Sửa được mọi trường trừ `category`. Body bắt buộc
+        kèm `updatedAt` admin đang thấy: khác bản trong bảng thì 409 `PRODUCT_CHANGED` kèm bản mới.
+        Đổi `stock` thì kèm `expectedStock`: khác tồn kho hiện tại (vd. khách vừa đặt hàng) thì 409
+        `STOCK_CHANGED` kèm `currentStock`. Đổi `status` thì `categoryStatus` đổi cùng một lần ghi.
+        Món đã xoá trả 404 (khôi phục trước). Gửi `imageUrl: null` để bỏ ảnh.
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductUpdate'
+      responses:
+        '200':
+          description: Sản phẩm sau khi sửa
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProduct'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AdminProductNotFound'
+        '409':
+          description: |
+            `PRODUCT_CHANGED` sản phẩm vừa được sửa ở nơi khác (kèm `current`);
+            `STOCK_CHANGED` tồn kho vừa đổi (kèm `currentStock`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/AdminProductProblem'
+              examples:
+                productChanged:
+                  summary: Sản phẩm vừa được sửa ở nơi khác
+                  value:
+                    type: about:blank
+                    title: Conflict
+                    status: 409
+                    code: PRODUCT_CHANGED
+                    detail: Sản phẩm vừa được sửa ở nơi khác. Tải bản mới rồi sửa lại.
+                    traceId: 'Jk3dPg2TSQ0EJ1A='
+                    current:
+                      productId: '01J9XKPQ0000000000000001'
+                      name: 'ASUS TUF Gaming GeForce RTX 4070'
+                      category: 'gpu'
+                      brand: 'ASUS'
+                      price: 15490000
+                      stock: 12
+                      status: 'ACTIVE'
+                      description: 'Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.'
+                      createdAt: '2026-10-01T07:00:00Z'
+                      updatedAt: '2026-11-25T08:40:00Z'
+                stockChanged:
+                  summary: Tồn kho vừa đổi (khách vừa đặt hàng)
+                  value:
+                    type: about:blank
+                    title: Conflict
+                    status: 409
+                    code: STOCK_CHANGED
+                    detail: Tồn kho vừa đổi. Kiểm lại số tồn kho rồi lưu lại.
+                    traceId: 'Jk3dPg2TSQ0EJ1B='
+                    currentStock: 10
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteAdminProduct
+      summary: Admin xoá mềm sản phẩm
+      description: |
+        Xoá mềm (catalog.md BR-14): `status` thành `INACTIVE`, ghi `deletedAt`, `categoryStatus`
+        thành `<loại>#DELETED`. Khách thấy như món ẩn (404), đơn cũ vẫn giữ `productId`. Không
+        xoá hẳn khỏi bảng. Món đã xoá hoặc không có thì 404.
+      tags: [admin]
+      responses:
+        '204':
+          description: Đã xoá mềm
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AdminProductNotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/admin/products/{productId}/restore:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ProductId'
+    post:
+      operationId: restoreAdminProduct
+      summary: Admin khôi phục sản phẩm đã xoá
+      description: |
+        Bỏ `deletedAt`, sản phẩm về trạng thái đã ẩn (`INACTIVE`, `categoryStatus` `<loại>#INACTIVE`;
+        catalog.md BR-14). Muốn bán lại thì hiện lại bằng `PATCH`. Món không có hoặc chưa xoá thì 404.
+      tags: [admin]
+      responses:
+        '200':
+          description: Sản phẩm sau khi khôi phục (đã ẩn)
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProduct'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/AdminProductNotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /api/v1/admin/product-images:
+    post:
+      operationId: createProductImageUpload
+      summary: Admin xin vé tải ảnh sản phẩm thẳng lên S3
+      description: |
+        Chỉ nhóm `admin` (catalog.md BR-16). Trả vé presigned POST sống 300 giây: trình duyệt gửi
+        `multipart/form-data` gồm mọi trường trong `upload.fields` rồi tới trường `file` (tệp ảnh)
+        tới `upload.url`. Vé có điều kiện cỡ 1 B … 3 MB và đúng `Content-Type` đã khai, nên S3 tự từ
+        chối tệp khác. Khoá do server sinh (`products/<ULID>.<đuôi>`), không dùng tên tệp người dùng.
+        Tải xong thì điền `imageUrl` vào sản phẩm rồi lưu (POST, PATCH `/admin/products`).
+        Ảnh tải lên mà không dùng chưa tự xoá (giới hạn đã biết). Không cache (`no-store`).
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductImageUploadRequest'
+      responses:
+        '200':
+          description: Vé tải ảnh
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImageUpload'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Problem'
+
   # ─── Events ────────────────────────────────────────────────────────────────
   /api/v1/events:
     post:
@@ -1445,6 +1753,303 @@ components:
             currentStatus:
               $ref: '#/components/schemas/OrderStatus'
 
+    # ─── Admin: sản phẩm (catalog.md BR-09 … BR-15) ─────────────────────────
+    AdminProduct:
+      description: Sản phẩm như admin thấy; món đã xoá mềm có `deletedAt` (BR-14)
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            deletedAt:
+              type: string
+              format: date-time
+              description: Lúc xoá mềm; không có trường này nghĩa là chưa xoá
+      example:
+        productId: '01J9XKPQ0000000000000001'
+        name: 'ASUS TUF Gaming GeForce RTX 4070'
+        category: 'gpu'
+        brand: 'ASUS'
+        price: 15900000
+        stock: 12
+        status: 'ACTIVE'
+        description: 'Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.'
+        specs:
+          vram: '12GB GDDR6X'
+          nguon_de_xuat: '750W'
+        createdAt: '2026-10-01T07:00:00Z'
+        updatedAt: '2026-11-20T03:15:00Z'
+
+    AdminProductSpecs:
+      type: object
+      description: |
+        Tối đa 20 cặp. Khoá phải thuộc danh sách thông số của loại (`SPEC_ORDER`, cùng bảng web dùng
+        để xếp thông số), giá trị là chuỗi 1–100 ký tự sau khi bỏ khoảng trắng hai đầu.
+      maxProperties: 20
+      propertyNames:
+        pattern: '^[a-z0-9_]{1,40}$'
+      additionalProperties:
+        type: string
+        minLength: 1
+        maxLength: 100
+
+    AdminProductCreate:
+      type: object
+      description: Thêm sản phẩm (BR-11). Server sinh `productId`, `createdAt`, `updatedAt`
+      required: [name, category, brand, price, stock, status, description]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          $ref: '#/components/schemas/ProductCategory'
+        brand:
+          type: string
+          minLength: 1
+          maxLength: 50
+        price:
+          type: integer
+          minimum: 1
+          maximum: 1000000000
+          description: Giá bán (VND, số nguyên)
+        stock:
+          type: integer
+          minimum: 0
+          maximum: 9999
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        imageUrl:
+          type: string
+          format: uri
+          description: |
+            Đường dẫn https. Ảnh tải lên qua `POST /api/v1/admin/product-images` có dạng
+            `https://<tên miền shop>/images/products/<ULID>.<jpg|png|webp>` (BR-16)
+          pattern: '^https://'
+          maxLength: 500
+        specs:
+          $ref: '#/components/schemas/AdminProductSpecs'
+      example:
+        name: 'Chuột Logitech G304 Lightspeed'
+        category: 'mouse'
+        brand: 'Logitech'
+        price: 790000
+        stock: 20
+        status: 'ACTIVE'
+        description: 'Chuột không dây gọn nhẹ, pin AA dùng lâu, hợp chơi game và làm việc.'
+        specs:
+          ket_noi: 'Lightspeed 2.4GHz'
+          cam_bien: 'HERO 12K'
+
+    AdminProductUpdate:
+      type: object
+      description: |
+        Sửa sản phẩm (BR-12, BR-13): gửi các trường muốn đổi kèm `updatedAt` đang thấy. Không đổi
+        được `category`. Có `stock` thì bắt buộc `expectedStock`.
+      required: [updatedAt]
+      minProperties: 2
+      additionalProperties: false
+      properties:
+        updatedAt:
+          type: string
+          format: date-time
+          description: '`updatedAt` của bản admin đang sửa'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        brand:
+          type: string
+          minLength: 1
+          maxLength: 50
+        price:
+          type: integer
+          minimum: 1
+          maximum: 1000000000
+        stock:
+          type: integer
+          minimum: 0
+          maximum: 9999
+        expectedStock:
+          type: integer
+          minimum: 0
+          maximum: 9999
+          description: Tồn kho admin thấy lúc mở form; bắt buộc khi có `stock`
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        imageUrl:
+          description: |
+            `null` để bỏ ảnh. Như AdminProductCreate: đường dẫn https, kể cả ảnh tải lên
+            `https://<tên miền shop>/images/products/<ULID>.<jpg|png|webp>` (BR-16)
+          oneOf:
+            - type: string
+              format: uri
+              pattern: '^https://'
+              maxLength: 500
+            - type: 'null'
+        specs:
+          $ref: '#/components/schemas/AdminProductSpecs'
+      dependentRequired:
+        stock: [expectedStock]
+      example:
+        updatedAt: '2026-11-20T03:15:00Z'
+        price: 15490000
+        stock: 10
+        expectedStock: 12
+
+    AdminProductList:
+      type: object
+      required: [items, counts]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminProduct'
+        nextCursor:
+          type: string
+          description: Có giá trị nếu còn trang tiếp theo
+        counts:
+          type: object
+          description: Số món của loại đang xem theo nhóm, không phụ thuộc `q` và `status`
+          required: [active, inactive, deleted]
+          properties:
+            active:
+              type: integer
+              minimum: 0
+            inactive:
+              type: integer
+              minimum: 0
+            deleted:
+              type: integer
+              minimum: 0
+      example:
+        items:
+          - productId: '01J9XKPQ0000000000000001'
+            name: 'ASUS TUF Gaming GeForce RTX 4070'
+            category: 'gpu'
+            brand: 'ASUS'
+            price: 15900000
+            stock: 12
+            status: 'ACTIVE'
+            description: 'Card đồ hoạ ASUS TUF Gaming RTX 4070 12GB GDDR6X, phù hợp gaming 1440p và dựng hình.'
+            specs:
+              vram: '12GB GDDR6X'
+              nguon_de_xuat: '750W'
+            createdAt: '2026-10-01T07:00:00Z'
+            updatedAt: '2026-11-20T03:15:00Z'
+          - productId: '01J9XKPQ0000000000000005'
+            name: 'MSI GeForce RTX 4060 Ventus 2X 8GB'
+            category: 'gpu'
+            brand: 'MSI'
+            price: 8290000
+            stock: 2
+            status: 'ACTIVE'
+            description: 'Card đồ hoạ tầm trung cho chơi game 1080p, tiết kiệm điện.'
+            specs:
+              vram: '8GB GDDR6'
+              nguon_de_xuat: '550W'
+            createdAt: '2026-10-01T07:00:00Z'
+            updatedAt: '2026-10-01T07:00:00Z'
+          - productId: '01J9XKPQ0000000000000006'
+            name: 'Gigabyte GeForce RTX 3060 Gaming OC 12GB'
+            category: 'gpu'
+            brand: 'Gigabyte'
+            price: 7490000
+            stock: 0
+            status: 'INACTIVE'
+            description: 'Card đồ hoạ đời trước, đã ngừng nhập hàng.'
+            createdAt: '2026-10-01T07:00:00Z'
+            updatedAt: '2026-11-18T09:00:00Z'
+        counts:
+          active: 7
+          inactive: 1
+          deleted: 0
+
+    AdminProductProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum: [PRODUCT_CHANGED, STOCK_CHANGED]
+            current:
+              $ref: '#/components/schemas/AdminProduct'
+            currentStock:
+              type: integer
+              minimum: 0
+              description: Tồn kho hiện tại (khi `STOCK_CHANGED`)
+
+    # ─── Admin: ảnh sản phẩm (catalog.md BR-16) ─────────────────────────────
+    ProductImageUploadRequest:
+      type: object
+      description: Loại và cỡ tệp định tải lên; web kiểm trước, S3 kiểm lại theo điều kiện của vé
+      required: [contentType, size]
+      additionalProperties: false
+      properties:
+        contentType:
+          type: string
+          description: JPG và JPEG cùng là `image/jpeg`
+          enum: [image/jpeg, image/png, image/webp]
+        size:
+          type: integer
+          description: Cỡ tệp (byte), tối đa 3 MB
+          minimum: 1
+          maximum: 3145728
+      example:
+        contentType: image/webp
+        size: 524288
+
+    ProductImageUpload:
+      type: object
+      required: [upload, imageUrl, expiresAt]
+      properties:
+        upload:
+          type: object
+          required: [url, fields]
+          properties:
+            url:
+              type: string
+              format: uri
+              description: Địa chỉ bucket ảnh để POST tệp
+            fields:
+              type: object
+              description: Các trường form phải gửi kèm trước trường `file`
+              additionalProperties:
+                type: string
+        imageUrl:
+          type: string
+          format: uri
+          description: |
+            Đường dẫn https của ảnh sau khi tải xong (`https://<tên miền shop>/images/products/...`),
+            điền vào `imageUrl` của sản phẩm
+        expiresAt:
+          type: string
+          format: date-time
+          description: Lúc vé hết hạn (300 giây sau khi cấp)
+      example:
+        upload:
+          url: 'https://shop-dev-product-images.s3.ap-southeast-1.amazonaws.com/'
+          fields:
+            key: 'products/01KAB3Q5G00000000000000001.webp'
+            Content-Type: image/webp
+            bucket: shop-dev-product-images
+            X-Amz-Algorithm: AWS4-HMAC-SHA256
+            X-Amz-Credential: 'EXAMPLE/20261126/ap-southeast-1/s3/aws4_request'
+            X-Amz-Date: '20261126T090000Z'
+            Policy: eyJleGFtcGxlIjp0cnVlfQ==
+            X-Amz-Signature: example
+        imageUrl: 'https://d111111abcdef8.cloudfront.net/images/products/01KAB3Q5G00000000000000001.webp'
+        expiresAt: '2026-11-26T09:05:00Z'
+
     # ─── Events ─────────────────────────────────────────────────────────────
     EventInput:
       type: object
@@ -1524,6 +2129,23 @@ components:
         default: 6
 
   responses:
+    AdminProductNotFound:
+      description: |
+        Không có sản phẩm. Với PATCH, DELETE: cả món đã xoá mềm. Với khôi phục: cả món chưa bị xoá
+        (catalog.md BR-12, BR-14)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            notFound:
+              summary: Không có sản phẩm hoặc không áp dụng được cho món này
+              value:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Không tìm thấy sản phẩm.
+                traceId: 'Jk3dPg2TSQ0EJ1C='
     Unauthorized:
       description: |
         Thiếu token, token sai hoặc hết hạn. JWT authorizer của HTTP API chặn trước khi tới Lambda

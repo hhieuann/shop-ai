@@ -32,6 +32,14 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // Hàng mới về: 20 món mới nhất, không lọc, không phân trang (pages/hang-moi-ve.md, #567)
+        path: 'new-arrivals',
+        handle: { surface: 'plain' } satisfies RouteHandle,
+        lazy: async () => ({
+          Component: (await import('./features/catalog/pages/NewArrivalsPage')).NewArrivalsPage,
+        }),
+      },
+      {
         // Nguồn ảnh sản phẩm demo (pages/nguon-anh.md, #530)
         path: 'image-credits',
         handle: { surface: 'plain' } satisfies RouteHandle,
@@ -135,11 +143,41 @@ export const routes: RouteObject[] = [
         ],
       },
       {
-        // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
+        // Trang quản trị: khung riêng (AdminLayout) kiểm quyền cho mọi trang con
         path: 'admin',
-        lazy: async () => ({
-          Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
-        }),
+        handle: { chrome: 'admin' } satisfies RouteHandle,
+        children: [
+          {
+            // Admin chuyển đơn sang Đang giao, Đã giao (pages/admin-don-hang.md); code tải riêng
+            index: true,
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminOrdersPage')).AdminOrdersPage,
+            }),
+          },
+          {
+            // Admin xem, ẩn, xoá, khôi phục sản phẩm (pages/admin-san-pham.md mục 2); code tải riêng
+            path: 'products',
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminProductsPage'))
+                .AdminProductsPage,
+            }),
+          },
+          {
+            // Thêm, sửa sản phẩm theo mẫu (pages/admin-san-pham.md mục 3); dùng chung một trang
+            path: 'products/new',
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminProductFormPage'))
+                .AdminProductFormPage,
+            }),
+          },
+          {
+            path: 'products/:productId/edit',
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminProductFormPage'))
+                .AdminProductFormPage,
+            }),
+          },
+        ],
       },
       {
         path: '*',

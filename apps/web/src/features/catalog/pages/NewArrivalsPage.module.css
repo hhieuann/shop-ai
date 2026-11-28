@@ -1,0 +1,73 @@
+/* Trang Hàng mới về (docs/web/pages/hang-moi-ve.md); nền trắng do RootLayout lo, lưới như trang danh sách */
+.page {
+  padding-bottom: var(--space-800);
+}
+
+.titleBlock {
+  margin-bottom: var(--space-200);
+}
+.heading {
+  margin: 0;
+  color: var(--fg-default);
+  font-size: var(--text-title-sm);
+  line-height: var(--leading-title-sm);
+  font-weight: 600;
+}
+.lead {
+  margin: 2px 0 0;
+  color: var(--fg-muted);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px var(--space-150);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  min-width: 0;
+}
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-400);
+}
+
+.message {
+  margin: var(--space-200) 0;
+  color: var(--fg-subdued);
+}
+.loading {
+  min-height: 100vh;
+}
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-150);
+}
+
+@media (min-width: 640px) {
+  .heading {
+    font-size: var(--text-title-md);
+    line-height: var(--leading-title-md);
+  }
+}
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-300) var(--space-200);
+  }
+}
+@media (min-width: 1280px) {
+  .titleBlock {
+    margin-bottom: 20px;
+  }
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

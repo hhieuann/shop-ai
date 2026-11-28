@@ -44,6 +44,11 @@ import type { Construct } from 'constructs';
 import type { ShopEnvironment } from './config.js';
 import { Monitoring } from './monitoring.js';
 import { OrderConfirmed } from './order-confirmed.js';
+import {
+  PRODUCT_IMAGES_KEY_PREFIX,
+  productImagesBucketName,
+  shopBaseUrlParameterName,
+} from './product-images.js';
 import { RecsPipeline } from './recs-pipeline.js';
 import { RecsTable } from './recs-table.js';
 import { TrainingData } from './training-data.js';
@@ -273,6 +278,9 @@ export class ApiStack extends Stack {
       products,
     );
 
+    // API admin sản phẩm (catalog.md BR-09 … BR-15): Lambda riêng, chỉ nhóm admin (kiểm ở Lambda)
+    const catalogAdminFn = this.addCatalogAdmin(shopEnv, removalPolicy, httpApi, products);
+
     // Đặt hàng (ordering.md): mọi route cần đăng nhập
     const ordering = this.addOrdering(shopEnv, removalPolicy, httpApi, products, carts);
     const orderAdminFn = this.addOrderAdmin(
@@ -344,6 +352,7 @@ export class ApiStack extends Stack {
       postConfirmationFn: auth.postConfirmationFn,
       apiFunctions: {
         catalog: catalogFn,
+        'catalog-admin': catalogAdminFn,
         cart: cartFn,
         ordering: ordering.fn,
         'ordering-admin': orderAdminFn,
@@ -658,6 +667,138 @@ export class ApiStack extends Stack {
     new CfnOutput(this, 'OrdersTableName', { value: orders.tableName });
     new CfnOutput(this, 'OrdersQueueUrl', { value: queue.queueUrl });
     return { fn, orders, orderIdempotency, queue, deadLetterQueue };
+  }
+
+  /**
+   * API admin sản phẩm (catalog.md BR-09 … BR-15, #546): Lambda riêng chạy `catalog/adminLambda.ts`,
+   * tách khỏi Lambda catalog công khai (chỉ đọc). Quyền tối thiểu trên bảng products:
+   * - `dynamodb:Query` chỉ trên index `byCategory` (danh sách theo loại và nhóm, đếm `Select: COUNT`);
+   * - `dynamodb:GetItem` (chi tiết, đọc lại khi ghi hỏng điều kiện), `dynamodb:PutItem` (thêm, có điều
+   *   kiện chưa tồn tại), `dynamodb:UpdateItem` (sửa, ẩn, hiện, xoá mềm, khôi phục; đều có điều kiện).
+   * Không `DeleteItem` (xoá là xoá mềm, BR-14), không `Scan`, không bảng khác. Không đặt điều kiện
+   * `dynamodb:Attributes` (bài học #253, #254). Kiểm nhóm `admin` ở Lambda (403); route gắn JWT
+   * authorizer của Cognito nên không token thì 401.
+   *
+   * Tải ảnh (BR-16, #561): bucket ảnh nằm ở stack web (OAC cần ARN distribution), ở đây chỉ tính lại
+   * tên bucket và tên tham số SSM từ cấu hình, không tham chiếu stack web (stack web đã phụ thuộc stack
+   * này). Quyền thêm:
+   * - `s3:PutObject` chỉ trên `products/*` của bucket ảnh: S3 kiểm quyền của người ký khi trình duyệt
+   *   POST bằng vé. Không GetObject, DeleteObject, ListBucket (ảnh bỏ đi chưa dọn, giới hạn đã biết);
+   * - `ssm:GetParameter` chỉ trên tham số tên miền shop (String, không cần `kms:Decrypt`).
+   */
+  private addCatalogAdmin(
+    shopEnv: ShopEnvironment,
+    removalPolicy: RemovalPolicy,
+    httpApi: HttpApi,
+    products: Table,
+  ) {
+    const imagesBucket = productImagesBucketName(shopEnv, this.account);
+    const baseUrlParameter = shopBaseUrlParameterName(shopEnv);
+    const fn = new NodejsFunction(this, 'CatalogAdminFunction', {
+      entry: path.join(API_SRC, 'modules', 'catalog', 'adminLambda.ts'),
+      depsLockFilePath: path.join(REPO_ROOT, 'pnpm-lock.yaml'),
+      runtime: Runtime.NODEJS_24_X,
+      architecture: Architecture.ARM_64,
+      memorySize: 256,
+      // Danh sách: tối đa 5 Query song song (2 nhóm + 3 lần đếm) trên một loại vài chục món; ghi: một
+      // GetItem và một lệnh ghi, đọc lại khi hỏng điều kiện. Vài trăm ms, 10 giây còn dư nhiều
+      timeout: Duration.seconds(10),
+      tracing: Tracing.ACTIVE,
+      logGroup: new LogGroup(this, 'CatalogAdminLogs', {
+        retention: RetentionDays.TWO_WEEKS,
+        removalPolicy,
+      }),
+      environment: {
+        PRODUCTS_TABLE: products.tableName,
+        PRODUCT_IMAGES_BUCKET: imagesBucket,
+        PRODUCT_IMAGES_BASE_URL_PARAM: baseUrlParameter,
+        // Cùng service với Lambda catalog để log tìm chung một chỗ; đồ thị tách bằng tên hàm
+        POWERTOOLS_SERVICE_NAME: 'catalog',
+        POWERTOOLS_LOG_LEVEL: shopEnv.isProd ? 'INFO' : 'DEBUG',
+        NODE_OPTIONS: '--enable-source-maps',
+      },
+      bundling: API_BUNDLING,
+    });
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+        resources: [products.tableArn],
+      }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['dynamodb:Query'],
+        resources: [`${products.tableArn}/index/${PRODUCTS_BY_CATEGORY_INDEX}`],
+      }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['s3:PutObject'],
+        resources: [`arn:${this.partition}:s3:::${imagesBucket}/${PRODUCT_IMAGES_KEY_PREFIX}*`],
+      }),
+    );
+    fn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          this.formatArn({
+            service: 'ssm',
+            resource: 'parameter',
+            resourceName: baseUrlParameter.slice(1),
+          }),
+        ],
+      }),
+    );
+    Tags.of(fn).add('module', 'catalog');
+    Validations.of(fn).acknowledge(
+      {
+        id: 'AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]',
+        reason: 'Policy có sẵn của AWS, chỉ cho Lambda tạo log stream và ghi log CloudWatch.',
+      },
+      {
+        // Khoá ảnh do Lambda sinh lúc ký vé (products/<ULID>.<ext>), không biết trước nên phải dùng *
+        // cdk-nag ghi token dạng <AWS::...>, giá trị đã biết thì ghi thẳng (như bucket asset ở web-stack.ts)
+        id: `AwsSolutions-IAM5[Resource::arn:${Token.isUnresolved(this.partition) ? '<AWS::Partition>' : this.partition}:s3:::${productImagesBucketName(shopEnv, Token.isUnresolved(this.account) ? '<AWS::AccountId>' : this.account)}/${PRODUCT_IMAGES_KEY_PREFIX}*]`,
+        reason:
+          'Ký vé tải ảnh (BR-16): khoá products/<ULID> sinh lúc chạy; chỉ PutObject, chỉ tiền tố products/.',
+      },
+      {
+        id: 'AwsSolutions-IAM5[Resource::*]',
+        reason:
+          'X-Ray bắt buộc Resource "*" cho xray:PutTraceSegments và xray:PutTelemetryRecords.',
+      },
+    );
+
+    const integration = new HttpLambdaIntegration('CatalogAdminIntegration', fn);
+    httpApi.addRoutes({
+      path: '/api/v1/admin/products',
+      // GET danh sách (BR-10), POST thêm (BR-11)
+      methods: [HttpMethod.GET, HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/admin/products/{productId}',
+      // GET chi tiết, PATCH sửa, ẩn, hiện (BR-12, BR-13), DELETE xoá mềm (BR-14)
+      methods: [HttpMethod.GET, HttpMethod.PATCH, HttpMethod.DELETE],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/admin/products/{productId}/restore',
+      // Khôi phục món đã xoá mềm (BR-14)
+      methods: [HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    httpApi.addRoutes({
+      path: '/api/v1/admin/product-images',
+      // Xin vé tải ảnh (BR-16, #560)
+      methods: [HttpMethod.POST],
+      integration,
+      authorizer: this.authorizer,
+    });
+    return fn;
   }
 
   /**

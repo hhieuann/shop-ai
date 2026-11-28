@@ -5,7 +5,7 @@ import styles from './Footer.module.css';
 
 const SHOP_LINKS = [
   { label: 'Tất cả sản phẩm', to: '/products' },
-  { label: 'Hàng mới về', to: '/products?sort=newest' },
+  { label: 'Hàng mới về', to: '/new-arrivals' },
   { label: 'Card đồ hoạ', to: '/products?category=gpu' },
   { label: 'Laptop', to: '/products?category=laptop' },
 ];

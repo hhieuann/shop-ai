@@ -72,7 +72,7 @@ describe('Header', () => {
     const nav = screen.getByRole('navigation', { name: 'Mua theo nhu cầu' });
     const links = within(nav).getAllByRole('link');
     expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
-      ['Hàng mới về', '/products?sort=newest'],
+      ['Hàng mới về', '/new-arrivals'],
       ['Chơi game', '/products?category=gpu'],
       ['Làm văn phòng', '/products?category=laptop'],
       ['Học lập trình', '/products?category=ram'],
@@ -80,6 +80,26 @@ describe('Header', () => {
       ['Tất cả sản phẩm', '/products'],
     ]);
     expect(links.filter((a) => a.hasAttribute('aria-current'))).toHaveLength(0);
+  });
+
+  it('đánh dấu "Hàng mới về" khi ở trang /new-arrivals, không đánh dấu "Tất cả sản phẩm" (#567)', () => {
+    renderAt('/new-arrivals');
+    const nav = screen.getByRole('navigation', { name: 'Mua theo nhu cầu' });
+    expect(within(nav).getByRole('link', { name: 'Hàng mới về' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(nav).getByRole('link', { name: 'Tất cả sản phẩm' })).not.toHaveAttribute(
+      'aria-current',
+    );
+  });
+
+  it('/products?sort=newest vẫn mở được, không đánh dấu "Hàng mới về"', () => {
+    renderAt('/products?sort=newest');
+    const nav = screen.getByRole('navigation', { name: 'Mua theo nhu cầu' });
+    expect(within(nav).getByRole('link', { name: 'Hàng mới về' })).not.toHaveAttribute(
+      'aria-current',
+    );
   });
 
   it('chỉ đánh dấu link khớp cả bộ lọc trên URL', () => {
@@ -114,34 +134,11 @@ describe('Header', () => {
     expect(screen.getByTestId('url')).toHaveTextContent('/products?q=rtx%204070');
   });
 
-  it('máy tính: nút Danh mục mở bảng 13 loại hàng, đánh dấu loại đang xem, Esc đóng', async () => {
-    const user = userEvent.setup();
+  it('máy tính (≥1280): không còn nút Danh mục; hàng 1 vẫn có ô tìm, Đơn hàng, giỏ (#567)', () => {
     renderAt('/products?category=gpu');
-    const trigger = screen.getByRole('button', { name: 'Danh mục' });
-
-    await user.click(trigger);
-    const panel = screen.getByRole('dialog', { name: 'Danh mục' });
-    expect(panel).toHaveAttribute('aria-modal', 'false');
-    const items = within(panel).getAllByRole('link');
-    expect(items).toHaveLength(13);
-    expect(items[0]).toHaveFocus();
-    expect(within(panel).getByRole('link', { name: 'Card đồ hoạ' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(trigger).toHaveFocus();
-  });
-
-  it('máy tính: bấm một loại hàng thì sang trang lọc và đóng bảng', async () => {
-    const user = userEvent.setup();
-    renderAt('/');
-    await user.click(screen.getByRole('button', { name: 'Danh mục' }));
-    await user.click(screen.getByRole('link', { name: 'Chuột' }));
-    expect(screen.getByTestId('url')).toHaveTextContent('/products?category=mouse');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Danh mục' })).toBeNull();
+    expect(screen.getByRole('searchbox', { name: 'Tìm sản phẩm theo tên' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Giỏ hàng' })).toBeInTheDocument();
   });
 
   it('điện thoại: ngăn kéo modal có link Đơn hàng trên 13 loại hàng, Tab đi vòng trong ngăn kéo', async () => {

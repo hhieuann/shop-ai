@@ -47,7 +47,7 @@ Bảng màu chàm (chốt 11/10/2026). Cột "Tương phản" là tỉ lệ WCAG
 | `--bg-surface-raised` | `#FAFAFA` | Ô tìm kiếm trên header, ô nhập, nút phụ, hàng lẻ của bảng thông số |
 | `--bg-surface-pressed` | `#EEEEEE` | Nhấn, hover của nút phụ |
 | `--bg-chrome` | `#4338CA` | **Header hàng 1 và footer** (chữ trắng 7,90) |
-| `--bg-chrome-strong` | `#3730A3` | Nút "Danh mục" trên header, nút menu trên điện thoại (chữ trắng 9,93) |
+| `--bg-chrome-strong` | `#3730A3` | Nút menu "Danh mục" trên header dưới 1280px (chữ trắng 9,93) |
 | `--bg-chrome-hover` | `rgba(255,255,255,.12)` | Hover của nút trên header |
 | `--bg-primary` / `-hover` / `-pressed` | `#4F46E5` / `#4338CA` / `#3730A3` | Nút chính; hover và nhấn **tối đi** (chữ trắng 6,29 / 7,90 / 9,93) |
 | `--bg-primary-tint` / `-tint-2` | `#EEF2FF` / `#E0E7FF` | Hover của mục menu và link nav; ô icon (`-tint-2`), mục đang chọn |
@@ -138,7 +138,7 @@ Hay dùng nhất: **8** (giữa các ô ở hàng đầu trang chủ, gap trong 
 |---|---|---|
 | `--radius-md` | 4px | Nhãn, badge, ô icon trong menu danh mục |
 | `--radius-lg` | 8px | **Nút, ô nhập, mục menu, ô icon** |
-| `--radius-btn` | 10px | Nút trên header (Danh mục, Đơn hàng, Đăng nhập, Giỏ hàng) |
+| `--radius-btn` | 10px | Nút trên header (nút menu, Đơn hàng, Đăng nhập, Giỏ hàng) |
 | `--radius-xl` | 12px | **Thẻ sản phẩm**, menu danh mục, hero, ô thông tin, ô "Thường mua kèm" |
 | `--radius-2xl` | 16px | Hộp thoại, menu tài khoản, ô trạng thái rỗng |
 | `--radius-full` | 9999px | **Ô tìm kiếm** (viên thuốc), nút tìm tròn, chip, nút tròn, nhãn tròn |
@@ -251,6 +251,11 @@ Cột "Trạng thái": ✅ đã có trong code, 📝 chưa làm thành component
 | `EmptyState` | `shared/components/EmptyState.tsx` | ✅ (dùng ở đơn hàng, giỏ hàng, trang danh sách, 404); thêm prop `title`, `className` cho trang 404 (§9.12) |
 | `ConfirmDialog` | `shared/components/ConfirmDialog.tsx` | ✅ (trang admin, nút xác nhận `primary`); thêm prop `tone="danger"` cho hộp huỷ đơn (§9.14) |
 | `Radio` | `shared/components/Radio.tsx` | ✅ (cột lọc, §9.5) |
+| `AdminLayout` (khung trang quản trị) | `app/AdminLayout.tsx`; khối không có quyền `features/admin/components/AdminForbidden.tsx` | ✅ (§9.29) |
+| `Select` (ô chọn) | `shared/components/Select.tsx` | ✅ (§9.30; trang admin sản phẩm dùng ở #548, #549) |
+| `Switch` (công tắc) | `shared/components/Switch.tsx` | ✅ (§9.31; form sản phẩm admin #549) |
+| `ActionMenu` (nút ba chấm, menu thao tác) | `shared/components/ActionMenu.tsx` | ✅ (§9.32; danh sách sản phẩm admin #548) |
+| `ToastProvider`, `useToast` (thông báo nổi) | `shared/components/Toast.tsx`, `toastContext.ts` | ✅ (§9.33; trang admin sản phẩm #548, #549) |
 | `Breadcrumb` | `shared/components/Breadcrumb.tsx` | ✅ (trang danh sách; trang chi tiết đổi sang khi làm lại, §9.22) |
 | `ProductListCard` | `features/catalog/components/ProductListCard.tsx` | ✅ (trang danh sách, §9.19); dòng thông số ở `features/catalog/lib/specSummary.ts` |
 | `AddToCartButton` (nút thêm 1 món trên thẻ) | `features/cart/components/AddToCartButton.tsx` | ✅ (§9.23) |
@@ -278,8 +283,7 @@ Hai hàng, dính đầu trang (`position: sticky; top: 0; z-index: 210`). Hàng 
 |---|---|
 | Hàng 1 | cao **76px**, padding 16px dọc, lề `--gutter` trong khung `--content-max`; phần tử cao **44px**, cách nhau 12px |
 | Logo | ô 36px nền `--gradient-logo` bo 8px, icon `--hero-ink` + chữ "Black Magic" 22/28/700 trắng; cả cụm là link về `/`. Favicon `apps/web/public/favicon.svg`: ô nền `--bg-chrome`, icon `Sparkles` `--fg-on-primary`; mã màu ghi thẳng trong file (svg không đọc token), đổi token thì sửa cả file này |
-| Cụm giữa | nút "Danh mục" + ô tìm kiếm thành **một cụm** `flex`, gap 12px, `flex: 0 1 872px`, `margin-inline: auto`: cụm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải (màn 1920: nút Danh mục bắt đầu khoảng 440px). Màn hẹp thì ô tìm co lại |
-| Nút "Danh mục" | `<button>` nền `--bg-chrome-strong`, chữ trắng 16/24/500, padding `10px 16px`, bo `--radius-btn` (10px), icon `Menu` 24 + chữ, gap 8px. Mở `CategoryMenu` (§9.18) dạng bảng thả xuống. Có ở mọi trang có header đầy đủ, kể cả trang chủ |
+| Cụm giữa | chỉ còn ô tìm kiếm (bỏ nút "Danh mục" từ 1280px, #567, 27/11/2026), cụm `flex: 0 1 872px`, `margin-inline: auto`: ô tìm **căn giữa khoảng trống** giữa logo và nhóm nút bên phải, rộng tối đa 720px. Lối vào loại hàng trên máy tính: cột danh mục ở trang chủ, cột lọc ở `/products`, hàng 2 |
 | Ô tìm kiếm | Theo ảnh tham khảo của Hoàng (11/10/2026), dạng **viên thuốc**: `role="search"`, co giãn, **rộng tối đa 720px**; cao **48px**, nền `--bg-surface-raised` (`#FAFAFA`), **không viền**, bo `--radius-full`, padding `0 6px 0 22px`; chữ 16px `--fg-default`, placeholder "Tìm laptop, card đồ hoạ, RAM…" `--fg-placeholder` (4,54), `maxLength=30`. Nút tìm **tròn 36px nền `#1A1A1A`** (`--fg-default`), icon `Search` 18 trắng, sát phải trong ô, `aria-label="Tìm"`; hover nền `--bg-chrome-strong`. Focus: viền trắng 2px quanh cả ô (`:focus-within`) |
 | Đơn hàng | đầu nhóm nút bên phải; `NavLink` cao 44px, padding `0 10px`, bo 10px, icon `Package` 28 + nhãn 16/24/500, gap 8px; hover nền `--bg-chrome-hover`; trang hiện tại gạch chân 2px trắng dưới nhãn |
 | Đăng nhập | nút mở menu tài khoản, cùng kích thước với Đơn hàng: icon `User` 28 + nhãn + `ChevronDown` 16 (§9.17) |
@@ -291,7 +295,7 @@ Sáu link hàng 2 (nhóm khách theo project-plan, đường dẫn là bộ lọ
 
 | Link | Icon | Tới |
 |---|---|---|
-| Hàng mới về | `Sparkles` | `/products` (mới nhất) |
+| Hàng mới về | `Sparkles` | `/new-arrivals` (trang riêng, 20 món mới nhất; pages/hang-moi-ve.md) |
 | Chơi game | `Gamepad2` | `/products?category=gpu` |
 | Làm văn phòng | `Briefcase` | `/products?category=laptop` |
 | Học lập trình | `CodeXml` | `/products?category=ram` |
@@ -567,17 +571,16 @@ Nội dung **khi đã đăng nhập**:
 
 **Không có:** ảnh đại diện, phương thức thanh toán, danh sách yêu thích, hỗ trợ, quyền lợi "miễn phí vận chuyển" (mọi đơn đều miễn phí, ordering BR-06). Trang tài khoản (đổi username, đổi mật khẩu) có từ 16/11/2026, vào bằng mục "Tài khoản của tôi".
 
-### 9.18 Menu danh mục (`CategoryMenu`, ✅; trang chủ và nút "Danh mục")
-Theo kiểu menu danh mục cột trái của trang tham khảo. Một danh sách 13 loại hàng (`CATEGORIES`, cùng thứ tự với `CategoryIcon`), dùng ở 3 chỗ:
+### 9.18 Menu danh mục (`CategoryMenu`, ✅; trang chủ và nút menu dưới 1280px)
+Theo kiểu menu danh mục cột trái của trang tham khảo. Một danh sách 13 loại hàng (`CATEGORIES`, cùng thứ tự với `CategoryIcon`), dùng ở 2 chỗ (bảng thả xuống của nút "Danh mục" từ 1280px đã bỏ ở #567):
 
 | Chỗ | Dạng |
 |---|---|
 | Trang chủ ≥1280 | **luôn hiện** ở cột trái hàng đầu trang (trang-chu.md §3.1) |
-| Nút "Danh mục" trên header ≥1280 (mọi trang) | bảng thả xuống ngay dưới nút, cách 12px, cùng kiểu vùng tối và cách đóng như menu tài khoản (§9.17) |
 | Nút menu trên header <1280 | ngăn kéo trượt từ trái, rộng `min(320px, 85vw)`, cao hết màn, nền `--bg-surface`, `--shadow-lg`, vùng tối `--scrim`; trên cùng có nút × và link "Đơn hàng" (icon `Package`), dưới là 13 loại hàng |
 
 Hình dạng danh sách:
-- Khung rộng 300px (trang chủ) hoặc 300px (bảng thả xuống), nền `--bg-surface`, viền 1px `--border-divider`, bo 12px, padding 8px.
+- Khung rộng 300px (trang chủ), nền `--bg-surface`, viền 1px `--border-divider`, bo 12px, padding 8px.
 - Mỗi mục là link tới `/products?category=…`: cao 36px, padding `4px 8px`, bo 8px, gap 12px; ô icon 28×28 nền `--bg-primary-tint-2`, bo 4px, `CategoryIcon` 20 `--fg-primary`; chữ 14/18/500 `--fg-heading`; `ChevronRight` 16 `--fg-icon-soft` sát phải.
 - Hover nền `--bg-primary-tint`. Loại đang xem (`aria-current="page"`): nền `--bg-primary-tint-2`, chữ `--fg-primary` đậm 600.
 - `<nav aria-label="Danh mục">` + `<ul>`.
@@ -791,8 +794,58 @@ Chốt 16/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md)). Một danh sách m
 ### 9.28 Ô mã QR (trang bật xác thực hai lớp)
 Chốt 18/11/2026 ([pages/tai-khoan.md](pages/tai-khoan.md) 3.4). Ô vuông **176px** (gồm padding và viền), padding **12px** (ảnh QR 150px), nền `--bg-surface`, viền 1px `--border-divider`, bo `--radius-xl`. Ảnh tạo trong trình duyệt bằng thư viện `qrcode` (`toDataURL`), chỉ nạp ở trang này. Đang tạo mã: khung chờ cùng cỡ, không nhảy bố cục. Chỉ là kích thước bố cục của một trang nên ghi số thẳng trong CSS module, không thêm token.
 
+### 9.29 Khung trang quản trị (`AdminLayout`, ✅; mọi trang `/admin/*`)
+Chốt 25/11/2026 (#542, [pages/admin-don-hang.md](pages/admin-don-hang.md)). Route `admin` có `handle.chrome = 'admin'`: `RootLayout` vẽ `app/AdminLayout.tsx` thay header, hàng danh mục và footer của cửa hàng. Chỉ dùng token có sẵn.
+
+| Phần | Giá trị |
+|---|---|
+| Thanh trên | cao 56px, rộng hết màn, dính đầu trang (z-index 210 như header), nền `--bg-surface`, viền dưới 1px `--border-divider`, padding `0 16px` (≥960: `0 24px`). Trái: link về `/admin` gồm ô 28px `--gradient-brand` bo `--radius-lg` có icon `Sparkles` 16 `--fg-on-primary`, chữ "Black Magic" 18/24/700 `--fg-heading` (ẩn dưới 640px), chip "Quản trị" (nền `--bg-primary-tint`, chữ 14/18/600 `--fg-primary`, bo `--radius-full`). Phải: link "Về cửa hàng" (icon `Store` 20 + chữ 14/20/500; dưới 640px chỉ icon, chữ cho trình đọc màn hình) và menu tài khoản §9.17 (thanh đổi biến `--fg-on-chrome`, `--bg-chrome-hover` sang màu cho nền trắng). Không đường dẫn |
+| Cột trái (≥960) | rộng 232px, nền `--bg-surface`, viền phải 1px `--border-divider`, dính dưới thanh trên, cao `100vh − 56px`, padding `16px 12px`. `<nav aria-label="Quản trị">` chia nhóm; nhãn nhóm chữ hoa 12/16/600 `--fg-subdued`, padding `0 12px`. Mục: link cao 40px, padding `0 12px`, bo `--radius-lg`, icon 20 + chữ 14/20/500 `--fg-default`; hover `--bg-transparent-hover`; mục hiện tại (`aria-current="page"`, `NavLink`) nền `--bg-primary-tint`, chữ `--fg-primary` 600 |
+| Nhóm, mục | "Bán hàng": Đơn hàng (`Receipt`, `/admin`). "Danh mục": Sản phẩm (`Package`, `/admin/products`), ẩn tới khi có trang. Không số đếm (API không trả tổng số) |
+| Dưới 960px | không ngăn kéo: các mục thành hàng chip (kiểu chip đang chọn §6, có icon) dính ngay dưới thanh trên, nền `--bg-surface`, viền dưới, padding `8px 16px`, cuộn ngang khi tràn; nhãn nhóm ẩn |
+| Vùng nội dung | `<main id="main">`, tối đa 1440px, padding `24px 16px 40px` (≥960: `24px 32px 40px`), nền `--bg-canvas`. Đầu trang: h1 24/32/700 + câu mô tả 14/18 `--fg-muted`; nút chính (nếu có) bên phải |
+| Kiểm quyền | chưa đăng nhập → `/login`; không thuộc nhóm `admin` hoặc đọc hồ sơ lỗi → khối rỗng §9.12 "Bạn không có quyền xem trang này." + "Về trang chủ", không vẽ cột trái; admin chưa bật xác thực hai lớp → `/account/two-factor` với `from` là đường dẫn đầy đủ, bật xong quay lại đó. Đang đọc phiên hoặc trạng thái MFA: "Đang tải…" |
+
+### 9.30 Ô chọn (`Select`, ✅)
+Chốt 25/11/2026 (#547). `<select>` gốc của trình duyệt (bàn phím, trình đọc màn hình, bảng chọn của điện thoại có sẵn), cùng hình dạng với `Field` (§9.4): cao 40px (`size="lg"` 48px), padding `0 12px`, nền `--bg-surface-raised`, viền 1px `--border-input`, bo `--radius-lg`, mũi tên mặc định (`color-scheme: light`), chữ 16px trên điện thoại. Nhãn, dấu `*`, dòng lỗi (`aria-invalid`, `aria-describedby`, icon `CircleAlert`) và gợi ý như `Field`. Prop `hideLabel`: nhãn chỉ cho trình đọc màn hình (`sr-only`), dùng ở thanh công cụ khi ô đã rõ nghĩa; form luôn hiện nhãn. Vô hiệu: chữ `--fg-disabled`, con trỏ `not-allowed`.
+
+### 9.31 Công tắc (`Switch`, ✅)
+Chốt 25/11/2026 (#547). Một hàng: bên trái nhãn 14/20/600 `--fg-heading` + dòng mô tả 12/18 `--fg-subdued` (tuỳ chọn); bên phải công tắc.
+
+| Phần | Giá trị |
+|---|---|
+| Nút | `<button type="button" role="switch" aria-checked>`, tên đọc từ nhãn (`aria-labelledby`), mô tả nối bằng `aria-describedby`. Bấm, Space, Enter đổi trạng thái |
+| Rãnh | 44×24px, bo `--radius-full`; tắt nền `--border-input` (hover `--border-default`); bật nền `--bg-primary` (hover `--bg-primary-hover`) |
+| Núm | tròn 18px nền `--bg-surface`, `--shadow-sm`, cách mép 3px; bật thì trượt sang phải 20px, `--dur-fast` `--ease-standard`; `prefers-reduced-motion` thì đổi ngay |
+| Vô hiệu | opacity .4, `not-allowed` |
+
+Dùng cho lựa chọn có/không áp dụng khi lưu form (vd. "Đang bán" ở form sản phẩm admin). Không dùng thay checkbox trong danh sách nhiều lựa chọn.
+
+### 9.32 Menu thao tác (`ActionMenu`, ✅)
+Chốt 25/11/2026 (#547). Nút ba chấm mở danh sách thao tác của một dòng (vd. danh sách sản phẩm admin), theo mẫu "menu button" của ARIA.
+
+| Phần | Giá trị |
+|---|---|
+| Nút | vuông 32×32 kiểu nút phụ `sm` (§9.3): viền `--border-default`, nền `--bg-surface-raised`, bo `--radius-lg`, icon `MoreHorizontal` 20; hover và khi mở nền `--bg-surface-pressed`. `aria-label` kèm tên đối tượng ("Thao tác khác: {tên}"), `aria-haspopup="menu"`, `aria-expanded`, `aria-controls` |
+| Menu | `role="menu"`, nổi dưới nút cách 4px, canh mép phải, rộng tối thiểu 220px, padding 6px, nền `--bg-surface`, viền `--border-divider`, bo `--radius-xl`, `--shadow-lg` |
+| Mục | `role="menuitem"`, cao 36px, padding `0 10px`, bo `--radius-md`, icon 18 `--fg-muted` + chữ 14/20; hover và focus nền `--bg-transparent-hover` (viền focus nằm trong mục). Mục `tone="danger"` chữ và icon `--fg-danger`. `separatorBefore` kẻ vạch 1px `--border-divider` cách 6px |
+| Bàn phím | Enter, Space, bấm, mũi tên xuống: mở và focus mục đầu; mũi tên lên trên nút: mở và focus mục cuối. Trong menu: mũi tên lên, xuống đi vòng; Home, End; Esc đóng và trả focus về nút; Tab đóng |
+| Đóng | chọn mục: đóng, trả focus về nút rồi chạy thao tác (thao tác mở hộp thoại thì hộp thoại tự lấy focus). Bấm ra ngoài: đóng, focus ở chỗ vừa bấm |
+
+### 9.33 Thông báo nổi (`ToastProvider`, `useToast`, ✅)
+Chốt 25/11/2026 (#547). Báo kết quả một thao tác vừa xong mà không chặn trang (vd. "Đã ẩn "{tên}" khỏi cửa hàng."). Lỗi cần người dùng sửa thì vẫn dùng `Alert` (§9.13) hoặc lỗi dưới ô.
+
+| Phần | Giá trị |
+|---|---|
+| Vị trí | `position: fixed`, góc dưới phải cách 24px; dưới 640px rộng hết, cách mép 16px. Lớp trên header và ngăn kéo (`z-index` 400), dưới hộp thoại `<dialog>`. Trang có thanh dính đáy (vd. form sản phẩm admin) gọi `useToastOffset(ref thanh)`: đặt `--toast-offset-bottom` trên `<html>` bằng chiều cao thanh để thông báo đứng trên thanh, không che nút; rời trang thì gỡ |
+| Khối | nền `--fg-heading`, chữ `--fg-on-primary` 14/20/500, padding `12px 8px 12px 16px`, bo `--radius-xl`, `--shadow-lg`, rộng tối đa 480px; hiện bằng mờ dần + trượt lên 8px trong `--dur-base` (`prefers-reduced-motion`: hiện ngay) |
+| Nút đóng | 32×32 trong suốt, icon `X` 18 màu chữ, `aria-label="Đóng thông báo"`; hover nền chữ trộn 16%; viền focus `--focus-ring-on-chrome` |
+| Đọc | vùng `role="status"` (`aria-live="polite"`) luôn có trên trang, không dời focus của người dùng |
+| Thời gian | tự ẩn sau 5 giây; rê chuột hoặc focus vào thông báo thì dừng, rời ra thì đếm lại 5 giây. Một lúc một thông báo, câu mới thay câu cũ |
+| Dùng | `ToastProvider` đặt một lần ở cấp trang (vd. trang admin sản phẩm); con gọi `useToast().show(câu)` |
+
 ### 9.34 Ảnh sản phẩm (`ProductImage`, ✅)
-Chốt 27/11/2026 (#530, [pages/nguon-anh.md](pages/nguon-anh.md)). Đánh số 9.34 vì các mục 9.29–9.33 là của trang quản trị đang chờ merge.
+Chốt 27/11/2026 (#530, [pages/nguon-anh.md](pages/nguon-anh.md)).
 
 | Phần | Giá trị |
 |---|---|
