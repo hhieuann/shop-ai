@@ -146,6 +146,21 @@ export const routes: RouteObject[] = [
                 .AdminProductsPage,
             }),
           },
+          {
+            // Thêm, sửa sản phẩm theo mẫu (pages/admin-san-pham.md mục 3); dùng chung một trang
+            path: 'products/new',
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminProductFormPage'))
+                .AdminProductFormPage,
+            }),
+          },
+          {
+            path: 'products/:productId/edit',
+            lazy: async () => ({
+              Component: (await import('./features/admin/pages/AdminProductFormPage'))
+                .AdminProductFormPage,
+            }),
+          },
         ],
       },
       {

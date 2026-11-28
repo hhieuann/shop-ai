@@ -1,0 +1,220 @@
+/* Thêm, sửa sản phẩm admin (docs/web/pages/admin-san-pham.md mục 3), trong khung quản trị (§9.29) */
+.page {
+  display: grid;
+  gap: var(--space-200);
+}
+.state {
+  margin: 0;
+  padding: var(--space-500) var(--space-200);
+  color: var(--fg-subdued);
+  text-align: center;
+}
+.link {
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-200);
+}
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.lead {
+  margin: var(--space-50) 0 0;
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* fieldset chỉ để khoá cả form khi món đã xoá; bỏ khung mặc định */
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-300);
+  align-items: start;
+}
+.main,
+.side {
+  display: grid;
+  gap: var(--space-200);
+  min-width: 0;
+}
+.block {
+  padding: 20px;
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+}
+.blockTitle {
+  margin: 0 0 var(--space-200);
+  color: var(--fg-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: 600;
+}
+.blockHint {
+  margin: calc(var(--space-150) * -1) 0 var(--space-200);
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.fields {
+  display: grid;
+  gap: var(--space-200);
+}
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-200);
+}
+
+/* Chip loại hàng: kiểu chip đang chọn (§6) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-100);
+}
+.chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  color: var(--fg-heading);
+  font-weight: 600;
+}
+.chip:hover:not(:disabled) {
+  background: var(--bg-primary-tint);
+}
+.chip[aria-checked='true'] {
+  padding: 0 13px;
+  border: 2px solid var(--border-primary);
+  background: var(--bg-primary-tint-2);
+  color: var(--fg-primary);
+}
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-150);
+  margin-top: var(--space-200);
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary-tint);
+  color: var(--fg-primary);
+  font-weight: 500;
+}
+
+/* Ô mô tả: cùng kiểu với Field (§9.4) */
+.textField {
+  display: grid;
+  gap: var(--space-50);
+}
+.textLabel {
+  font-weight: 500;
+}
+.required {
+  color: var(--fg-danger);
+}
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px var(--space-150);
+  resize: vertical;
+}
+.textarea:focus-visible {
+  border-color: var(--border-primary);
+}
+.textarea[aria-invalid='true'] {
+  border-color: var(--fg-danger);
+}
+.textHint,
+.textError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+  margin: 0;
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.textHint {
+  color: var(--fg-subdued);
+}
+.textError {
+  color: var(--fg-danger);
+  font-weight: 500;
+}
+
+/* Thẻ xem trước chỉ để xem */
+.preview {
+  pointer-events: none;
+}
+
+/* Thanh cuối trang: Huỷ, Lưu; dính đáy vùng nội dung */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-100);
+  margin: 0 calc(var(--space-400) * -1) calc(var(--space-500) * -1);
+  padding: var(--space-150) var(--space-400);
+  border-top: 1px solid var(--border-divider);
+  background: var(--bg-surface);
+}
+.formError {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-50);
+  margin: 0;
+  color: var(--fg-danger);
+  font-weight: 500;
+}
+
+@media (max-width: 959px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bar {
+    margin: 0 calc(var(--space-200) * -1) calc(var(--space-500) * -1);
+    padding: var(--space-150) var(--space-200);
+  }
+}
+@media (max-width: 639px) {
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .bar > a,
+  .bar > button {
+    flex: 1;
+  }
+  .formError {
+    flex-basis: 100%;
+  }
+}

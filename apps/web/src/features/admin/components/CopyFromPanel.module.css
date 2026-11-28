@@ -1,0 +1,19 @@
+/* Ô chọn sản phẩm để sao chép (pages/admin-san-pham.md mục 3) */
+.panel {
+  display: grid;
+  gap: var(--space-150);
+  margin-bottom: var(--space-200);
+  padding: var(--space-200);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+}
+.note {
+  margin: 0;
+  color: var(--fg-subdued);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-100);
+}

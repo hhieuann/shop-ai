@@ -2,7 +2,7 @@
 
 Chốt 25/11/2026 (#543). Nghiệp vụ: [catalog.md](../../business/catalog.md) mục "Admin quản lý sản phẩm" (BR-09 … BR-15). API: `/api/v1/admin/products` (contracts/openapi.yaml, tag `admin`). Khung: design-system §9.29 (`AdminLayout`). Đọc kèm [design-system.md](../design-system.md).
 
-Người làm: **Hoàng**. Danh sách (mục 2) đã làm ở #548: `features/admin/pages/AdminProductsPage.tsx`, bộ lọc trên URL `features/admin/lib/adminProductFilters.ts`. Thêm, sửa (mục 3) dự kiến ở #549: `AdminProductFormPage.tsx`, `features/admin/lib/productTemplates.ts`. Component dùng chung (#547, design-system §9.30–9.33): `Select`, `Switch`, `ActionMenu` (nút ba chấm), `ToastProvider` (thông báo nổi).
+Người làm: **Hoàng**. Danh sách (mục 2) đã làm ở #548: `features/admin/pages/AdminProductsPage.tsx`, bộ lọc trên URL `features/admin/lib/adminProductFilters.ts`. Thêm, sửa (mục 3) đã làm ở #549: `features/admin/pages/AdminProductFormPage.tsx`, luật form `features/admin/lib/productForm.ts`, mẫu `features/admin/lib/productTemplates.ts`, `features/admin/components/CopyFromPanel.tsx`, `ImagePreview.tsx`. Component dùng chung (#547, design-system §9.30–9.33): `Select`, `Switch`, `ActionMenu` (nút ba chấm), `ToastProvider` (thông báo nổi).
 
 ## 1. Ai thấy gì
 
@@ -80,7 +80,7 @@ Như trang đơn admin: mỗi dòng thành thẻ trong khối.
 
 ### Đầu trang
 - H1 "Thêm sản phẩm" hoặc tên sản phẩm (trang sửa) + dòng phụ. Trang sửa có nhãn trạng thái cạnh H1.
-- Góc phải tiêu đề (chỉ trang thêm): nút phụ "Sao chép từ sản phẩm có sẵn" (icon `Copy`). Bấm thì mở hộp chọn: ô tìm theo tên trong loại đang chọn, danh sách kết quả (tên, giá); chọn một món thì điền mọi ô **trừ tên, giá, tồn kho và ảnh** (các ô này để trống cho admin nhập).
+- Góc phải tiêu đề (chỉ trang thêm): nút phụ "Sao chép từ sản phẩm có sẵn" (icon `Copy`). Bấm thì mở một khối ngay dưới tiêu đề (không phải hộp thoại): ô chọn các món của loại đang chọn (tối đa 50 món mới nhất, đang bán và đã ẩn) và nút "Điền từ sản phẩm này"; chọn một món thì điền mọi ô **trừ tên, giá, tồn kho và ảnh** (các ô này để trống cho admin nhập).
 
 ### Bố cục
 Lưới `minmax(0,1fr) | 360px`, cách 24px; dưới 960px một cột (cột phải xuống dưới). Mỗi khối: nền trắng, viền `--border-divider`, bo `--radius-xl`, padding 20, tiêu đề khối 16/24/600, các khối cách nhau 16px.

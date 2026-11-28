@@ -42,6 +42,7 @@ export type AdminTargetStatus = NonNullable<
 /** API admin sản phẩm (catalog.md BR-09 … BR-15): món đã xoá mềm có `deletedAt` */
 export type AdminProduct = Schemas['AdminProduct'];
 export type AdminProductList = Schemas['AdminProductList'];
+export type AdminProductCreate = Schemas['AdminProductCreate'];
 export type AdminProductUpdate = Schemas['AdminProductUpdate'];
 export type AdminProductProblem = Schemas['AdminProductProblem'];
 /** Lọc trạng thái của danh sách admin; bỏ trống là đang bán và đã ẩn */
