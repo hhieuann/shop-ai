@@ -55,3 +55,24 @@ export interface AdminProductWriter {
   /** Khôi phục về đã ẩn (`<loại>#INACTIVE`), bỏ `deletedAt`. `null` khi không có hoặc chưa xoá */
   restore(product: Pick<Product, 'productId' | 'category'>, now: string): Promise<Product | null>;
 }
+
+/** Vé tải ảnh thẳng lên S3 (presigned POST, catalog.md BR-16): trình duyệt gửi `fields` cùng tệp tới `url` */
+export interface ProductImageUpload {
+  readonly url: string;
+  readonly fields: Readonly<Record<string, string>>;
+}
+
+/** Tên miền shop dạng `https://<host>` để ghép đường dẫn ảnh công khai (adapter đọc SSM) */
+export interface ShopBaseUrlSource {
+  get(): Promise<string>;
+}
+
+/** Ký vé tải ảnh; adapter dùng createPresignedPost của S3 */
+export interface ProductImageSigner {
+  sign(input: {
+    readonly key: string;
+    readonly contentType: string;
+    readonly maxBytes: number;
+    readonly expiresInSeconds: number;
+  }): Promise<ProductImageUpload>;
+}

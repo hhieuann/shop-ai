@@ -354,6 +354,31 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/product-images': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Admin xin vé tải ảnh sản phẩm thẳng lên S3
+     * @description Chỉ nhóm `admin` (catalog.md BR-16). Trả vé presigned POST sống 300 giây: trình duyệt gửi
+     *     `multipart/form-data` gồm mọi trường trong `upload.fields` rồi tới trường `file` (tệp ảnh)
+     *     tới `upload.url`. Vé có điều kiện cỡ 1 B … 3 MB và đúng `Content-Type` đã khai, nên S3 tự từ
+     *     chối tệp khác. Khoá do server sinh (`products/<ULID>.<đuôi>`), không dùng tên tệp người dùng.
+     *     Tải xong thì điền `imageUrl` vào sản phẩm rồi lưu (POST, PATCH `/admin/products`).
+     *     Ảnh tải lên mà không dùng chưa tự xoá (giới hạn đã biết). Không cache (`no-store`).
+     */
+    post: operations['createProductImageUpload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/events': {
     parameters: {
       query?: never;
@@ -890,7 +915,11 @@ export interface components {
       stock: number;
       status: components['schemas']['ProductStatus'];
       description: string;
-      /** Format: uri */
+      /**
+       * Format: uri
+       * @description Đường dẫn https. Ảnh tải lên qua `POST /api/v1/admin/product-images` có dạng
+       *     `https://<tên miền shop>/images/products/<ULID>.<jpg|png|webp>` (BR-16)
+       */
       imageUrl?: string;
       specs?: components['schemas']['AdminProductSpecs'];
     };
@@ -918,7 +947,10 @@ export interface components {
       expectedStock?: number;
       status?: components['schemas']['ProductStatus'];
       description?: string;
-      /** @description `null` để bỏ ảnh */
+      /**
+       * @description `null` để bỏ ảnh. Như AdminProductCreate: đường dẫn https, kể cả ảnh tải lên
+       *     `https://<tên miền shop>/images/products/<ULID>.<jpg|png|webp>` (BR-16)
+       */
       imageUrl?: string | null;
       specs?: components['schemas']['AdminProductSpecs'];
     };
@@ -994,6 +1026,65 @@ export interface components {
       current?: components['schemas']['AdminProduct'];
       /** @description Tồn kho hiện tại (khi `STOCK_CHANGED`) */
       currentStock?: number;
+    };
+    /**
+     * @description Loại và cỡ tệp định tải lên; web kiểm trước, S3 kiểm lại theo điều kiện của vé
+     * @example {
+     *       "contentType": "image/webp",
+     *       "size": 524288
+     *     }
+     */
+    ProductImageUploadRequest: {
+      /**
+       * @description JPG và JPEG cùng là `image/jpeg`
+       * @enum {string}
+       */
+      contentType: 'image/jpeg' | 'image/png' | 'image/webp';
+      /** @description Cỡ tệp (byte), tối đa 3 MB */
+      size: number;
+    };
+    /**
+     * @example {
+     *       "upload": {
+     *         "url": "https://shop-dev-product-images.s3.ap-southeast-1.amazonaws.com/",
+     *         "fields": {
+     *           "key": "products/01KAB3Q5G00000000000000001.webp",
+     *           "Content-Type": "image/webp",
+     *           "bucket": "shop-dev-product-images",
+     *           "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+     *           "X-Amz-Credential": "EXAMPLE/20261126/ap-southeast-1/s3/aws4_request",
+     *           "X-Amz-Date": "20261126T090000Z",
+     *           "Policy": "eyJleGFtcGxlIjp0cnVlfQ==",
+     *           "X-Amz-Signature": "example"
+     *         }
+     *       },
+     *       "imageUrl": "https://d111111abcdef8.cloudfront.net/images/products/01KAB3Q5G00000000000000001.webp",
+     *       "expiresAt": "2026-11-26T09:05:00Z"
+     *     }
+     */
+    ProductImageUpload: {
+      upload: {
+        /**
+         * Format: uri
+         * @description Địa chỉ bucket ảnh để POST tệp
+         */
+        url: string;
+        /** @description Các trường form phải gửi kèm trước trường `file` */
+        fields: {
+          [key: string]: string;
+        };
+      };
+      /**
+       * Format: uri
+       * @description Đường dẫn https của ảnh sau khi tải xong (`https://<tên miền shop>/images/products/...`),
+       *     điền vào `imageUrl` của sản phẩm
+       */
+      imageUrl: string;
+      /**
+       * Format: date-time
+       * @description Lúc vé hết hạn (300 giây sau khi cấp)
+       */
+      expiresAt: string;
     };
     /** @description Sự kiện client gửi lên. Không có `userId` và thời gian, server tự lấy. */
     EventInput: {
@@ -1992,6 +2083,35 @@ export interface operations {
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
       404: components['responses']['AdminProductNotFound'];
+      default: components['responses']['Problem'];
+    };
+  };
+  createProductImageUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProductImageUploadRequest'];
+      };
+    };
+    responses: {
+      /** @description Vé tải ảnh */
+      200: {
+        headers: {
+          'Cache-Control'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductImageUpload'];
+        };
+      };
+      400: components['responses']['Problem'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
       default: components['responses']['Problem'];
     };
   };
