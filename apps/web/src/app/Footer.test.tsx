@@ -32,8 +32,14 @@ describe('Footer', () => {
         .map((a) => a.getAttribute('href')),
     ).toEqual(['/login', '/register', '/orders']);
     expect(screen.getByText('Thanh toán khi nhận hàng (COD)')).toBeInTheDocument();
-    expect(
-      screen.getByText('© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo.'),
-    ).toBeInTheDocument();
+    // Dòng cuối: demo, ảnh thuộc về nhà sản xuất, link Nguồn ảnh (#530)
+    const legal = screen.getByText(
+      /© 2026 Black Magic · Sản phẩm, giá và tồn kho chỉ dùng để demo\./,
+    );
+    expect(legal).toHaveTextContent('Ảnh sản phẩm thuộc về nhà sản xuất');
+    expect(within(legal).getByRole('link', { name: 'Nguồn ảnh' })).toHaveAttribute(
+      'href',
+      '/image-credits',
+    );
   });
 });

@@ -24,7 +24,7 @@ Bố cục: nền xám, các khối trắng bo 16px. Cột trái có khối sả
 | Giá trị dài | Dài nhất trong dữ liệu demo 42 ký tự ("HDMI 4K, LAN, 2x USB-A, USB-C, SD, PD 100W"): ô cắt 1 dòng với `…` và có `title`; panel hiện đầy đủ |
 | `specs` thiếu hoặc không còn dòng nào sau khi lọc | Không render khối thông số (không có khối rỗng) |
 | `description` | Bộ dữ liệu demo dài tối đa 66 ký tự; vẫn giữ `white-space: pre-line` cho mô tả nhiều dòng do admin nhập sau này |
-| `imageUrl` | Bộ dữ liệu demo **không có ảnh** → hiện icon loại hàng; có ảnh thì hiện ảnh |
+| `imageUrl` | Seed không có `imageUrl`; 104 món demo hiện ảnh của nhà sản xuất gắn theo `productId` (#530, design-system §9.34); món không có ảnh hoặc ảnh lỗi thì hiện icon loại hàng |
 
 ## 2. Bố cục
 
@@ -67,9 +67,9 @@ Dùng `Breadcrumb` có sẵn (design-system §9.22): "Trang chủ" (`/`) › tê
 Dưới 640px chỉ hiện một link "‹ {tên loại}" (icon `ChevronLeft` 16, chữ 14/20/500 `--fg-primary`, gap 2px) về danh sách loại đó, vẫn nằm trong `<nav aria-label="Đường dẫn">`. Bỏ nút "← Quay lại" hiện có.
 
 ### 3.2 Ảnh sản phẩm
-- Ô vuông (`aspect-ratio: 1`), nền `--bg-subtle`, bo `--radius-lg` (8px), padding 24px, rộng tối đa `--pdp-media-max` (560px).
-- Có ảnh: `<img>` `object-fit: contain`, `mix-blend-mode: multiply`, `alt` = tên sản phẩm (ảnh lớn đứng riêng). Đây là phần tử lớn nhất đầu trang nên **không** `loading="lazy"`; thêm `fetchpriority="high"` và `width`/`height` để không giật bố cục.
-- Không có ảnh (toàn bộ dữ liệu demo): icon loại hàng (`CategoryIcon`) 56px màu `--fg-icon-soft` giữa ô, không ghi chữ "Không có ảnh".
+- Ô vuông (`aspect-ratio: 1`), nền `--bg-subtle`, bo `--radius-lg` (8px), không padding (trước đây 24px; lề nằm sẵn trong ảnh, design-system §9.34), `overflow: hidden`, rộng tối đa `--pdp-media-max` (560px).
+- Có ảnh: `<img>` `position: absolute; inset: 0`, `mix-blend-mode: multiply`; ảnh demo phủ kín ô (`object-fit: cover`), ảnh `imageUrl` từ API giữ `contain` với padding 24px trên `<img>` như trước (design-system §9.34); `alt` = tên sản phẩm (ảnh lớn đứng riêng). Đây là phần tử lớn nhất đầu trang nên **không** `loading="lazy"`; thêm `fetchpriority="high"` và `width`/`height` để không giật bố cục.
+- Ảnh theo `ProductImage` (design-system §9.34, #530): ảnh admin đặt, không có thì ảnh demo của 104 món; không có ảnh hoặc ảnh tải lỗi thì icon loại hàng (`CategoryIcon`) 56px màu `--fg-icon-soft` giữa ô, không ghi chữ "Không có ảnh". Không có chú thích dưới ảnh.
 - Hết hàng: ô ảnh `opacity: .6`.
 - Không có dải ảnh nhỏ, không phóng to (chỉ có một ảnh).
 

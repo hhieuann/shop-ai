@@ -4,6 +4,7 @@ import { Price } from '../../../shared/components/Price';
 import { AddToCartButton } from '../../cart/components/AddToCartButton';
 import { specSummary } from '../lib/specSummary';
 import { CategoryIcon } from './CategoryIcon';
+import { ProductImage } from './ProductImage';
 import { StockBadge } from './StockBadge';
 import styles from './ProductListCard.module.css';
 
@@ -22,21 +23,21 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
         <span className={styles.badge}>
           <StockBadge stock={product.stock} status={product.status} />
         </span>
-        {product.imageUrl ? (
-          <img
-            className={styles.image}
-            src={product.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width={259}
-            height={236}
-          />
-        ) : (
-          <span className={styles.noImage}>
-            <CategoryIcon category={product.category} size={64} />
-          </span>
-        )}
+        <ProductImage
+          productId={product.productId}
+          imageUrl={product.imageUrl}
+          className={styles.image}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={259}
+          height={236}
+          fallback={
+            <span className={styles.noImage}>
+              <CategoryIcon category={product.category} size={64} />
+            </span>
+          }
+        />
       </div>
       <p className={styles.brand}>{product.brand}</p>
       <h3 className={styles.title}>

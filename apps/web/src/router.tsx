@@ -40,6 +40,14 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // Nguồn ảnh sản phẩm demo (pages/nguon-anh.md, #530)
+        path: 'image-credits',
+        handle: { surface: 'plain' } satisfies RouteHandle,
+        lazy: async () => ({
+          Component: (await import('./features/catalog/pages/ImageCreditsPage')).ImageCreditsPage,
+        }),
+      },
+      {
         path: 'products/:productId',
         // Từ 1280px hàng 2 header thu lại khi cuộn (§3.8); breadcrumb sát header (§2)
         handle: { headerNeeds: 'collapse', flushTop: true } satisfies RouteHandle,

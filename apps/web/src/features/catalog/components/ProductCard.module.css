@@ -43,6 +43,7 @@
 
 /* Ô ảnh vuông chạm sát mép thẻ */
 .plate {
+  position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 1;
@@ -58,10 +59,16 @@
   transform: scale(1.05);
 }
 .image {
-  width: 84%;
-  height: 84%;
-  object-fit: contain;
-  mix-blend-mode: multiply; /* nền trắng của ảnh hoà vào ô xám */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: multiply; /* ảnh demo phủ kín ô, lề đã nằm trong ảnh (§9.34); nền trắng của ảnh hoà vào ô xám */
+}
+.image[data-source='api'] {
+  padding: 8%; /* ảnh chiếm 84% ô */
+  object-fit: contain; /* ảnh API (admin tải lên, mọi tỉ lệ): giữ contain và lề như trước, không cắt mất sản phẩm */
 }
 .noImage {
   display: grid;

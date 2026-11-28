@@ -14,20 +14,27 @@
   margin: -10px; /* vùng bấm 40px, ô vẽ 20px: bù để ô thẳng hàng với lề */
 }
 .plate {
+  position: relative;
   display: grid;
   place-items: center;
   width: 96px;
   height: 96px;
-  padding: var(--space-100);
+  overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--bg-subtle);
   color: var(--border-input);
 }
 .plate img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  mix-blend-mode: multiply;
+  object-fit: cover;
+  mix-blend-mode: multiply; /* ảnh demo phủ kín ô, lề đã nằm trong ảnh (§9.34); nền trắng của ảnh hoà vào ô xám */
+}
+.plate img[data-source='api'] {
+  padding: var(--space-100);
+  object-fit: contain; /* ảnh API (admin tải lên, mọi tỉ lệ): giữ contain và lề như trước, không cắt mất sản phẩm */
 }
 .dim {
   opacity: 0.6;

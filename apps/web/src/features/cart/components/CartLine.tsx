@@ -5,6 +5,7 @@ import { Checkbox } from '../../../shared/components/Checkbox';
 import { Price } from '../../../shared/components/Price';
 import { QuantityStepper } from '../../../shared/components/QuantityStepper';
 import { formatVnd } from '../../../shared/lib/format';
+import { ProductImage } from '../../catalog/components/ProductImage';
 import { canSelect, unavailableReason } from '../lib/selection';
 import styles from './CartLine.module.css';
 
@@ -50,11 +51,16 @@ export function CartLine({
         tabIndex={-1}
         aria-hidden="true"
       >
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt="" width={80} height={80} loading="lazy" decoding="async" />
-        ) : (
-          <Package size={32} strokeWidth={1.75} />
-        )}
+        <ProductImage
+          productId={item.productId}
+          imageUrl={item.imageUrl}
+          alt=""
+          width={80}
+          height={80}
+          loading="lazy"
+          decoding="async"
+          fallback={<Package size={32} strokeWidth={1.75} />}
+        />
       </Link>
 
       <div className={styles.info}>

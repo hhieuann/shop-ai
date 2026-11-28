@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { ProductSummary } from '../../../shared/api/types';
 import { Price } from '../../../shared/components/Price';
 import { CategoryIcon } from './CategoryIcon';
+import { ProductImage } from './ProductImage';
 import { StockBadge } from './StockBadge';
 import styles from './ProductCard.module.css';
 
@@ -14,21 +15,21 @@ export function ProductCard({ product }: { product: ProductSummary }) {
   return (
     <article className={`${styles.card} ${unavailable ? styles.unavailable : ''}`}>
       <div className={styles.plate}>
-        {product.imageUrl ? (
-          <img
-            className={styles.image}
-            src={product.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width={240}
-            height={240}
-          />
-        ) : (
-          <span className={styles.noImage}>
-            <CategoryIcon category={product.category} size={56} />
-          </span>
-        )}
+        <ProductImage
+          productId={product.productId}
+          imageUrl={product.imageUrl}
+          className={styles.image}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={240}
+          height={240}
+          fallback={
+            <span className={styles.noImage}>
+              <CategoryIcon category={product.category} size={56} />
+            </span>
+          }
+        />
       </div>
       <div className={styles.body}>
         <h3 className={styles.title}>
