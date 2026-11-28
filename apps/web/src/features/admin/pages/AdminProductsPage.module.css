@@ -1,0 +1,388 @@
+/* Quản trị sản phẩm (docs/web/pages/admin-san-pham.md mục 2), trong khung quản trị (design-system §9.29).
+   Khối, thanh công cụ, bảng, nhãn viên theo trang đơn admin (pages/admin-don-hang.md mục 2) */
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-200);
+  margin-bottom: var(--space-300);
+}
+.title {
+  margin: 0;
+  color: var(--fg-heading);
+  font-size: var(--text-title-md);
+  line-height: var(--leading-title-md);
+  font-weight: 700;
+}
+.title:focus {
+  outline: none;
+}
+.title:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.lead {
+  margin: var(--space-50) 0 0;
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.add {
+  flex-shrink: 0;
+}
+
+.block {
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface);
+}
+.message {
+  margin: 0;
+  padding: var(--space-500) var(--space-200);
+  color: var(--fg-subdued);
+  text-align: center;
+}
+.messageText {
+  margin: 0 0 var(--space-100);
+}
+.link {
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+
+/* ── Thanh công cụ: ô tìm, ô chọn loại, nút phân đoạn ── */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-150);
+  padding: var(--space-150) var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+}
+.search {
+  position: relative;
+  width: 260px;
+  max-width: 100%;
+}
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-150);
+  translate: 0 -50%;
+  color: var(--fg-subdued);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-150) 0 40px;
+}
+.category {
+  width: 200px;
+}
+.segments {
+  display: inline-flex;
+  gap: var(--space-25);
+  margin-left: auto;
+  padding: var(--space-25);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 var(--space-150);
+  border-radius: var(--radius-md);
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.segment:hover {
+  color: var(--fg-heading);
+  text-decoration: none;
+}
+.segment[aria-current='page'] {
+  background: var(--bg-surface);
+  color: var(--fg-heading);
+  box-shadow: var(--shadow-xs);
+}
+.count {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--fg-muted) 12%, transparent);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Bảng ── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+}
+.table th {
+  padding: var(--space-100) var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+  background: var(--bg-surface-raised);
+  color: var(--fg-subdued);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.table td {
+  padding: 10px var(--space-200);
+  border-bottom: 1px solid var(--border-divider);
+  vertical-align: middle;
+}
+.row:last-child td {
+  border-bottom: 0;
+}
+.row:hover td {
+  background: var(--bg-surface-raised);
+}
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.product {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+}
+.thumb {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  color: var(--fg-icon-soft);
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.names {
+  display: grid;
+  min-width: 0;
+}
+.name {
+  color: var(--fg-heading);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.brand {
+  color: var(--fg-subdued);
+  font-size: 12px;
+  line-height: 16px;
+}
+.muted {
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.price {
+  white-space: nowrap;
+}
+.stockLabel {
+  display: none;
+}
+.low {
+  color: var(--fg-warning);
+  font-weight: 600;
+}
+.out {
+  color: var(--fg-danger);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Nhãn trạng thái dạng viên có chấm (như trang đơn admin) */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-25) 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pillActive {
+  background: var(--bg-success-tint);
+  color: var(--fg-success);
+}
+.pillHidden {
+  background: var(--bg-subtle);
+  color: var(--fg-muted);
+}
+.pillDeleted {
+  background: var(--bg-danger-tint);
+  color: var(--fg-danger);
+}
+
+.actionCell {
+  text-align: right;
+}
+.actions {
+  display: inline-flex;
+  gap: var(--space-50);
+  justify-content: flex-end;
+}
+/* Nút bút "Sửa": vuông 32px như nút ba chấm (§9.32) */
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  color: var(--fg-default);
+}
+.iconButton:hover {
+  background: var(--bg-surface-pressed);
+  color: var(--fg-default);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  min-height: 56px;
+  padding: var(--space-100) var(--space-200);
+  border-top: 1px solid var(--border-divider);
+}
+.footCount {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+.foot > nav {
+  margin-top: 0;
+}
+
+/* Hộp xoá: ô tròn icon thùng rác cạnh câu giải thích */
+.dialogBody {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-150);
+}
+.trash {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-danger-tint);
+  color: var(--fg-danger);
+}
+.dialogName {
+  color: var(--fg-heading);
+}
+
+/* Dưới 768px: thanh công cụ xếp dọc; mỗi dòng thành thẻ trong khối, cột Loại ẩn */
+@media (max-width: 767px) {
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .add {
+    width: 100%;
+  }
+  .toolbar {
+    padding: var(--space-150);
+  }
+  .search,
+  .category {
+    width: 100%;
+  }
+  .segments {
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table tbody {
+    display: block;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'product product'
+      'price stock'
+      'status action';
+    gap: var(--space-100) var(--space-150);
+    padding: var(--space-200);
+    border-bottom: 1px solid var(--border-divider);
+  }
+  .row:last-child {
+    border-bottom: 0;
+  }
+  .table td {
+    padding: 0;
+    border: 0;
+  }
+  .row:hover td {
+    background: none;
+  }
+  .product {
+    grid-area: product;
+  }
+  .categoryCol {
+    display: none;
+  }
+  .table .price {
+    grid-area: price;
+    text-align: left;
+  }
+  .table .stock {
+    grid-area: stock;
+  }
+  .stockLabel {
+    display: inline;
+    color: var(--fg-muted);
+  }
+  .statusCell {
+    grid-area: status;
+  }
+  .actionCell {
+    grid-area: action;
+  }
+  .foot {
+    padding: var(--space-100) var(--space-150);
+  }
+}

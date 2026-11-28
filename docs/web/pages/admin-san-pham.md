@@ -2,7 +2,7 @@
 
 Chốt 25/11/2026 (#543). Nghiệp vụ: [catalog.md](../../business/catalog.md) mục "Admin quản lý sản phẩm" (BR-09 … BR-15). API: `/api/v1/admin/products` (contracts/openapi.yaml, tag `admin`). Khung: design-system §9.29 (`AdminLayout`). Đọc kèm [design-system.md](../design-system.md).
 
-Người làm: **Hoàng**. Code dự kiến: `features/admin/pages/AdminProductsPage.tsx`, `AdminProductFormPage.tsx`, `features/admin/lib/productTemplates.ts`. Component mới dùng chung (làm trước, mỗi cái một mục design-system): `Select`, `Switch`, `ActionMenu` (nút ba chấm), `Toast` (thông báo nổi).
+Người làm: **Hoàng**. Danh sách (mục 2) đã làm ở #548: `features/admin/pages/AdminProductsPage.tsx`, bộ lọc trên URL `features/admin/lib/adminProductFilters.ts`. Thêm, sửa (mục 3) đã làm ở #549: `features/admin/pages/AdminProductFormPage.tsx`, luật form `features/admin/lib/productForm.ts`, mẫu `features/admin/lib/productTemplates.ts`, `features/admin/components/CopyFromPanel.tsx`, `ImagePreview.tsx`. Component dùng chung (#547, design-system §9.30–9.33): `Select`, `Switch`, `ActionMenu` (nút ba chấm), `ToastProvider` (thông báo nổi).
 
 ## 1. Ai thấy gì
 
@@ -36,7 +36,7 @@ Một khối như trang đơn admin (nền `--bg-surface`, viền, bo `--radius-
 
 **Thao tác trên dòng** (căn phải):
 - Món đang bán hoặc đã ẩn:
-  - nút icon `Pencil` 32×32 "Sửa" (link `/admin/products/:id`, `aria-label` "Sửa {tên}");
+  - nút icon `Pencil` 32×32 "Sửa" (link `/admin/products/:id/edit`, `aria-label` "Sửa: {tên}");
   - `ActionMenu` nút `MoreHorizontal` 32×32 ("Thao tác khác: {tên}") mở menu rộng 220px (nền trắng, bo `--radius-xl`, `--shadow-lg`): **Sửa** · **Nhân bản** (→ `/admin/products/new?from=<id>`) · **Ẩn khỏi cửa hàng** hoặc **Hiện lại** · vạch · **Xoá** (chữ và icon `--fg-danger`).
 - Món đã xoá: chỉ nút phụ `sm` "Khôi phục".
 
@@ -45,7 +45,7 @@ Một khối như trang đơn admin (nền `--bg-surface`, viền, bo `--radius-
 ### Thao tác
 - **Ẩn, hiện lại:** `PATCH { status, updatedAt }` ngay, không hỏi lại. Xong: `Toast` "Đã ẩn "{tên}" khỏi cửa hàng." / "Đã hiện lại "{tên}"."; tải lại danh sách và `counts`.
 - **Xoá:** `ConfirmDialog tone="danger"`:
-  - đầu hộp là ô tròn 40px `--bg-danger-tint` có icon `Trash2` `--fg-danger`;
+  - trong nội dung hộp, bên trái câu giải thích là ô tròn 40px `--bg-danger-tint` có icon `Trash2` `--fg-danger` (`ConfirmDialog` chưa có chỗ đặt icon riêng nên không đặt trên tiêu đề);
   - tiêu đề "Xoá sản phẩm này?";
   - nội dung "{tên} sẽ không hiện ở cửa hàng nữa. Đơn cũ vẫn giữ món này. Bạn có thể khôi phục ở mục "Đã xoá"";
   - nút "Giữ lại" (focus trước) + "Xoá sản phẩm" (danger).
@@ -76,11 +76,11 @@ Như trang đơn admin: mỗi dòng thành thẻ trong khối.
 - Hàng 3: nhãn trạng thái bên trái, hai nút icon bên phải.
 - Cột Loại ẩn (đã chọn ở thanh công cụ).
 
-## 3. Thêm `/admin/products/new`, sửa `/admin/products/:productId`
+## 3. Thêm `/admin/products/new`, sửa `/admin/products/:productId/edit`
 
 ### Đầu trang
 - H1 "Thêm sản phẩm" hoặc tên sản phẩm (trang sửa) + dòng phụ. Trang sửa có nhãn trạng thái cạnh H1.
-- Góc phải tiêu đề (chỉ trang thêm): nút phụ "Sao chép từ sản phẩm có sẵn" (icon `Copy`). Bấm thì mở hộp chọn: ô tìm theo tên trong loại đang chọn, danh sách kết quả (tên, giá); chọn một món thì điền mọi ô **trừ tên, giá, tồn kho và ảnh** (các ô này để trống cho admin nhập).
+- Góc phải tiêu đề (chỉ trang thêm): nút phụ "Sao chép từ sản phẩm có sẵn" (icon `Copy`). Bấm thì mở một khối ngay dưới tiêu đề (không phải hộp thoại): ô chọn các món của loại đang chọn (tối đa 50 món mới nhất, đang bán và đã ẩn) và nút "Điền từ sản phẩm này"; chọn một món thì điền mọi ô **trừ tên, giá, tồn kho và ảnh** (các ô này để trống cho admin nhập).
 
 ### Bố cục
 Lưới `minmax(0,1fr) | 360px`, cách 24px; dưới 960px một cột (cột phải xuống dưới). Mỗi khối: nền trắng, viền `--border-divider`, bo `--radius-xl`, padding 20, tiêu đề khối 16/24/600, các khối cách nhau 16px.
@@ -104,7 +104,7 @@ Lưới `minmax(0,1fr) | 360px`, cách 24px; dưới 960px một cột (cột ph
 
 ### Kiểm và lỗi
 - Kiểm ở web theo BR-11 khi rời ô và khi bấm Lưu; lỗi hiện dưới ô (`Field` error), focus ô lỗi đầu tiên. Lỗi 400 từ API gắn vào ô theo `errors[].field`.
-- Thêm xong: sang `/admin/products/:id` của món mới, `Toast` "Đã thêm "{tên}"."
+- Thêm xong: sang `/admin/products/:id/edit` của món mới, `Toast` "Đã thêm "{tên}"."
 - Sửa xong: ở lại, `Toast` "Đã lưu thay đổi.", cập nhật `updatedAt` và `expectedStock` mới.
 - 409 `STOCK_CHANGED`: `Alert` warning trên thanh cuối "Tồn kho vừa đổi thành {N} (có thể do khách vừa đặt hàng). Kiểm lại số tồn kho rồi lưu lại."; ô tồn kho giữ số admin nhập, `expectedStock` cập nhật theo N.
 - 409 `PRODUCT_CHANGED`: `ConfirmDialog` "Sản phẩm vừa được sửa ở nơi khác" với "Tải bản mới" (mất phần đang sửa) và "Ở lại".

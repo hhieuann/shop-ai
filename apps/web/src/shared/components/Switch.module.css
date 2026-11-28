@@ -1,0 +1,68 @@
+/* Công tắc (docs/web/design-system.md §9.31) */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+}
+.text {
+  display: grid;
+  gap: var(--space-25);
+  min-width: 0;
+}
+.label {
+  color: var(--fg-heading);
+  font-weight: 600;
+}
+.description {
+  color: var(--fg-subdued);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-sm);
+}
+
+/* Rãnh 44×24, bo tròn; vùng bấm đủ 44px bề ngang */
+.track {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--border-input);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.track:hover:not(:disabled) {
+  background: var(--border-default);
+}
+.track[aria-checked='true'] {
+  background: var(--bg-primary);
+}
+.track[aria-checked='true']:hover:not(:disabled) {
+  background: var(--bg-primary-hover);
+}
+.track:disabled {
+  opacity: 0.4;
+}
+/* Núm tròn 18px, cách mép 3px; bật thì trượt sang phải */
+.thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.track[aria-checked='true'] .thumb {
+  transform: translateX(20px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .thumb {
+    transition: none;
+  }
+}

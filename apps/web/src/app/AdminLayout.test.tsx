@@ -72,13 +72,17 @@ describe('AdminLayout · khung (design-system §9.29)', () => {
     );
     expect(screen.getByRole('link', { name: 'Về cửa hàng' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('button', { name: 'Tài khoản của an' })).toBeInTheDocument();
-    // Điều hướng: Đơn hàng là mục hiện tại; Sản phẩm chưa có trang nên chưa hiện
+    // Điều hướng: Đơn hàng là mục hiện tại; Sản phẩm (#548) có trong nhóm Danh mục, không phải mục hiện tại
     const nav = screen.getByRole('navigation', { name: 'Quản trị' });
     expect(within(nav).getByRole('link', { name: 'Đơn hàng' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    expect(within(nav).queryByRole('link', { name: 'Sản phẩm' })).toBeNull();
+    expect(within(nav).getByRole('link', { name: 'Sản phẩm' })).toHaveAttribute(
+      'href',
+      '/admin/products',
+    );
+    expect(within(nav).getByRole('link', { name: 'Sản phẩm' })).not.toHaveAttribute('aria-current');
     // Không có ô tìm kiếm, hàng danh mục của cửa hàng
     expect(screen.queryByRole('searchbox')).toBeNull();
   });
